@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文字数カウンター</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.webmanifest">
+</head>
+<body>
+    <div class="container">
+        <h1>文字数カウンター</h1>
+        <textarea id="text-input" placeholder="テキストを入力してください"></textarea>
+        <div class="stats">
+            <p>文字数: <span id="char-count">0</span></p>
+            <p>単語数: <span id="word-count">0</span></p>
+            <p>行数: <span id="line-count">0</span></p>
+        </div>
+        <input type="number" id="max-char-limit" placeholder="上限文字数">
+    </div>
+    <script src="app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js');
+        }
+    </script>
+</body>
+</html>
