@@ -1,0 +1,17 @@
+{
+  "name": "★HOSHI 管制塔",
+  "short_name": "HOSHI管制塔",
+  "description": "★HOSHI の開発状況（作業台・待ち行列・結果）をライブ表示する管制塔",
+  "start_url": "status.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#141413",
+  "theme_color": "#141413",
+  "orientation": "portrait-primary",
+  "lang": "ja",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

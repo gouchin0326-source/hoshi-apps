@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>★HOSHI 管制塔</title>
+<meta name="theme-color" content="#141413">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="HOSHI管制塔">
 <style>
   :root{
     --bg:#f7f7f5; --card:#ffffff; --ink:#1a1a19; --sub:#5f5e5a; --muted:#898781;
@@ -81,7 +89,7 @@
   <h2>結果（公開アプリ）</h2>
   <div class="card" id="results"><div class="empty">読み込み中…</div></div>
 
-  <footer><span id="updated"></span><button onclick="load()">更新</button></footer>
+  <footer><span id="updated"></span><button onclick="load()">更新</button><button id="installBtn" style="display:none">📲 アプリにする</button></footer>
 </div>
 <script>
 function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
@@ -147,6 +155,26 @@ async function load(){
 }
 load();
 setInterval(load, 30000);
+
+// --- PWA: サービスワーカー登録（オフライン外殻＝アプリ化の土台） ---
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+}
+// --- 「アプリにする」導線（Android/PC=ネイティブprompt / iOS=手順案内） ---
+var deferredPrompt = null;
+var installBtn = document.getElementById('installBtn');
+function isIOS() { return /iphone|ipad|ipod/i.test(navigator.userAgent); }
+function isStandalone() { return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true; }
+window.addEventListener('beforeinstallprompt', function (e) {
+  e.preventDefault(); deferredPrompt = e; if (!isStandalone()) installBtn.style.display = '';
+});
+window.addEventListener('appinstalled', function () { installBtn.style.display = 'none'; });
+if (!isStandalone() && isIOS()) installBtn.style.display = '';  // iOSはpromptが無いので常時提示
+installBtn.onclick = async function () {
+  if (deferredPrompt) { deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; installBtn.style.display = 'none'; }
+  else if (isIOS()) { alert('このページで、下の「共有」ボタン（□に↑）→「ホーム画面に追加」を選ぶと、アプリのアイコンになります。'); }
+  else { alert('ブラウザのメニュー（⋮）→「アプリをインストール」を選んでください。'); }
+};
 </script>
 </body>
 </html>
