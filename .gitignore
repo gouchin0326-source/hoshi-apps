@@ -1,0 +1,2 @@
+# local-only status signature (change-detection cache; never publish)
+.status.sig
