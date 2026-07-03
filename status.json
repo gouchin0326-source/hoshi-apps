@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-07-04 06:55:09",
+  "generated_at": "2026-07-04 08:01:09",
   "gpu": {
     "occupant": "空き（アイドル）",
     "note": "誰も使っていません",
-    "vram_used_gb": 0.9,
+    "vram_used_gb": 1.1,
     "vram_total_gb": 15.9,
     "util": 1
   },

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>★HOSHI</title>
+<meta name="theme-color" content="#141413">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="★HOSHI">
+<style>
+  :root{
+    --bg:#f7f7f5; --card:#ffffff; --ink:#1a1a19; --sub:#5f5e5a; --muted:#898781;
+    --border:#e3e2db; --accent:#2a78d6; --accent-ink:#0c447c;
+    --ok:#0f6e56; --ok-bg:#e1f5ee; --down:#a32d2d; --down-bg:#fcebeb;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#141413; --card:#1e1e1c; --ink:#f2f1ea; --sub:#b7b6ac; --muted:#8b8a82;
+      --border:#33322e; --accent:#3987e5; --accent-ink:#b5d4f4;
+      --ok:#5dcaa5; --ok-bg:#0f2e26; --down:#f09595; --down-bg:#3a1414; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);line-height:1.6;-webkit-text-size-adjust:100%;
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
+  .wrap{max-width:640px;margin:0 auto;padding:22px 16px 48px}
+  h1{font-size:26px;font-weight:700;margin:0 0 2px;letter-spacing:.02em}
+  .lead{color:var(--sub);font-size:14px;margin:0 0 14px}
+  .live{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:500;
+        padding:6px 12px;border-radius:9px;background:var(--card);border:1px solid var(--border);color:var(--sub);margin-bottom:18px}
+  .live .dot{width:9px;height:9px;border-radius:50%;background:var(--muted);flex:0 0 auto}
+  .live.up .dot{background:var(--ok)} .live.down .dot{background:var(--down)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media (max-width:460px){ .grid{grid-template-columns:1fr} }
+  .tile{background:var(--card);border:1px solid var(--border);border-radius:15px;padding:16px;
+        text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:2px;min-height:104px;position:relative}
+  .tile:active{transform:scale(.99)}
+  .tile .ic{font-size:26px;line-height:1;margin-bottom:6px}
+  .tile .name{font-size:16px;font-weight:600}
+  .tile .desc{font-size:12.5px;color:var(--sub)}
+  .tile .st{margin-top:auto;padding-top:8px;font-size:12px;font-weight:500}
+  .st.ok{color:var(--ok)} .st.down{color:var(--down)} .st.mut{color:var(--muted)}
+  .tile .ext{position:absolute;top:14px;right:14px;font-size:12px;color:var(--muted)}
+  .setgear{position:absolute;top:12px;right:12px;font-size:15px;color:var(--muted);
+           background:transparent;border:0;cursor:pointer;padding:4px}
+  footer{margin-top:22px;color:var(--muted);font-size:11.5px;text-align:center;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>★HOSHI</h1>
+  <p class="lead">ここが入口。すべての面へここから2タップ以内。</p>
+  <div class="live" id="live"><span class="dot"></span><span id="livetext">状態を確認中…</span></div>
+  <div class="grid" id="grid"></div>
+  <footer>
+    ★HOSHI · GitHub Pages 配信<br>
+    操作（操縦席）のURLは<b>この端末の中だけ</b>に保存します（公開ページ／リポジトリには一切書き込みません）。
+  </footer>
+</div>
+<script>
+// ★セキュリティ: このファイルには遠隔URL・トークンを一切書かない。
+//   操作(操縦席)の固定URL(トークン付き)は「初回登録制」で localStorage にのみ保存する。
+var CK_KEY='hoshi_cockpit_url';
+var PRIV='https://github.com/gouchin0326-source/hoshi-dashboard';
+function getCk(){ try{ return localStorage.getItem(CK_KEY)||''; }catch(e){ return ''; } }
+function setCk(v){ try{ if(v) localStorage.setItem(CK_KEY,v); else localStorage.removeItem(CK_KEY); }catch(e){} }
+
+function registerCk(){
+  var cur=getCk();
+  var msg='操縦席の固定URLを貼り付けてください（私有の COCKPIT.md にある、末尾にトークンが付いたURL）。\n'
+        + 'この端末の中だけに保存し、公開ページには一切書き込みません。\n'
+        + '（登録を消すには空欄でOK）';
+  var v=prompt(msg, cur);
+  if(v===null) return;                 // キャンセル
+  v=v.trim();
+  if(v && !/^https:\/\//.test(v)){ alert('https:// で始まるURLを貼ってください。'); return; }
+  setCk(v);
+  renderTiles(lastStatus);
+}
+function openCk(){
+  var u=getCk();
+  if(!u){ registerCk(); return false; }
+  location.href=u; return false;
+}
+
+function minsAgo(ts){
+  if(!ts) return null;
+  var t=new Date(String(ts).replace(' ','T'));
+  if(isNaN(t.getTime())) return null;
+  return Math.floor((Date.now()-t.getTime())/60000);
+}
+// status.jsonは6分間隔更新→12分以内の鮮度なら家PCは稼働中とみなす
+function pcAlive(st){ var m = st? minsAgo(st.generated_at):null; return (m!==null && m<=12); }
+
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+function tilesDef(){
+  return [
+    {ic:'📊', name:'開発状況（管制塔）', desc:'作業台・待ち行列・結果のライブ', href:'status.html', node:'status'},
+    {ic:'🎛', name:'操作（操縦席）',     desc:'PC稼働時のみ・要トークン',     node:'cockpit'},
+    {ic:'📱', name:'アプリ集',           desc:'公開アプリのタイル一覧',       href:'index.html', node:'apps'},
+    {ic:'🖥', name:'環境',               desc:'GPU/柱/ロードマップ（私有・要ログイン）', href:PRIV+'/blob/main/system/dashboard.png', ext:true, node:'env'},
+    {ic:'📦', name:'納品物',             desc:'G:\\マイドライブ\\HOSHI\\生成物（Driveアプリで閲覧）', href:'https://drive.google.com/drive/my-drive', ext:true, node:'deliver'},
+    {ic:'📚', name:'資料',               desc:'設計書・チケット・業務ボード（私有・要ログイン）', href:PRIV+'/tree/main/system', ext:true, node:'docs'}
+  ];
+}
+
+var lastStatus=null;
+function renderTiles(st){
+  lastStatus=st;
+  var alive=pcAlive(st);
+  var html=tilesDef().map(function(t){
+    if(t.node==='cockpit'){
+      var reg=!!getCk();
+      var st2 = !reg ? '<span class="st mut">未登録（タップで登録）</span>'
+                : alive ? '<span class="st ok">● 登録済み・PC稼働中</span>'
+                        : '<span class="st down">● 登録済み・PC停止中の可能性</span>';
+      return '<a class="tile" href="#" onclick="return openCk()">'
+           + (reg?'<button class="setgear" title="URLを変更/削除" onclick="event.preventDefault();event.stopPropagation();registerCk()">⚙</button>':'')
+           + '<div class="ic">'+t.ic+'</div><div class="name">'+esc(t.name)+'</div>'
+           + '<div class="desc">'+esc(t.desc)+'</div>'+st2+'</a>';
+    }
+    var ext = t.ext ? '<span class="ext">↗</span>' : '';
+    var extAttr = t.ext ? ' target="_blank" rel="noopener noreferrer"' : '';
+    var st3='';
+    if(t.node==='status'){ st3 = st ? '<span class="st '+(alive?'ok':'mut')+'">'+(alive?'● ライブ':'○ 最終値を表示')+'</span>' : '<span class="st mut">読み込み中…</span>'; }
+    else if(t.node==='apps'){ st3='<span class="st mut">いつでも利用可</span>'; }
+    else { st3='<span class="st mut">'+(t.ext?'外部で開く':'')+'</span>'; }
+    return '<a class="tile" href="'+esc(t.href)+'"'+extAttr+'>'+ext
+         + '<div class="ic">'+t.ic+'</div><div class="name">'+esc(t.name)+'</div>'
+         + '<div class="desc">'+esc(t.desc)+'</div>'+st3+'</a>';
+  }).join('');
+  document.getElementById('grid').innerHTML=html;
+}
+
+function renderLive(st){
+  var el=document.getElementById('live'), tx=document.getElementById('livetext');
+  if(!st){ el.className='live'; tx.textContent='状態を取得できません（オフライン？）'; return; }
+  var m=minsAgo(st.generated_at), alive=pcAlive(st);
+  el.className='live '+(alive?'up':'down');
+  var ago = (m===null)?'':(m<1?'たった今':(m+'分前'));
+  tx.textContent = (alive?'家PC稼働中':'家PC停止中の可能性')+' ・ 最終更新 '+(st.generated_at||'-')+(ago?'（'+ago+'）':'');
+}
+
+async function load(){
+  var st=null;
+  try{
+    var r=await fetch('status.json?_='+Date.now(), {cache:'no-store'});
+    if(r.ok) st=await r.json();
+  }catch(e){}
+  renderLive(st); renderTiles(st);
+}
+renderTiles(null);        // 先に枠を描く（オフラインでも入口は生きる）
+load();
+setInterval(load, 60000); // 1分ごとに生死更新（同一オリジンの静的JSON＝遠隔トンネルの枠は消費しない）
+
+// PWA: 外殻キャッシュ（オフライン/PC停止でも入口が開く）
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+}
+</script>
+</body>
+</html>

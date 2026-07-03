@@ -1,8 +1,8 @@
 {
-  "name": "★HOSHI ハブ",
-  "short_name": "HOSHIハブ",
-  "description": "★HOSHI の公開アプリ・ハブ（アプリ一覧／管制塔ライブ状況）。ここから各アプリへ入り、必ずハブへ戻れる。",
-  "start_url": "index.html",
+  "name": "★HOSHI",
+  "short_name": "★HOSHI",
+  "description": "★HOSHI の唯一の入口。開発状況・操作・アプリ・環境・納品物・資料へここから2タップ以内。",
+  "start_url": "home.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#141413",
