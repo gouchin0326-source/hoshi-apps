@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>★HOSHI 管制塔</title>
+<style>
+  :root{
+    --bg:#f7f7f5; --card:#ffffff; --ink:#1a1a19; --sub:#5f5e5a; --muted:#898781;
+    --border:#e3e2db; --accent:#2a78d6; --accent-ink:#0c447c;
+    --ok:#0f6e56; --ok-bg:#e1f5ee; --busy:#534ab7; --busy-bg:#eeedfe;
+    --down:#a32d2d; --down-bg:#fcebeb; --track:#eceae2;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#141413; --card:#1e1e1c; --ink:#f2f1ea; --sub:#b7b6ac; --muted:#8b8a82;
+      --border:#33322e; --accent:#3987e5; --accent-ink:#b5d4f4;
+      --ok:#5dcaa5; --ok-bg:#0f2e26; --busy:#afa9ec; --busy-bg:#26215c; --busy-bg:#241f4d;
+      --down:#f09595; --down-bg:#3a1414; --track:#2c2c2a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);line-height:1.6;-webkit-text-size-adjust:100%;
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
+  .wrap{max-width:640px;margin:0 auto;padding:20px 16px 48px}
+  .back{display:inline-block;margin-bottom:14px;padding:8px 14px;background:var(--busy-bg);color:var(--accent-ink);
+        text-decoration:none;border-radius:10px;font-size:14px;font-weight:500}
+  h1{font-size:22px;font-weight:600;margin:0 0 2px}
+  .lead{color:var(--sub);font-size:14px;margin:0 0 18px}
+  h2{font-size:13px;font-weight:600;color:var(--muted);text-transform:none;margin:22px 0 10px;letter-spacing:.02em}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+  .occ{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .occ .big{font-size:20px;font-weight:600}
+  .occ .note{font-size:13px;color:var(--sub)}
+  .bar{height:12px;border-radius:6px;background:var(--track);margin-top:14px;overflow:hidden}
+  .bar > i{display:block;height:100%;border-radius:6px;background:var(--busy)}
+  .vram{font-size:13px;color:var(--sub);margin-top:6px}
+  .svc{display:flex;flex-wrap:wrap;gap:8px}
+  .pill{display:inline-flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--border);
+        border-radius:999px;padding:6px 12px;font-size:13px}
+  .dot{width:9px;height:9px;border-radius:50%}
+  .up{background:var(--ok)} .dn{background:var(--down)}
+  .row{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--border)}
+  .row:first-child{border-top:0}
+  .num{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:28px}
+  .rtitle{flex:1;font-size:15px;min-width:0}
+  .badge{font-size:12px;font-weight:500;padding:3px 10px;border-radius:999px;white-space:nowrap}
+  .b-wait{background:var(--busy-bg);color:var(--accent-ink)}
+  .b-done{background:var(--ok-bg);color:var(--ok)}
+  .link{color:var(--accent);text-decoration:none;font-size:14px;font-weight:500;white-space:nowrap}
+  .empty{color:var(--muted);font-size:14px;padding:8px 0}
+  footer{margin-top:26px;display:flex;align-items:center;gap:12px;color:var(--muted);font-size:12px}
+  button{font:inherit;font-size:13px;padding:7px 14px;border:1px solid var(--border);background:var(--card);
+         color:var(--ink);border-radius:10px}
+  button:active{transform:scale(.98)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← アプリ一覧へ戻る</a>
+  <h1>★HOSHI 管制塔</h1>
+  <p class="lead">開発の今 — 作業台・待ち行列・結果を可視化</p>
+
+  <h2>作業台（16GB GPU）— 1度に1ジョブ</h2>
+  <div class="card" id="workbench"><div class="empty">読み込み中…</div></div>
+
+  <h2>サービス</h2>
+  <div class="svc" id="services"></div>
+
+  <h2>待ち行列（依頼／自律ジョブ）</h2>
+  <div class="card" id="queue"><div class="empty">読み込み中…</div></div>
+
+  <h2>結果（公開アプリ）</h2>
+  <div class="card" id="results"><div class="empty">読み込み中…</div></div>
+
+  <footer><span id="updated"></span><button onclick="load()">更新</button></footer>
+</div>
+<script>
+function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+async function load(){
+  let d;
+  try{ d = await (await fetch('status.json?t='+Date.now(),{cache:'no-store'})).json(); }
+  catch(e){ document.getElementById('updated').textContent='status.json を読めませんでした'; return; }
+
+  // 作業台
+  var g=d.gpu||{}, idle=(g.occupant||'').indexOf('空き')>-1;
+  var pct=g.vram_total_gb? Math.min(100,Math.round(g.vram_used_gb/g.vram_total_gb*100)):0;
+  document.getElementById('workbench').innerHTML =
+    '<div class="occ"><span class="big" style="color:'+(idle?'var(--sub)':'var(--busy)')+'">'+esc(g.occupant||'-')+'</span>'
+    +'<span class="note">'+esc(g.note||'')+'</span></div>'
+    +'<div class="bar"><i style="width:'+pct+'%;background:'+(idle?'var(--muted)':'var(--busy)')+'"></i></div>'
+    +'<div class="vram">VRAM '+ (g.vram_used_gb||0) +' / '+ (g.vram_total_gb||0) +' GB　使用率 '+ (g.util||0) +'%</div>';
+
+  // サービス
+  document.getElementById('services').innerHTML = (d.services||[]).map(function(s){
+    return '<span class="pill"><span class="dot '+(s.up?'up':'dn')+'"></span>'+esc(s.name)+'</span>';
+  }).join('');
+
+  // 待ち行列
+  var q=d.queue||[];
+  document.getElementById('queue').innerHTML = q.length ? q.map(function(it){
+    var done = it.state==='完了';
+    return '<div class="row"><span class="num">#'+esc(it.num)+'</span>'
+      +'<span class="rtitle">'+esc(it.title)+'</span>'
+      +'<span class="badge '+(done?'b-done':'b-wait')+'">'+esc(it.state)+'</span></div>';
+  }).join('') : '<div class="empty">待ちジョブはありません</div>';
+
+  // 結果
+  var r=d.results||[];
+  document.getElementById('results').innerHTML = r.length ? r.map(function(it){
+    return '<div class="row"><span class="rtitle">'+esc(it.name)+'</span>'
+      +'<a class="link" href="'+esc(it.url)+'">開く →</a></div>';
+  }).join('') : '<div class="empty">まだ結果はありません</div>';
+
+  document.getElementById('updated').textContent = '更新: '+(d.generated_at||'-');
+}
+load();
+setInterval(load, 30000);
+</script>
+</body>
+</html>
