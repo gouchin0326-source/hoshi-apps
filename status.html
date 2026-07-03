@@ -123,8 +123,9 @@ async function load(){
   }).join('');
 
   // 待ち行列（自律ランナーの実ジョブ状態を反映）
-  var q=d.queue||[], rn=d.runner||{};
-  var rline = (rn.current!=null)
+  var q=d.queue||[], rn=d.runner;
+  var rline = !rn ? ''
+    : (rn.current!=null)
     ? '<div class="runline busy"><b>⚙ #'+esc(rn.current)+' をビルド中…</b>　<span class="rt">ローカルLLMが自律ビルド中</span></div>'
     : '<div class="runline">自律ランナー: <b>'+esc(rn.activity||(rn.up?'待機中':'停止中'))+'</b>'
       +(rn.updated?'　<span class="rt">最終 '+esc(rn.updated)+'</span>':'')+'</div>';
