@@ -45,6 +45,16 @@
   .badge{font-size:12px;font-weight:500;padding:3px 10px;border-radius:999px;white-space:nowrap}
   .b-wait{background:var(--busy-bg);color:var(--accent-ink)}
   .b-done{background:var(--ok-bg);color:var(--ok)}
+  .b-busy{background:var(--busy-bg);color:var(--busy);font-weight:600}
+  .b-busy .bd{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--busy);
+    margin-right:5px;animation:pulse 1.4s infinite;vertical-align:middle}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  .b-down{background:var(--down-bg);color:var(--down)}
+  .meta{font-size:12px;color:var(--sub);margin-top:2px}
+  .runline{font-size:13px;color:var(--sub);padding-bottom:10px;margin-bottom:2px;border-bottom:1px dashed var(--border)}
+  .runline b{color:var(--ink);font-weight:600}
+  .runline.busy b{color:var(--busy)}
+  .runline .rt{color:var(--muted);font-size:12px}
   .link{color:var(--accent);text-decoration:none;font-size:14px;font-weight:500;white-space:nowrap}
   .empty{color:var(--muted);font-size:14px;padding:8px 0}
   footer{margin-top:26px;display:flex;align-items:center;gap:12px;color:var(--muted);font-size:12px}
@@ -75,6 +85,24 @@
 </div>
 <script>
 function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+// 右端バッジ = 干場のやること（レビュー待ち等）を優先、ランナー稼働/失敗は上書き表示
+function jobBadge(it){
+  if(it.job==='building') return '<span class="badge b-busy"><span class="bd"></span>ビルド中</span>';
+  if(it.job==='failed')   return '<span class="badge b-down">要調整</span>';
+  if(it.state==='レビュー待ち') return '<span class="badge b-wait">レビュー待ち</span>';
+  if(it.state==='完了')   return '<span class="badge b-done">完了</span>';
+  return '<span class="badge b-wait">'+esc(it.state)+'</span>';
+}
+// タイトル下の小さな説明 = ★HOSHIが実際に何をしたか
+function jobMeta(it){
+  if(it.job==='building') return '<div class="meta">⚙ ローカルLLMがビルド中…</div>';
+  if(it.job==='failed')   return '<div class="meta">🔴 自動ビルド未完了（要調整/難所）</div>';
+  if(it.job==='built'){
+    var v = it.verified ? '機能検証PASS' : '構造チェックPASS（動作は要確認）';
+    return '<div class="meta">✅ 納品済み'+(it.category?' ・ '+esc(it.category):'')+' ・ '+v+'</div>';
+  }
+  return '';
+}
 async function load(){
   let d;
   try{ d = await (await fetch('status.json?t='+Date.now(),{cache:'no-store'})).json(); }
@@ -94,14 +122,18 @@ async function load(){
     return '<span class="pill"><span class="dot '+(s.up?'up':'dn')+'"></span>'+esc(s.name)+'</span>';
   }).join('');
 
-  // 待ち行列
-  var q=d.queue||[];
-  document.getElementById('queue').innerHTML = q.length ? q.map(function(it){
-    var done = it.state==='完了';
+  // 待ち行列（自律ランナーの実ジョブ状態を反映）
+  var q=d.queue||[], rn=d.runner||{};
+  var rline = (rn.current!=null)
+    ? '<div class="runline busy"><b>⚙ #'+esc(rn.current)+' をビルド中…</b>　<span class="rt">ローカルLLMが自律ビルド中</span></div>'
+    : '<div class="runline">自律ランナー: <b>'+esc(rn.activity||(rn.up?'待機中':'停止中'))+'</b>'
+      +(rn.updated?'　<span class="rt">最終 '+esc(rn.updated)+'</span>':'')+'</div>';
+  document.getElementById('queue').innerHTML = rline + (q.length ? q.map(function(it){
     return '<div class="row"><span class="num">#'+esc(it.num)+'</span>'
-      +'<span class="rtitle">'+esc(it.title)+'</span>'
-      +'<span class="badge '+(done?'b-done':'b-wait')+'">'+esc(it.state)+'</span></div>';
-  }).join('') : '<div class="empty">待ちジョブはありません</div>';
+      +'<div class="rtitle">'+esc(it.title)+ jobMeta(it) +'</div>'
+      + jobBadge(it)
+      + (it.url ? '<a class="link" href="'+esc(it.url)+'">開く →</a>' : '') +'</div>';
+  }).join('') : '<div class="empty">待ちジョブはありません</div>');
 
   // 結果
   var r=d.results||[];
