@@ -1,8 +1,8 @@
 {
-  "name": "★HOSHI 管制塔",
-  "short_name": "HOSHI管制塔",
-  "description": "★HOSHI の開発状況（作業台・待ち行列・結果）をライブ表示する管制塔",
-  "start_url": "status.html",
+  "name": "★HOSHI ハブ",
+  "short_name": "HOSHIハブ",
+  "description": "★HOSHI の公開アプリ・ハブ（アプリ一覧／管制塔ライブ状況）。ここから各アプリへ入り、必ずハブへ戻れる。",
+  "start_url": "index.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#141413",
