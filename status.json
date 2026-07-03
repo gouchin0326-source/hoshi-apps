@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-03 19:07:02",
+  "generated_at": "2026-07-03 19:13:02",
   "gpu": {
     "occupant": "空き（アイドル）",
     "note": "誰も使っていません",
@@ -28,7 +28,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-03 19:04",
+    "updated": "2026-07-03 19:10",
     "current": null
   },
   "queue": [
