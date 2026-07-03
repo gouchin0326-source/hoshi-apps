@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-03 16:13:07",
+  "generated_at": "2026-07-03 16:19:02",
   "gpu": {
     "occupant": "空き（アイドル）",
     "note": "誰も使っていません",
@@ -28,41 +28,10 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-03 16:08",
+    "updated": "2026-07-03 16:18",
     "current": null
   },
-  "queue": [
-    {
-      "num": 1,
-      "title": "サンプルアプリ",
-      "state": "レビュー待ち",
-      "job": "none",
-      "app": "",
-      "category": "",
-      "verified": false,
-      "url": ""
-    },
-    {
-      "num": 2,
-      "title": "[アプリ] 文字数カウンター",
-      "state": "レビュー待ち",
-      "job": "built",
-      "app": "文字数カウンター",
-      "category": "general",
-      "verified": false,
-      "url": "apps/issue-2/index.html"
-    },
-    {
-      "num": 3,
-      "title": "[アプリ] 税込計算ツール",
-      "state": "レビュー待ち",
-      "job": "built",
-      "app": "税込計算ツール",
-      "category": "calculator",
-      "verified": true,
-      "url": "apps/issue-3/index.html"
-    }
-  ],
+  "queue": [],
   "results": [
     {
       "name": "Clock",
