@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>★HOSHI 広報部</title>
+<meta name="theme-color" content="#141413">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="★HOSHI 広報部">
+<style>
+  :root{
+    --bg:#f7f7f5; --card:#ffffff; --ink:#1a1a19; --sub:#5f5e5a; --muted:#898781;
+    --border:#e3e2db; --accent:#2a78d6; --accent-ink:#0c447c; --chip:#f0efea; --track:#eceae2;
+    --ok:#0f6e56; --ok-bg:#e1f5ee; --busy:#534ab7; --busy-bg:#eeedfe;
+    --down:#a32d2d; --down-bg:#fcebeb; --wait:#8a6d0f; --wait-bg:#fbf1d6;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#141413; --card:#1e1e1c; --ink:#f2f1ea; --sub:#b7b6ac; --muted:#8b8a82;
+      --border:#33322e; --accent:#3987e5; --accent-ink:#b5d4f4; --chip:#26251f; --track:#2c2c2a;
+      --ok:#5dcaa5; --ok-bg:#0f2e26; --busy:#afa9ec; --busy-bg:#241f4d;
+      --down:#f09595; --down-bg:#3a1414; --wait:#e3c04a; --wait-bg:#332b12; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);line-height:1.6;-webkit-text-size-adjust:100%;
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
+  .wrap{max-width:720px;margin:0 auto;padding:16px 16px 48px}
+  .home{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;margin-bottom:12px;font-size:13px;
+        font-weight:600;color:#fff;background:#0c447c;border-radius:9px;text-decoration:none}
+  h1{font-size:22px;font-weight:700;margin:0 0 2px}
+  .lead{color:var(--sub);font-size:13px;margin:0 0 14px}
+  h2{font-size:13px;font-weight:600;color:var(--muted);margin:20px 0 8px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{font-size:13px;padding:6px 12px;border-radius:999px;background:var(--chip);color:var(--sub)}
+  .chip b{color:var(--ink);font-variant-numeric:tabular-nums}
+  .row{display:flex;align-items:center;gap:11px;padding:12px 0;border-top:1px solid var(--border);text-decoration:none;color:inherit}
+  .row:first-child{border-top:0}
+  .rico{width:40px;height:40px;border-radius:11px;background:var(--chip);display:flex;align-items:center;justify-content:center;font-size:19px;flex:0 0 auto}
+  .rmeta{flex:1;min-width:0}
+  .rname{font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rsub{font-size:12px;color:var(--sub)}
+  .badge{font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap}
+  .b-ok{background:var(--ok-bg);color:var(--ok)} .b-open{background:var(--busy-bg);color:var(--busy)}
+  .go{font-size:16px;color:var(--muted);flex:0 0 auto}
+  .empty{color:var(--muted);font-size:13px;padding:12px 0}
+  .biglink{display:flex;align-items:center;gap:13px;padding:15px 16px;background:var(--card);border:1px solid var(--border);
+           border-radius:13px;text-decoration:none;color:inherit;margin-bottom:10px}
+  .biglink .bic{width:44px;height:44px;border-radius:12px;background:var(--chip);display:flex;align-items:center;justify-content:center;font-size:22px;flex:0 0 auto}
+  .biglink .bt{flex:1;min-width:0}
+  .biglink .bname{font-size:15.5px;font-weight:700}
+  .biglink .bdesc{font-size:12.5px;color:var(--sub)}
+  .note{margin-top:22px;padding:14px 16px;background:var(--card);border:1px solid var(--border);border-radius:12px;font-size:13px;color:var(--sub)}
+  .note b{color:var(--ink)} .note a{color:var(--accent);font-weight:600;text-decoration:none}
+  footer{margin-top:18px;color:var(--muted);font-size:11.5px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="home" href="home.html">⌂ ★HOSHI ホーム</a>
+  <h1>📣 広報部</h1>
+  <p class="lead">対外提供の窓口＝<b>公開アプリ</b>と<b>Gドライブ納品物</b>を、スマホ／会社PCからいつでも開ける形で届ける部署。掲示は<b>公開Pagesの読み取り専用</b>（遠隔トンネルを消費しません）。</p>
+
+  <h2>対外サマリー</h2>
+  <div class="card">
+    <div class="chips">
+      <span class="chip">🟢 公開アプリ <b id="c-apps">–</b></span>
+      <span class="chip">📦 納品導線 <b>Gドライブ</b></span>
+      <span class="chip" id="c-updated" style="background:transparent">最終更新 <b>–</b></span>
+    </div>
+  </div>
+
+  <h2>入口</h2>
+  <a class="biglink" href="index.html">
+    <div class="bic">📱</div>
+    <div class="bt"><div class="bname">公開アプリハブ</div><div class="bdesc">タップで動くライブアプリ一覧（無料・登録不要）</div></div>
+    <div class="go">›</div>
+  </a>
+  <a class="biglink" href="https://drive.google.com/drive/my-drive" target="_blank" rel="noopener noreferrer">
+    <div class="bic">📦</div>
+    <div class="bt"><div class="bname">Gドライブ納品物</div><div class="bdesc">生成物（画像・音楽・動画）・成果物をスマホのDriveアプリで閲覧 ↗</div></div>
+    <div class="go">↗</div>
+  </a>
+
+  <h2>掲示板（公開中のアプリ）</h2>
+  <div class="card" id="board"><div class="empty">読み込み中…</div></div>
+
+  <div class="note">
+    公開アプリは<b>この公開Pages</b>から誰でも開けます（機密は含めない方針）。生成物・大きな成果物は<b>Gドライブ納品</b>でスマホから閲覧。制作の現場は → <a href="make.html">🎨 制作部</a>、開発の進捗は → <a href="dev.html">🏭 開発部</a>。
+  </div>
+  <footer>★HOSHI 広報部 · 見る＝公開Pages（無料）・自動更新は遠隔トンネルを消費しません</footer>
+</div>
+<script>
+// 公開status.jsonのみ読む＝遠隔トンネル消費0（P4追補§8）。秘密はこのページに出さない。
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function minsAgo(ts){ if(!ts) return null; var t=Date.parse(String(ts).replace(' ','T')); if(isNaN(t)) return null; return Math.max(0,Math.round((Date.now()-t)/60000)); }
+
+function render(d){
+  var results=(d&&d.results)||[];
+  document.getElementById('c-apps').textContent = results.length;
+  var m=minsAgo(d&&d.generated_at);
+  var ago=(m===null)?'':(m<1?'たった今':(m+'分前'));
+  document.getElementById('c-updated').innerHTML = '最終更新 <b>'+esc((d&&d.generated_at)||'-')+(ago?'（'+ago+'）':'')+'</b>';
+
+  var board=document.getElementById('board');
+  if(!results.length){
+    board.innerHTML='<div class="empty">いま公開中のアプリはありません（納品済みになると掲示されます）。</div>';
+    return;
+  }
+  board.innerHTML = results.map(function(r){
+    var url=String(r.url||'');
+    var open = url ? ' href="'+esc(url)+'"' : '';
+    return '<a class="row"'+open+'>'
+      + '<div class="rico">📱</div>'
+      + '<div class="rmeta"><div class="rname">'+esc(r.name||'（無題）')+'</div>'
+      +   '<div class="rsub">'+(url?esc(url):'リンク準備中')+'</div></div>'
+      + (url?'<span class="badge b-ok">公開中</span>':'<span class="badge b-open">準備中</span>')
+      + '<span class="go">›</span></a>';
+  }).join('');
+}
+
+async function load(){
+  try{ var r=await fetch('status.json?_='+Date.now(),{cache:'no-store'}); if(r.ok) render(await r.json()); else render(null); }
+  catch(e){ document.getElementById('board').innerHTML='<div class="empty">状態を取得できません（オフライン？）</div>'; }
+}
+load();
+setInterval(load, 60000);
+
+if('serviceWorker' in navigator){ window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); }); }
+</script>
+</body>
+</html>

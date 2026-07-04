@@ -115,7 +115,7 @@ function departments(st){
     {ic:'🛰', name:'情シス部', desc:'PC環境・操作（操縦席）・送信台帳＝外部通信の窓口',
       node:'ops', badge:(c.sends?('送信 '+c.sends):'')},
     {ic:'📣', name:'広報部', desc:'対外提供＝公開アプリ ＋ Gドライブ納品',
-      node:'pr', badge:''},
+      href:'pr.html', node:'pr', badge:''},
     {ic:'📚', name:'総務部', desc:'設計書・チケット・納品台帳（私有・要ログイン）',
       href:PRIV+'/tree/main/system', ext:true, node:'docs', badge:''}
   ];
@@ -135,14 +135,6 @@ function renderTiles(st){
       return '<a class="tile" href="#" onclick="return openCk()">'+badge
            + (reg?'<button class="setgear" title="URLを変更/削除" onclick="event.preventDefault();event.stopPropagation();registerCk()">⚙</button>':'')
            + '<div class="ic">'+t.ic+'</div><div class="name">'+esc(t.name)+'</div><div class="desc">'+esc(t.desc)+'</div>'+s+'</a>';
-    }
-    if(t.node==='pr'){                                    // 広報部＝対外提供: 公開アプリ ＋ Gドライブ納品(担当変更2026-07-04)
-      return '<div class="tile">'
-        + '<div class="ic">'+t.ic+'</div><div class="name">'+esc(t.name)+'</div><div class="desc">'+esc(t.desc)+'</div>'
-        + '<div class="sublinks">'
-        +   '<a class="sublink" href="index.html">📱 公開アプリ</a>'
-        +   '<a class="sublink" href="https://drive.google.com/drive/my-drive" target="_blank" rel="noopener noreferrer">📦 Gドライブ納品物 ↗</a>'
-        + '</div></div>';
     }
     var extAttr = t.ext ? ' target="_blank" rel="noopener noreferrer"' : '';
     var s2 = (t.node==='status') ? '<span class="st '+(alive?'ok':'mut')+'">'+(alive?'● ライブ':'○ 最終値を表示')+'</span>'
