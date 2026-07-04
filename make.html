@@ -58,6 +58,11 @@
   .empty{color:var(--muted);font-size:13px;padding:12px 0}
   .note{margin-top:22px;padding:14px 16px;background:var(--card);border:1px solid var(--border);border-radius:12px;font-size:13px;color:var(--sub)}
   .note b{color:var(--ink)} .note a{color:var(--accent);font-weight:600;text-decoration:none}
+  .gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+  .gitem img,.gitem video{width:100%;display:block;border-radius:10px;background:var(--track);aspect-ratio:4/3;object-fit:cover}
+  .gitem-audio audio{width:100%;margin-top:6px}
+  .gcap{font-size:12px;color:var(--sub);margin-top:7px}
+  .gnote{font-size:12px;color:var(--muted);margin-top:14px}
   footer{margin-top:18px;color:var(--muted);font-size:11.5px;text-align:center}
 </style>
 </head>
@@ -72,6 +77,25 @@
 
   <h2>生成ライン</h2>
   <div class="card" id="lines"><div class="empty">読み込み中…</div></div>
+
+  <h2>最新の生成物（サンプル）</h2>
+  <div class="card">
+    <div class="gallery">
+      <div class="gitem">
+        <img src="media_gallery/sample_image.jpg" alt="画像サンプル（Z-Image）" loading="lazy">
+        <div class="gcap">🖼 画像 · Z-Image</div>
+      </div>
+      <div class="gitem">
+        <video src="media_gallery/sample_video.mp4" controls preload="none" poster=""></video>
+        <div class="gcap">🎬 動画 · Wan 2.2 TI2V-5B（5秒720p）</div>
+      </div>
+      <div class="gitem gitem-audio">
+        <audio src="media_gallery/sample_music.mp3" controls preload="none"></audio>
+        <div class="gcap">🎵 音楽 · ACE-Step 1.5（日本語詞）</div>
+      </div>
+    </div>
+    <div class="gnote">手作業で選んだ代表サンプル・実物は<b>ローカル保管</b>（このページの物は軽量コピー）。</div>
+  </div>
 
   <h2>生成ジョブ</h2>
   <div class="card" id="jobs"><div class="empty">読み込み中…</div></div>
