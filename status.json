@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-07-05 05:37:09",
+  "generated_at": "2026-07-05 05:43:07",
   "gpu": {
-    "occupant": "空き（アイドル）",
-    "note": "誰も使っていません",
-    "vram_used_gb": 0.7,
+    "occupant": "メディア生成（画像/音楽）",
+    "note": "生成モデルがVRAMを使用中",
+    "vram_used_gb": 8.5,
     "vram_total_gb": 15.9,
     "util": 1
   },
@@ -14,7 +14,7 @@
     },
     {
       "name": "生成 (ComfyUI)",
-      "up": false
+      "up": true
     },
     {
       "name": "チャットUI (Open WebUI)",
@@ -28,7 +28,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-05 05:35",
+    "updated": "2026-07-05 05:41",
     "current": null
   },
   "queue": [
@@ -103,7 +103,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 5
+    "push_today": 6
   },
   "ai_works": []
 }
