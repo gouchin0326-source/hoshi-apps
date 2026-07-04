@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-07-04 13:49:06",
+  "generated_at": "2026-07-04 13:55:06",
   "gpu": {
-    "occupant": "空き（アイドル）",
-    "note": "誰も使っていません",
-    "vram_used_gb": 1.4,
+    "occupant": "コード開発（ローカルLLM）",
+    "note": "qwen2.5-coder:14b",
+    "vram_used_gb": 13.0,
     "vram_total_gb": 15.9,
     "util": 4
   },
@@ -28,7 +28,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-04 05:06",
+    "updated": "2026-07-04 13:54",
     "current": null
   },
   "queue": [
@@ -71,10 +71,10 @@
     {
       "num": 4,
       "title": "[アプリ] 在庫管理ツール",
-      "state": "受付/待機",
-      "job": "none",
-      "app": "",
-      "category": "",
+      "state": "レビュー待ち",
+      "job": "built",
+      "app": "在庫管理ツール",
+      "category": "general",
       "verified": false,
       "url": "",
       "purpose": "仕事",
@@ -103,7 +103,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 31
+    "push_today": 32
   },
   "ai_works": []
 }
