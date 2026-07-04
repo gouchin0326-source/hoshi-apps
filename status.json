@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-04 16:01:05",
+  "generated_at": "2026-07-04 16:07:05",
   "gpu": {
     "occupant": "コード開発（ローカルLLM）",
     "note": "qwen2.5-coder:14b",
@@ -22,13 +22,13 @@
     },
     {
       "name": "自律ランナー",
-      "up": false
+      "up": true
     }
   ],
   "runner": {
-    "up": false,
-    "activity": "停止中",
-    "updated": "2026-07-04 15:42",
+    "up": true,
+    "activity": "待機中",
+    "updated": "2026-07-04 16:06",
     "current": null
   },
   "queue": [
@@ -103,7 +103,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 53
+    "push_today": 54
   },
   "ai_works": []
 }
