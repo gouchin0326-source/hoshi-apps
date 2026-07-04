@@ -1,16 +1,16 @@
 {
-  "generated_at": "2026-07-04 13:19:11",
+  "generated_at": "2026-07-04 13:25:06",
   "gpu": {
-    "occupant": "空き（アイドル）",
-    "note": "誰も使っていません",
-    "vram_used_gb": 0.9,
+    "occupant": "コード開発（ローカルLLM）",
+    "note": "qwen2.5-coder:14b",
+    "vram_used_gb": 12.6,
     "vram_total_gb": 15.9,
-    "util": 5
+    "util": 4
   },
   "services": [
     {
       "name": "ローカルLLM (Ollama)",
-      "up": false
+      "up": true
     },
     {
       "name": "生成 (ComfyUI)",
@@ -91,7 +91,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 26
+    "push_today": 27
   },
   "ai_works": []
 }
