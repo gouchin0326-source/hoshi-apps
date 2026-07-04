@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-07-04 13:31:04",
+  "generated_at": "2026-07-04 13:37:06",
   "gpu": {
     "occupant": "メディア生成（画像/音楽）",
     "note": "生成モデルがVRAMを使用中",
-    "vram_used_gb": 10.5,
+    "vram_used_gb": 11.4,
     "vram_total_gb": 15.9,
     "util": 100
   },
@@ -84,14 +84,14 @@
     }
   ],
   "requests": {
-    "today": 484,
+    "today": 491,
     "hist": {
       "2026-07-02": 430,
       "2026-07-03": 612
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 28
+    "push_today": 29
   },
   "ai_works": []
 }
