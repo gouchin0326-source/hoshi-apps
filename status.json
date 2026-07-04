@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-07-04 08:01:09",
+  "generated_at": "2026-07-04 09:54:45",
   "gpu": {
     "occupant": "空き（アイドル）",
     "note": "誰も使っていません",
-    "vram_used_gb": 1.1,
+    "vram_used_gb": 0.9,
     "vram_total_gb": 15.9,
-    "util": 1
+    "util": 4
   },
   "services": [
     {
@@ -76,5 +76,14 @@
       "name": "税込計算ツール",
       "url": "apps/issue-3/index.html"
     }
-  ]
+  ],
+  "requests": {
+    "today": 449,
+    "hist": {
+      "2026-07-02": 430,
+      "2026-07-03": 612
+    },
+    "cap_month": 20000,
+    "guide_day": 666
+  }
 }
