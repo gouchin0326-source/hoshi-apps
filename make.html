@@ -104,11 +104,10 @@ function render(d){
   var busyBadge='<span class="badge b-busy"><span class="bd"></span>生成中</span>';
   var okBadge='<span class="badge b-ok">生成可</span>';
   var offBadge='<span class="badge b-off">エンジン停止中</span>';
-  var prepBadge='<span class="badge b-prep">準備中（P2）</span>';
   var lines=[
     {ic:'🖼', name:'画像', tech:'Z-Image（ComfyUI）', st: engineUp?(mediaBusy?busyBadge:okBadge):offBadge},
     {ic:'🎵', name:'音楽', tech:'ACE-Step', st: engineUp?okBadge:offBadge},
-    {ic:'🎬', name:'動画', tech:'Wan 2.2 / LTXV（導入予定）', st: prepBadge}
+    {ic:'🎬', name:'動画', tech:'Wan 2.2 TI2V-5B ／ LTXV distilled', st: engineUp?(mediaBusy?busyBadge:okBadge):offBadge}
   ];
   document.getElementById('lines').innerHTML = lines.map(function(l){
     return '<div class="line"><div class="lico">'+l.ic+'</div>'
