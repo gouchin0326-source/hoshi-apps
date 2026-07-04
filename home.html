@@ -95,7 +95,8 @@ function counts(st){
   return { pending:q.filter(function(it){return it.state!=='完了';}).length,
            done:q.filter(function(it){return it.state==='完了';}).length,
            results:r.length, total:q.length,
-           sends:(st&&st.requests&&st.requests.today)||0 };
+           sends:(st&&st.requests&&st.requests.today)||0,
+           push:(st&&st.requests&&st.requests.push_today)||0 };
 }
 
 function departments(st){
@@ -157,7 +158,7 @@ function renderSummary(st){
     '<span class="sc '+(alive?'ok':'down')+'">'+(alive?'🟢 家PC稼働':'🔴 家PC停止の可能性')+'</span>'
     +'<span class="sc">待ちジョブ <b>'+c.pending+'</b></span>'
     +'<span class="sc">納品 <b>'+c.results+'</b></span>'
-    +'<span class="sc">本日送信 <b>'+c.sends+'</b></span>'
+    +'<span class="sc">本日送信 ngrok<b>'+c.sends+'</b> / push<b>'+c.push+'</b></span>'
     +'<span class="sc" style="border:0;background:transparent">最終更新 '+esc(st.generated_at||'-')+(ago?'（'+ago+'）':'')+'</span>';
 }
 
