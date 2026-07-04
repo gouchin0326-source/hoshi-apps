@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-04 13:37:06",
+  "generated_at": "2026-07-04 13:43:05",
   "gpu": {
     "occupant": "メディア生成（画像/音楽）",
     "note": "生成モデルがVRAMを使用中",
@@ -67,6 +67,18 @@
       "url": "apps/issue-3/index.html",
       "purpose": "未分類",
       "method": "local"
+    },
+    {
+      "num": 4,
+      "title": "[アプリ] 在庫管理ツール",
+      "state": "受付/待機",
+      "job": "none",
+      "app": "",
+      "category": "",
+      "verified": false,
+      "url": "",
+      "purpose": "仕事",
+      "method": "local"
     }
   ],
   "results": [
@@ -91,7 +103,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 29
+    "push_today": 30
   },
   "ai_works": []
 }
