@@ -48,6 +48,15 @@
   .flow .step{display:flex;align-items:center;gap:5px;color:var(--sub)}
   .flow .step b{color:var(--ink);font-weight:600}
   .flow .arw{color:var(--muted);margin:0 2px}
+  .cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:4px}
+  .cat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:1px}
+  .cat .ci{font-size:18px;line-height:1.2}
+  .cat b{font-size:14px;font-weight:650}
+  .cat .cd{font-size:11.5px;color:var(--sub)}
+  .cat.det{border-color:var(--ok);background:var(--ok-bg)}
+  .cat .tag{font-size:10px;font-weight:700;color:var(--ok);margin-top:2px}
+  .catsnote{font-size:12px;color:var(--sub);margin:8px 2px 2px;line-height:1.55}
+  .catsnote b{color:var(--ink)}
   h2{font-size:13px;font-weight:600;color:var(--muted);margin:20px 0 8px}
   .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:6px 16px}
   .row{display:flex;align-items:center;gap:10px;padding:12px 0;border-top:1px solid var(--border)}
@@ -85,6 +94,19 @@
     <span class="step">✅ <b>検証</b></span><span class="arw">→</span>
     <span class="step">📦 <b>納品</b></span>
   </div>
+
+  <h2>🧩 作れるアプリ（厳密検証つき・8種）</h2>
+  <div class="cats">
+    <div class="cat"><span class="ci">🧮</span><b>計算</b><span class="cd">割引・日給・BMI など 数値→結果</span></div>
+    <div class="cat"><span class="ci">🔁</span><b>単位換算</b><span class="cd">cm↔inch・温度・通貨（双方向）</span></div>
+    <div class="cat det"><span class="ci">📋</span><b>リスト管理</b><span class="cd">名簿・在庫・備品・持ち物（登録/一覧/削除/CSV/合計）</span><span class="tag">決定論・変動ゼロ</span></div>
+    <div class="cat"><span class="ci">✅</span><b>チェックリスト</b><span class="cd">持ち物・点検・todo＋進捗表示</span></div>
+    <div class="cat"><span class="ci">📊</span><b>集計</b><span class="cd">CSVをカテゴリ別に合計</span></div>
+    <div class="cat"><span class="ci">✊</span><b>選択ゲーム</b><span class="cd">じゃんけん（勝敗カウント・永続）</span></div>
+    <div class="cat"><span class="ci">🔢</span><b>数当て</b><span class="cd">ヒント（大小）＋試行回数</span></div>
+    <div class="cat"><span class="ci">❓</span><b>クイズ</b><span class="cd">4択・自動採点</span></div>
+  </div>
+  <p class="catsnote">各種別は<b>機械が自動で機能テスト</b>（"動く"まで検証）してから納品します。仕様が固い型は<b>テンプレ生成でLLMを機械的処理から外し変動ゼロ</b>（リスト管理）。アクションゲーム等の難物は無理に納品せず<b>要調整</b>へ回します。<br><span style="color:var(--muted)">実力測定 2026-07-04：作れなかった型を分析→種別を拡張（換算/選択ゲーム/数当て/クイズ）＋精度を強化。</span></p>
 
   <h2>⚙ ビルド中</h2>
   <div class="card" id="building"><div class="empty">読み込み中…</div></div>
