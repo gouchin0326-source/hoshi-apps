@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-07-04 15:43:05",
+  "generated_at": "2026-07-04 15:49:05",
   "gpu": {
     "occupant": "コード開発（ローカルLLM）",
     "note": "qwen2.5-coder:14b",
     "vram_used_gb": 15.4,
     "vram_total_gb": 15.9,
-    "util": 13
+    "util": 99
   },
   "services": [
     {
@@ -96,14 +96,14 @@
     }
   ],
   "requests": {
-    "today": 493,
+    "today": 495,
     "hist": {
       "2026-07-02": 430,
       "2026-07-03": 612
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 50
+    "push_today": 51
   },
   "ai_works": []
 }
