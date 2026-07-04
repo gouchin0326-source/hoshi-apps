@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-07-04 12:43:16",
+  "generated_at": "2026-07-04 12:49:13",
   "gpu": {
     "occupant": "空き（アイドル）",
     "note": "誰も使っていません",
     "vram_used_gb": 0.9,
     "vram_total_gb": 15.9,
-    "util": 1
+    "util": 3
   },
   "services": [
     {
@@ -91,6 +91,6 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 20
+    "push_today": 21
   }
 }
