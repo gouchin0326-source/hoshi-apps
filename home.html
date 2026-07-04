@@ -48,6 +48,10 @@
   .badge{position:absolute;top:13px;right:13px;font-size:11.5px;font-weight:700;color:var(--accent-ink);
          background:var(--chip);border:1px solid var(--border);border-radius:999px;padding:3px 9px;font-variant-numeric:tabular-nums}
   .ext{position:absolute;top:14px;right:14px;font-size:12px;color:var(--muted)}
+  .sublinks{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:10px}
+  .sublink{font-size:12.5px;font-weight:600;color:var(--accent-ink);background:var(--chip);
+           border:1px solid var(--border);border-radius:9px;padding:6px 10px;text-decoration:none}
+  .sublink:active{transform:scale(.98)}
   .setgear{position:absolute;top:11px;right:11px;font-size:15px;color:var(--muted);background:transparent;border:0;cursor:pointer;padding:4px}
   footer{margin-top:22px;color:var(--muted);font-size:11.5px;text-align:center;line-height:1.7}
 </style>
@@ -101,12 +105,12 @@ function departments(st){
       node:'status', badge:(st?(pcAlive(st)?'ライブ':'最終値'):'')},
     {ic:'🏭', name:'開発部', desc:'アプリ自律開発が主軸／画像・音楽・動画＝第1事業(ローカルLLM・¥0)',
       href:PRIV+'/issues', ext:true, node:'dev', badge:(c.total?('待ち '+c.pending):'')},
-    {ic:'🎨', name:'制作部', desc:'生成物（画像/音楽/動画）→ Gドライブに納品',
-      href:'https://drive.google.com/drive/my-drive', ext:true, node:'make', badge:(c.results?('納品 '+c.results):'')},
+    {ic:'🎨', name:'制作部', desc:'生成工房（画像/音楽/動画）＝ローカルで作成',
+      href:'status.html', node:'make', badge:''},
     {ic:'🛰', name:'情シス部', desc:'PC環境・操作（操縦席）・送信台帳＝外部通信の窓口',
       node:'ops', badge:(c.sends?('送信 '+c.sends):'')},
-    {ic:'📣', name:'広報部', desc:'公開アプリ・掲示板（第2事業の実務ツールも）',
-      href:'index.html', node:'pr', badge:(c.results?(''+c.results+'本'):'')},
+    {ic:'📣', name:'広報部', desc:'対外提供＝公開アプリ ＋ Gドライブ納品',
+      node:'pr', badge:''},
     {ic:'📚', name:'総務部', desc:'設計書・チケット・納品台帳（私有・要ログイン）',
       href:PRIV+'/tree/main/system', ext:true, node:'docs', badge:''}
   ];
@@ -126,6 +130,14 @@ function renderTiles(st){
       return '<a class="tile" href="#" onclick="return openCk()">'+badge
            + (reg?'<button class="setgear" title="URLを変更/削除" onclick="event.preventDefault();event.stopPropagation();registerCk()">⚙</button>':'')
            + '<div class="ic">'+t.ic+'</div><div class="name">'+esc(t.name)+'</div><div class="desc">'+esc(t.desc)+'</div>'+s+'</a>';
+    }
+    if(t.node==='pr'){                                    // 広報部＝対外提供: 公開アプリ ＋ Gドライブ納品(担当変更2026-07-04)
+      return '<div class="tile">'
+        + '<div class="ic">'+t.ic+'</div><div class="name">'+esc(t.name)+'</div><div class="desc">'+esc(t.desc)+'</div>'
+        + '<div class="sublinks">'
+        +   '<a class="sublink" href="index.html">📱 公開アプリ</a>'
+        +   '<a class="sublink" href="https://drive.google.com/drive/my-drive" target="_blank" rel="noopener noreferrer">📦 Gドライブ納品物 ↗</a>'
+        + '</div></div>';
     }
     var extAttr = t.ext ? ' target="_blank" rel="noopener noreferrer"' : '';
     var s2 = (t.node==='status') ? '<span class="st '+(alive?'ok':'mut')+'">'+(alive?'● ライブ':'○ 最終値を表示')+'</span>'
