@@ -16,95 +16,99 @@
   :root{
     --bg:#f7f7f5; --card:#ffffff; --ink:#1a1a19; --sub:#5f5e5a; --muted:#898781;
     --border:#e3e2db; --accent:#2a78d6; --accent-ink:#0c447c;
-    --ok:#0f6e56; --ok-bg:#e1f5ee; --down:#a32d2d; --down-bg:#fcebeb;
+    --ok:#0f6e56; --ok-bg:#e1f5ee; --down:#a32d2d; --down-bg:#fcebeb; --chip:#f0efea;
   }
   @media (prefers-color-scheme: dark){
     :root{ --bg:#141413; --card:#1e1e1c; --ink:#f2f1ea; --sub:#b7b6ac; --muted:#8b8a82;
       --border:#33322e; --accent:#3987e5; --accent-ink:#b5d4f4;
-      --ok:#5dcaa5; --ok-bg:#0f2e26; --down:#f09595; --down-bg:#3a1414; }
+      --ok:#5dcaa5; --ok-bg:#0f2e26; --down:#f09595; --down-bg:#3a1414; --chip:#26251f; }
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);line-height:1.6;-webkit-text-size-adjust:100%;
        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
-  .wrap{max-width:640px;margin:0 auto;padding:22px 16px 48px}
-  h1{font-size:26px;font-weight:700;margin:0 0 2px;letter-spacing:.02em}
-  .lead{color:var(--sub);font-size:14px;margin:0 0 14px}
-  .live{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:500;
-        padding:6px 12px;border-radius:9px;background:var(--card);border:1px solid var(--border);color:var(--sub);margin-bottom:18px}
-  .live .dot{width:9px;height:9px;border-radius:50%;background:var(--muted);flex:0 0 auto}
-  .live.up .dot{background:var(--ok)} .live.down .dot{background:var(--down)}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  @media (max-width:460px){ .grid{grid-template-columns:1fr} }
-  .tile{background:var(--card);border:1px solid var(--border);border-radius:15px;padding:16px;
-        text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:2px;min-height:104px;position:relative}
+  .wrap{max-width:1000px;margin:0 auto;padding:20px 16px 48px}
+  h1{font-size:26px;font-weight:700;margin:0 0 1px;letter-spacing:.02em}
+  .lead{color:var(--sub);font-size:13px;margin:0 0 14px}
+  /* 全社サマリー1行 */
+  .summary{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+  .sc{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--border);
+      border-radius:10px;padding:7px 13px;font-size:13px;color:var(--sub);font-weight:500}
+  .sc b{color:var(--ink);font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+  .sc.ok{color:var(--ok);border-color:var(--ok)} .sc.down{color:var(--down);border-color:var(--down)}
+  /* 部署タイル */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+  .tile{background:var(--card);border:1px solid var(--border);border-radius:15px;padding:15px 16px;
+        text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:2px;min-height:112px;position:relative}
   .tile:active{transform:scale(.99)}
-  .tile .ic{font-size:26px;line-height:1;margin-bottom:6px}
+  .tile .ic{font-size:25px;line-height:1;margin-bottom:5px}
   .tile .name{font-size:16px;font-weight:600}
-  .tile .desc{font-size:12.5px;color:var(--sub)}
+  .tile .desc{font-size:12px;color:var(--sub)}
   .tile .st{margin-top:auto;padding-top:8px;font-size:12px;font-weight:500}
   .st.ok{color:var(--ok)} .st.down{color:var(--down)} .st.mut{color:var(--muted)}
-  .tile .ext{position:absolute;top:14px;right:14px;font-size:12px;color:var(--muted)}
-  .setgear{position:absolute;top:12px;right:12px;font-size:15px;color:var(--muted);
-           background:transparent;border:0;cursor:pointer;padding:4px}
+  .badge{position:absolute;top:13px;right:13px;font-size:11.5px;font-weight:700;color:var(--accent-ink);
+         background:var(--chip);border:1px solid var(--border);border-radius:999px;padding:3px 9px;font-variant-numeric:tabular-nums}
+  .ext{position:absolute;top:14px;right:14px;font-size:12px;color:var(--muted)}
+  .setgear{position:absolute;top:11px;right:11px;font-size:15px;color:var(--muted);background:transparent;border:0;cursor:pointer;padding:4px}
   footer{margin-top:22px;color:var(--muted);font-size:11.5px;text-align:center;line-height:1.7}
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>★HOSHI</h1>
-  <p class="lead">ここが入口。すべての面へここから2タップ以内。</p>
-  <div class="live" id="live"><span class="dot"></span><span id="livetext">状態を確認中…</span></div>
+  <p class="lead">社長室 — 会社（各部署）の今をここで管理。すべてへ2タップ以内。</p>
+  <div class="summary" id="summary"><span class="sc">状態を確認中…</span></div>
   <div class="grid" id="grid"></div>
-  <footer>
-    ★HOSHI · GitHub Pages 配信<br>
-    操作（操縦席）のURLは<b>この端末の中だけ</b>に保存します（公開ページ／リポジトリには一切書き込みません）。
+  <footer id="foot">
+    ★HOSHI · 見る＝公開Pages（無料）／操作＝家PC(要トークン)だけ<br>
+    操作（操縦席）のURLは<b>この端末の中だけ</b>に保存（公開ページ／リポジトリには書き込みません）。
   </footer>
 </div>
 <script>
-// ★セキュリティ: このファイルには遠隔URL・トークンを一切書かない。
-//   操作(操縦席)の固定URL(トークン付き)は「初回登録制」で localStorage にのみ保存する。
+// ★通信経済(P5§3=P4§8): このホームは公開status.jsonのみを読む(ngrok消費0)。
+//   ★セキュリティ: 遠隔URL・トークンは書かない。操作(操縦席)は初回登録制でlocalStorageのみ。
 var CK_KEY='hoshi_cockpit_url';
 var PRIV='https://github.com/gouchin0326-source/hoshi-dashboard';
 function getCk(){ try{ return localStorage.getItem(CK_KEY)||''; }catch(e){ return ''; } }
 function setCk(v){ try{ if(v) localStorage.setItem(CK_KEY,v); else localStorage.removeItem(CK_KEY); }catch(e){} }
-
 function registerCk(){
   var cur=getCk();
-  var msg='操縦席の固定URLを貼り付けてください（私有の COCKPIT.md にある、末尾にトークンが付いたURL）。\n'
-        + 'この端末の中だけに保存し、公開ページには一切書き込みません。\n'
-        + '（登録を消すには空欄でOK）';
+  var msg='操作（操縦席）の固定URLを貼り付けてください（私有 COCKPIT.md の、末尾にトークンが付いたURL）。\n'
+        + 'この端末の中だけに保存し、公開ページには一切書き込みません。（消すには空欄）';
   var v=prompt(msg, cur);
-  if(v===null) return;                 // キャンセル
+  if(v===null) return;
   v=v.trim();
   if(v && !/^https:\/\//.test(v)){ alert('https:// で始まるURLを貼ってください。'); return; }
-  setCk(v);
-  renderTiles(lastStatus);
+  setCk(v); renderTiles(lastStatus);
 }
-function openCk(){
-  var u=getCk();
-  if(!u){ registerCk(); return false; }
-  location.href=u; return false;
-}
+function openCk(){ var u=getCk(); if(!u){ registerCk(); return false; } location.href=u; return false; }
 
-function minsAgo(ts){
-  if(!ts) return null;
-  var t=new Date(String(ts).replace(' ','T'));
-  if(isNaN(t.getTime())) return null;
-  return Math.floor((Date.now()-t.getTime())/60000);
-}
-// status.jsonは6分間隔更新→12分以内の鮮度なら家PCは稼働中とみなす
-function pcAlive(st){ var m = st? minsAgo(st.generated_at):null; return (m!==null && m<=12); }
-
+function minsAgo(ts){ if(!ts) return null; var t=new Date(String(ts).replace(' ','T')); return isNaN(t.getTime())?null:Math.floor((Date.now()-t.getTime())/60000); }
+function pcAlive(st){ var m=st?minsAgo(st.generated_at):null; return (m!==null && m<=12); }   // status.jsonは6分間隔→12分以内で稼働中
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 
-function tilesDef(){
+function counts(st){
+  var q=(st&&st.queue)||[], r=(st&&st.results)||[];
+  return { pending:q.filter(function(it){return it.state!=='完了';}).length,
+           done:q.filter(function(it){return it.state==='完了';}).length,
+           results:r.length, total:q.length,
+           sends:(st&&st.requests&&st.requests.today)||0 };
+}
+
+function departments(st){
+  var c=counts(st);
   return [
-    {ic:'📊', name:'開発状況（管制塔）', desc:'作業台・待ち行列・結果のライブ', href:'status.html', node:'status'},
-    {ic:'🎛', name:'操作（操縦席）',     desc:'PC稼働時のみ・要トークン',     node:'cockpit'},
-    {ic:'📱', name:'アプリ集',           desc:'公開アプリのタイル一覧',       href:'index.html', node:'apps'},
-    {ic:'🖥', name:'環境',               desc:'GPU/柱/ロードマップ（私有・要ログイン）', href:PRIV+'/blob/main/system/dashboard.png', ext:true, node:'env'},
-    {ic:'📦', name:'納品物',             desc:'G:\\マイドライブ\\HOSHI\\生成物（Driveアプリで閲覧）', href:'https://drive.google.com/drive/my-drive', ext:true, node:'deliver'},
-    {ic:'📚', name:'資料',               desc:'設計書・チケット・業務ボード（私有・要ログイン）', href:PRIV+'/tree/main/system', ext:true, node:'docs'}
+    {ic:'📊', name:'経営ダッシュ（管制塔）', desc:'作業台・サービス・待ち行列・結果', href:'status.html',
+      node:'status', badge:(st?(pcAlive(st)?'ライブ':'最終値'):'')},
+    {ic:'🏭', name:'開発部', desc:'アプリ自律開発が主軸／画像・音楽・動画＝第1事業(ローカルLLM・¥0)',
+      href:PRIV+'/issues', ext:true, node:'dev', badge:(c.total?('待ち '+c.pending):'')},
+    {ic:'🎨', name:'制作部', desc:'生成物（画像/音楽/動画）→ Gドライブに納品',
+      href:'https://drive.google.com/drive/my-drive', ext:true, node:'make', badge:(c.results?('納品 '+c.results):'')},
+    {ic:'🛰', name:'情シス部', desc:'PC環境・操作（操縦席）・送信台帳＝外部通信の窓口',
+      node:'ops', badge:(c.sends?('送信 '+c.sends):'')},
+    {ic:'📣', name:'広報部', desc:'公開アプリ・掲示板（第2事業の実務ツールも）',
+      href:'index.html', node:'pr', badge:(c.results?(''+c.results+'本'):'')},
+    {ic:'📚', name:'総務部', desc:'設計書・チケット・納品台帳（私有・要ログイン）',
+      href:PRIV+'/tree/main/system', ext:true, node:'docs', badge:''}
   ];
 }
 
@@ -112,52 +116,48 @@ var lastStatus=null;
 function renderTiles(st){
   lastStatus=st;
   var alive=pcAlive(st);
-  var html=tilesDef().map(function(t){
-    if(t.node==='cockpit'){
+  document.getElementById('grid').innerHTML = departments(st).map(function(t){
+    var badge = t.badge ? '<span class="badge">'+esc(t.badge)+'</span>' : (t.ext?'<span class="ext">↗</span>':'');
+    if(t.node==='ops'){                                   // 情シス部＝操作(操縦席)。初回登録制
       var reg=!!getCk();
-      var st2 = !reg ? '<span class="st mut">未登録（タップで登録）</span>'
-                : alive ? '<span class="st ok">● 登録済み・PC稼働中</span>'
-                        : '<span class="st down">● 登録済み・PC停止中の可能性</span>';
-      return '<a class="tile" href="#" onclick="return openCk()">'
+      var s = !reg ? '<span class="st mut">未登録（タップで登録）</span>'
+              : alive ? '<span class="st ok">● 登録済み・PC稼働中</span>'
+                      : '<span class="st down">● 登録済み・PC停止中の可能性</span>';
+      return '<a class="tile" href="#" onclick="return openCk()">'+badge
            + (reg?'<button class="setgear" title="URLを変更/削除" onclick="event.preventDefault();event.stopPropagation();registerCk()">⚙</button>':'')
-           + '<div class="ic">'+t.ic+'</div><div class="name">'+esc(t.name)+'</div>'
-           + '<div class="desc">'+esc(t.desc)+'</div>'+st2+'</a>';
+           + '<div class="ic">'+t.ic+'</div><div class="name">'+esc(t.name)+'</div><div class="desc">'+esc(t.desc)+'</div>'+s+'</a>';
     }
-    var ext = t.ext ? '<span class="ext">↗</span>' : '';
     var extAttr = t.ext ? ' target="_blank" rel="noopener noreferrer"' : '';
-    var st3='';
-    if(t.node==='status'){ st3 = st ? '<span class="st '+(alive?'ok':'mut')+'">'+(alive?'● ライブ':'○ 最終値を表示')+'</span>' : '<span class="st mut">読み込み中…</span>'; }
-    else if(t.node==='apps'){ st3='<span class="st mut">いつでも利用可</span>'; }
-    else { st3='<span class="st mut">'+(t.ext?'外部で開く':'')+'</span>'; }
-    return '<a class="tile" href="'+esc(t.href)+'"'+extAttr+'>'+ext
-         + '<div class="ic">'+t.ic+'</div><div class="name">'+esc(t.name)+'</div>'
-         + '<div class="desc">'+esc(t.desc)+'</div>'+st3+'</a>';
+    var s2 = (t.node==='status') ? '<span class="st '+(alive?'ok':'mut')+'">'+(alive?'● ライブ':'○ 最終値を表示')+'</span>'
+           : (t.node==='pr') ? '<span class="st mut">いつでも利用可</span>'
+           : '<span class="st mut">'+(t.ext?'外部で開く':'')+'</span>';
+    return '<a class="tile" href="'+esc(t.href)+'"'+extAttr+'>'+badge
+         + '<div class="ic">'+t.ic+'</div><div class="name">'+esc(t.name)+'</div><div class="desc">'+esc(t.desc)+'</div>'+s2+'</a>';
   }).join('');
-  document.getElementById('grid').innerHTML=html;
 }
 
-function renderLive(st){
-  var el=document.getElementById('live'), tx=document.getElementById('livetext');
-  if(!st){ el.className='live'; tx.textContent='状態を取得できません（オフライン？）'; return; }
-  var m=minsAgo(st.generated_at), alive=pcAlive(st);
-  el.className='live '+(alive?'up':'down');
-  var ago = (m===null)?'':(m<1?'たった今':(m+'分前'));
-  tx.textContent = (alive?'家PC稼働中':'家PC停止中の可能性')+' ・ 最終更新 '+(st.generated_at||'-')+(ago?'（'+ago+'）':'');
+function renderSummary(st){
+  var el=document.getElementById('summary');
+  if(!st){ el.innerHTML='<span class="sc">状態を取得できません（オフライン？）</span>'; return; }
+  var alive=pcAlive(st), c=counts(st), m=minsAgo(st.generated_at);
+  var ago=(m===null)?'':(m<1?'たった今':(m+'分前'));
+  el.innerHTML =
+    '<span class="sc '+(alive?'ok':'down')+'">'+(alive?'🟢 家PC稼働':'🔴 家PC停止の可能性')+'</span>'
+    +'<span class="sc">待ちジョブ <b>'+c.pending+'</b></span>'
+    +'<span class="sc">納品 <b>'+c.results+'</b></span>'
+    +'<span class="sc">本日送信 <b>'+c.sends+'</b></span>'
+    +'<span class="sc" style="border:0;background:transparent">最終更新 '+esc(st.generated_at||'-')+(ago?'（'+ago+'）':'')+'</span>';
 }
 
 async function load(){
   var st=null;
-  try{
-    var r=await fetch('status.json?_='+Date.now(), {cache:'no-store'});
-    if(r.ok) st=await r.json();
-  }catch(e){}
-  renderLive(st); renderTiles(st);
+  try{ var r=await fetch('status.json?_='+Date.now(),{cache:'no-store'}); if(r.ok) st=await r.json(); }catch(e){}
+  renderSummary(st); renderTiles(st);
 }
-renderTiles(null);        // 先に枠を描く（オフラインでも入口は生きる）
+renderTiles(null);            // 先に枠(オフラインでも入口は生きる)
 load();
-setInterval(load, 60000); // 1分ごとに生死更新（同一オリジンの静的JSON＝遠隔トンネルの枠は消費しない）
+setInterval(load, 60000);     // 公開status.json(無料)で1分ごと更新＝ngrok消費0
 
-// PWA: 外殻キャッシュ（オフライン/PC停止でも入口が開く）
 if('serviceWorker' in navigator){
   window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
 }
