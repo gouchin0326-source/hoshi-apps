@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-07-04 12:13:12",
+  "generated_at": "2026-07-04 12:19:11",
   "gpu": {
     "occupant": "空き（アイドル）",
     "note": "誰も使っていません",
     "vram_used_gb": 0.9,
     "vram_total_gb": 15.9,
-    "util": 3
+    "util": 2
   },
   "services": [
     {
@@ -40,7 +40,9 @@
       "app": "",
       "category": "",
       "verified": false,
-      "url": ""
+      "url": "",
+      "purpose": "未分類",
+      "method": "local"
     },
     {
       "num": 2,
@@ -50,7 +52,9 @@
       "app": "文字数カウンター",
       "category": "general",
       "verified": false,
-      "url": "apps/issue-2/index.html"
+      "url": "apps/issue-2/index.html",
+      "purpose": "未分類",
+      "method": "local"
     },
     {
       "num": 3,
@@ -60,7 +64,9 @@
       "app": "税込計算ツール",
       "category": "calculator",
       "verified": true,
-      "url": "apps/issue-3/index.html"
+      "url": "apps/issue-3/index.html",
+      "purpose": "未分類",
+      "method": "local"
     }
   ],
   "results": [
@@ -85,6 +91,6 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 15
+    "push_today": 16
   }
 }
