@@ -105,7 +105,7 @@ function departments(st){
     {ic:'📊', name:'経営ダッシュ（管制塔）', desc:'作業台・サービス・待ち行列・結果', href:'status.html',
       node:'status', badge:(st?(pcAlive(st)?'ライブ':'最終値'):'')},
     {ic:'🏭', name:'開発部', desc:'アプリ自律開発が主軸／画像・音楽・動画＝第1事業(ローカルLLM・¥0)',
-      href:PRIV+'/issues', ext:true, node:'dev', badge:(c.total?('待ち '+c.pending):'')},
+      href:'dev.html', node:'dev', badge:(c.total?('待ち '+c.pending):'')},
     {ic:'🎨', name:'制作部', desc:'生成工房（画像/音楽/動画）＝ローカルで作成',
       href:'status.html', node:'make', badge:''},
     {ic:'🛰', name:'情シス部', desc:'PC環境・操作（操縦席）・送信台帳＝外部通信の窓口',
