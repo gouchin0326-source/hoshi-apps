@@ -1,0 +1,8 @@
+{
+  "name": "長さ単位変換",
+  "short_name": "Length Converter",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000"
+}

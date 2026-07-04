@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4択クイズゲーム</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="manifest" href="manifest.webmanifest">
+</head>
+<body>
+<h1>4択クイズゲーム</h1>
+<section class="card">
+<div id="question" class="row"></div>
+<div id="choices">
+<button class="btn choice" id="choice0"></button>
+<button class="btn choice" id="choice1"></button>
+<button class="btn choice" id="choice2"></button>
+<button class="btn choice" id="choice3"></button>
+</div>
+<div class="row">スコア: <span id="score">0</span> / <span id="qtotal">5</span></div>
+<div id="result" class="muted"></div>
+</section>
+<script src="app.js"></script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('service-worker.js');}</script>
+</body>
+</html>

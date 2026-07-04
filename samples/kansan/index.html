@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>長さ単位変換</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="manifest" href="manifest.webmanifest">
+</head>
+<body>
+<h1>長さ単位変換</h1>
+<section class="card">
+<label>値: <input type="number" id="inVal"></label>
+<label>方向: <select id="dir">
+<option value="ab">cm → inch</option>
+<option value="ba">inch → cm</option>
+</select></label>
+<button id="convBtn" class="btn">変換</button>
+<div class="row">結果: <span id="result">0</span></div>
+<div id="error" class="muted"></div>
+</section>
+<script src="app.js"></script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('service-worker.js');}</script>
+</body>
+</html>

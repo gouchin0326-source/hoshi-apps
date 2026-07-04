@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数当てゲーム</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="manifest" href="manifest.webmanifest">
+</head>
+<body>
+<h1>数当てゲーム</h1>
+<section class="card">
+<label>予想: <input type="number" id="guessInput"></label>
+<button id="guessBtn" class="btn">判定</button>
+<div class="row">ヒント: <span id="hint"></span></div>
+<div class="row">試行回数: <span id="attempts">0</span></div>
+<button id="newBtn" class="btn">新しいゲーム</button>
+</section>
+<script src="app.js"></script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('service-worker.js');}</script>
+</body>
+</html>

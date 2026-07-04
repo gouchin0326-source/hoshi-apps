@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>★HOSHI サンプルアプリ館</title>
+<meta name="theme-color" content="#141413">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="★HOSHI サンプル">
+<style>
+  :root{
+    --bg:#f7f7f5; --card:#ffffff; --ink:#1a1a19; --sub:#5f5e5a; --muted:#898781;
+    --border:#e3e2db; --accent:#2a78d6; --accent-ink:#0c447c; --chip:#f0efea;
+    --ok:#0f6e56; --ok-bg:#e1f5ee;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#141413; --card:#1e1e1c; --ink:#f2f1ea; --sub:#b7b6ac; --muted:#8b8a82;
+      --border:#33322e; --accent:#3987e5; --accent-ink:#b5d4f4; --chip:#26251f;
+      --ok:#5dcaa5; --ok-bg:#0f2e26; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);line-height:1.6;-webkit-text-size-adjust:100%;
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
+  .wrap{max-width:720px;margin:0 auto;padding:16px 16px 48px}
+  .home{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;margin-bottom:12px;font-size:13px;
+        font-weight:600;color:#fff;background:#0c447c;border-radius:9px;text-decoration:none}
+  h1{font-size:22px;font-weight:700;margin:0 0 2px}
+  .lead{color:var(--sub);font-size:13px;margin:0 0 16px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:12px}
+  a.app{display:flex;flex-direction:column;gap:4px;background:var(--card);border:1px solid var(--border);
+        border-radius:14px;padding:16px;text-decoration:none;color:inherit;transition:border-color .15s, transform .1s}
+  a.app:hover{border-color:var(--accent)}
+  a.app:active{transform:scale(.99)}
+  .app .top{display:flex;align-items:center;gap:10px}
+  .app .ic{font-size:26px;line-height:1}
+  .app .nm{font-size:16px;font-weight:700}
+  .app .cat{font-size:11px;font-weight:700;color:var(--ok);background:var(--ok-bg);
+            padding:2px 8px;border-radius:999px;align-self:flex-start;margin-top:2px}
+  .app .de{font-size:12.5px;color:var(--sub);margin:2px 0 4px}
+  .app .go{font-size:13px;font-weight:700;color:var(--accent)}
+  .note{margin-top:22px;padding:14px 16px;background:var(--card);border:1px solid var(--border);
+        border-radius:12px;font-size:13px;color:var(--sub);line-height:1.6}
+  .note b{color:var(--ink)}
+  footer{margin-top:18px;color:var(--muted);font-size:11.5px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="home" href="home.html">⌂ ★HOSHI ホーム</a>
+  <h1>🧩 サンプルアプリ館</h1>
+  <p class="lead">ローカルLLMが<b>自律で作り・機械が機能検証</b>した業務／ゲームアプリの見本。カードをタップするとその場で動きます（¥0・完全オフライン）。</p>
+
+  <div class="grid">
+    <a class="app" href="samples/kansan/">
+      <div class="top"><span class="ic">🔁</span><span class="nm">長さ換算</span></div>
+      <span class="cat">単位換算</span>
+      <span class="de">cm ↔ inch を双方向に変換。値と結果を機械が両方向で検証。</span>
+      <span class="go">開いて使う →</span>
+    </a>
+    <a class="app" href="samples/janken/">
+      <div class="top"><span class="ic">✊</span><span class="nm">じゃんけん</span></div>
+      <span class="cat">選択ゲーム</span>
+      <span class="de">CPUと対戦し勝ち・負け・引き分けを記録（保存対応）。</span>
+      <span class="go">遊ぶ →</span>
+    </a>
+    <a class="app" href="samples/kazuate/">
+      <div class="top"><span class="ic">🔢</span><span class="nm">数当て</span></div>
+      <span class="cat">数当て</span>
+      <span class="de">1〜100の数を当てる。大きい／小さいのヒントと試行回数。</span>
+      <span class="go">遊ぶ →</span>
+    </a>
+    <a class="app" href="samples/quiz/">
+      <div class="top"><span class="ic">❓</span><span class="nm">4択クイズ</span></div>
+      <span class="cat">クイズ</span>
+      <span class="de">5問を出題して正誤判定・最後に正解数を自動採点。</span>
+      <span class="go">挑戦する →</span>
+    </a>
+    <a class="app" href="samples/zaiko/">
+      <div class="top"><span class="ic">📋</span><span class="nm">在庫管理</span></div>
+      <span class="cat">リスト管理・決定論</span>
+      <span class="de">商品名と在庫数を登録／一覧／削除・合計表示・CSV書き出し。テンプレ生成で変動ゼロ。</span>
+      <span class="go">使ってみる →</span>
+    </a>
+  </div>
+
+  <div class="note">
+    <b>これらは自動生成の見本です。</b> ★HOSHIの開発部（第1事業）が、ローカルLLMで<b>計画→実装→機械検証→納品</b>まで自律で作りました。扱うデータはすべて架空のサンプルで、機密は含みません。<br>
+    → <a class="go" href="dev.html" style="color:var(--accent);text-decoration:none;font-weight:700">🏭 開発部（作れるアプリ一覧・ライブ状況）へ</a>
+  </div>
+  <footer>★HOSHI サンプルアプリ館 · 見る＝公開Pages（無料）· データは端末内 localStorage のみ</footer>
+</div>
+</body>
+</html>

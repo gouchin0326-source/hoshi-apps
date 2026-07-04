@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>じゃんけんゲーム</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="manifest" href="manifest.webmanifest">
+</head>
+<body>
+<h1>じゃんけんゲーム</h1>
+<section class="card">
+<div id="choices">
+<button class="choice btn" id="c_gu" data-choice="gu">グー</button>
+<button class="choice btn" id="c_choki" data-choice="choki">チョキ</button>
+<button class="choice btn" id="c_pa" data-choice="pa">パー</button>
+</div>
+<div class="row">結果: <span id="result"></span></div>
+<div class="row">勝ち <span id="winCount">0</span> ・ 負け <span id="loseCount">0</span> ・ 引き分け <span id="drawCount">0</span></div>
+<button id="resetBtn" class="btn">リセット</button>
+</section>
+<script src="app.js"></script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('service-worker.js');}</script>
+</body>
+</html>

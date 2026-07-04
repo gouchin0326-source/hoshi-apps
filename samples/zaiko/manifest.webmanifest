@@ -1,0 +1,10 @@
+{
+  "name": "在庫管理",
+  "short_name": "在庫管理",
+  "start_url": "./",
+  "display": "standalone",
+  "lang": "ja",
+  "background_color": "#f5f6f8",
+  "theme_color": "#2563eb",
+  "icons": []
+}
