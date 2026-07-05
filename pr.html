@@ -85,6 +85,9 @@
     <div class="go">↗</div>
   </a>
 
+  <h2>🎮 公開アプリ（カタログ）</h2>
+  <div class="card" id="catalog"><div class="empty">読み込み中…</div></div>
+
   <h2>掲示板（公開中のアプリ）</h2>
   <div class="card" id="board"><div class="empty">読み込み中…</div></div>
 
@@ -128,6 +131,26 @@ async function load(){
 }
 load();
 setInterval(load, 60000);
+
+// 公開アプリカタログ(apps.json)＝アプリ追加はjson1エントリ(P7 E1)。公開Pagesのみ=トンネル消費0。
+async function loadCatalog(){
+  var el=document.getElementById('catalog');
+  try{
+    var r=await fetch('apps.json?_='+Date.now(),{cache:'no-store'});
+    if(!r.ok) throw 0;
+    var d=await r.json(); var apps=(d&&d.apps)||[];
+    if(!apps.length){ el.innerHTML='<div class="empty">公開アプリはまだありません。</div>'; return; }
+    el.innerHTML=apps.map(function(a){
+      return '<a class="row" href="'+esc(a.path||'#')+'">'
+        + '<div class="rico">'+esc(a.icon||'📱')+'</div>'
+        + '<div class="rmeta"><div class="rname">'+esc(a.title||'')+'</div>'
+        +   '<div class="rsub">'+esc(a.desc||'')+'</div></div>'
+        + (a.badge?'<span class="badge b-open">'+esc(a.badge)+'</span>':'')
+        + '<span class="go">›</span></a>';
+    }).join('');
+  }catch(e){ el.innerHTML='<div class="empty">カタログを取得できません</div>'; }
+}
+loadCatalog();
 
 if('serviceWorker' in navigator){ window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); }); }
 </script>
