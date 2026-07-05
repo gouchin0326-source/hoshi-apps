@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-05 17:49:05",
+  "generated_at": "2026-07-05 17:55:05",
   "gpu": {
     "occupant": "メディア生成（画像/音楽）",
     "note": "生成モデルがVRAMを使用中",
@@ -28,7 +28,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-05 17:46",
+    "updated": "2026-07-05 17:52",
     "current": null
   },
   "queue": [
@@ -103,7 +103,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 128
+    "push_today": 129
   },
   "ai_works": [
     {
