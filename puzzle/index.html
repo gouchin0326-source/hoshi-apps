@@ -111,6 +111,7 @@ footer{padding:10px;text-align:center;font-size:10px;color:#565064;}
 <div id="ovl"><div id="mbox"></div></div>
 <script>
 "use strict";
+const APP_VER="2.1"; /* デプロイ毎に上げる: 旧Service Workerのキャッシュを?vで構造的に回避 */
 /* ============ util ============ */
 function makeRng(seed){let s=(seed>>>0)||1;function next(){s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296;}return{next,int:function(n){return Math.floor(next()*n);}};}
 function $(id){return document.getElementById(id);}
@@ -162,7 +163,7 @@ function loadArt(art){
   if(ArtCache[art.id])return ArtCache[art.id];
   ArtCache[art.id]=new Promise(function(res){
     if(!art.img){res(genPlaceholder(art.id));return;}
-    const im=new Image();im.onload=function(){res(im);};im.onerror=function(){res(genPlaceholder(art.id));};im.src=art.img;
+    const im=new Image();im.onload=function(){res(im);};im.onerror=function(){res(genPlaceholder(art.id));};im.src=art.img+"?v="+APP_VER;
   });
   return ArtCache[art.id];
 }
@@ -739,7 +740,7 @@ async function boot(){
   ["pointerup","pointerleave","pointercancel"].forEach(ev=>hb.addEventListener(ev,()=>{R.hint=false;R.draw();}));
   window.addEventListener("resize",()=>{if(Game.mod&&Game.grid){R.layout(Game.grid);R.draw();}});
   let data=FALLBACK;
-  try{const res=await fetch("genres.json",{cache:"no-cache"});if(res.ok)data=await res.json();}catch(e){}
+  try{const res=await fetch("genres.json?v="+APP_VER,{cache:"no-cache"});if(res.ok)data=await res.json();}catch(e){}
   Game.arts=data.arts;Game.genres=data.genres;
   if(Game.arts.length&&Game.arts[0].img)Shell.setBg(Game.arts[0]);
   Shell.home();
