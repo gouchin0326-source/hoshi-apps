@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-07-05 19:01:05",
+  "generated_at": "2026-07-05 19:07:09",
   "gpu": {
     "occupant": "メディア生成（画像/音楽）",
     "note": "生成モデルがVRAMを使用中",
-    "vram_used_gb": 10.4,
+    "vram_used_gb": 10.3,
     "vram_total_gb": 15.9,
     "util": 1
   },
@@ -28,7 +28,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-05 18:58",
+    "updated": "2026-07-05 19:04",
     "current": null
   },
   "queue": [
@@ -103,7 +103,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 140
+    "push_today": 141
   },
   "ai_works": [
     {
@@ -112,6 +112,70 @@
       "purpose": "個人",
       "url": "https://gouchin0326-source.github.io/hoshi-apps/puzzle/",
       "date": "2026-07-05",
+      "method": "ai"
+    },
+    {
+      "name": "照合デスク v0.1β(表記ゆれ突合・単一HTML)",
+      "ai": "3ai",
+      "purpose": "仕事",
+      "url": "",
+      "date": "2026-07-03",
+      "method": "ai"
+    },
+    {
+      "name": "生産管理ボードPro v95β.3(ST×稼働時間反映)",
+      "ai": "claude",
+      "purpose": "仕事",
+      "url": "",
+      "date": "2026-07-03",
+      "method": "ai"
+    },
+    {
+      "name": "購買サーチ v24.2(配布キット)",
+      "ai": "claude",
+      "purpose": "仕事",
+      "url": "",
+      "date": "2026-07-02",
+      "method": "ai"
+    },
+    {
+      "name": "STメーカー v0.2(祝日一括公休化)",
+      "ai": "claude",
+      "purpose": "仕事",
+      "url": "",
+      "date": "2026-07-03",
+      "method": "ai"
+    },
+    {
+      "name": "マニュアル仕上げスタジオ v1.1",
+      "ai": "claude",
+      "purpose": "仕事",
+      "url": "",
+      "date": "2026-07-02",
+      "method": "ai"
+    },
+    {
+      "name": "Excel束ね・ばらし BundleSplit v1.0",
+      "ai": "claude",
+      "purpose": "仕事",
+      "url": "",
+      "date": "2026-07-03",
+      "method": "ai"
+    },
+    {
+      "name": "PdfLite v4.3(検索/並替/undo軽量化)",
+      "ai": "claude",
+      "purpose": "仕事",
+      "url": "",
+      "date": "2026-07-03",
+      "method": "ai"
+    },
+    {
+      "name": "MultiBox Platform Edition v2.3(デザインプリセット)",
+      "ai": "claude",
+      "purpose": "仕事",
+      "url": "",
+      "date": "2026-07-03",
       "method": "ai"
     }
   ]
