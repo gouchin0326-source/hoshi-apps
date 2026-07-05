@@ -1,20 +1,20 @@
 {
-  "generated_at": "2026-07-05 23:07:05",
+  "generated_at": "2026-07-06 06:01:09",
   "gpu": {
-    "occupant": "メディア生成（画像/音楽）",
-    "note": "生成モデルがVRAMを使用中",
-    "vram_used_gb": 7.8,
+    "occupant": "空き（アイドル）",
+    "note": "誰も使っていません",
+    "vram_used_gb": 0.8,
     "vram_total_gb": 15.9,
     "util": 0
   },
   "services": [
     {
       "name": "ローカルLLM (Ollama)",
-      "up": true
+      "up": false
     },
     {
       "name": "生成 (ComfyUI)",
-      "up": true
+      "up": false
     },
     {
       "name": "チャットUI (Open WebUI)",
@@ -28,7 +28,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-05 23:06",
+    "updated": "2026-07-06 06:00",
     "current": null
   },
   "queue": [
@@ -96,7 +96,7 @@
     }
   ],
   "requests": {
-    "today": 20,
+    "today": 0,
     "hist": {
       "2026-07-02": 430,
       "2026-07-03": 612,
@@ -104,7 +104,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 182
+    "push_today": 0
   },
   "ai_works": [
     {
