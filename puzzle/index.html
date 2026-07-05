@@ -222,7 +222,7 @@ const R={
     for(let i=0;i<G.cells.length;i++){const[c,r]=G.cr(i);const dx=c*cs,dy=r*cs;
       if(this.drag&&this.drag.from===i)continue;
       this.drawPiece(i,dx,dy,1);
-      if(G.cells[i].block==null&&G.cells[i].art===i&&Game.mod&&Game.mod.id==="t3_swap"){x.strokeStyle="rgba(212,175,55,.25)";x.lineWidth=1;x.strokeRect(dx+1,dy+1,cs-2,cs-2);}
+      if(G.cells[i].block==null&&G.cells[i].art===i&&Game.mod&&(Game.mod.id==="t3_swap"||Game.mod.id==="t5_boss")){x.strokeStyle="rgba(212,175,55,.25)";x.lineWidth=1;x.strokeRect(dx+1,dy+1,cs-2,cs-2);}
       const f=this.flash[i];if(f){const t=(now-f)/450;if(t<1){x.fillStyle="rgba(255,240,190,"+(0.55*(1-t))+")";x.fillRect(dx,dy,cs,cs);needMore=true;}else delete this.flash[i];}
       if(this.sel===i){x.strokeStyle="#f0d070";x.lineWidth=3;this.rr(dx+2,dy+2,cs-4,cs-4,8);x.stroke();}}
     x.strokeStyle="rgba(255,255,255,.05)";x.lineWidth=1;
@@ -233,6 +233,12 @@ const R={
         if(p.life>0){x.globalAlpha=Math.max(0,p.life);x.fillStyle=p.col;
           x.fillRect(p.x-p.size/2,p.y-p.size/2,p.size,p.size);alive.push(p);}}
       x.globalAlpha=1;this.parts=alive;if(alive.length)needMore=true;}
+    if(this.float&&this.art){const a=this.float.art;const img=this.art;
+      const pw=img.width/G.cols,ph=img.height/G.rows;const[fc,fr]=G.cr(a);
+      const fdx=this.float.col*cs,fdy=this.float.y*cs;
+      x.fillStyle="rgba(240,208,112,.12)";x.fillRect(fdx,0,cs,this.px);
+      x.drawImage(img,fc*pw,fr*ph,pw,ph,fdx+1.5,fdy+1.5,cs-3,cs-3);
+      x.strokeStyle="#f0d070";x.lineWidth=2;x.strokeRect(fdx+1.5,fdy+1.5,cs-3,cs-3);}
     x.strokeStyle="rgba(212,175,55,.5)";x.lineWidth=2;x.strokeRect(1,1,this.px-2,this.px-2);
     x.strokeStyle="rgba(212,175,55,.14)";x.lineWidth=6;x.strokeRect(4,4,this.px-8,this.px-8);
     if(this.hint&&this.art){x.globalAlpha=0.38;x.drawImage(this.art,0,0,this.px,this.px);x.globalAlpha=1;}
@@ -346,6 +352,182 @@ function T1Excavate(){
     restore(s){s.blocks.forEach((b,i)=>{G.cells[i].block=b;G.cells[i].art=i;});moves=s.moves;brush=s.brush;colors=s.colors;}
   };
 }
+/* ============ RuleModule: T2 整列（スライド・逆適用シャッフル=常時可解） ============ */
+function T2Slide(){
+  let G,rng,moves=0,empty=-1,shuf=[];
+  function solved(){for(let i=0;i<G.cells.length;i++){if(i===empty)continue;if(G.cells[i].art!==i)return false;}return true;}
+  function neighbors(i){const[c,r]=G.cr(i);const out=[];
+    for(const[dc,dr]of[[1,0],[-1,0],[0,1],[0,-1]])if(G.inb(c+dc,r+dr))out.push(G.idx(c+dc,r+dr));return out;}
+  function moveTile(i){G.cells[empty].art=G.cells[i].art;G.cells[i].art=null;empty=i;}
+  function doMove(i){const dest=empty;moveTile(i);moves++;
+    if(G.cells[dest].art===dest){Audio2.snap();R.flashCells([dest]);}else Audio2.tap();
+    R.draw();
+    if(solved()){G.cells[empty].art=empty;R.draw();return{moves:moves,clear:true};}
+    return{moves:moves,clear:false};}
+  return{
+    id:"t2_slide",gestures:["tap","swipe"],
+    goalText:"空きマスへ滑らせて絵を整列させよ（空きマスの隣をタップ）",hint:true,
+    init(stage,ctx){G=ctx.grid;rng=ctx.rng;const n=G.cells.length;
+      for(let i=0;i<n;i++){G.cells[i].art=i;G.cells[i].block=null;}
+      empty=n-1;G.cells[empty].art=null;shuf=[];
+      const N=stage.shuffle||n*8;let last=-1;
+      for(let k=0;k<N;k++){const nb=neighbors(empty).filter(j=>j!==last);
+        const pick=nb[rng.int(nb.length)];last=empty;shuf.push(pick);moveTile(pick);}
+      moves=0;},
+    onTap(i){if(i===empty)return null;
+      if(!neighbors(empty).includes(i)){Audio2.bad();return null;}
+      return doMove(i);},
+    onSwipe(i,dir){const[c,r]=G.cr(i);const jc=c+dir[0],jr=r+dir[1];
+      if(!G.inb(jc,jr))return null;
+      if(G.idx(jc,jr)===empty)return doMove(i);
+      return null;},
+    isClear(){return solved();},
+    movesOf(){return moves;},
+    stars(){const n=G.cells.length;if(moves<=n*5)return 3;if(moves<=n*9)return 2;return 1;},
+    serialize(){return{art:G.cells.map(c=>c.art),empty:empty,moves:moves};},
+    restore(s){s.art.forEach((a,i)=>{G.cells[i].art=a;G.cells[i].block=null;});empty=s.empty;moves=s.moves;},
+    _shufSeq(){return shuf.slice();}
+  };
+}
+/* ============ RuleModule: T4 補完（落ちもの・列タップで導く） ============ */
+function T4Drop(){
+  let G,rng,moves=0,misses=0,holes=[],queue=[],cur=null,speed=1.2,done=false;
+  function holeInCol(c){for(const h of holes)if(h%G.cols===c&&G.cells[h].art==null)return h;return -1;}
+  function allFilled(){return holes.every(h=>G.cells[h].art!=null);}
+  function spawn(){if(!queue.length){cur=null;R.float=null;return;}
+    cur={frag:queue[0],col:Math.floor(G.cols/2),y:-1};}
+  return{
+    id:"t4_drop",gestures:["tap"],
+    goalText:"落ちる欠片の正しい場所の列をタップして導け（ヒント💡で完成図）",hint:true,
+    init(stage,ctx){G=ctx.grid;rng=ctx.rng;speed=stage.speed||1.2;moves=0;misses=0;done=false;
+      for(let i=0;i<G.cells.length;i++){G.cells[i].art=i;G.cells[i].block=null;}
+      const k=Math.min(stage.holes||G.cols,G.cols);
+      const cols=[...Array(G.cols).keys()];
+      for(let i=cols.length-1;i>0;i--){const j=rng.int(i+1);[cols[i],cols[j]]=[cols[j],cols[i]];}
+      holes=[];
+      for(let x2=0;x2<k;x2++){const c=cols[x2];const r=1+rng.int(G.rows-1);const h=G.idx(c,r);holes.push(h);G.cells[h].art=null;}
+      queue=holes.slice();
+      for(let i=queue.length-1;i>0;i--){const j=rng.int(i+1);[queue[i],queue[j]]=[queue[j],queue[i]];}
+      spawn();},
+    onTap(i){if(!cur||done)return null;cur.col=i%G.cols;Audio2.tap();return null;},
+    tick(dt){if(done||!cur)return null;
+      cur.y+=speed*dt;
+      const h=holeInCol(cur.col);
+      const targetRow=h>=0?Math.floor(h/G.cols):G.rows-0.6;
+      if(cur.y>=targetRow){
+        moves++;
+        if(h>=0&&cur.frag===h){G.cells[h].art=h;Audio2.snap();R.flashCells([h]);R.burst([h],null);queue.shift();}
+        else{misses++;Audio2.bad();queue.push(queue.shift());}
+        spawn();
+        if(allFilled()){done=true;cur=null;R.float=null;R.draw();return{moves:moves,clear:true};}}
+      R.float=cur?{art:cur.frag,col:cur.col,y:cur.y}:null;
+      R.draw();
+      return null;},
+    isClear(){return done;},
+    movesOf(){return moves;},
+    stars(){if(misses===0)return 3;if(misses<=Math.ceil(holes.length/3))return 2;return 1;},
+    serialize(){return{art:G.cells.map(c=>c.art),holes:holes.slice(),queue:queue.slice(),misses:misses,moves:moves,done:done};},
+    restore(s){s.art.forEach((a,i)=>{G.cells[i].art=a;G.cells[i].block=null;});
+      holes=s.holes;queue=s.queue;misses=s.misses;moves=s.moves;done=s.done;spawn();},
+    _debug(){return{holes:holes.slice(),queue:queue.slice(),cur:cur?{frag:cur.frag,col:cur.col,y:cur.y}:null,misses:misses};}
+  };
+}
+/* ============ RuleModule: T5 封印解除（ボス=発掘×修復の二層融合） ============ */
+function T5Boss(){
+  let G,rng,colors=4,moves=0,brush=false,busy=false;
+  function covered(i){return G.cells[i].block!=null;}
+  function coveredCount(){return G.cells.filter(c=>c.block!=null).length;}
+  function lineIdx(){const lines=[];
+    for(let r=0;r<G.rows;r++){const L=[];for(let c=0;c<G.cols;c++)L.push(G.idx(c,r));lines.push(L);}
+    for(let c=0;c<G.cols;c++){const L=[];for(let r=0;r<G.rows;r++)L.push(G.idx(c,r));lines.push(L);}
+    return lines;}
+  function findMatches(){const out=new Set();
+    for(const L of lineIdx()){let run=[],prev=null;
+      const flush=()=>{if(run.length>=3)run.forEach(i=>out.add(i));run=[];};
+      for(const i of L){const b=covered(i)?G.cells[i].block:null;
+        if(b!=null&&b===prev)run.push(i);else{flush();prev=b;run=b!=null?[i]:[];}}
+      flush();}
+    return[...out];}
+  function gravity(){
+    for(let c=0;c<G.cols;c++){const stack=[];
+      for(let r=G.rows-1;r>=0;r--){const i=G.idx(c,r);if(covered(i))stack.push(G.cells[i].block);}
+      let k=0;for(let r=G.rows-1;r>=0;r--){const i=G.idx(c,r);
+        G.cells[i].block=k<stack.length?stack[k++]:null;}}}
+  function hasMove(){
+    for(let i=0;i<G.cells.length;i++){if(!covered(i))continue;const[c,r]=G.cr(i);
+      for(const[dc,dr]of[[1,0],[0,1]]){if(!G.inb(c+dc,r+dr))continue;const j=G.idx(c+dc,r+dr);if(!covered(j))continue;
+        const a=G.cells[i],b=G.cells[j];[a.block,b.block]=[b.block,a.block];
+        const m=findMatches().length>0;[a.block,b.block]=[b.block,a.block];if(m)return true;}}
+    return false;}
+  function reshuffle(){const blocks=G.cells.filter(c=>c.block!=null).map(c=>c.block);
+    for(let t=0;t<30;t++){
+      for(let i=blocks.length-1;i>0;i--){const j=rng.int(i+1);[blocks[i],blocks[j]]=[blocks[j],blocks[i]];}
+      let k=0;for(const c of G.cells)if(c.block!=null)c.block=blocks[k++];
+      if(findMatches().length===0&&hasMove())return true;}
+    return false;}
+  function artSolved(){return G.cells.every((c,i)=>c.art===i);}
+  function isClearAll(){return coveredCount()===0&&artSolved();}
+  async function resolve(){busy=true;let combo=0;
+    while(true){const m=findMatches();if(!m.length)break;combo++;
+      const clearCol=G.cells[m[0]].block;
+      for(const i of m)G.cells[i].block=null;
+      Audio2.clearRun(combo);R.flashCells(m);R.burst(m,clearCol);
+      if(combo>=2){const cb=$("combo");cb.textContent=combo+" 連鎖!";cb.classList.add("pop");setTimeout(()=>cb.classList.remove("pop"),600);}
+      await delay(200);gravity();R.draw();await delay(170);}
+    busy=false;
+    if(coveredCount()>0){
+      if(coveredCount()<=6){brush=true;Game.msg("封印は残りわずか——タップで払い、絵の修復も進めよう");}
+      else if(!hasMove()){if(!reshuffle()){brush=true;Game.msg("残りはタップで払おう");}else{Game.msg("手が無いため封印を組み替えた");R.draw();}}}
+    else Game.msg("封印は解けた——あとは絵を修復せよ");
+    return{moves:moves,clear:isClearAll(),combo:combo};}
+  return{
+    id:"t5_boss",gestures:["tap","swipe","dragdrop"],
+    goalText:"封印を3つ揃えて解き、現れた絵をピース交換で修復せよ",hint:true,
+    init(stage,ctx){G=ctx.grid;rng=ctx.rng;colors=Math.min(stage.colors||4,BLOCK_COLORS.length);moves=0;brush=false;
+      const n=G.cells.length;
+      let perm;for(let t=0;t<40;t++){perm=[...Array(n).keys()];
+        for(let i=n-1;i>0;i--){const j=rng.int(i+1);[perm[i],perm[j]]=[perm[j],perm[i]];}
+        const fixed=perm.filter((p,i)=>p===i).length;
+        if(fixed<=Math.max(1,Math.floor(n*0.12)))break;}
+      perm.forEach((p,i)=>{G.cells[i].art=p;});
+      for(let t=0;t<40;t++){
+        for(let i=0;i<n;i++){const[c,r]=G.cr(i);let col;
+          for(let g2=0;g2<20;g2++){col=rng.int(colors);
+            const l1=G.inb(c-1,r)?G.cells[G.idx(c-1,r)].block:null,l2=G.inb(c-2,r)?G.cells[G.idx(c-2,r)].block:null;
+            const u1=G.inb(c,r-1)?G.cells[G.idx(c,r-1)].block:null,u2=G.inb(c,r-2)?G.cells[G.idx(c,r-2)].block:null;
+            if(!(col===l1&&col===l2)&&!(col===u1&&col===u2))break;}
+          G.cells[i].block=col;}
+        if(hasMove()&&findMatches().length===0)break;}},
+    async onSwipe(i,dir){if(busy)return null;const[c,r]=G.cr(i);const nc=c+dir[0],nr=r+dir[1];
+      if(!G.inb(nc,nr))return null;const j=G.idx(nc,nr);
+      if(!covered(i)||!covered(j))return null;
+      const a=G.cells[i],b=G.cells[j];[a.block,b.block]=[b.block,a.block];R.draw();
+      if(findMatches().length===0){await delay(120);[a.block,b.block]=[b.block,a.block];Audio2.bad();R.draw();return null;}
+      moves++;Audio2.tap();return await resolve();},
+    async onTap(i){if(busy)return null;
+      if(covered(i)){
+        if(brush){G.cells[i].block=null;moves++;Audio2.snap();R.flashCells([i]);R.burst([i],null);
+          gravity();R.draw();return await resolve();}
+        Audio2.bad();R.sel=-1;R.draw();return null;}
+      if(R.sel<0){if(G.cells[i].art!==i){R.sel=i;Audio2.tap();}R.draw();return null;}
+      if(R.sel===i){R.sel=-1;R.draw();return null;}
+      const a2=R.sel;R.sel=-1;
+      if(covered(a2)){R.draw();return null;}
+      return this.doSwap(a2,i);},
+    onDrop(a,b){if(a===b)return null;if(covered(a)||covered(b)){Audio2.bad();return null;}
+      return this.doSwap(a,b);},
+    doSwap(a,b){const ca=G.cells[a],cb=G.cells[b];[ca.art,cb.art]=[cb.art,ca.art];moves++;
+      const snapped=[];if(ca.art===a)snapped.push(a);if(cb.art===b)snapped.push(b);
+      if(snapped.length){Audio2.snap();R.flashCells(snapped);R.burst(snapped,null);}else Audio2.tap();
+      R.draw();return{moves:moves,clear:isClearAll()};},
+    isClear(){return isClearAll();},
+    movesOf(){return moves;},
+    stars(){const n=G.cells.length;if(moves<=Math.ceil(n*0.8))return 3;if(moves<=Math.ceil(n*1.25))return 2;return 1;},
+    serialize(){return{blocks:G.cells.map(c=>c.block),art:G.cells.map(c=>c.art),moves:moves,brush:brush,colors:colors};},
+    restore(s){s.blocks.forEach((b,i)=>{G.cells[i].block=b;});s.art.forEach((a,i)=>{G.cells[i].art=a;});
+      moves=s.moves;brush=s.brush;colors=s.colors;}
+  };
+}
 /* ============ RuleModule: T9 テスト（拡張実証用） ============ */
 function T9Test(){let G,done=false;return{
   id:"t9_test",gestures:["tap"],goalText:"テスト: どこかをタップ",hint:false,
@@ -356,7 +538,10 @@ function T9Test(){let G,done=false;return{
 /* ============ モジュール登録簿 ============ */
 const MODULES={
   t1_excavate:{make:T1Excavate,name:"発掘",icon:"🪨",desc:"連鎖で瓦礫を崩す"},
+  t2_slide:{make:T2Slide,name:"整列",icon:"🧭",desc:"空きマスへ滑らせて整える"},
   t3_swap:{make:T3Swap,name:"修復",icon:"🖼",desc:"ピース交換で組み直す"},
+  t4_drop:{make:T4Drop,name:"補完",icon:"🧩",desc:"落ちる欠片を導いてはめる"},
+  t5_boss:{make:T5Boss,name:"封印解除",icon:"👑",desc:"発掘×修復の二層ボス"},
   t9_test:{make:T9Test,name:"検査",icon:"🧪",desc:"テスト用"}
 };
 /* ============ 入力状態機械 ============ */
@@ -422,8 +607,25 @@ const Game={
     $("hudMoves").textContent=this.mod.movesOf();
     $("hintBtn").style.display=this.mod.hint?"":"none";
     $("resetBtn").style.display="";
-    this.msg("『"+art.title+"』を修復中");R.draw();this.saveResume();
+    this.msg("『"+art.title+"』を修復中");R.float=null;R.draw();this.saveResume();this.startTicker();
   },
+  _tk:null,_tkGen:0,
+  startTicker(){const self=this;if(!this.mod||!this.mod.tick)return;
+    const gen=++this._tkGen;let last=performance.now();let rafAlive=false;
+    function step(){
+      if(gen!==self._tkGen||Shell.scr!=="play"||!self.mod||!self.mod.tick){R.float=null;return false;}
+      const now=performance.now();const dt=Math.min(0.05,(now-last)/1000);last=now;
+      const res=self.mod.tick(dt);
+      $("hudMoves").textContent=self.mod.movesOf();
+      if(res&&res.clear){self._tkGen++;self.onClear();return false;}
+      return true;}
+    let fellBack=false;
+    const rafLoop=function(){if(fellBack)return;rafAlive=true;if(step())requestAnimationFrame(rafLoop);};
+    requestAnimationFrame(rafLoop);
+    setTimeout(function(){
+      if(gen!==self._tkGen)return;
+      if(!rafAlive){fellBack=true;const toLoop=function(){if(step())setTimeout(toLoop,33);};toLoop();}
+    },350);},
   saveResume(){if(!this.cur)return;const g=this.genres[this.cur.gi];
     Store.data.resume={gid:g.type,si:this.cur.si,state:this.mod.serialize()};Store.save();},
   async handle(resP){const res=await resP;if(!res)return;

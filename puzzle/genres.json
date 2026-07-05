@@ -29,16 +29,37 @@
       ]
     },
     {
-      "type": "t2_slide", "name": "整列", "icon": "🧭", "comingSoon": true,
-      "desc": "空きマスに絵の断片を滑らせて整えるスライドパズル", "rule": "", "stages": []
+      "type": "t2_slide", "name": "整列",
+      "desc": "空きマスに絵の断片を滑らせて整えるスライドパズル",
+      "rule": "空きマスの隣のピースをタップ（または空きマスへスワイプ）すると滑る。全て正しい位置に整えれば修復完了。ヒント💡長押しで完成図。",
+      "stages": [
+        {"grid": [3,3], "seed": 401, "shuffle": 80, "art": "torii_dawn"},
+        {"grid": [3,3], "seed": 402, "shuffle": 160, "art": "hoshi_cafe"},
+        {"grid": [4,4], "seed": 403, "shuffle": 240, "art": "neon_city"},
+        {"grid": [4,4], "seed": 404, "shuffle": 360, "art": "torii_dawn"},
+        {"grid": [5,5], "seed": 405, "shuffle": 500, "art": "hoshi_cafe"}
+      ]
     },
     {
-      "type": "t4_drop", "name": "補完", "icon": "🧩", "comingSoon": true,
-      "desc": "落ちてくる欠けピースを正しい位置へ導く落ちもの系", "rule": "", "stages": []
+      "type": "t4_drop", "name": "補完",
+      "desc": "落ちてくる欠けピースを正しい位置へ導く落ちもの系",
+      "rule": "絵の欠片が上から落ちてくる。欠片の絵柄を見て、それが属する場所の列をタップして導こう。正しい穴に落ちればはまる。ミスすると欠片は列の最後尾へ。ノーミスで★3。",
+      "stages": [
+        {"grid": [5,5], "seed": 501, "holes": 4, "speed": 1.0, "art": "neon_city"},
+        {"grid": [6,6], "seed": 502, "holes": 5, "speed": 1.2, "art": "hoshi_cafe"},
+        {"grid": [7,7], "seed": 503, "holes": 6, "speed": 1.4, "art": "torii_dawn"},
+        {"grid": [8,8], "seed": 504, "holes": 8, "speed": 1.7, "art": "neon_city"}
+      ]
     },
     {
-      "type": "t5_boss", "name": "封印解除", "icon": "👑", "comingSoon": true,
-      "desc": "発掘×修復の二層融合ボスステージ", "rule": "", "stages": []
+      "type": "t5_boss", "name": "封印解除",
+      "desc": "発掘×修復の二層融合ボスステージ",
+      "rule": "絵は封印(瓦礫)に覆われ、しかも下でバラバラになっている。スワイプで封印を3つ揃えて解き、現れたピースをタップ交換で修復。2つの技を同時に使う最終試練。",
+      "stages": [
+        {"grid": [5,5], "seed": 601, "colors": 4, "art": "hoshi_cafe"},
+        {"grid": [6,6], "seed": 602, "colors": 4, "art": "neon_city"},
+        {"grid": [7,7], "seed": 603, "colors": 5, "art": "torii_dawn"}
+      ]
     }
   ]
 }
