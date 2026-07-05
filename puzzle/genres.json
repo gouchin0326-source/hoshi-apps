@@ -1,0 +1,44 @@
+{
+  "version": 3,
+  "arts": [
+    {"id": "neon_city", "title": "真夜中のネオン都市", "img": "assets/neon_city.webp", "credit": "Z-Image Turbo on ★HOSHI (RTX 5080)"},
+    {"id": "hoshi_cafe", "title": "星のカフェ", "img": "assets/hoshi_cafe.webp", "credit": "Z-Image Turbo on ★HOSHI (RTX 5080)"},
+    {"id": "torii_dawn", "title": "暁の鳥居", "img": "assets/torii_dawn.webp", "credit": "Z-Image Turbo on ★HOSHI (RTX 5080)"}
+  ],
+  "genres": [
+    {
+      "type": "t1_excavate", "name": "発掘", "desc": "瓦礫を3つ揃えて崩し、下の絵を掘り出す連鎖パズル",
+      "rule": "隣の瓦礫とスワイプで入れ替え、同じ色を3つ揃えると崩れて絵が現れる。上の瓦礫が落ちて連鎖すると一気に発掘。残りわずかになったらタップで払える。",
+      "stages": [
+        {"grid": [5,5], "seed": 101, "colors": 4, "art": "neon_city"},
+        {"grid": [6,6], "seed": 102, "colors": 4, "art": "hoshi_cafe"},
+        {"grid": [7,7], "seed": 103, "colors": 4, "art": "torii_dawn"},
+        {"grid": [8,8], "seed": 104, "colors": 5, "art": "neon_city"},
+        {"grid": [9,9], "seed": 105, "colors": 5, "art": "hoshi_cafe"}
+      ]
+    },
+    {
+      "type": "t3_swap", "name": "修復", "desc": "バラバラのピースを交換して絵を組み直すジグソー系",
+      "rule": "入れ替えたい2枚をタップ（またはドラッグ）で交換。正しい位置にはまると光る。ヒント💡長押しで完成図が見える。",
+      "stages": [
+        {"grid": [3,3], "seed": 201, "art": "torii_dawn"},
+        {"grid": [4,4], "seed": 202, "art": "neon_city"},
+        {"grid": [5,5], "seed": 203, "art": "hoshi_cafe"},
+        {"grid": [6,6], "seed": 204, "art": "neon_city"},
+        {"grid": [7,7], "seed": 205, "art": "torii_dawn"}
+      ]
+    },
+    {
+      "type": "t2_slide", "name": "整列", "icon": "🧭", "comingSoon": true,
+      "desc": "空きマスに絵の断片を滑らせて整えるスライドパズル", "rule": "", "stages": []
+    },
+    {
+      "type": "t4_drop", "name": "補完", "icon": "🧩", "comingSoon": true,
+      "desc": "落ちてくる欠けピースを正しい位置へ導く落ちもの系", "rule": "", "stages": []
+    },
+    {
+      "type": "t5_boss", "name": "封印解除", "icon": "👑", "comingSoon": true,
+      "desc": "発掘×修復の二層融合ボスステージ", "rule": "", "stages": []
+    }
+  ]
+}
