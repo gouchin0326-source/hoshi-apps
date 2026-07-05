@@ -9,13 +9,13 @@
     {
       "type": "t6_starvein", "name": "星脈発掘 ✨NEW",
       "desc": "なぞって炸裂！雪崩とフィーバーの完全オリジナル爽快発掘",
-      "rule": "同じ色の瓦礫を指でなぞって繋ぎ（ナナメOK・2個からOK）、離すと一斉炸裂！落下で4個以上の塊ができると自動で雪崩連鎖。★が光るマスは星脈＝絵の輝きが走る場所で、消すと星力2倍。ゲージ満タンでタップ→5秒間なんでも繋がるフィーバー！最後は自動のフィナーレ雪崩で締め。",
+      "rule": "同じ色の瓦礫を指でなぞって繋ぎ（ナナメOK・2個からOK）、離すと一斉炸裂→上から補充＝無限に消せる！2.5秒以内に消し続けると🔥コンボ（発掘量が加速）。落下・補充で4個以上の塊は自動雪崩。★の星脈マスは星力2倍。ゲージ満タンでタップ→6秒フィーバー＝色無視繋ぎ+なぞる度に💥十字爆風！絵は発掘度に応じて下からせり上がる。",
       "stages": [
-        {"grid": [7,7], "seed": 701, "colors": 4, "art": "neon_city"},
-        {"grid": [8,8], "seed": 702, "colors": 4, "art": "hoshi_cafe"},
-        {"grid": [8,8], "seed": 703, "colors": 5, "art": "torii_dawn"},
-        {"grid": [9,9], "seed": 704, "colors": 5, "art": "neon_city"},
-        {"grid": [10,10], "seed": 705, "colors": 5, "art": "hoshi_cafe"}
+        {"grid": [7,7], "seed": 701, "colors": 4, "quota": 330, "art": "neon_city"},
+        {"grid": [8,8], "seed": 702, "colors": 4, "quota": 440, "art": "hoshi_cafe"},
+        {"grid": [8,8], "seed": 703, "colors": 5, "quota": 470, "art": "torii_dawn"},
+        {"grid": [9,9], "seed": 704, "colors": 5, "quota": 560, "art": "neon_city"},
+        {"grid": [10,10], "seed": 705, "colors": 5, "quota": 680, "art": "hoshi_cafe"}
       ]
     },
     {

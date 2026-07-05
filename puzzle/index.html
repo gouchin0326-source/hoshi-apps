@@ -118,7 +118,7 @@ footer{padding:10px;text-align:center;font-size:10px;color:#565064;}
 <div id="ovl"><div id="mbox"></div></div>
 <script>
 "use strict";
-const APP_VER="3.0"; /* デプロイ毎に上げる: 旧Service Workerのキャッシュを?vで構造的に回避 */
+const APP_VER="3.1"; /* デプロイ毎に上げる: 旧Service Workerのキャッシュを?vで構造的に回避 */
 /* ============ util ============ */
 function makeRng(seed){let s=(seed>>>0)||1;function next(){s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296;}return{next,int:function(n){return Math.floor(next()*n);}};}
 function $(id){return document.getElementById(id);}
@@ -186,7 +186,7 @@ const BLOCK_GLYPH=["●","▲","■","◆","★"];
 const R={
   cv:null,x:null,px:1,cell:0,dpr:1,art:null,G:null,
   sel:-1,drag:null,hint:false,flash:{},parts:[],_tints:{},
-  shake:0,veins:new Set(),path:[],fever:false,float:null,
+  shake:0,veins:new Set(),path:[],fever:false,float:null,progress:0,
   init(cv){this.cv=cv;this.x=cv.getContext("2d");},
   tint(hex,amt){const k=hex+"|"+amt;if(this._tints[k])return this._tints[k];
     const n=parseInt(hex.slice(1),16);let r=(n>>16)+amt,g=((n>>8)&255)+amt,b=(n&255)+amt;
@@ -231,6 +231,10 @@ const R={
     const bg=x.createRadialGradient(this.px/2,this.px/2,this.px*0.15,this.px/2,this.px/2,this.px*0.75);
     bg.addColorStop(0,"#0a0c14");bg.addColorStop(1,"#04050a");
     x.fillStyle=bg;x.fillRect(0,0,this.px,this.px);
+    if(this.progress>0&&this.art){const h=this.px*Math.min(1,this.progress);
+      x.save();x.beginPath();x.rect(0,this.px-h,this.px,h);x.clip();
+      x.globalAlpha=0.95;x.drawImage(this.art,0,0,this.px,this.px);x.globalAlpha=1;x.restore();
+      x.fillStyle="rgba(240,208,112,.55)";x.fillRect(0,this.px-h-1.5,this.px,3);}
     for(let i=0;i<G.cells.length;i++){const[c,r]=G.cr(i);const dx=c*cs,dy=r*cs;
       if(this.drag&&this.drag.from===i)continue;
       this.drawPiece(i,dx,dy,1);
@@ -557,7 +561,8 @@ function T5Boss(){
 }
 /* ============ RuleModule: T6 星脈発掘（完全オリジナル主力・なぞり消し×雪崩×フィーバー×絵がステージを作る） ============ */
 function T6Starvein(){
-  let G,rng,colors=5,score=0,drags=0,maxPath=0,maxChain=0,gauge=0,gaugeMax=40,fever=0,feverCount=0,busy=false,path=[];
+  let G,rng,colors=5,quota=100,progress=0,score=0,drags=0,maxPath=0,maxChain=0,
+      combo=0,comboT=0,maxCombo=0,gauge=0,gaugeMax=40,fever=0,feverCount=0,busy=false,path=[],done=false;
   const cov=i=>G.cells[i].block!=null;
   function neighbors8(i){const[c,r]=G.cr(i);const out=[];
     for(let dc=-1;dc<=1;dc++)for(let dr=-1;dr<=1;dr++){if(!dc&&!dr)continue;
@@ -580,6 +585,11 @@ function T6Starvein(){
       for(let i=0;i<G.cells.length;i++){G.cells[i].art=i;G.cells[i].block=rng.int(colors);}
       if(groups4().length===0)return;}
     for(const grp of groups4())G.cells[grp[0]].block=(G.cells[grp[0]].block+1)%colors;}
+  function refill(){for(let i=0;i<G.cells.length;i++)
+    if(G.cells[i].block==null){G.cells[i].block=rng.int(colors);G.cells[i].art=i;}}
+  function updHud(){$("hudGoal").textContent="⛏発掘度 "+Math.min(100,Math.round(progress/quota*100))+"%"+
+    (combo>=2?"　🔥"+combo+"コンボ中!":"");}
+  function addProgress(n){progress+=n;R.progress=Math.min(1,progress/quota);updHud();}
   function veinsFromArt(){R.veins=new Set();try{
     const cv=document.createElement("canvas");cv.width=G.cols;cv.height=G.rows;
     const x=cv.getContext("2d");x.drawImage(R.art,0,0,G.cols,G.rows);
@@ -590,31 +600,30 @@ function T6Starvein(){
     for(let n=0;n<k;n++)R.veins.add(lum[n].i);
   }catch(e){}}
   function updGauge(){const w=$("gaugeWrap"),f=$("gaugeFill"),t=$("gaugeTxt");
-    if(fever>0){w.className="fever";f.style.width=(fever/5*100)+"%";t.textContent="🌟 フィーバー中!! "+fever.toFixed(1)+"s";}
+    if(fever>0){w.className="fever";f.style.width=(fever/6*100)+"%";t.textContent="🌟 フィーバー中!! "+fever.toFixed(1)+"s";}
     else{w.className=gauge>=gaugeMax?"full":"";f.style.width=Math.min(100,gauge/gaugeMax*100)+"%";
       t.textContent=gauge>=gaugeMax?"★満タン!! タップで解放!!":"★星力 "+Math.round(gauge/gaugeMax*100)+"%";}}
   function addGauge(n){if(fever>0)return;gauge=Math.min(gaugeMax,gauge+n);updGauge();}
   function isDone(){return G.cells.every(c=>c.block==null);}
-  async function shatter(cells){busy=true;let combo=0;let list=cells;
-    while(list.length){combo++;maxChain=Math.max(maxChain,combo-1);
+  async function shatter(list){busy=true;let depth=0;
+    while(list.length&&depth<9){depth++;
+      if(depth>1)maxChain=Math.max(maxChain,depth-1);
       const col=G.cells[list[0]].block;
       let vein=0;for(const i of list){if(R.veins.has(i))vein++;G.cells[i].block=null;}
-      score+=list.length*list.length;
+      combo++;comboT=2.5;maxCombo=Math.max(maxCombo,combo);
+      const mult=1+0.15*(combo-1);
+      addProgress(Math.round((list.length+vein)*mult));
       addGauge(list.length+vein);
+      score+=Math.round(list.length*list.length*mult);
       Audio2.clearRun(combo);R.flashCells(list);R.burst(list,col);
-      R.shake=Math.min(14,3+list.length*0.9+combo*1.6);
-      if(combo>=2){const cb=$("combo");cb.textContent=(combo-1)+" 雪崩!";cb.classList.add("pop");setTimeout(()=>cb.classList.remove("pop"),600);}
-      R.draw();await delay(130);gravity();R.draw();await delay(110);
+      R.shake=Math.min(16,3+list.length*0.9+combo*0.8);
+      if(combo>=2){const cb=$("combo");cb.textContent=combo+" COMBO!";cb.classList.add("pop");setTimeout(()=>cb.classList.remove("pop"),600);}
+      R.draw();await delay(120);gravity();R.draw();await delay(90);
+      refill();R.draw();await delay(60);
       const gs=groups4();list=gs.length?gs.flat():[];}
-    if(!isDone()&&!hasPair()&&fever<=0){
-      Game.msg("✨ フィナーレ雪崩!");
-      while(!isDone()){const rest=[];
-        for(let i=0;i<G.cells.length&&rest.length<3;i++)if(cov(i))rest.push(i);
-        const col2=G.cells[rest[0]].block;for(const i of rest)G.cells[i].block=null;
-        score+=rest.length*2;Audio2.clearRun(3);R.flashCells(rest);R.burst(rest,col2);R.shake=8;
-        R.draw();await delay(110);gravity();R.draw();await delay(80);}}
-    busy=false;
-    return{moves:drags,clear:isDone()};}
+    if(!hasPair())fill();
+    busy=false;done=done||progress>=quota;
+    return{moves:drags,clear:done};}
   function pathOk(from,to){if(!cov(to)||path.includes(to))return false;
     if(!neighbors8(from).includes(to))return false;
     if(fever>0)return true;
@@ -623,9 +632,11 @@ function T6Starvein(){
     id:"t6_starvein",gestures:["path"],
     goalText:"同じ色をなぞって繋ぎ、離して炸裂！★の星脈は星力2倍",hint:false,
     init(stage,ctx){G=ctx.grid;rng=ctx.rng;colors=Math.min(stage.colors||5,BLOCK_COLORS.length);
-      gaugeMax=stage.gauge||Math.round(G.cells.length*0.6);
-      score=0;drags=0;maxPath=0;maxChain=0;gauge=0;fever=0;feverCount=0;path=[];
-      fill();veinsFromArt();
+      quota=stage.quota||Math.round(G.cells.length*6.5);
+      gaugeMax=stage.gauge||Math.round(G.cells.length*0.55);
+      score=0;drags=0;maxPath=0;maxChain=0;combo=0;comboT=0;maxCombo=0;
+      gauge=0;fever=0;feverCount=0;path=[];progress=0;done=false;
+      fill();veinsFromArt();R.progress=0;
       $("gaugeWrap").style.display="block";updGauge();},
     onPathStart(i){if(busy||!cov(i))return false;
       path=[i];R.path=path;Audio2.tone(420,0.05,"sine",0.08);R.draw();return true;},
@@ -636,26 +647,40 @@ function T6Starvein(){
         Audio2.tone(420*Math.pow(1.059,Math.min(path.length,24)),0.05,"sine",0.09);R.draw();}},
     async onPathEnd(){const p=path.slice();path=[];R.path=[];
       if(p.length<2){R.draw();return null;}
-      drags++;return await shatter(p);},
+      drags++;let list=p;
+      if(fever>0){
+        const last=p[p.length-1];const[lc,lr]=G.cr(last);const set=new Set(p);
+        for(let c2=0;c2<G.cols;c2++){const j=G.idx(c2,lr);if(G.cells[j].block!=null)set.add(j);}
+        for(let r2=0;r2<G.rows;r2++){const j=G.idx(lc,r2);if(G.cells[j].block!=null)set.add(j);}
+        list=[...set];R.shake=18;Game.msg("💥 十字爆風!!");}
+      return await shatter(list);},
     onGauge(){if(fever>0||gauge<gaugeMax||busy)return;
-      gauge=0;fever=5;feverCount++;R.fever=true;Audio2.fanfare();updGauge();
-      Game.msg("🌟 星力解放——5秒間なんでも繋がる!!");R.draw();},
-    tick(dt){if(fever>0){fever-=dt;
-        if(fever<=0){fever=0;R.fever=false;Game.msg("");
-          if(!isDone()&&!hasPair()&&!busy)Game.handle(shatter([]));}
-        updGauge();}
+      gauge=0;fever=6;feverCount++;R.fever=true;Audio2.fanfare();updGauge();
+      Game.msg("🌟 星力解放!! 6秒間なんでも繋がる+なぞる度に十字爆風!!");R.draw();},
+    tick(dt){
+      if(comboT>0&&fever<=0){comboT-=dt;
+        if(comboT<=0&&combo>0){combo=0;updHud();}}
+      if(fever>0){fever-=dt;
+        if(Math.random()<0.35)R.parts.push({x:Math.random()*R.px,y:-4,vx:(Math.random()-0.5)*0.6,
+          vy:R.cell*0.05,size:2+Math.random()*4,life:1,col:"#f0d070"});
+        if(fever<=0){fever=0;R.fever=false;comboT=Math.max(comboT,1.2);Game.msg("");}
+        updGauge();R.draw();}
       return null;},
-    isClear(){return isDone();},
+    isClear(){return done;},
     movesOf(){return drags;},
-    stars(){if(maxChain>=3||maxPath>=10||feverCount>=2)return 3;
-      if(maxChain>=1||maxPath>=6||feverCount>=1)return 2;return 1;},
+    stars(){if(maxCombo>=14)return 3;if(maxCombo>=7)return 2;return 1;},
     serialize(){return{blocks:G.cells.map(c=>c.block),score:score,drags:drags,maxPath:maxPath,
-      maxChain:maxChain,gauge:gauge,feverCount:feverCount,colors:colors,gaugeMax:gaugeMax};},
+      maxChain:maxChain,gauge:gauge,feverCount:feverCount,colors:colors,gaugeMax:gaugeMax,
+      quota:quota,progress:progress,maxCombo:maxCombo};},
     restore(s){s.blocks.forEach((b,i)=>{G.cells[i].block=b;G.cells[i].art=i;});
       score=s.score;drags=s.drags;maxPath=s.maxPath;maxChain=s.maxChain;
       gauge=s.gauge;feverCount=s.feverCount;colors=s.colors;gaugeMax=s.gaugeMax;
-      veinsFromArt();$("gaugeWrap").style.display="block";updGauge();},
-    _debug(){return{gauge:gauge,gaugeMax:gaugeMax,fever:fever,score:score,maxPath:maxPath,maxChain:maxChain,covered:G.cells.filter(c=>c.block!=null).length};}
+      quota=s.quota||quota;progress=s.progress||0;maxCombo=s.maxCombo||0;
+      R.progress=Math.min(1,progress/quota);
+      veinsFromArt();$("gaugeWrap").style.display="block";updGauge();updHud();},
+    _debug(){return{gauge:gauge,gaugeMax:gaugeMax,fever:fever,score:score,maxPath:maxPath,
+      maxChain:maxChain,combo:combo,maxCombo:maxCombo,progress:progress,quota:quota,
+      covered:G.cells.filter(c=>c.block!=null).length};}
   };
 }
 /* ============ RuleModule: T9 テスト（拡張実証用） ============ */
@@ -733,7 +758,7 @@ const Game={
     const gd=st.grid||[5,5];this.grid=makeGrid(gd[0],gd[1]);
     const art=this.artOf(st.art);
     R.art=await loadArt(art);R.layout(this.grid);R.sel=-1;R.hint=false;R.flash={};R.parts=[];
-    R.veins=new Set();R.path=[];R.shake=0;R.fever=false;
+    R.veins=new Set();R.path=[];R.shake=0;R.fever=false;R.progress=0;
     $("gaugeWrap").style.display="none";
     Shell.setBg(art);
     this.mod=def.make();this.cur={gi:gi,si:si};this.t0=Date.now();
