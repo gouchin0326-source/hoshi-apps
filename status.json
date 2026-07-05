@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-07-05 14:01:06",
+  "generated_at": "2026-07-05 14:07:07",
   "gpu": {
     "occupant": "メディア生成（画像/音楽）",
     "note": "生成モデルがVRAMを使用中",
     "vram_used_gb": 10.5,
     "vram_total_gb": 15.9,
-    "util": 99
+    "util": 100
   },
   "services": [
     {
@@ -28,7 +28,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-05 14:00",
+    "updated": "2026-07-05 14:06",
     "current": null
   },
   "queue": [
@@ -103,7 +103,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 90
+    "push_today": 91
   },
   "ai_works": [
     {
