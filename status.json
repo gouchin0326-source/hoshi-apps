@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-07-05 13:25:05",
+  "generated_at": "2026-07-05 13:28:33",
   "gpu": {
     "occupant": "メディア生成（画像/音楽）",
     "note": "生成モデルがVRAMを使用中",
     "vram_used_gb": 15.4,
     "vram_total_gb": 15.9,
-    "util": 100
+    "util": 99
   },
   "services": [
     {
@@ -28,7 +28,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-05 13:23",
+    "updated": "2026-07-05 13:26",
     "current": null
   },
   "queue": [
@@ -103,7 +103,16 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 83
+    "push_today": 84
   },
-  "ai_works": []
+  "ai_works": [
+    {
+      "name": "★HOSHIアートパズル『絵画修復』v2(全5ジャンル)",
+      "ai": "claude",
+      "purpose": "個人",
+      "url": "https://gouchin0326-source.github.io/hoshi-apps/puzzle/",
+      "date": "2026-07-05",
+      "method": "ai"
+    }
+  ]
 }
