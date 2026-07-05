@@ -55,6 +55,12 @@ h2{font-size:14px;color:var(--gold2);letter-spacing:.15em;margin:18px 0 8px;font
 #hudGoal{font-size:12px;color:var(--tx2);flex:1;min-width:120px;}
 .chip{background:var(--panel);border:1px solid #2c3040;border-radius:9px;padding:5px 10px;font-size:12px;white-space:nowrap;}
 .chip b{color:var(--gold2);font-size:14px;}
+#gaugeWrap{display:none;height:26px;background:#12141d;border:1px solid #3a3f52;border-radius:13px;overflow:hidden;margin:0 0 8px;position:relative;cursor:pointer;}
+#gaugeFill{height:100%;width:0%;background:linear-gradient(90deg,#8a6d1f,#d4af37,#f0d070);transition:width .18s;}
+#gaugeWrap.full #gaugeFill{animation:pulse .6s infinite alternate;}
+#gaugeWrap.fever #gaugeFill{background:linear-gradient(90deg,#e05a5a,#e0b03f,#58c26e,#4f9de0,#a86fe0);}
+@keyframes pulse{from{filter:brightness(1)}to{filter:brightness(1.5)}}
+#gaugeTxt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;text-shadow:0 1px 3px #000;letter-spacing:.1em;}
 #boardWrap{position:relative;display:flex;justify-content:center;}
 #board{touch-action:none;border-radius:12px;background:#05060a;max-width:100%;user-select:none;-webkit-user-select:none;}
 #msg{min-height:22px;text-align:center;font-size:12px;color:var(--gold2);margin-top:8px;}
@@ -102,6 +108,7 @@ footer{padding:10px;text-align:center;font-size:10px;color:#565064;}
         <span id="hudGoal"></span>
         <span class="chip">手数 <b id="hudMoves">0</b></span>
       </div>
+      <div id="gaugeWrap"><div id="gaugeFill"></div><div id="gaugeTxt">★星力</div></div>
       <div id="boardWrap"><canvas id="board"></canvas><div id="combo"></div></div>
       <div id="msg"></div>
     </section>
@@ -111,7 +118,7 @@ footer{padding:10px;text-align:center;font-size:10px;color:#565064;}
 <div id="ovl"><div id="mbox"></div></div>
 <script>
 "use strict";
-const APP_VER="2.1"; /* デプロイ毎に上げる: 旧Service Workerのキャッシュを?vで構造的に回避 */
+const APP_VER="3.0"; /* デプロイ毎に上げる: 旧Service Workerのキャッシュを?vで構造的に回避 */
 /* ============ util ============ */
 function makeRng(seed){let s=(seed>>>0)||1;function next(){s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296;}return{next,int:function(n){return Math.floor(next()*n);}};}
 function $(id){return document.getElementById(id);}
@@ -179,6 +186,7 @@ const BLOCK_GLYPH=["●","▲","■","◆","★"];
 const R={
   cv:null,x:null,px:1,cell:0,dpr:1,art:null,G:null,
   sel:-1,drag:null,hint:false,flash:{},parts:[],_tints:{},
+  shake:0,veins:new Set(),path:[],fever:false,float:null,
   init(cv){this.cv=cv;this.x=cv.getContext("2d");},
   tint(hex,amt){const k=hex+"|"+amt;if(this._tints[k])return this._tints[k];
     const n=parseInt(hex.slice(1),16);let r=(n>>16)+amt,g=((n>>8)&255)+amt,b=(n&255)+amt;
@@ -215,17 +223,35 @@ const R={
       const[ac,ar]=G.cr(a);this.x.drawImage(img,ac*pw,ar*ph,pw,ph,dx+off,dy+off,cs*s,cs*s);}},
   rr(x0,y0,w,h,r){const x=this.x;x.beginPath();x.moveTo(x0+r,y0);x.arcTo(x0+w,y0,x0+w,y0+h,r);x.arcTo(x0+w,y0+h,x0,y0+h,r);x.arcTo(x0,y0+h,x0,y0,r);x.arcTo(x0,y0,x0+w,y0,r);x.closePath();},
   draw(){const G=this.G;if(!G)return;const x=this.x,cs=this.cell;
-    x.clearRect(0,0,this.px,this.px);
+    x.setTransform(this.dpr,0,0,this.dpr,0,0);
+    x.clearRect(-8,-8,this.px+16,this.px+16);
+    const now=performance.now();let needMore=false;
+    if(this.shake>0.4){x.translate((Math.random()-0.5)*this.shake,(Math.random()-0.5)*this.shake);
+      this.shake*=0.86;needMore=true;}else this.shake=0;
     const bg=x.createRadialGradient(this.px/2,this.px/2,this.px*0.15,this.px/2,this.px/2,this.px*0.75);
     bg.addColorStop(0,"#0a0c14");bg.addColorStop(1,"#04050a");
     x.fillStyle=bg;x.fillRect(0,0,this.px,this.px);
-    const now=performance.now();let needMore=false;
     for(let i=0;i<G.cells.length;i++){const[c,r]=G.cr(i);const dx=c*cs,dy=r*cs;
       if(this.drag&&this.drag.from===i)continue;
       this.drawPiece(i,dx,dy,1);
       if(G.cells[i].block==null&&G.cells[i].art===i&&Game.mod&&(Game.mod.id==="t3_swap"||Game.mod.id==="t5_boss")){x.strokeStyle="rgba(212,175,55,.25)";x.lineWidth=1;x.strokeRect(dx+1,dy+1,cs-2,cs-2);}
       const f=this.flash[i];if(f){const t=(now-f)/450;if(t<1){x.fillStyle="rgba(255,240,190,"+(0.55*(1-t))+")";x.fillRect(dx,dy,cs,cs);needMore=true;}else delete this.flash[i];}
+      if(G.cells[i].block!=null&&this.veins.has(i)){
+        x.fillStyle="rgba(255,220,110,.16)";x.fillRect(dx,dy,cs,cs);
+        x.fillStyle="rgba(255,230,140,.9)";x.font=Math.round(cs*0.22)+"px sans-serif";
+        x.textAlign="right";x.textBaseline="top";x.fillText("★",dx+cs-3,dy+2);}
       if(this.sel===i){x.strokeStyle="#f0d070";x.lineWidth=3;this.rr(dx+2,dy+2,cs-4,cs-4,8);x.stroke();}}
+    if(this.path.length){
+      x.fillStyle="rgba(255,255,255,.18)";
+      for(const i of this.path){const[c,r]=G.cr(i);x.fillRect(c*cs,r*cs,cs,cs);}
+      x.lineWidth=Math.max(4,cs*0.13);x.lineCap="round";x.lineJoin="round";
+      x.strokeStyle=this.fever?"rgba(255,255,255,.9)":"rgba(240,208,112,.85)";
+      x.beginPath();
+      this.path.forEach((i,k)=>{const[c,r]=G.cr(i);const px2=c*cs+cs/2,py2=r*cs+cs/2;
+        if(k)x.lineTo(px2,py2);else x.moveTo(px2,py2);});
+      x.stroke();}
+    if(this.fever){x.strokeStyle="rgba(240,208,112,"+(0.5+0.4*Math.sin(now/110))+")";
+      x.lineWidth=5;x.strokeRect(2.5,2.5,this.px-5,this.px-5);needMore=true;}
     x.strokeStyle="rgba(255,255,255,.05)";x.lineWidth=1;
     for(let c=1;c<G.cols;c++){x.beginPath();x.moveTo(c*cs,0);x.lineTo(c*cs,this.px);x.stroke();}
     for(let r=1;r<G.rows;r++){x.beginPath();x.moveTo(0,r*cs);x.lineTo(this.px,r*cs);x.stroke();}
@@ -529,6 +555,109 @@ function T5Boss(){
       moves=s.moves;brush=s.brush;colors=s.colors;}
   };
 }
+/* ============ RuleModule: T6 星脈発掘（完全オリジナル主力・なぞり消し×雪崩×フィーバー×絵がステージを作る） ============ */
+function T6Starvein(){
+  let G,rng,colors=5,score=0,drags=0,maxPath=0,maxChain=0,gauge=0,gaugeMax=40,fever=0,feverCount=0,busy=false,path=[];
+  const cov=i=>G.cells[i].block!=null;
+  function neighbors8(i){const[c,r]=G.cr(i);const out=[];
+    for(let dc=-1;dc<=1;dc++)for(let dr=-1;dr<=1;dr++){if(!dc&&!dr)continue;
+      if(G.inb(c+dc,r+dr))out.push(G.idx(c+dc,r+dr));}return out;}
+  function hasPair(){for(let i=0;i<G.cells.length;i++){if(!cov(i))continue;
+    for(const j of neighbors8(i))if(cov(j)&&G.cells[j].block===G.cells[i].block)return true;}return false;}
+  function groups4(){const seen=new Set(),out=[];
+    for(let i=0;i<G.cells.length;i++){if(!cov(i)||seen.has(i))continue;
+      const col=G.cells[i].block;const q=[i],grp=[];seen.add(i);
+      while(q.length){const v=q.pop();grp.push(v);const[c,r]=G.cr(v);
+        for(const[dc,dr]of[[1,0],[-1,0],[0,1],[0,-1]]){if(!G.inb(c+dc,r+dr))continue;
+          const w=G.idx(c+dc,r+dr);if(seen.has(w)||!cov(w)||G.cells[w].block!==col)continue;
+          seen.add(w);q.push(w);}}
+      if(grp.length>=4)out.push(grp);}
+    return out;}
+  function gravity(){for(let c=0;c<G.cols;c++){const st=[];
+    for(let r=G.rows-1;r>=0;r--){const i=G.idx(c,r);if(cov(i))st.push(G.cells[i].block);}
+    let k=0;for(let r=G.rows-1;r>=0;r--){G.cells[G.idx(c,r)].block=k<st.length?st[k++]:null;}}}
+  function fill(){for(let t=0;t<40;t++){
+      for(let i=0;i<G.cells.length;i++){G.cells[i].art=i;G.cells[i].block=rng.int(colors);}
+      if(groups4().length===0)return;}
+    for(const grp of groups4())G.cells[grp[0]].block=(G.cells[grp[0]].block+1)%colors;}
+  function veinsFromArt(){R.veins=new Set();try{
+    const cv=document.createElement("canvas");cv.width=G.cols;cv.height=G.rows;
+    const x=cv.getContext("2d");x.drawImage(R.art,0,0,G.cols,G.rows);
+    const d=x.getImageData(0,0,G.cols,G.rows).data;const lum=[];
+    for(let i=0;i<G.cells.length;i++)lum.push({i:i,l:d[i*4]*0.299+d[i*4+1]*0.587+d[i*4+2]*0.114});
+    lum.sort((a,b)=>b.l-a.l);
+    const k=Math.round(G.cells.length*0.25);
+    for(let n=0;n<k;n++)R.veins.add(lum[n].i);
+  }catch(e){}}
+  function updGauge(){const w=$("gaugeWrap"),f=$("gaugeFill"),t=$("gaugeTxt");
+    if(fever>0){w.className="fever";f.style.width=(fever/5*100)+"%";t.textContent="🌟 フィーバー中!! "+fever.toFixed(1)+"s";}
+    else{w.className=gauge>=gaugeMax?"full":"";f.style.width=Math.min(100,gauge/gaugeMax*100)+"%";
+      t.textContent=gauge>=gaugeMax?"★満タン!! タップで解放!!":"★星力 "+Math.round(gauge/gaugeMax*100)+"%";}}
+  function addGauge(n){if(fever>0)return;gauge=Math.min(gaugeMax,gauge+n);updGauge();}
+  function isDone(){return G.cells.every(c=>c.block==null);}
+  async function shatter(cells){busy=true;let combo=0;let list=cells;
+    while(list.length){combo++;maxChain=Math.max(maxChain,combo-1);
+      const col=G.cells[list[0]].block;
+      let vein=0;for(const i of list){if(R.veins.has(i))vein++;G.cells[i].block=null;}
+      score+=list.length*list.length;
+      addGauge(list.length+vein);
+      Audio2.clearRun(combo);R.flashCells(list);R.burst(list,col);
+      R.shake=Math.min(14,3+list.length*0.9+combo*1.6);
+      if(combo>=2){const cb=$("combo");cb.textContent=(combo-1)+" 雪崩!";cb.classList.add("pop");setTimeout(()=>cb.classList.remove("pop"),600);}
+      R.draw();await delay(130);gravity();R.draw();await delay(110);
+      const gs=groups4();list=gs.length?gs.flat():[];}
+    if(!isDone()&&!hasPair()&&fever<=0){
+      Game.msg("✨ フィナーレ雪崩!");
+      while(!isDone()){const rest=[];
+        for(let i=0;i<G.cells.length&&rest.length<3;i++)if(cov(i))rest.push(i);
+        const col2=G.cells[rest[0]].block;for(const i of rest)G.cells[i].block=null;
+        score+=rest.length*2;Audio2.clearRun(3);R.flashCells(rest);R.burst(rest,col2);R.shake=8;
+        R.draw();await delay(110);gravity();R.draw();await delay(80);}}
+    busy=false;
+    return{moves:drags,clear:isDone()};}
+  function pathOk(from,to){if(!cov(to)||path.includes(to))return false;
+    if(!neighbors8(from).includes(to))return false;
+    if(fever>0)return true;
+    return G.cells[to].block===G.cells[path[0]].block;}
+  return{
+    id:"t6_starvein",gestures:["path"],
+    goalText:"同じ色をなぞって繋ぎ、離して炸裂！★の星脈は星力2倍",hint:false,
+    init(stage,ctx){G=ctx.grid;rng=ctx.rng;colors=Math.min(stage.colors||5,BLOCK_COLORS.length);
+      gaugeMax=stage.gauge||Math.round(G.cells.length*0.6);
+      score=0;drags=0;maxPath=0;maxChain=0;gauge=0;fever=0;feverCount=0;path=[];
+      fill();veinsFromArt();
+      $("gaugeWrap").style.display="block";updGauge();},
+    onPathStart(i){if(busy||!cov(i))return false;
+      path=[i];R.path=path;Audio2.tone(420,0.05,"sine",0.08);R.draw();return true;},
+    onPathMove(i){if(busy||!path.length)return;
+      if(path.length>=2&&i===path[path.length-2]){path.pop();R.draw();return;}
+      const last=path[path.length-1];
+      if(pathOk(last,i)){path.push(i);maxPath=Math.max(maxPath,path.length);
+        Audio2.tone(420*Math.pow(1.059,Math.min(path.length,24)),0.05,"sine",0.09);R.draw();}},
+    async onPathEnd(){const p=path.slice();path=[];R.path=[];
+      if(p.length<2){R.draw();return null;}
+      drags++;return await shatter(p);},
+    onGauge(){if(fever>0||gauge<gaugeMax||busy)return;
+      gauge=0;fever=5;feverCount++;R.fever=true;Audio2.fanfare();updGauge();
+      Game.msg("🌟 星力解放——5秒間なんでも繋がる!!");R.draw();},
+    tick(dt){if(fever>0){fever-=dt;
+        if(fever<=0){fever=0;R.fever=false;Game.msg("");
+          if(!isDone()&&!hasPair()&&!busy)Game.handle(shatter([]));}
+        updGauge();}
+      return null;},
+    isClear(){return isDone();},
+    movesOf(){return drags;},
+    stars(){if(maxChain>=3||maxPath>=10||feverCount>=2)return 3;
+      if(maxChain>=1||maxPath>=6||feverCount>=1)return 2;return 1;},
+    serialize(){return{blocks:G.cells.map(c=>c.block),score:score,drags:drags,maxPath:maxPath,
+      maxChain:maxChain,gauge:gauge,feverCount:feverCount,colors:colors,gaugeMax:gaugeMax};},
+    restore(s){s.blocks.forEach((b,i)=>{G.cells[i].block=b;G.cells[i].art=i;});
+      score=s.score;drags=s.drags;maxPath=s.maxPath;maxChain=s.maxChain;
+      gauge=s.gauge;feverCount=s.feverCount;colors=s.colors;gaugeMax=s.gaugeMax;
+      veinsFromArt();$("gaugeWrap").style.display="block";updGauge();},
+    _debug(){return{gauge:gauge,gaugeMax:gaugeMax,fever:fever,score:score,maxPath:maxPath,maxChain:maxChain,covered:G.cells.filter(c=>c.block!=null).length};}
+  };
+}
 /* ============ RuleModule: T9 テスト（拡張実証用） ============ */
 function T9Test(){let G,done=false;return{
   id:"t9_test",gestures:["tap"],goalText:"テスト: どこかをタップ",hint:false,
@@ -538,6 +667,7 @@ function T9Test(){let G,done=false;return{
   serialize(){return{done:done};},restore(s){done=s.done;}};}
 /* ============ モジュール登録簿 ============ */
 const MODULES={
+  t6_starvein:{make:T6Starvein,name:"星脈発掘",icon:"🌟",desc:"なぞって炸裂・雪崩とフィーバー"},
   t1_excavate:{make:T1Excavate,name:"発掘",icon:"🪨",desc:"連鎖で瓦礫を崩す"},
   t2_slide:{make:T2Slide,name:"整列",icon:"🧭",desc:"空きマスへ滑らせて整える"},
   t3_swap:{make:T3Swap,name:"修復",icon:"🖼",desc:"ピース交換で組み直す"},
@@ -557,8 +687,11 @@ const Input={
   },
   down(e){if(!Game.mod)return;const i=R.cellAt(e);if(i<0)return;
     e.target.setPointerCapture(e.pointerId);
+    if(Game.mod.gestures.includes("path")&&Game.mod.onPathStart&&Game.mod.onPathStart(i)){
+      this.st="PATH";this.startCell=i;return;}
     this.st="ARMED";this.start={x:e.clientX,y:e.clientY};this.startCell=i;},
   move(e){if(this.st==="IDLE"||!Game.mod)return;
+    if(this.st==="PATH"){const i=R.cellAt(e);if(i>=0&&Game.mod.onPathMove)Game.mod.onPathMove(i);return;}
     const dx=e.clientX-this.start.x,dy=e.clientY-this.start.y;const dist=Math.hypot(dx,dy);
     const g=Game.mod.gestures;
     if(this.st==="ARMED"&&dist>10){
@@ -570,6 +703,8 @@ const Input={
     if(this.st==="DRAG"){const r=R.cv.getBoundingClientRect();
       R.drag={from:this.startCell,x:e.clientX-r.left,y:e.clientY-r.top};R.draw();}},
   up(e){if(!Game.mod){this.cancel();return;}
+    if(this.st==="PATH"){this.st="IDLE";this.startCell=-1;
+      if(Game.mod.onPathEnd)Game.handle(Game.mod.onPathEnd());return;}
     if(this.st==="DRAG"){const to=R.cellAt(e);R.drag=null;
       const from=this.startCell;this.st="IDLE";this.startCell=-1;
       if(to>=0&&to!==from)Game.handle(Game.mod.onDrop&&Game.mod.onDrop(from,to));else R.draw();return;}
@@ -577,7 +712,9 @@ const Input={
       if(i===this.startCell&&Game.mod.onTap)Game.handle(Game.mod.onTap(i));
       this.startCell=-1;return;}
     this.st="IDLE";},
-  cancel(){this.st="IDLE";this.startCell=-1;R.drag=null;if(Game.mod)R.draw();}
+  cancel(){const wasPath=this.st==="PATH";this.st="IDLE";this.startCell=-1;R.drag=null;
+    if(wasPath&&Game.mod&&Game.mod.onPathEnd)Game.handle(Game.mod.onPathEnd());
+    else if(Game.mod)R.draw();}
 };
 /* ============ Game controller（ジャンル式） ============ */
 const Game={
@@ -596,6 +733,8 @@ const Game={
     const gd=st.grid||[5,5];this.grid=makeGrid(gd[0],gd[1]);
     const art=this.artOf(st.art);
     R.art=await loadArt(art);R.layout(this.grid);R.sel=-1;R.hint=false;R.flash={};R.parts=[];
+    R.veins=new Set();R.path=[];R.shake=0;R.fever=false;
+    $("gaugeWrap").style.display="none";
     Shell.setBg(art);
     this.mod=def.make();this.cur={gi:gi,si:si};this.t0=Date.now();
     const ctx={grid:this.grid,rng:makeRng((st.seed||1)+si*7919)};
@@ -653,7 +792,8 @@ const Shell={
     el.style.backgroundImage="url('"+this._bgCache[art.id]+"')";},
   show(name){this.scr=name;["home","genre","play"].forEach(s=>$("scr-"+s).classList.toggle("on",s===name));
     $("backBtn").style.display=name==="home"?"none":"";
-    if(name!=="play"){$("hintBtn").style.display="none";$("resetBtn").style.display="none";Game.mod=null;}
+    if(name!=="play"){$("hintBtn").style.display="none";$("resetBtn").style.display="none";
+      $("gaugeWrap").style.display="none";Game.mod=null;}
     $("tbTitle").textContent=name==="home"?"★HOSHI アートパズル『絵画修復』":
       name==="genre"?(MODULES[Game.genres[this.gi].type]||{}).icon+" "+Game.genres[this.gi].name:"修復作業中";},
   async drawArtTo(cv,art,fraction){
@@ -735,6 +875,7 @@ async function boot(){
     $("sfxBtn").textContent=Store.data.settings.sfx?"🔊":"🔇";});
   $("backBtn").addEventListener("click",()=>{if(Shell.scr==="play"){Game.saveResume();Shell.genre(Shell.gi);}else Shell.home();});
   $("resetBtn").addEventListener("click",()=>{if(Game.cur){Store.data.resume=null;Store.save();Game.loadStage(Game.cur.gi,Game.cur.si,true);}});
+  $("gaugeWrap").addEventListener("click",()=>{if(Game.mod&&Game.mod.onGauge)Game.mod.onGauge();});
   const hb=$("hintBtn");
   hb.addEventListener("pointerdown",()=>{R.hint=true;R.draw();});
   ["pointerup","pointerleave","pointercancel"].forEach(ev=>hb.addEventListener(ev,()=>{R.hint=false;R.draw();}));
