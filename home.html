@@ -17,11 +17,13 @@
     --bg:#f7f7f5; --card:#ffffff; --ink:#1a1a19; --sub:#5f5e5a; --muted:#898781;
     --border:#e3e2db; --accent:#2a78d6; --accent-ink:#0c447c;
     --ok:#0f6e56; --ok-bg:#e1f5ee; --down:#a32d2d; --down-bg:#fcebeb; --chip:#f0efea;
+    --local:#c07a12; --local-bg:#f7edda; --cloud:#2a78d6; --cloud-bg:#e6effb;
   }
   @media (prefers-color-scheme: dark){
     :root{ --bg:#141413; --card:#1e1e1c; --ink:#f2f1ea; --sub:#b7b6ac; --muted:#8b8a82;
       --border:#33322e; --accent:#3987e5; --accent-ink:#b5d4f4;
-      --ok:#5dcaa5; --ok-bg:#0f2e26; --down:#f09595; --down-bg:#3a1414; --chip:#26251f; }
+      --ok:#5dcaa5; --ok-bg:#0f2e26; --down:#f09595; --down-bg:#3a1414; --chip:#26251f;
+      --local:#e7b24a; --local-bg:#2a2410; --cloud:#5a9cc0; --cloud-bg:#122430; }
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);line-height:1.6;-webkit-text-size-adjust:100%;
@@ -29,19 +31,33 @@
   .wrap{max-width:1000px;margin:0 auto;padding:20px 16px 48px}
   h1{font-size:26px;font-weight:700;margin:0 0 1px;letter-spacing:.02em}
   .lead{color:var(--sub);font-size:13px;margin:0 0 14px}
-  /* 全社サマリー1行 */
+  .draftbar{background:var(--local-bg);border:1px solid var(--local);color:var(--local);
+    border-radius:10px;padding:8px 12px;font-size:12.5px;font-weight:600;margin-bottom:14px}
   .summary{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
   .sc{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--border);
       border-radius:10px;padding:7px 13px;font-size:13px;color:var(--sub);font-weight:500}
   .sc b{color:var(--ink);font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
   .sc.ok{color:var(--ok);border-color:var(--ok)} .sc.down{color:var(--down);border-color:var(--down)}
-  /* 部署タイル */
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+  /* zone */
+  .zone{margin-top:20px}
+  .zone > h2{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 9px;display:flex;align-items:center;gap:9px}
+  .zone > h2::after{content:"";flex:1;height:1px;background:var(--border)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+  .grid.hero{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
   .tile{background:var(--card);border:1px solid var(--border);border-radius:15px;padding:15px 16px;
         text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:2px;min-height:112px;position:relative}
   .tile:active{transform:scale(.99)}
+  .tile.hero{min-height:140px;border-width:1.5px}
+  .tile.local{border-color:var(--local)} .tile.local .ic{color:var(--local)}
+  .tile.cloud{border-color:var(--cloud)} .tile.cloud .ic{color:var(--cloud)}
   .tile .ic{font-size:25px;line-height:1;margin-bottom:5px}
   .tile .name{font-size:16px;font-weight:600}
+  .tile.hero .name{font-size:18px}
+  .tile .tag{font-size:10.5px;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:999px;
+    display:inline-block;margin-bottom:6px;width:max-content}
+  .tile.local .tag{background:var(--local-bg);color:var(--local)}
+  .tile.cloud .tag{background:var(--cloud-bg);color:var(--cloud)}
   .tile .desc{font-size:12px;color:var(--sub)}
   .tile .st{margin-top:auto;padding-top:8px;font-size:12px;font-weight:500}
   .st.ok{color:var(--ok)} .st.down{color:var(--down)} .st.mut{color:var(--muted)}
@@ -59,20 +75,16 @@
 <body>
 <div class="wrap">
   <h1>★HOSHI</h1>
-  <p class="lead">社長室 — 会社（各部署）の今をここで管理。すべてへ2タップ以内。</p>
+  <p class="lead">社長室 — 会社の今をここで管理。すべてへ2タップ以内。</p>
   <div class="summary" id="summary"><span class="sc">状態を確認中…</span></div>
-  <div style="display:flex;flex-wrap:wrap;gap:14px;margin:-6px 0 16px">
-    <a href="works.html" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--accent);text-decoration:none">📦 成果物の内訳（手段×用途で進捗）→</a>
-    <a href="samples.html" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--accent);text-decoration:none">🧩 サンプルアプリ館（タップで動く）→</a>
-  </div>
-  <div class="grid" id="grid"></div>
+  <div id="grid"></div>
   <footer id="foot">
     ★HOSHI · 見る＝公開Pages（無料）／操作＝家PC(要トークン)だけ<br>
     操作（操縦席）のURLは<b>この端末の中だけ</b>に保存（公開ページ／リポジトリには書き込みません）。
   </footer>
 </div>
 <script>
-// ★通信経済(P5§3=P4§8): このホームは公開status.jsonのみを読む(ngrok消費0)。
+// ★通信経済: このホームは公開status.jsonのみを読む(ngrok消費0)。
 //   ★セキュリティ: 遠隔URL・トークンは書かない。操作(操縦席)は初回登録制でlocalStorageのみ。
 var CK_KEY='hoshi_cockpit_url';
 var PRIV='https://github.com/gouchin0326-source/hoshi-dashboard';
@@ -91,7 +103,7 @@ function registerCk(){
 function openCk(){ var u=getCk(); if(!u){ registerCk(); return false; } location.href=u; return false; }
 
 function minsAgo(ts){ if(!ts) return null; var t=new Date(String(ts).replace(' ','T')); return isNaN(t.getTime())?null:Math.floor((Date.now()-t.getTime())/60000); }
-function pcAlive(st){ var m=st?minsAgo(st.generated_at):null; return (m!==null && m<=12); }   // status.jsonは6分間隔→12分以内で稼働中
+function pcAlive(st){ var m=st?minsAgo(st.generated_at):null; return (m!==null && m<=12); }
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 
 function counts(st){
@@ -103,45 +115,69 @@ function counts(st){
            push:(st&&st.requests&&st.requests.push_today)||0 };
 }
 
-function departments(st){
+// ★製造ライン(工房)を上位軸に。制作ゾーン=local_llm/cloud_ai、運営ゾーン=部署。
+function zones(st){
   var c=counts(st);
   return [
-    {ic:'📊', name:'経営ダッシュ（管制塔）', desc:'作業台・サービス・待ち行列・結果', href:'status.html',
-      node:'status', badge:(st?(pcAlive(st)?'ライブ':'最終値'):'')},
-    {ic:'🏭', name:'開発部', desc:'アプリ自律開発が主軸／画像・音楽・動画＝第1事業(ローカルLLM・¥0)',
-      href:'dev.html', node:'dev', badge:(c.total?('待ち '+c.pending):'')},
-    {ic:'🎨', name:'制作部', desc:'生成工房（画像/音楽/動画）＝ローカルで作成',
-      href:'make.html', node:'make', badge:''},
-    {ic:'🛰', name:'情シス部', desc:'PC環境・操作（操縦席）・送信台帳＝外部通信の窓口',
-      node:'ops', badge:(c.sends?('送信 '+c.sends):'')},
-    {ic:'📣', name:'広報部', desc:'対外提供＝公開アプリ ＋ Gドライブ納品',
-      href:'pr.html', node:'pr', badge:''},
-    {ic:'📚', name:'総務部', desc:'設計書・チケット・納品台帳（私有・要ログイン）',
-      href:PRIV+'/tree/main/system', ext:true, node:'docs', badge:''}
+    { title:'制作 — 製造ラインで2分（誰が作ったか）', hero:true, tiles:[
+      {cls:'local', ic:'🌙', tag:'LOCAL LLM · 完全自社所有 · ¥0', name:'ローカルLLM工房',
+       desc:'画像・音楽・動画・MV（生成）＋自律ビルダー製アプリ。GPU単一レーンで駆動。',
+       node:'local', badge:(c.total?('待ち '+c.pending):''),
+       links:[{t:'生成工房',h:'make.html'},{t:'自律開発',h:'dev.html'}]},
+      {cls:'cloud', ic:'☁️', tag:'CLOUD AI · 各社規約の確認要', name:'最新AI工房',
+       desc:'Claude / Fable / GPT / Gemini 製の制作物・アプリ。quota/課金枠を消費。',
+       node:'cloud', badge:'',
+       links:[{t:'成果物内訳',h:'works.html'},{t:'サンプル館',h:'samples.html'}]}
+    ]},
+    { title:'運営 — 部署', hero:false, tiles:[
+      {ic:'📊', name:'管制塔（見る専用）', desc:'作業台・サービス・待ち行列・結果', href:'status.html',
+       node:'status', badge:(st?(pcAlive(st)?'ライブ':'最終値'):'')},
+      {ic:'🛰', name:'情シス部（操作）', desc:'操縦席・送信台帳＝外部通信の窓口（1日枠を節約）',
+       node:'ops', badge:(c.sends?('送信 '+c.sends):'')},
+      {ic:'📣', name:'広報部', desc:'対外提供＝公開アプリ ＋ Gドライブ納品',
+       href:'pr.html', node:'pr', badge:''},
+      {ic:'📚', name:'総務部', desc:'設計書・チケット・台帳（私有・要ログイン）',
+       href:PRIV+'/tree/main/system', ext:true, node:'docs', badge:''}
+    ]}
   ];
 }
 
 var lastStatus=null;
+function tileHTML(t, alive){
+  var badge = t.badge ? '<span class="badge">'+esc(t.badge)+'</span>' : (t.ext?'<span class="ext">↗</span>':'');
+  var cls = 'tile'+(t.hero?' hero':'')+(t.cls?(' '+t.cls):'');
+  var tag = t.tag ? '<span class="tag">'+esc(t.tag)+'</span>' : '';
+  // 工房タイル（sublinksで複数の行き先を持つ・タイル自体はリンクにしない）
+  if(t.links){
+    var subs = t.links.map(function(l){return '<a class="sublink" href="'+esc(l.h)+'">'+esc(l.t)+' →</a>';}).join('');
+    return '<div class="'+cls+'">'+badge+tag+'<div class="ic">'+t.ic+'</div><div class="name">'+esc(t.name)+'</div>'
+         + '<div class="desc">'+esc(t.desc)+'</div><div class="sublinks">'+subs+'</div></div>';
+  }
+  // 情シス部＝操作(操縦席)。初回登録制・トークンは端末内のみ
+  if(t.node==='ops'){
+    var reg=!!getCk();
+    var s = !reg ? '<span class="st mut">未登録（タップで登録）</span>'
+            : alive ? '<span class="st ok">● 登録済み・PC稼働中</span>'
+                    : '<span class="st down">● 登録済み・PC停止中の可能性</span>';
+    return '<a class="'+cls+'" href="#" onclick="return openCk()">'+badge
+         + (reg?'<button class="setgear" title="URLを変更/削除" onclick="event.preventDefault();event.stopPropagation();registerCk()">⚙</button>':'')
+         + '<div class="ic">'+t.ic+'</div><div class="name">'+esc(t.name)+'</div><div class="desc">'+esc(t.desc)+'</div>'+s+'</a>';
+  }
+  // 通常リンクタイル
+  var extAttr = t.ext ? ' target="_blank" rel="noopener noreferrer"' : '';
+  var s2 = (t.node==='status') ? '<span class="st '+(alive?'ok':'mut')+'">'+(alive?'● ライブ':'○ 最終値を表示')+'</span>'
+         : (t.node==='pr') ? '<span class="st mut">いつでも利用可</span>'
+         : '<span class="st mut">'+(t.ext?'外部で開く':'')+'</span>';
+  return '<a class="'+cls+'" href="'+esc(t.href)+'"'+extAttr+'>'+badge
+       + '<div class="ic">'+t.ic+'</div><div class="name">'+esc(t.name)+'</div><div class="desc">'+esc(t.desc)+'</div>'+s2+'</a>';
+}
 function renderTiles(st){
   lastStatus=st;
   var alive=pcAlive(st);
-  document.getElementById('grid').innerHTML = departments(st).map(function(t){
-    var badge = t.badge ? '<span class="badge">'+esc(t.badge)+'</span>' : (t.ext?'<span class="ext">↗</span>':'');
-    if(t.node==='ops'){                                   // 情シス部＝操作(操縦席)。初回登録制
-      var reg=!!getCk();
-      var s = !reg ? '<span class="st mut">未登録（タップで登録）</span>'
-              : alive ? '<span class="st ok">● 登録済み・PC稼働中</span>'
-                      : '<span class="st down">● 登録済み・PC停止中の可能性</span>';
-      return '<a class="tile" href="#" onclick="return openCk()">'+badge
-           + (reg?'<button class="setgear" title="URLを変更/削除" onclick="event.preventDefault();event.stopPropagation();registerCk()">⚙</button>':'')
-           + '<div class="ic">'+t.ic+'</div><div class="name">'+esc(t.name)+'</div><div class="desc">'+esc(t.desc)+'</div>'+s+'</a>';
-    }
-    var extAttr = t.ext ? ' target="_blank" rel="noopener noreferrer"' : '';
-    var s2 = (t.node==='status') ? '<span class="st '+(alive?'ok':'mut')+'">'+(alive?'● ライブ':'○ 最終値を表示')+'</span>'
-           : (t.node==='pr') ? '<span class="st mut">いつでも利用可</span>'
-           : '<span class="st mut">'+(t.ext?'外部で開く':'')+'</span>';
-    return '<a class="tile" href="'+esc(t.href)+'"'+extAttr+'>'+badge
-         + '<div class="ic">'+t.ic+'</div><div class="name">'+esc(t.name)+'</div><div class="desc">'+esc(t.desc)+'</div>'+s2+'</a>';
+  document.getElementById('grid').innerHTML = zones(st).map(function(z){
+    return '<section class="zone"><h2>'+esc(z.title)+'</h2><div class="grid'+(z.hero?' hero':'')+'">'
+         + z.tiles.map(function(t){ t.hero=z.hero; return tileHTML(t,alive); }).join('')
+         + '</div></section>';
   }).join('');
 }
 
