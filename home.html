@@ -202,8 +202,11 @@ function gpuFree(st){
   return null;
 }
 function anomalies(st){                                    // 異常＝即気づくべき事象のみ（オンデマンドのOllama/ComfyUI停止は正常扱い）
-  var a=[], svc=(st&&st.services)||[];
+  var a=[], svc=(st&&st.services)||[], r=(st&&st.resources)||{};
   svc.forEach(function(s){ if(s && /ランナー/.test(s.name||'') && s.up===false) a.push('自律ランナー停止'); });
+  if(typeof r.cpu_pct==='number' && r.cpu_pct>=92) a.push('CPU高負荷 '+r.cpu_pct+'%');
+  if(typeof r.mem_pct==='number' && r.mem_pct>=90) a.push('メモリ逼迫 '+r.mem_pct+'%');
+  if(typeof r.disk_free_gb==='number' && r.disk_free_gb<50) a.push('ディスク残少 '+r.disk_free_gb+'GB');
   return a;
 }
 function renderSummary(st){
@@ -228,13 +231,19 @@ function renderSummary(st){
   var comCard='<div class="sig '+(near?'warn':'mut')+'"><div class="k">☁️ 外部通信枠（全セッション共有）</div>'
     +'<div class="v">'+(near?'⚠ 残りわずか':'✅ 余裕')+'</div>'
     +'<div class="s">本日 ngrok '+c.sends+'/'+cap+' · push '+c.push+'</div></div>';
-  // 資源ストリップ（CPU/メモリ/容量＝家PC計測を配信に追加後に表示）
-  var strip='<div class="strip"><span>CPU <b>—</b></span><span>メモリ <b>—</b></span><span>容量 <b>—</b></span>'
+  // 資源ストリップ（CPU/メモリ/容量＝家PCの実測。status.json.resources）
+  var r=(st.resources)||{};
+  function rv(v,u){ return (typeof v==='number')?(v+u):'—'; }
+  var diskPct=(typeof r.disk_used_gb==='number'&&typeof r.disk_free_gb==='number')?Math.round(r.disk_used_gb/(r.disk_used_gb+r.disk_free_gb)*100):null;
+  var strip='<div class="strip">'
+    +'<span>CPU <b>'+rv(r.cpu_pct,'%')+'</b></span>'
+    +'<span>メモリ <b>'+rv(r.mem_pct,'%')+'</b>'+(r.mem_total_gb?(' /'+r.mem_total_gb+'GB'):'')+'</span>'
+    +'<span>容量 <b>'+(typeof r.disk_free_gb==='number'?(r.disk_free_gb+'GB空き'):'—')+'</b>'+(diskPct!=null?('・'+diskPct+'%使用'):'')+'</span>'
     +'<span>VRAM <b>'+(g.vram_used_gb!=null?(g.vram_used_gb+'GB'):'—')+'</b></span>'
     +'<span class="mut">待ち '+c.pending+' · 納品 '+c.results+'</span>'
     +'<span class="mut">更新 '+esc(st.generated_at||'-')+(ago?'（'+ago+'）':'')+'</span></div>';
   el.innerHTML='<div class="sigs">'+gpuCard+anCard+comCard+'</div>'+strip
-    +'<div class="notehint">CPU・メモリ・容量は家PCの計測を配信に追加後に表示（現在は—）。この画面は公開status.jsonのみ読み込み＝ngrok消費0。</div>';
+    +'<div class="notehint">PC使用状況（CPU/メモリ/容量/VRAM）は家PCの実測。この画面は公開status.jsonのみ読み込み＝ngrok消費0。</div>';
 }
 
 async function load(){
