@@ -1,11 +1,23 @@
 {
-  "generated_at": "2026-07-06 22:43:09",
+  "generated_at": "2026-07-06 22:49:09",
   "gpu": {
-    "occupant": "空き（アイドル）",
-    "note": "誰も使っていません",
-    "vram_used_gb": 0.6,
+    "occupant": "smoketest（wire_smoke）",
+    "note": "排他ロック保持中 / 経過4s",
+    "vram_used_gb": 0.9,
     "vram_total_gb": 15.9,
-    "util": 1
+    "util": 0,
+    "lock": {
+      "locked": true,
+      "holder": {
+        "pid": 24772,
+        "session": "wire_smoke",
+        "job": "smoketest",
+        "started_at": "2026-07-06T22:49:05+0900",
+        "age_sec": 4,
+        "alive": true
+      },
+      "stale": false
+    }
   },
   "services": [
     {
@@ -28,7 +40,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-06 22:41",
+    "updated": "2026-07-06 22:47",
     "current": null
   },
   "queue": [
@@ -104,7 +116,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 167
+    "push_today": 168
   },
   "ai_works": [
     {
@@ -181,8 +193,8 @@
     }
   ],
   "resources": {
-    "cpu_pct": 18,
-    "mem_pct": 28,
+    "cpu_pct": 8,
+    "mem_pct": 32,
     "mem_total_gb": 31.7,
     "disk_used_gb": 262.3,
     "disk_free_gb": 1599.5
