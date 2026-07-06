@@ -1,28 +1,21 @@
 {
-  "generated_at": "2026-07-06 22:49:09",
+  "generated_at": "2026-07-06 22:55:07",
   "gpu": {
-    "occupant": "smoketest（wire_smoke）",
-    "note": "排他ロック保持中 / 経過4s",
-    "vram_used_gb": 0.9,
+    "occupant": "コード開発（ローカルLLM）",
+    "note": "qwen2.5-coder:14b",
+    "vram_used_gb": 9.7,
     "vram_total_gb": 15.9,
     "util": 0,
     "lock": {
-      "locked": true,
-      "holder": {
-        "pid": 24772,
-        "session": "wire_smoke",
-        "job": "smoketest",
-        "started_at": "2026-07-06T22:49:05+0900",
-        "age_sec": 4,
-        "alive": true
-      },
+      "locked": false,
+      "holder": null,
       "stale": false
     }
   },
   "services": [
     {
       "name": "ローカルLLM (Ollama)",
-      "up": false
+      "up": true
     },
     {
       "name": "生成 (ComfyUI)",
@@ -40,7 +33,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-06 22:47",
+    "updated": "2026-07-06 22:53",
     "current": null
   },
   "queue": [
@@ -116,7 +109,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 168
+    "push_today": 169
   },
   "ai_works": [
     {
@@ -193,10 +186,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 8,
-    "mem_pct": 32,
+    "cpu_pct": 13,
+    "mem_pct": 35,
     "mem_total_gb": 31.7,
     "disk_used_gb": 262.3,
-    "disk_free_gb": 1599.5
+    "disk_free_gb": 1599.4
   }
 }
