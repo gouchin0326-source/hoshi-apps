@@ -38,6 +38,20 @@
       border-radius:10px;padding:7px 13px;font-size:13px;color:var(--sub);font-weight:500}
   .sc b{color:var(--ink);font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
   .sc.ok{color:var(--ok);border-color:var(--ok)} .sc.down{color:var(--down);border-color:var(--down)}
+  /* 管制サマリー（PC状態の信号灯・開いた瞬間に見える最重要部） */
+  .sigs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px}
+  .sig{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;border-left-width:4px}
+  .sig.ok{border-left-color:var(--ok)} .sig.down{border-left-color:var(--down)}
+  .sig.warn{border-left-color:#c9871f} .sig.mut{border-left-color:var(--muted)}
+  .sig .k{font-size:11.5px;color:var(--sub);font-weight:600}
+  .sig .v{font-size:18px;font-weight:700;margin:3px 0 2px}
+  .sig.ok .v{color:var(--ok)} .sig.down .v{color:var(--down)} .sig.warn .v{color:#c9871f}
+  .sig .s{font-size:11.5px;color:var(--muted)}
+  .strip{display:flex;flex-wrap:wrap;gap:14px;background:var(--card);border:1px solid var(--border);
+    border-radius:10px;padding:9px 14px;font-size:12.5px;color:var(--sub);margin-bottom:6px;font-variant-numeric:tabular-nums}
+  .strip b{color:var(--ink);font-weight:700} .strip .mut{color:var(--muted)}
+  .notehint{font-size:11px;color:var(--muted);margin-bottom:16px}
+  @media(max-width:640px){.sigs{grid-template-columns:1fr}}
   /* zone */
   .zone{margin-top:20px}
   .zone > h2{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
@@ -181,17 +195,46 @@ function renderTiles(st){
   }).join('');
 }
 
+function gpuFree(st){
+  var g=st&&st.gpu; if(!g) return null;
+  if(g.occupant && /空き|アイドル|idle/i.test(g.occupant)) return true;
+  if(typeof g.vram_used_gb==='number') return g.vram_used_gb < 3;   // 3GB未満=デスクトップのみ=空き
+  return null;
+}
+function anomalies(st){                                    // 異常＝即気づくべき事象のみ（オンデマンドのOllama/ComfyUI停止は正常扱い）
+  var a=[], svc=(st&&st.services)||[];
+  svc.forEach(function(s){ if(s && /ランナー/.test(s.name||'') && s.up===false) a.push('自律ランナー停止'); });
+  return a;
+}
 function renderSummary(st){
   var el=document.getElementById('summary');
-  if(!st){ el.innerHTML='<span class="sc">状態を取得できません（オフライン？）</span>'; return; }
+  if(!st){ el.innerHTML='<div class="sigs"><div class="sig down"><div class="k">状態</div><div class="v">取得不可</div><div class="s">公開status.jsonに届いていません（家PC/配信の停止？）</div></div></div>'; return; }
   var alive=pcAlive(st), c=counts(st), m=minsAgo(st.generated_at);
   var ago=(m===null)?'':(m<1?'たった今':(m+'分前'));
-  el.innerHTML =
-    '<span class="sc '+(alive?'ok':'down')+'">'+(alive?'🟢 家PC稼働':'🔴 家PC停止の可能性')+'</span>'
-    +'<span class="sc">待ちジョブ <b>'+c.pending+'</b></span>'
-    +'<span class="sc">納品 <b>'+c.results+'</b></span>'
-    +'<span class="sc">本日送信 ngrok<b>'+c.sends+'</b> / push<b>'+c.push+'</b></span>'
-    +'<span class="sc" style="border:0;background:transparent">最終更新 '+esc(st.generated_at||'-')+(ago?'（'+ago+'）':'')+'</span>';
+  var g=st.gpu||{}, free=gpuFree(st), an=anomalies(st);
+  // 🌙 GPU 使っていい？
+  var gpuCls=(free===true?'ok':(free===false?'down':'mut'));
+  var gpuCard='<div class="sig '+gpuCls+'"><div class="k">🌙 GPU 使っていい？</div>'
+    +'<div class="v">'+(free===true?'✅ OK（空き）':(free===false?'⛔ 待て（占有中）':'—'))+'</div>'
+    +'<div class="s">'+(g.vram_used_gb!=null?('VRAM '+g.vram_used_gb+'/'+(g.vram_total_gb||16)+'GB · util '+(g.util||0)+'%'):'')
+    +(g.occupant?(' · '+esc(g.occupant)):'')+'</div></div>';
+  // ⚠ 異常は？
+  var okAll=alive && an.length===0;
+  var anCard='<div class="sig '+(okAll?'ok':'down')+'"><div class="k">⚠ 異常は？</div>'
+    +'<div class="v">'+(okAll?'● 正常':'🔴 要確認')+'</div>'
+    +'<div class="s">'+(alive?'家PC稼働':'家PC停止の可能性')+(an.length?(' · '+esc(an.join(' / '))):'')+'</div></div>';
+  // ☁️ 外部通信枠（全セッション共有＝並列運用の衝突防止）
+  var cap=(st.requests&&st.requests.guide_day)||666, near=c.sends>=cap*0.85;
+  var comCard='<div class="sig '+(near?'warn':'mut')+'"><div class="k">☁️ 外部通信枠（全セッション共有）</div>'
+    +'<div class="v">'+(near?'⚠ 残りわずか':'✅ 余裕')+'</div>'
+    +'<div class="s">本日 ngrok '+c.sends+'/'+cap+' · push '+c.push+'</div></div>';
+  // 資源ストリップ（CPU/メモリ/容量＝家PC計測を配信に追加後に表示）
+  var strip='<div class="strip"><span>CPU <b>—</b></span><span>メモリ <b>—</b></span><span>容量 <b>—</b></span>'
+    +'<span>VRAM <b>'+(g.vram_used_gb!=null?(g.vram_used_gb+'GB'):'—')+'</b></span>'
+    +'<span class="mut">待ち '+c.pending+' · 納品 '+c.results+'</span>'
+    +'<span class="mut">更新 '+esc(st.generated_at||'-')+(ago?'（'+ago+'）':'')+'</span></div>';
+  el.innerHTML='<div class="sigs">'+gpuCard+anCard+comCard+'</div>'+strip
+    +'<div class="notehint">CPU・メモリ・容量は家PCの計測を配信に追加後に表示（現在は—）。この画面は公開status.jsonのみ読み込み＝ngrok消費0。</div>';
 }
 
 async function load(){
