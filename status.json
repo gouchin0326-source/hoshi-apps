@@ -1,21 +1,14 @@
 {
-  "generated_at": "2026-07-07 06:55:07",
+  "generated_at": "2026-07-07 07:01:10",
   "gpu": {
-    "occupant": "codex-local-llm:lock-smoke（codex）",
-    "note": "排他ロック保持中 / 経過16s",
-    "vram_used_gb": 2.4,
+    "occupant": "空き（アイドル）",
+    "note": "誰も使っていません",
+    "vram_used_gb": 1.0,
     "vram_total_gb": 15.9,
-    "util": 2,
+    "util": 1,
     "lock": {
-      "locked": true,
-      "holder": {
-        "pid": 22556,
-        "session": "codex",
-        "job": "codex-local-llm:lock-smoke",
-        "started_at": "2026-07-07T06:54:50+0900",
-        "age_sec": 16,
-        "alive": true
-      },
+      "locked": false,
+      "holder": null,
       "stale": false
     }
   },
@@ -118,7 +111,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 11
+    "push_today": 12
   },
   "ai_works": [
     {
@@ -195,10 +188,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 16,
-    "mem_pct": 41,
+    "cpu_pct": 3,
+    "mem_pct": 40,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 262.5,
-    "disk_free_gb": 1599.2
+    "disk_used_gb": 263.2,
+    "disk_free_gb": 1598.6
   }
 }
