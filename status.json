@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-07-06 13:13:09",
+  "generated_at": "2026-07-06 13:19:09",
   "gpu": {
     "occupant": "空き（アイドル）",
     "note": "誰も使っていません",
     "vram_used_gb": 1.2,
     "vram_total_gb": 15.9,
-    "util": 0
+    "util": 1
   },
   "services": [
     {
@@ -28,7 +28,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-06 13:12",
+    "updated": "2026-07-06 13:18",
     "current": null
   },
   "queue": [
@@ -104,7 +104,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 72
+    "push_today": 73
   },
   "ai_works": [
     {
