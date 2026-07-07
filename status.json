@@ -1,14 +1,22 @@
 {
-  "generated_at": "2026-07-07 19:01:05",
+  "generated_at": "2026-07-07 19:07:05",
   "gpu": {
-    "occupant": "モデル待機中（アイドル）",
-    "note": "生成は完了済み・モデルがVRAMに残っています",
-    "vram_used_gb": 4.3,
+    "occupant": "runner_build（hoshi_runner）",
+    "note": "経過245s / 目安あと約5分",
+    "vram_used_gb": 17179865103.6,
     "vram_total_gb": 15.9,
-    "util": 1,
+    "util": 99,
     "lock": {
-      "locked": false,
-      "holder": null,
+      "locked": true,
+      "holder": {
+        "pid": 30380,
+        "session": "hoshi_runner",
+        "job": "runner_build",
+        "started_at": "2026-07-07T19:02:59+0900",
+        "age_sec": 245,
+        "alive": true,
+        "est_minutes": 10
+      },
       "stale": false
     }
   },
@@ -101,7 +109,7 @@
     }
   ],
   "requests": {
-    "today": 62,
+    "today": 67,
     "hist": {
       "2026-07-02": 430,
       "2026-07-03": 612,
@@ -111,7 +119,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 132
+    "push_today": 133
   },
   "ai_works": [
     {
@@ -188,10 +196,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 2,
-    "mem_pct": 77,
+    "cpu_pct": 10,
+    "mem_pct": 79,
     "mem_total_gb": 31.7,
     "disk_used_gb": 264.6,
-    "disk_free_gb": 1597.1
+    "disk_free_gb": 1597.2
   }
 }
