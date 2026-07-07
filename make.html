@@ -191,7 +191,9 @@ function svcUp(services, sub){ return (services||[]).some(function(s){return s.u
 
 function render(d){
   var g=(d&&d.gpu)||{}, services=(d&&d.services)||[], q=(d&&d.queue)||[];
-  var mediaBusy=(String(g.occupant||'').indexOf('メディア')>-1) || (g.vram_used_gb>3);
+  // ★VRAM>3GBだけで「生成中」と判定すると、モデルが待機状態でVRAMに残っているだけの
+  //   ケース(2026-07-07実発生)を誤検知する。実使用率(util)か明示的な"生成中"文言で判定する。
+  var mediaBusy=(g.util||0) > 10 || String(g.occupant||'').indexOf('生成中')>-1;
   var engineUp = svcUp(services,'ComfyUI') || svcUp(services,'生成');
 
   // 作業台
