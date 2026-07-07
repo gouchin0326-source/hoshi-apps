@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-07-07 12:43:09",
+  "generated_at": "2026-07-07 12:49:06",
   "gpu": {
     "occupant": "メディア生成（画像/音楽）",
     "note": "生成モデルがVRAMを使用中",
     "vram_used_gb": 14.0,
     "vram_total_gb": 15.9,
-    "util": 2,
+    "util": 1,
     "lock": {
       "locked": false,
       "holder": null,
@@ -111,7 +111,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 69
+    "push_today": 70
   },
   "ai_works": [
     {
@@ -188,8 +188,8 @@
     }
   ],
   "resources": {
-    "cpu_pct": 7,
-    "mem_pct": 48,
+    "cpu_pct": 3,
+    "mem_pct": 47,
     "mem_total_gb": 31.7,
     "disk_used_gb": 263.9,
     "disk_free_gb": 1597.9
