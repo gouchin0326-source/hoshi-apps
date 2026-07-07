@@ -91,6 +91,11 @@
     </span>
   </a>
 
+  <h2>📮 指示ボックス（自律ビルドへ直接指示）</h2>
+  <div class="card" id="seedbox">
+    <div class="empty">読み込み中…</div>
+  </div>
+
   <h2>作業台（GPU）— 1度に1ジョブ</h2>
   <div class="card" id="workbench"><div class="empty">読み込み中…</div></div>
 
@@ -231,6 +236,104 @@ load();
 setInterval(load, 60000);
 
 if('serviceWorker' in navigator){ window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); }); }
+
+// --- 📮 指示ボックス（自律ビルドへ直接指示・home.htmlの登録済みトークンを共有） ---------------
+// home.htmlと同じキー名で読むだけ（登録UIはhome.html側に一本化・ここでは作らない）。
+var CK_KEY='hoshi_cockpit_url';
+function getCk(){ try{ return localStorage.getItem(CK_KEY)||''; }catch(e){ return ''; } }
+function ckBase(){
+  var u=getCk(); if(!u) return null;
+  try{ var url=new URL(u); return {origin:url.origin, k:url.searchParams.get('k')}; }
+  catch(e){ return null; }
+}
+
+function seedOutcomeIcon(rec){
+  if(!rec.outcome) return '⏳';
+  if(rec.verified) return '✅';
+  if(/^ok:/.test(rec.outcome)) return '✅';
+  if(/^skipped/.test(rec.outcome)) return '⚠';
+  return '⚠';
+}
+
+function renderSeedHistory(status){
+  var lines=[];
+  lines.push('<div class="occ"><span class="big">⏳ 処理待ち '+(status.pending||0)+'件</span></div>');
+  var recent=status.recent||[];
+  if(recent.length){
+    lines.push('<div style="margin-top:12px">'+recent.map(function(rec){
+      var icon=seedOutcomeIcon(rec);
+      var preview=esc((rec.goal_preview||'').slice(0,40));
+      return '<div class="row"><span class="num">'+icon+'</span><div class="rt">'+preview+'</div></div>';
+    }).join('')+'</div>');
+  } else {
+    lines.push('<div class="empty">まだ実行履歴はありません</div>');
+  }
+  return lines.join('');
+}
+
+async function seedFetchStatus(ck){
+  try{
+    var r = await fetch(ck.origin+'/api/seed_status?k='+encodeURIComponent(ck.k), {cache:'no-store'});
+    if(!r.ok) throw new Error('status '+r.status);
+    return await r.json();
+  }catch(e){
+    return null;
+  }
+}
+
+async function initSeedbox(){
+  var box = document.getElementById('seedbox');
+  var ck = ckBase();
+  if(!ck || !ck.k){
+    box.innerHTML = '<div class="empty">操縦席の登録が必要です（ホームの『情シス部』から一度登録してください）</div>';
+    return;
+  }
+  box.innerHTML =
+    '<textarea id="seedtext" rows="4" style="width:100%;box-sizing:border-box;padding:10px;border-radius:10px;'
+    +'border:1px solid var(--border);background:var(--bg);color:var(--ink);font-family:inherit;font-size:14px;resize:vertical"'
+    +' placeholder="1行目=タイトル&#10;2行目以降=詳細..."></textarea>'
+    +'<div style="margin-top:10px;display:flex;align-items:center;gap:10px">'
+    +'<button id="seedsend" style="padding:9px 18px;border:0;border-radius:10px;background:var(--accent);color:#fff;'
+    +'font-weight:600;font-size:14px;cursor:pointer">📮 送信</button>'
+    +'<span id="seedmsg" style="font-size:13px;color:var(--sub)"></span></div>'
+    +'<div id="seedhist" style="margin-top:16px">読み込み中…</div>';
+
+  var msg = document.getElementById('seedmsg');
+  var hist = document.getElementById('seedhist');
+
+  async function refreshHistory(){
+    var st = await seedFetchStatus(ck);
+    hist.innerHTML = st ? renderSeedHistory(st) : '<div class="empty">履歴を取得できません</div>';
+  }
+
+  document.getElementById('seedsend').addEventListener('click', async function(){
+    var ta = document.getElementById('seedtext');
+    var text = ta.value;
+    if(!text.trim()){ msg.textContent='入力してください'; return; }
+    msg.textContent='送信中…';
+    try{
+      var r = await fetch(ck.origin+'/api/seed', {
+        method:'POST',
+        headers:{'X-Cockpit-Key':ck.k,'Content-Type':'application/json'},
+        body: JSON.stringify({text:text})
+      });
+      var d = await r.json().catch(function(){return {};});
+      if(r.ok && d.ok){
+        ta.value='';
+        msg.textContent='送信しました（キュー待ち）';
+        setTimeout(function(){ msg.textContent=''; }, 3000);
+        refreshHistory();
+      } else {
+        msg.textContent='送信失敗: '+(d.msg||r.status);
+      }
+    }catch(e){
+      msg.textContent='送信失敗（通信エラー）';
+    }
+  });
+
+  refreshHistory();
+}
+initSeedbox();
 </script>
 </body>
 </html>
