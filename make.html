@@ -306,10 +306,14 @@ var NGROK_SKIP_HEADERS = {'ngrok-skip-browser-warning':'true'};
 async function seedFetchStatus(ck){
   try{
     var r = await fetch(ck.origin+'/api/seed_status?k='+encodeURIComponent(ck.k), {cache:'no-store', headers:NGROK_SKIP_HEADERS});
-    if(!r.ok) throw new Error('status '+r.status);
+    var ct = r.headers.get('content-type')||'';
+    if(!r.ok) return {__err:'サーバーエラー(status '+r.status+')'};
+    if(ct.indexOf('application/json')===-1){
+      return {__err:'応答がJSON形式ではありません(ngrok警告ページ等の可能性・content-type='+(ct||'不明')+')'};
+    }
     return await r.json();
   }catch(e){
-    return null;
+    return {__err:'通信できません: '+(e&&e.message||e)};
   }
 }
 
@@ -347,8 +351,11 @@ async function initSeedbox(){
   var hist = document.getElementById('seedhist');
 
   async function refreshHistory(){
+    hist.innerHTML = '<div class="empty">読み込み中…</div>';
     var st = await seedFetchStatus(ck);
-    hist.innerHTML = st ? renderSeedHistory(st) : '<div class="empty">履歴を取得できません</div>';
+    if(!st){ hist.innerHTML = '<div class="empty">履歴を取得できません（不明なエラー）</div>'; return; }
+    if(st.__err){ hist.innerHTML = '<div class="empty">履歴取得エラー: '+esc(st.__err)+'</div>'; return; }
+    hist.innerHTML = renderSeedHistory(st);
   }
 
   document.getElementById('seedrefresh').addEventListener('click', refreshHistory);
