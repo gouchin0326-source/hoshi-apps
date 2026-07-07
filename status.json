@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-07 15:13:04",
+  "generated_at": "2026-07-07 15:19:04",
   "gpu": {
     "occupant": "メディア生成（画像/音楽）",
     "note": "生成モデルがVRAMを使用中",
@@ -111,7 +111,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 94
+    "push_today": 95
   },
   "ai_works": [
     {
@@ -188,8 +188,8 @@
     }
   ],
   "resources": {
-    "cpu_pct": 8,
-    "mem_pct": 48,
+    "cpu_pct": 5,
+    "mem_pct": 49,
     "mem_total_gb": 31.7,
     "disk_used_gb": 264.2,
     "disk_free_gb": 1597.6
