@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-07-07 21:37:05",
+  "generated_at": "2026-07-07 21:43:05",
   "gpu": {
     "occupant": "モデル待機中（アイドル）",
     "note": "生成は完了済み・モデルがVRAMに残っています",
-    "vram_used_gb": 4.2,
+    "vram_used_gb": 4.3,
     "vram_total_gb": 15.9,
-    "util": 2,
+    "util": 0,
     "lock": {
       "locked": false,
       "holder": null,
@@ -27,11 +27,11 @@
     },
     {
       "name": "自律ランナー",
-      "up": true
+      "up": false
     }
   ],
   "runner": {
-    "up": true,
+    "up": false,
     "activity": "待機中",
     "updated": "2026-07-06 23:59",
     "current": null
@@ -111,7 +111,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 158
+    "push_today": 159
   },
   "ai_works": [
     {
@@ -188,10 +188,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 3,
-    "mem_pct": 71,
+    "cpu_pct": 1,
+    "mem_pct": 61,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 264.8,
-    "disk_free_gb": 1596.9
+    "disk_used_gb": 264.4,
+    "disk_free_gb": 1597.3
   }
 }
