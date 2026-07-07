@@ -303,9 +303,18 @@ function renderSeedHistory(status){
 // このヘッダで回避しないとJSONのはずが警告ページに化けて r.json() が失敗する(2026-07-07実発生)。
 var NGROK_SKIP_HEADERS = {'ngrok-skip-browser-warning':'true'};
 
+// タイムアウト無しのfetchは、通信が黙って止まった時に「読み込み中…」が永久に残る原因になる。
+// AbortControllerで必ず有限時間で決着させる(2026-07-07実発生の切り分け用)。
+function fetchWithTimeout(url, opts, ms){
+  var ctrl = new AbortController();
+  var timer = setTimeout(function(){ ctrl.abort(); }, ms||10000);
+  var o = Object.assign({}, opts||{}, {signal: ctrl.signal});
+  return fetch(url, o).finally(function(){ clearTimeout(timer); });
+}
+
 async function seedFetchStatus(ck){
   try{
-    var r = await fetch(ck.origin+'/api/seed_status?k='+encodeURIComponent(ck.k), {cache:'no-store', headers:NGROK_SKIP_HEADERS});
+    var r = await fetchWithTimeout(ck.origin+'/api/seed_status?k='+encodeURIComponent(ck.k), {cache:'no-store', headers:NGROK_SKIP_HEADERS}, 10000);
     var ct = r.headers.get('content-type')||'';
     if(!r.ok) return {__err:'サーバーエラー(status '+r.status+')'};
     if(ct.indexOf('application/json')===-1){
@@ -313,13 +322,14 @@ async function seedFetchStatus(ck){
     }
     return await r.json();
   }catch(e){
+    if(e && e.name==='AbortError') return {__err:'タイムアウト(10秒応答なし・通信がどこかで止まっています)'};
     return {__err:'通信できません: '+(e&&e.message||e)};
   }
 }
 
 async function seedFetchText(ck, fname){
   try{
-    var r = await fetch(ck.origin+'/api/seed_text?file='+encodeURIComponent(fname)+'&k='+encodeURIComponent(ck.k), {cache:'no-store', headers:NGROK_SKIP_HEADERS});
+    var r = await fetchWithTimeout(ck.origin+'/api/seed_text?file='+encodeURIComponent(fname)+'&k='+encodeURIComponent(ck.k), {cache:'no-store', headers:NGROK_SKIP_HEADERS}, 10000);
     var d = await r.json().catch(function(){return {};});
     if(!r.ok || !d.ok) return null;
     return d.text||'';
@@ -384,11 +394,11 @@ async function initSeedbox(){
     if(!text.trim()){ msg.textContent='入力してください'; return; }
     msg.textContent='送信中…';
     try{
-      var r = await fetch(ck.origin+'/api/seed', {
+      var r = await fetchWithTimeout(ck.origin+'/api/seed', {
         method:'POST',
         headers:{'X-Cockpit-Key':ck.k,'Content-Type':'application/json','ngrok-skip-browser-warning':'true'},
         body: JSON.stringify({text:text})
-      });
+      }, 15000);
       var d = await r.json().catch(function(){return {};});
       if(r.ok && d.ok){
         ta.value='';
@@ -399,7 +409,7 @@ async function initSeedbox(){
         msg.textContent='送信失敗: '+(d.msg||r.status);
       }
     }catch(e){
-      msg.textContent='送信失敗（通信エラー）';
+      msg.textContent = (e && e.name==='AbortError') ? '送信失敗（タイムアウト15秒）' : '送信失敗（通信エラー: '+(e&&e.message||e)+'）';
     }
   });
 
