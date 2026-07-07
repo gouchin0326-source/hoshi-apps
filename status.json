@@ -1,14 +1,21 @@
 {
-  "generated_at": "2026-07-07 12:07:07",
+  "generated_at": "2026-07-07 12:13:08",
   "gpu": {
-    "occupant": "メディア生成（画像/音楽）",
-    "note": "生成モデルがVRAMを使用中",
-    "vram_used_gb": 6.9,
+    "occupant": "codex-ltxv-video（codex）",
+    "note": "排他ロック保持中 / 経過6s",
+    "vram_used_gb": 10.5,
     "vram_total_gb": 15.9,
     "util": 1,
     "lock": {
-      "locked": false,
-      "holder": null,
+      "locked": true,
+      "holder": {
+        "pid": 16100,
+        "session": "codex",
+        "job": "codex-ltxv-video",
+        "started_at": "2026-07-07T12:12:58+0900",
+        "age_sec": 6,
+        "alive": true
+      },
       "stale": false
     }
   },
@@ -111,7 +118,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 63
+    "push_today": 64
   },
   "ai_works": [
     {
@@ -188,10 +195,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 2,
-    "mem_pct": 61,
+    "cpu_pct": 11,
+    "mem_pct": 83,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 263.9,
-    "disk_free_gb": 1597.9
+    "disk_used_gb": 282.2,
+    "disk_free_gb": 1579.5
   }
 }
