@@ -1,7 +1,7 @@
 // ★HOSHI 管制塔 PWA サービスワーカー
 // 役割: アプリ外殻(HTML/アイコン)をキャッシュしてオフラインでも即開く。
 //       ただし status.json は常に最新をネットワークから取る(失敗時のみ最後の値)。
-const CACHE = 'hoshi-kanseito-v18';
+const CACHE = 'hoshi-kanseito-v19';
 const SHELL = [
   './',
   'home.html',
@@ -43,8 +43,10 @@ self.addEventListener('fetch', (e) => {
   const isHTML = e.request.mode === 'navigate'
               || url.pathname.endsWith('.html') || url.pathname.endsWith('/');
   if (isHTML || url.pathname.includes('/puzzle/')) {
+    // ★cache:'no-store'必須＝ブラウザの通常HTTPキャッシュを迂回して必ず本物のネットワークへ行く。
+    //   e.request をそのままfetchするとブラウザキャッシュ経由で古いHTMLが返ることがあった(2026-07-07実発生)。
     e.respondWith(
-      fetch(e.request).then((res) => {
+      fetch(e.request.url, {cache: 'no-store', credentials: 'same-origin'}).then((res) => {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
         return res;
