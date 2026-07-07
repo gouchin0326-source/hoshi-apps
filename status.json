@@ -1,14 +1,21 @@
 {
-  "generated_at": "2026-07-07 17:07:04",
+  "generated_at": "2026-07-07 17:13:04",
   "gpu": {
-    "occupant": "メディア生成（画像/音楽）",
-    "note": "生成モデルがVRAMを使用中",
-    "vram_used_gb": 14.1,
+    "occupant": "runner_build（hoshi_runner）",
+    "note": "排他ロック保持中 / 経過308s",
+    "vram_used_gb": 17179865103.6,
     "vram_total_gb": 15.9,
-    "util": 1,
+    "util": 100,
     "lock": {
-      "locked": false,
-      "holder": null,
+      "locked": true,
+      "holder": {
+        "pid": 30380,
+        "session": "hoshi_runner",
+        "job": "runner_build",
+        "started_at": "2026-07-07T17:07:56+0900",
+        "age_sec": 308,
+        "alive": true
+      },
       "stale": false
     }
   },
@@ -111,7 +118,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 113
+    "push_today": 114
   },
   "ai_works": [
     {
@@ -188,8 +195,8 @@
     }
   ],
   "resources": {
-    "cpu_pct": 6,
-    "mem_pct": 49,
+    "cpu_pct": 9,
+    "mem_pct": 83,
     "mem_total_gb": 31.7,
     "disk_used_gb": 264.6,
     "disk_free_gb": 1597.2
