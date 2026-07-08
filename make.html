@@ -277,7 +277,7 @@ function renderSeedPending(status){
     +'<div style="margin-top:6px">'+list+'</div></details>';
 }
 
-function renderSeedHistory(status){
+function renderSeedHistory(status, ck){
   var lines=[];
   lines.push(renderSeedProcessing(status));
   lines.push(renderSeedPending(status));
@@ -291,13 +291,19 @@ function renderSeedHistory(status){
         ? '<button class="seed-edit-btn" data-file="'+seedFile+'" style="margin-left:8px;padding:3px 10px;border:0;border-radius:8px;'
           +'background:var(--muted);color:var(--ink);font-size:12px;cursor:pointer">✏️ 編集して再送信</button>'
         : '';
+      // 出荷: 生成物(index.html)が実在する時だけ「開く」リンクを出す(app_dirはサーバ側で実在確認済み)。
+      var openBtn = (rec.app_dir && ck)
+        ? '<a href="'+ck.origin+'/api/seed_app/'+encodeURIComponent(rec.app_dir)+'/?k='+encodeURIComponent(ck.k)+'" '
+          +'target="_blank" rel="noopener" style="margin-left:8px;padding:3px 10px;border:0;border-radius:8px;'
+          +'background:var(--muted);color:var(--ink);font-size:12px;text-decoration:none;cursor:pointer">📦 開く</a>'
+        : '';
       return '<div class="row" style="flex-wrap:wrap;gap:6px"><div class="rt" style="flex:1;min-width:0">'+preview+'</div>'
-        +badge+'<span style="font-size:12px;color:var(--sub)">'+esc(rec.ts||'')+'</span>'+editBtn+'</div>';
+        +badge+'<span style="font-size:12px;color:var(--sub)">'+esc(rec.ts||'')+'</span>'+editBtn+openBtn+'</div>';
     }).join('')+'</div>');
   } else {
     lines.push('<div class="empty">まだ実行履歴はありません</div>');
   }
-  lines.push('<div class="gnote" style="margin-top:8px">生成されたアプリ自体はここから開けません（appdirはPC側で確認してください）。</div>');
+  lines.push('<div class="gnote" style="margin-top:8px">📦「開く」がある行は、生成されたアプリをこのまま別タブで開けます。</div>');
   return lines.join('');
 }
 
@@ -367,7 +373,7 @@ async function initSeedbox(){
     var st = await seedFetchStatus(ck);
     if(!st){ hist.innerHTML = '<div class="empty">履歴を取得できません（不明なエラー）</div>'; return; }
     if(st.__err){ hist.innerHTML = '<div class="empty">履歴取得エラー: '+esc(st.__err)+'</div>'; return; }
-    hist.innerHTML = renderSeedHistory(st);
+    hist.innerHTML = renderSeedHistory(st, ck);
   }
 
   document.getElementById('seedrefresh').addEventListener('click', refreshHistory);
