@@ -249,6 +249,16 @@ function ckBase(){
   catch(e){ return null; }
 }
 
+// PDCA「P」= 曖昧な一言指示を物理的に防ぐ構造化ウィザード(2026-07-09・コーディング/アプリジャンル限定)。
+function seedFieldHtml(id, label, placeholder, rows, required){
+  var star = required ? ' <span style="color:#ff6b6b">*必須</span>' : ' <span style="color:var(--sub);font-size:11px">(任意)</span>';
+  return '<div style="margin-top:8px">'
+    +'<label for="'+id+'" style="display:block;font-size:12.5px;color:var(--sub);margin-bottom:3px">'+esc(label)+star+'</label>'
+    +'<textarea id="'+id+'" rows="'+rows+'" placeholder="'+esc(placeholder)+'" data-required="'+(required?'1':'0')+'" style="width:100%;'
+    +'box-sizing:border-box;padding:9px;border-radius:9px;border:1px solid var(--border);background:var(--bg);color:var(--ink);'
+    +'font-family:inherit;font-size:13.5px;resize:vertical"></textarea></div>';
+}
+
 function seedOutcomeBadge(rec){
   // verified優先→outcome文字列の接頭辞で判定（仕様どおり）。
   if(rec.verified === true) return '<span class="badge b-ok">✅完了</span>';
@@ -297,8 +307,13 @@ function renderSeedHistory(status, ck){
           +'target="_blank" rel="noopener" style="margin-left:8px;padding:3px 10px;border:0;border-radius:8px;'
           +'background:var(--muted);color:var(--ink);font-size:12px;text-decoration:none;cursor:pointer">📦 開く</a>'
         : '';
+      // 改良(2026-07-08): 生成物がある行は「新規」でなく「この既存アプリへの変更」として送信できる。
+      var improveBtn = rec.app_dir
+        ? '<button class="seed-improve-btn" data-appdir="'+esc(rec.app_dir)+'" style="margin-left:8px;padding:3px 10px;border:0;'
+          +'border-radius:8px;background:var(--muted);color:var(--ink);font-size:12px;cursor:pointer">🔧 改良を依頼</button>'
+        : '';
       return '<div class="row" style="flex-wrap:wrap;gap:6px"><div class="rt" style="flex:1;min-width:0">'+preview+'</div>'
-        +badge+'<span style="font-size:12px;color:var(--sub)">'+esc(rec.ts||'')+'</span>'+editBtn+openBtn+'</div>';
+        +badge+'<span style="font-size:12px;color:var(--sub)">'+esc(rec.ts||'')+'</span>'+editBtn+openBtn+improveBtn+'</div>';
     }).join('')+'</div>');
   } else {
     lines.push('<div class="empty">まだ実行履歴はありません</div>');
@@ -354,12 +369,28 @@ async function initSeedbox(){
     return;
   }
   box.innerHTML =
-    '<textarea id="seedtext" rows="4" style="width:100%;box-sizing:border-box;padding:10px;border-radius:10px;'
+    '<div id="seedTargetBar" style="display:none;margin-bottom:8px;padding:7px 11px;border-radius:9px;'
+    +'background:var(--local-bg,rgba(192,122,18,.12));border:1px solid var(--local,#c07a12);font-size:12.5px;'
+    +'color:var(--local,#c07a12);display:flex;align-items:center;gap:8px;flex-wrap:wrap"></div>'
+    +'<div id="seedWizard">'
+    +'<div style="font-size:12px;color:var(--sub);margin-bottom:6px">📝 新規アプリの依頼＝*必須の4項目を埋めないと送信できません（曖昧な一言指示を防ぐため）</div>'
+    +'<input id="seedTitle" type="text" data-required="1" placeholder="タイトル（何を作るか一言）" style="width:100%;'
+    +'box-sizing:border-box;padding:9px;border-radius:9px;border:1px solid var(--border);background:var(--bg);'
+    +'color:var(--ink);font-family:inherit;font-size:14px">'
+    +seedFieldHtml('seedWant','やりたいこと','何のためのツールか。誰が何をするか',2,true)
+    +seedFieldHtml('seedInput','入力','画面に何を入力させるか。項目名と型を具体的に',2,true)
+    +seedFieldHtml('seedOutput','出力・動作','ボタンを押したら何が起きるか。保存先やファイル形式なども',2,true)
+    +seedFieldHtml('seedLook','見た目の希望','色・レイアウトの好みがあれば。無ければ空欄でOK（おまかせ）',1,false)
+    +seedFieldHtml('seedAvoid','やらないこと','範囲外にしたいこと（例: サーバー通信はしない）',2,true)
+    +'</div>'
+    +'<div id="seedImproveWrap" style="display:none;margin-top:8px">'
+    +'<textarea id="seedImproveText" rows="4" style="width:100%;box-sizing:border-box;padding:10px;border-radius:10px;'
     +'border:1px solid var(--border);background:var(--bg);color:var(--ink);font-family:inherit;font-size:14px;resize:vertical"'
-    +' placeholder="1行目=タイトル&#10;2行目以降=詳細..."></textarea>'
+    +' placeholder="何を変えたいか具体的に書いてください（例: 引き算・掛け算・割り算もできるようにして）"></textarea>'
+    +'</div>'
     +'<div style="margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
-    +'<button id="seedsend" style="padding:9px 18px;border:0;border-radius:10px;background:var(--accent);color:#fff;'
-    +'font-weight:600;font-size:14px;cursor:pointer">📮 送信</button>'
+    +'<button id="seedsend" disabled style="padding:9px 18px;border:0;border-radius:10px;background:var(--accent);color:#fff;'
+    +'font-weight:600;font-size:14px;cursor:not-allowed;opacity:.5">📮 送信</button>'
     +'<button id="seedrefresh" style="padding:9px 14px;border:0;border-radius:10px;background:var(--muted);color:var(--ink);'
     +'font-weight:600;font-size:13px;cursor:pointer">🔄 更新</button>'
     +'<span id="seedmsg" style="font-size:13px;color:var(--sub)"></span></div>'
@@ -367,6 +398,95 @@ async function initSeedbox(){
 
   var msg = document.getElementById('seedmsg');
   var hist = document.getElementById('seedhist');
+  var targetBar = document.getElementById('seedTargetBar');
+  var wizard = document.getElementById('seedWizard');
+  var improveWrap = document.getElementById('seedImproveWrap');
+  var sendBtn = document.getElementById('seedsend');
+  var WIZ_REQUIRED = ['seedTitle','seedWant','seedInput','seedOutput','seedAvoid'];
+  var WIZ_ALL = ['seedTitle','seedWant','seedInput','seedOutput','seedLook','seedAvoid'];
+  var WIZ_LABELS = {seedWant:'やりたいこと', seedInput:'入力', seedOutput:'出力・動作', seedLook:'見た目の希望', seedAvoid:'やらないこと'};
+
+  function setSendEnabled(ok){
+    sendBtn.disabled = !ok;
+    sendBtn.style.opacity = ok ? '1' : '.5';
+    sendBtn.style.cursor = ok ? 'pointer' : 'not-allowed';
+  }
+
+  function checkValid(){
+    if(targetApp){
+      setSendEnabled(!!document.getElementById('seedImproveText').value.trim());
+      return;
+    }
+    var allOk = WIZ_REQUIRED.every(function(id){ return document.getElementById(id).value.trim().length>0; });
+    setSendEnabled(allOk);
+  }
+
+  WIZ_ALL.forEach(function(id){ document.getElementById(id).addEventListener('input', checkValid); });
+  document.getElementById('seedImproveText').addEventListener('input', checkValid);
+
+  function buildWizardText(){
+    function bullets(v){ return v.trim().split('\n').map(function(l){ return '- '+l; }).join('\n'); }
+    var title = document.getElementById('seedTitle').value.trim();
+    var look = document.getElementById('seedLook').value.trim();
+    return title+'\n\nやりたいこと:\n'+bullets(document.getElementById('seedWant').value)
+      +'\n\n入力:\n'+bullets(document.getElementById('seedInput').value)
+      +'\n\n出力・動作:\n'+bullets(document.getElementById('seedOutput').value)
+      +'\n\n見た目の希望:\n'+(look?bullets(look):'- おまかせ')
+      +'\n\nやらないこと:\n'+bullets(document.getElementById('seedAvoid').value);
+  }
+
+  function clearWizard(){ WIZ_ALL.forEach(function(id){ document.getElementById(id).value=''; }); }
+
+  // 「編集して再送信」用: 過去の送信テキスト(構造化テンプレ or 旧・自由記述)をウィザードへ復元する。
+  // 旧形式(マーカー無し)は情報を失わないよう全文を「やりたいこと」欄へ落とす。
+  function fillWizardFrom(text){
+    clearWizard();
+    var firstNl = text.indexOf('\n');
+    var title = firstNl===-1 ? text : text.slice(0, firstNl);
+    var body = firstNl===-1 ? '' : text.slice(firstNl+1);
+    var labels = ['やりたいこと','入力','出力・動作','見た目の希望','やらないこと'];
+    var found = false;
+    for(var i=0;i<labels.length;i++){
+      var label = labels[i];
+      var sm = body.match(new RegExp('(?:^|\\n)'+label+':\\s*\\n'));
+      if(!sm) continue;
+      var start = sm.index + sm[0].length;
+      var end = body.length;
+      for(var j=0;j<labels.length;j++){
+        if(labels[j]===label) continue;
+        var nm = body.slice(start).match(new RegExp('\\n'+labels[j]+':\\s*\\n'));
+        if(nm){ var pos = start+nm.index; if(pos<end) end=pos; }
+      }
+      var chunk = body.slice(start, end).trim();
+      var val = chunk.split('\n').map(function(l){ return l.replace(/^-\s?/, ''); }).join('\n').trim();
+      if(label==='見た目の希望' && val==='おまかせ') val='';
+      var targetId = Object.keys(WIZ_LABELS).filter(function(id){ return WIZ_LABELS[id]===label; })[0];
+      document.getElementById(targetId).value = val;
+      found = true;
+    }
+    document.getElementById('seedTitle').value = found ? title.trim() : '';
+    if(!found){ document.getElementById('seedWant').value = text.trim(); }
+    return found;
+  }
+
+  // ★改良モード(2026-07-08): nullなら新規アプリ(ウィザード)、appdir文字列なら「そのアプリを改良」送信(自由記述)になる。
+  var targetApp = null;
+  function setTargetApp(appdir){
+    targetApp = appdir;
+    if(!appdir){
+      targetBar.style.display='none'; targetBar.innerHTML='';
+      improveWrap.style.display='none'; wizard.style.display='block';
+      checkValid();
+      return;
+    }
+    targetBar.style.display='flex';
+    targetBar.innerHTML = '🔧 改良対象: <b>'+esc(appdir)+'</b>（このアプリに変更を加えます）'
+      + '<button id="seedTargetClear" type="button" style="margin-left:auto;border:0;background:transparent;'
+      + 'color:inherit;cursor:pointer;font-size:12px;text-decoration:underline">✕ 解除して新規作成に戻す</button>';
+    document.getElementById('seedTargetClear').addEventListener('click', function(){ setTargetApp(null); });
+    wizard.style.display='none'; improveWrap.style.display='block';
+    checkValid();
+  }
 
   async function refreshHistory(){
     hist.innerHTML = '<div class="empty">読み込み中…</div>';
@@ -382,6 +502,7 @@ async function initSeedbox(){
   hist.addEventListener('click', async function(ev){
     var btn = ev.target.closest('.seed-edit-btn');
     if(!btn) return;
+    setTargetApp(null);   // 「編集して再送信」は新規送信の系統＝改良対象の選択が残っていたら解除する
     var fname = btn.getAttribute('data-file');
     if(!fname) return;
     msg.textContent='読込中…';
@@ -390,27 +511,42 @@ async function initSeedbox(){
       msg.textContent='取得失敗: '+fname;
       return;
     }
-    document.getElementById('seedtext').value = text;
-    msg.textContent='編集欄にセットしました（内容を直して送信してください）';
+    var parsed = fillWizardFrom(text);
+    checkValid();
+    msg.textContent = parsed ? '編集欄にセットしました（内容を直して送信してください）' : '旧形式のため全文を「やりたいこと」欄に入れました（項目を分けて確認してください）';
     box.scrollIntoView({behavior:'smooth', block:'start'});
-    setTimeout(function(){ msg.textContent=''; }, 4000);
+    setTimeout(function(){ msg.textContent=''; }, 5000);
   });
 
-  document.getElementById('seedsend').addEventListener('click', async function(){
-    var ta = document.getElementById('seedtext');
-    var text = ta.value;
+  // 「🔧 改良を依頼」＝イベント委任。次の送信が「この既存アプリへの変更」として扱われる。
+  hist.addEventListener('click', function(ev){
+    var btn = ev.target.closest('.seed-improve-btn');
+    if(!btn) return;
+    var appdir = btn.getAttribute('data-appdir');
+    if(!appdir) return;
+    setTargetApp(appdir);
+    document.getElementById('seedImproveText').value = '';
+    box.scrollIntoView({behavior:'smooth', block:'start'});
+    document.getElementById('seedImproveText').focus();
+  });
+
+  sendBtn.addEventListener('click', async function(){
+    if(sendBtn.disabled) return;
+    var text = targetApp ? document.getElementById('seedImproveText').value : buildWizardText();
     if(!text.trim()){ msg.textContent='入力してください'; return; }
-    msg.textContent='送信中…';
+    msg.textContent = targetApp ? '送信中…（改良依頼）' : '送信中…';
     try{
       var r = await fetchWithTimeout(ck.origin+'/api/seed', {
         method:'POST',
         headers:{'X-Cockpit-Key':ck.k,'Content-Type':'application/json','ngrok-skip-browser-warning':'true'},
-        body: JSON.stringify({text:text})
+        body: JSON.stringify(targetApp ? {text:text, target_app:targetApp} : {text:text})
       }, 15000);
       var d = await r.json().catch(function(){return {};});
       if(r.ok && d.ok){
-        ta.value='';
+        clearWizard();
+        document.getElementById('seedImproveText').value='';
         msg.textContent='送信しました（キュー待ち）';
+        setTargetApp(null);
         setTimeout(function(){ msg.textContent=''; }, 3000);
         refreshHistory();
       } else {
@@ -421,6 +557,7 @@ async function initSeedbox(){
     }
   });
 
+  checkValid();
   refreshHistory();
 }
 initSeedbox();
