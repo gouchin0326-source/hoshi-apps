@@ -33,25 +33,18 @@
   .lead{color:var(--sub);font-size:13px;margin:0 0 14px}
   .draftbar{background:var(--local-bg);border:1px solid var(--local);color:var(--local);
     border-radius:10px;padding:8px 12px;font-size:12.5px;font-weight:600;margin-bottom:14px}
-  .summary{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
-  .sc{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--border);
-      border-radius:10px;padding:7px 13px;font-size:13px;color:var(--sub);font-weight:500}
-  .sc b{color:var(--ink);font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
-  .sc.ok{color:var(--ok);border-color:var(--ok)} .sc.down{color:var(--down);border-color:var(--down)}
-  /* 管制サマリー（PC状態の信号灯・開いた瞬間に見える最重要部） */
-  .sigs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px}
-  .sig{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;border-left-width:4px}
-  .sig.ok{border-left-color:var(--ok)} .sig.down{border-left-color:var(--down)}
-  .sig.warn{border-left-color:#c9871f} .sig.mut{border-left-color:var(--muted)}
-  .sig .k{font-size:11.5px;color:var(--sub);font-weight:600}
-  .sig .v{font-size:18px;font-weight:700;margin:3px 0 2px}
-  .sig.ok .v{color:var(--ok)} .sig.down .v{color:var(--down)} .sig.warn .v{color:#c9871f}
-  .sig .s{font-size:11.5px;color:var(--muted)}
-  .strip{display:flex;flex-wrap:wrap;gap:14px;background:var(--card);border:1px solid var(--border);
-    border-radius:10px;padding:9px 14px;font-size:12.5px;color:var(--sub);margin-bottom:6px;font-variant-numeric:tabular-nums}
-  .strip b{color:var(--ink);font-weight:700} .strip .mut{color:var(--muted)}
-  .notehint{font-size:11px;color:var(--muted);margin-bottom:16px}
-  @media(max-width:640px){.sigs{grid-template-columns:1fr}}
+  .summary{margin-bottom:14px}
+  /* ★社長室コンパクト化(2026-07-09・PDCA化準備)＝信号灯+資源を1本の帯に集約。空いた面積は制作2工房へ配分。 */
+  .hqstrip{display:flex;flex-wrap:wrap;align-items:center;gap:7px 14px;background:var(--card);
+    border:1px solid var(--border);border-radius:10px;padding:8px 13px;font-size:12px;color:var(--sub);
+    font-variant-numeric:tabular-nums}
+  .hqi{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+  .hqi b{color:var(--ink);font-weight:700}
+  .hqi.mut{color:var(--muted)}
+  .dot{width:7px;height:7px;border-radius:50%;flex:none;display:inline-block}
+  .dot.ok{background:var(--ok)} .dot.down{background:var(--down)} .dot.warn{background:#c9871f} .dot.mut{background:var(--muted)}
+  .hqsep{width:1px;align-self:stretch;background:var(--border)}
+  @media(max-width:640px){.hqsep{display:none}}
   /* zone */
   .zone{margin-top:20px}
   .zone > h2{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
@@ -62,7 +55,7 @@
   .tile{background:var(--card);border:1px solid var(--border);border-radius:15px;padding:15px 16px;
         text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:2px;min-height:112px;position:relative}
   .tile:active{transform:scale(.99)}
-  .tile.hero{min-height:140px;border-width:1.5px}
+  .tile.hero{min-height:236px;border-width:1.5px}
   .tile.local{border-color:var(--local)} .tile.local .ic{color:var(--local)}
   .tile.cloud{border-color:var(--cloud)} .tile.cloud .ic{color:var(--cloud)}
   .tile .ic{font-size:25px;line-height:1;margin-bottom:5px}
@@ -75,6 +68,14 @@
   .tile .desc{font-size:12px;color:var(--sub)}
   .tile .st{margin-top:auto;padding-top:8px;font-size:12px;font-weight:500}
   .st.ok{color:var(--ok)} .st.down{color:var(--down)} .st.mut{color:var(--muted)}
+  /* ★工房タイル内の状況可視化パネル(2026-07-09)＝空いた面積で各工房が稼働状況を表示 */
+  .tile .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:6px 8px;margin:9px 0 2px}
+  .statitem{background:var(--chip);border-radius:8px;padding:6px 9px}
+  .statitem .k{font-size:10px;color:var(--sub);font-weight:600}
+  .statitem .v{font-size:14.5px;font-weight:700;color:var(--ink);margin-top:1px}
+  .statitem.ok .v{color:var(--ok)} .statitem.down .v{color:var(--down)}
+  .statplaceholder{background:var(--chip);border:1px dashed var(--border);border-radius:8px;padding:11px;
+    font-size:11.5px;color:var(--muted);margin:9px 0 2px;text-align:center}
   .badge{position:absolute;top:13px;right:13px;font-size:11.5px;font-weight:700;color:var(--accent-ink);
          background:var(--chip);border:1px solid var(--border);border-radius:999px;padding:3px 9px;font-variant-numeric:tabular-nums}
   .ext{position:absolute;top:14px;right:14px;font-size:12px;color:var(--muted)}
@@ -83,6 +84,16 @@
            border:1px solid var(--border);border-radius:9px;padding:6px 10px;text-decoration:none}
   .sublink:active{transform:scale(.98)}
   .setgear{position:absolute;top:11px;right:11px;font-size:15px;color:var(--muted);background:transparent;border:0;cursor:pointer;padding:4px}
+  /* ★運営ゾーン コンパクト化(2026-07-09)＝タイルを行レイアウト化し専有面積を半分程度に。空きは制作2工房へ配分。 */
+  .grid.compact{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+  .tile.compact{min-height:0;padding:9px 30px 9px 11px;flex-direction:row;align-items:center;gap:9px}
+  .tile.compact .ic{font-size:19px;margin:0}
+  .tile.compact .bd{display:flex;flex-direction:column;gap:0;min-width:0}
+  .tile.compact .name{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tile.compact .st{margin:0;padding:0;font-size:10px}
+  .tile.compact .badge{top:6px;right:7px;font-size:10px;padding:2px 6px}
+  .tile.compact .ext{top:7px;right:9px;font-size:11px}
+  .tile.compact .setgear{top:4px;right:4px;font-size:13px;padding:2px}
   footer{margin-top:22px;color:var(--muted);font-size:11.5px;text-align:center;line-height:1.7}
 </style>
 </head>
@@ -136,23 +147,33 @@ function counts(st){
 }
 
 // ★製造ライン(工房)を上位軸に。制作ゾーン=local_llm/cloud_ai、運営ゾーン=部署。
+// ★2026-07-09 PDCA化準備＝社長室(信号灯)と運営(部署)をコンパクト化し、空いた面積を制作2工房へ配分。
+//   各工房タイル内で状況を可視化(stats=実測パネル／statNote=未配線プレースホルダー・虚偽データは出さない)。
 function zones(st){
   var c=counts(st);
+  var g=(st&&st.gpu)||{};
+  var free=gpuFree(st);
+  var localStats=[
+    {k:'🌙 GPU', v:(free===true?'空き':(free===false?'占有中':'—')), cls:(free===true?'ok':(free===false?'down':''))},
+    {k:'VRAM', v:(g.vram_used_gb!=null?(g.vram_used_gb+'/'+(g.vram_total_gb||16)+'GB'):'—')},
+    {k:'待ち', v:c.pending},
+    {k:'完了', v:c.done}
+  ];
   return [
     { title:'制作 — 製造ラインで2分（誰が作ったか）', hero:true, tiles:[
       {cls:'local', ic:'🌙', tag:'LOCAL LLM · 完全自社所有 · ¥0', name:'ローカルLLM工房',
        desc:'画像・音楽・動画・MV（生成）＋自律ビルダー製アプリ。GPU単一レーンで駆動。',
-       node:'local', badge:(c.total?('待ち '+c.pending):''),
+       node:'local', badge:(c.total?('待ち '+c.pending):''), stats:localStats,
        links:[{t:'生成工房',h:'make.html'},{t:'自律開発',h:'dev.html'}]},
       {cls:'cloud', ic:'☁️', tag:'CLOUD AI · 各社規約の確認要', name:'最新AI工房',
        desc:'Claude / Fable / GPT / Gemini 製の制作物・アプリ。quota/課金枠を消費。',
-       node:'cloud', badge:'',
+       node:'cloud', badge:'', statNote:'状況の可視化は準備中（各社quotaのライブ計測は今後配線）',
        links:[{t:'成果物内訳',h:'works.html'},{t:'サンプル館',h:'samples.html'}]}
     ]},
-    { title:'運営 — 部署', hero:false, tiles:[
-      {ic:'📊', name:'管制塔（見る専用）', desc:'作業台・サービス・待ち行列・結果', href:'status.html',
+    { title:'運営 — 部署', hero:false, compact:true, tiles:[
+      {ic:'📊', name:'管制塔', desc:'作業台・サービス・待ち行列・結果（見る専用）', href:'status.html',
        node:'status', badge:(st?(pcAlive(st)?'ライブ':'最終値'):'')},
-      {ic:'🛰', name:'情シス部（操作）', desc:'操縦席・送信台帳＝外部通信の窓口（1日枠を節約）',
+      {ic:'🛰', name:'情シス部', desc:'操縦席・送信台帳＝外部通信の窓口（操作・1日枠を節約）',
        node:'ops', badge:(c.sends?('送信 '+c.sends):'')},
       {ic:'📣', name:'広報部', desc:'対外提供＝公開アプリ ＋ Gドライブ納品',
        href:'pr.html', node:'pr', badge:''},
@@ -165,38 +186,48 @@ function zones(st){
 var lastStatus=null;
 function tileHTML(t, alive){
   var badge = t.badge ? '<span class="badge">'+esc(t.badge)+'</span>' : (t.ext?'<span class="ext">↗</span>':'');
-  var cls = 'tile'+(t.hero?' hero':'')+(t.cls?(' '+t.cls):'');
+  var cls = 'tile'+(t.hero?' hero':'')+(t.cls?(' '+t.cls):'')+(t.compact?' compact':'');
   var tag = t.tag ? '<span class="tag">'+esc(t.tag)+'</span>' : '';
-  // 工房タイル（sublinksで複数の行き先を持つ・タイル自体はリンクにしない）
+  // 工房タイル（sublinksで複数の行き先を持つ・タイル自体はリンクにしない・状況可視化パネル付き）
   if(t.links){
     var subs = t.links.map(function(l){return '<a class="sublink" href="'+esc(l.h)+'">'+esc(l.t)+' →</a>';}).join('');
+    var vis = '';
+    if(t.stats && t.stats.length){
+      vis = '<div class="stats">'+t.stats.map(function(s){
+        return '<div class="statitem'+(s.cls?(' '+s.cls):'')+'"><div class="k">'+esc(s.k)+'</div><div class="v">'+esc(String(s.v))+'</div></div>';
+      }).join('')+'</div>';
+    } else if(t.statNote){
+      vis = '<div class="statplaceholder">'+esc(t.statNote)+'</div>';
+    }
     return '<div class="'+cls+'">'+badge+tag+'<div class="ic">'+t.ic+'</div><div class="name">'+esc(t.name)+'</div>'
-         + '<div class="desc">'+esc(t.desc)+'</div><div class="sublinks">'+subs+'</div></div>';
+         + '<div class="desc">'+esc(t.desc)+'</div>'+vis+'<div class="sublinks">'+subs+'</div></div>';
   }
-  // 情シス部＝操作(操縦席)。初回登録制・トークンは端末内のみ
-  if(t.node==='ops'){
-    var reg=!!getCk();
-    var s = !reg ? '<span class="st mut">未登録（タップで登録）</span>'
-            : alive ? '<span class="st ok">● 登録済み・PC稼働中</span>'
-                    : '<span class="st down">● 登録済み・PC停止中の可能性</span>';
-    return '<a class="'+cls+'" href="#" onclick="return openCk()">'+badge
-         + (reg?'<button class="setgear" title="URLを変更/削除" onclick="event.preventDefault();event.stopPropagation();registerCk()">⚙</button>':'')
-         + '<div class="ic">'+t.ic+'</div><div class="name">'+esc(t.name)+'</div><div class="desc">'+esc(t.desc)+'</div>'+s+'</a>';
+  // 運営ゾーン＝コンパクト行タイル（社長室/運営の面積縮小分を制作へ回すためのレイアウト）
+  if(t.compact){
+    if(t.node==='ops'){
+      var reg=!!getCk();
+      var s = !reg ? '<span class="st mut">未登録</span>'
+              : alive ? '<span class="st ok">●稼働中</span>' : '<span class="st down">●停止中?</span>';
+      return '<a class="'+cls+'" href="#" title="'+esc(t.desc)+'" onclick="return openCk()">'+badge
+           + (reg?'<button class="setgear" title="URLを変更/削除" onclick="event.preventDefault();event.stopPropagation();registerCk()">⚙</button>':'')
+           + '<div class="ic">'+t.ic+'</div><div class="bd"><div class="name">'+esc(t.name)+'</div>'+s+'</div></a>';
+    }
+    var extAttr = t.ext ? ' target="_blank" rel="noopener noreferrer"' : '';
+    var s2 = (t.node==='status') ? '<span class="st '+(alive?'ok':'mut')+'">'+(alive?'●ライブ':'○最終値')+'</span>' : '';
+    return '<a class="'+cls+'" href="'+esc(t.href)+'"'+extAttr+' title="'+esc(t.desc)+'">'+badge
+         + '<div class="ic">'+t.ic+'</div><div class="bd"><div class="name">'+esc(t.name)+'</div>'+s2+'</div></a>';
   }
-  // 通常リンクタイル
-  var extAttr = t.ext ? ' target="_blank" rel="noopener noreferrer"' : '';
-  var s2 = (t.node==='status') ? '<span class="st '+(alive?'ok':'mut')+'">'+(alive?'● ライブ':'○ 最終値を表示')+'</span>'
-         : (t.node==='pr') ? '<span class="st mut">いつでも利用可</span>'
-         : '<span class="st mut">'+(t.ext?'外部で開く':'')+'</span>';
-  return '<a class="'+cls+'" href="'+esc(t.href)+'"'+extAttr+'>'+badge
-       + '<div class="ic">'+t.ic+'</div><div class="name">'+esc(t.name)+'</div><div class="desc">'+esc(t.desc)+'</div>'+s2+'</a>';
+  // 通常リンクタイル（フォールバック）
+  var extAttr2 = t.ext ? ' target="_blank" rel="noopener noreferrer"' : '';
+  return '<a class="'+cls+'" href="'+esc(t.href)+'"'+extAttr2+'>'+badge
+       + '<div class="ic">'+t.ic+'</div><div class="name">'+esc(t.name)+'</div><div class="desc">'+esc(t.desc)+'</div></a>';
 }
 function renderTiles(st){
   lastStatus=st;
   var alive=pcAlive(st);
   document.getElementById('grid').innerHTML = zones(st).map(function(z){
-    return '<section class="zone"><h2>'+esc(z.title)+'</h2><div class="grid'+(z.hero?' hero':'')+'">'
-         + z.tiles.map(function(t){ t.hero=z.hero; return tileHTML(t,alive); }).join('')
+    return '<section class="zone"><h2>'+esc(z.title)+'</h2><div class="grid'+(z.hero?' hero':'')+(z.compact?' compact':'')+'">'
+         + z.tiles.map(function(t){ t.hero=z.hero; t.compact=z.compact; return tileHTML(t,alive); }).join('')
          + '</div></section>';
   }).join('');
 }
@@ -215,41 +246,32 @@ function anomalies(st){                                    // 異常＝即気づ
   if(typeof r.disk_free_gb==='number' && r.disk_free_gb<50) a.push('ディスク残少 '+r.disk_free_gb+'GB');
   return a;
 }
+// ★社長室コンパクト化(2026-07-09)＝信号灯3枚+資源ストリップ+注記を1本の帯に集約。中身(計算)は不変・見た目のみ圧縮。
 function renderSummary(st){
   var el=document.getElementById('summary');
-  if(!st){ el.innerHTML='<div class="sigs"><div class="sig down"><div class="k">状態</div><div class="v">取得不可</div><div class="s">公開status.jsonに届いていません（家PC/配信の停止？）</div></div></div>'; return; }
+  if(!st){ el.innerHTML='<div class="hqstrip"><span class="hqi"><span class="dot down"></span>状態取得不可 — 公開status.jsonに届いていません（家PC/配信の停止？）</span></div>'; return; }
   var alive=pcAlive(st), c=counts(st), m=minsAgo(st.generated_at);
   var ago=(m===null)?'':(m<1?'たった今':(m+'分前'));
   var g=st.gpu||{}, free=gpuFree(st), an=anomalies(st);
-  // 🌙 GPU 使っていい？
-  var gpuCls=(free===true?'ok':(free===false?'down':'mut'));
-  var gpuCard='<div class="sig '+gpuCls+'"><div class="k">🌙 GPU 使っていい？</div>'
-    +'<div class="v">'+(free===true?'✅ OK（空き）':(free===false?'⛔ 待て（占有中）':'—'))+'</div>'
-    +'<div class="s">'+(g.vram_used_gb!=null?('VRAM '+g.vram_used_gb+'/'+(g.vram_total_gb||16)+'GB · util '+(g.util||0)+'%'):'')
-    +(g.occupant?(' · '+esc(g.occupant)):'')+'</div></div>';
-  // ⚠ 異常は？
+  var gpuDot=(free===true?'ok':(free===false?'down':'mut'));
+  var gpuTxt=(free===true?'GPU空き':(free===false?'GPU占有中':'GPU—'));
   var okAll=alive && an.length===0;
-  var anCard='<div class="sig '+(okAll?'ok':'down')+'"><div class="k">⚠ 異常は？</div>'
-    +'<div class="v">'+(okAll?'● 正常':'🔴 要確認')+'</div>'
-    +'<div class="s">'+(alive?'家PC稼働':'家PC停止の可能性')+(an.length?(' · '+esc(an.join(' / '))):'')+'</div></div>';
-  // ☁️ 外部通信枠（全セッション共有＝並列運用の衝突防止）
+  var anTxt=okAll?'正常':('要確認'+(an.length?'：'+esc(an.join('/')):''));
   var cap=(st.requests&&st.requests.guide_day)||666, near=c.sends>=cap*0.85;
-  var comCard='<div class="sig '+(near?'warn':'mut')+'"><div class="k">☁️ 外部通信枠（全セッション共有）</div>'
-    +'<div class="v">'+(near?'⚠ 残りわずか':'✅ 余裕')+'</div>'
-    +'<div class="s">本日 ngrok '+c.sends+'/'+cap+' · push '+c.push+'</div></div>';
-  // 資源ストリップ（CPU/メモリ/容量＝家PCの実測。status.json.resources）
   var r=(st.resources)||{};
   function rv(v,u){ return (typeof v==='number')?(v+u):'—'; }
-  var diskPct=(typeof r.disk_used_gb==='number'&&typeof r.disk_free_gb==='number')?Math.round(r.disk_used_gb/(r.disk_used_gb+r.disk_free_gb)*100):null;
-  var strip='<div class="strip">'
-    +'<span>CPU <b>'+rv(r.cpu_pct,'%')+'</b></span>'
-    +'<span>メモリ <b>'+rv(r.mem_pct,'%')+'</b>'+(r.mem_total_gb?(' /'+r.mem_total_gb+'GB'):'')+'</span>'
-    +'<span>容量 <b>'+(typeof r.disk_free_gb==='number'?(r.disk_free_gb+'GB空き'):'—')+'</b>'+(diskPct!=null?('・'+diskPct+'%使用'):'')+'</span>'
-    +'<span>VRAM <b>'+(g.vram_used_gb!=null?(g.vram_used_gb+'GB'):'—')+'</b></span>'
-    +'<span class="mut">待ち '+c.pending+' · 納品 '+c.results+'</span>'
-    +'<span class="mut">更新 '+esc(st.generated_at||'-')+(ago?'（'+ago+'）':'')+'</span></div>';
-  el.innerHTML='<div class="sigs">'+gpuCard+anCard+comCard+'</div>'+strip
-    +'<div class="notehint">PC使用状況（CPU/メモリ/容量/VRAM）は家PCの実測。この画面は公開status.jsonのみ読み込み＝ngrok消費0。</div>';
+  el.innerHTML='<div class="hqstrip" title="PC使用状況(CPU/メモリ/容量/VRAM)は家PCの実測。この画面は公開status.jsonのみ読み込み＝ngrok消費0">'
+    +'<span class="hqi"><span class="dot '+gpuDot+'"></span>'+esc(gpuTxt)+(g.vram_used_gb!=null?(' <b>'+g.vram_used_gb+'/'+(g.vram_total_gb||16)+'GB</b>'):'')+'</span>'
+    +'<span class="hqsep"></span>'
+    +'<span class="hqi"><span class="dot '+(okAll?'ok':'down')+'"></span>'+esc(anTxt)+'</span>'
+    +'<span class="hqsep"></span>'
+    +'<span class="hqi"><span class="dot '+(near?'warn':'mut')+'"></span>通信 <b>'+c.sends+'/'+cap+'</b></span>'
+    +'<span class="hqsep"></span>'
+    +'<span class="hqi">CPU <b>'+rv(r.cpu_pct,'%')+'</b></span>'
+    +'<span class="hqi">メモリ <b>'+rv(r.mem_pct,'%')+'</b></span>'
+    +'<span class="hqi">容量 <b>'+(typeof r.disk_free_gb==='number'?(r.disk_free_gb+'GB空き'):'—')+'</b></span>'
+    +'<span class="hqi mut">待ち '+c.pending+' ・更新 '+esc(st.generated_at||'-')+(ago?'（'+ago+'）':'')+'</span>'
+    +'</div>';
 }
 
 async function load(){
