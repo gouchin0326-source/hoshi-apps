@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>更新履歴 — ★HOSHI</title>
+<meta name="theme-color" content="#141413">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<style>
+  :root{
+    --bg:#f7f7f5; --card:#ffffff; --ink:#1a1a19; --sub:#5f5e5a; --muted:#898781;
+    --border:#e3e2db; --accent:#2a78d6; --accent-ink:#0c447c; --chip:#f0efea;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#141413; --card:#1e1e1c; --ink:#f2f1ea; --sub:#b7b6ac; --muted:#8b8a82;
+      --border:#33322e; --accent:#3987e5; --accent-ink:#b5d4f4; --chip:#26251f; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);line-height:1.6;-webkit-text-size-adjust:100%;
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
+  .wrap{max-width:720px;margin:0 auto;padding:20px 16px 48px}
+  .back{font-size:13px;color:var(--accent-ink);text-decoration:none;font-weight:600}
+  h1{font-size:24px;font-weight:700;margin:12px 0 2px}
+  .lead{color:var(--sub);font-size:13px;margin:0 0 22px}
+  .day{margin-bottom:22px}
+  .day h2{font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.04em;margin:0 0 8px;
+    display:flex;align-items:center;gap:9px}
+  .day h2::after{content:"";flex:1;height:1px;background:var(--border)}
+  ul{margin:0;padding:0;list-style:none}
+  li{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:11px 14px;
+     font-size:14px;margin-bottom:8px}
+  footer{margin-top:24px;color:var(--muted);font-size:11.5px;text-align:center;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="home.html">← ★HOSHI トップへ</a>
+  <h1>📜 更新履歴</h1>
+  <p class="lead">★HOSHI に加わった変更を新しい順に記録。手入力で追記(自動生成ではありません)。</p>
+
+  <div class="day">
+    <h2>2026-07-08</h2>
+    <ul>
+      <li>📦 生成工房：完了した依頼から生成物を直接開けるように「開く」ボタンを追加(受注→生産→出荷の「出荷」)。</li>
+      <li>🔧 自律ビルドの信頼性を修正：サービスワーカー登録の誤判定・生成タイムアウトの短さ・リトライ時に仕様(id契約)を見失う問題を、実際の失敗ログから特定して修正。</li>
+      <li>🔄 ★HOSHIトップに「最新版に更新」ボタンを追加。この更新履歴ページも新設。</li>
+    </ul>
+  </div>
+
+  <div class="day">
+    <h2>2026-07-07</h2>
+    <ul>
+      <li>📮 生成工房に指示ボックスを追加（ローカルLLM工房へ直接指示・送信/受信/処理中/完了のライフサイクル可視化つき）。</li>
+      <li>🐛 指示ボックスの通信まわりを強化（応答タイムアウト・ngrok警告ページ回避・エラー理由の表示）。</li>
+      <li>🖥 作業台のGPU使用中判定を実使用率ベースに修正（誤って「空き」と出ないように）。</li>
+      <li>🌃 前日分の生成物を整理し私専用へ。</li>
+    </ul>
+  </div>
+
+  <div class="day">
+    <h2>2026-07-06</h2>
+    <ul>
+      <li>📊 ★HOSHIトップに管制サマリー（PC状態の信号灯：GPU空き/異常/通信枠）を追加。</li>
+      <li>🏭 ハブの構成を「製造ライン」軸に再編（ローカルLLM工房／最新AI工房）。</li>
+    </ul>
+  </div>
+
+  <footer>★HOSHI · 更新履歴は総務部の記録用（公開情報のみ・機密は書きません）</footer>
+</div>
+</body>
+</html>

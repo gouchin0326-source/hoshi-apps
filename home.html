@@ -89,7 +89,13 @@
 <body>
 <div class="wrap">
   <h1>★HOSHI</h1>
-  <p class="lead">社長室 — 会社の今をここで管理。すべてへ2タップ以内。</p>
+  <p class="lead">社長室 — 会社の今をここで管理。すべてへ2タップ以内。
+    <button id="forceUpdateBtn" type="button"
+      style="margin-left:8px;padding:5px 11px;border:1px solid var(--border);border-radius:9px;
+      background:var(--chip);color:var(--accent-ink);font-size:12px;font-weight:600;cursor:pointer;vertical-align:middle"
+      >🔄 最新版に更新</button>
+    <a href="changelog.html" style="margin-left:6px;font-size:12px;color:var(--muted)">📜 更新履歴</a>
+  </p>
   <div class="summary" id="summary"><span class="sc">状態を確認中…</span></div>
   <div id="grid"></div>
   <footer id="foot">
@@ -258,6 +264,23 @@ setInterval(load, 60000);     // 公開status.json(無料)で1分ごと更新＝
 if('serviceWorker' in navigator){
   window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
 }
+
+// ★更新ボタン: SW未登録化+全キャッシュ削除+キャッシュバスター付き再読込で「必ず最新」を保証する。
+// PWA/スマホでボタン等の新機能が反映されない(SWが古いまま)という問い合わせへの自己解決手段。
+document.getElementById('forceUpdateBtn').addEventListener('click', async function(){
+  var btn=this; btn.disabled=true; btn.textContent='更新中…';
+  try{
+    if('serviceWorker' in navigator){
+      var regs = await navigator.serviceWorker.getRegistrations();
+      for(var i=0;i<regs.length;i++){ await regs[i].unregister(); }
+    }
+    if(window.caches){
+      var keys = await caches.keys();
+      for(var j=0;j<keys.length;j++){ await caches.delete(keys[j]); }
+    }
+  }catch(e){}
+  location.href = location.pathname + '?_=' + Date.now();
+});
 </script>
 </body>
 </html>
