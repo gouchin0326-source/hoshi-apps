@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-08 17:55:07",
+  "generated_at": "2026-07-08 18:01:07",
   "gpu": {
     "occupant": "空き（アイドル）",
     "note": "誰も使っていません",
@@ -112,7 +112,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 111
+    "push_today": 112
   },
   "ai_works": [
     {
