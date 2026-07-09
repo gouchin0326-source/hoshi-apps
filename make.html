@@ -71,6 +71,21 @@
   .pace .pl{font-size:13.5px;font-weight:600;margin-top:3px}
   .pace .pt{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.45}
   .pace.measuring .pv{color:var(--wait)}
+  /* ★指示ボックス拡張(2026-07-09)＝入力欄の一部を選択肢化＋タスクセット(直列複数指示＋可視化)。 */
+  .selectfield{width:100%;box-sizing:border-box;padding:9px;border-radius:9px;border:1px solid var(--border);
+    background:var(--bg);color:var(--ink);font-family:inherit;font-size:13.5px}
+  .chiprow{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .chip{font-size:12px;font-weight:600;padding:5px 11px;border-radius:999px;border:1px solid var(--border);
+    background:var(--chip);color:var(--sub);cursor:pointer;user-select:none}
+  .chip.active{background:var(--accent);border-color:var(--accent);color:#fff}
+  .tsbox{margin-top:4px}
+  .tsrow{display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid var(--border)}
+  .tsrow:first-child{border-top:0}
+  .tsico{font-size:17px;flex:0 0 auto}
+  .tsmeta{flex:1;min-width:0}
+  .tstitle{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tstag{font-size:11px;color:var(--sub)}
+  .tsbtn{border:0;border-radius:8px;background:var(--muted);color:var(--ink);font-size:11.5px;padding:4px 9px;cursor:pointer}
   footer{margin-top:18px;color:var(--muted);font-size:11.5px;text-align:center}
 </style>
 </head>
@@ -249,7 +264,7 @@ function ckBase(){
   catch(e){ return null; }
 }
 
-// PDCA「P」= 曖昧な一言指示を物理的に防ぐ構造化ウィザード(2026-07-09・コーディング/アプリジャンル限定)。
+// PDCA「P」= 曖昧な一言指示を物理的に防ぐ構造化ウィザード(2026-07-09)。
 function seedFieldHtml(id, label, placeholder, rows, required){
   var star = required ? ' <span style="color:#ff6b6b">*必須</span>' : ' <span style="color:var(--sub);font-size:11px">(任意)</span>';
   return '<div style="margin-top:8px">'
@@ -257,6 +272,31 @@ function seedFieldHtml(id, label, placeholder, rows, required){
     +'<textarea id="'+id+'" rows="'+rows+'" placeholder="'+esc(placeholder)+'" data-required="'+(required?'1':'0')+'" style="width:100%;'
     +'box-sizing:border-box;padding:9px;border-radius:9px;border:1px solid var(--border);background:var(--bg);color:var(--ink);'
     +'font-family:inherit;font-size:13.5px;resize:vertical"></textarea></div>';
+}
+
+// ★選択肢化(2026-07-09)＝自由記述だけだった項目の一部を選択式に。種別/パターンは新規メタ情報、
+//   出力形式・見た目トーンは既存テキスト欄へチップでbullet行を足す方式(バックエンド互換・書式は不変)。
+var GENRE_META={app:{ic:'💻',label:'アプリ'}, image:{ic:'🖼',label:'画像'}, music:{ic:'🎵',label:'音楽'},
+                video:{ic:'🎬',label:'動画・MV'}, spec:{ic:'📄',label:'仕様書'}};
+var GENRE_OPTS=['app','image','music','video','spec'];
+var PATTERN_META={single:{label:'単独制作'}, combo:{label:'組み合わせ制作'}, mass:{label:'量産'}};
+var PATTERN_OPTS=['single','combo','mass'];
+var OUTPUT_CHIPS=['画面表示のみ','ファイル保存','CSV書き出し','JSON書き出し'];
+var LOOK_CHIPS=['シンプル','カラフル','ダーク基調','にぎやか'];
+
+function seedSelectHtml(id, label, keys, meta, required){
+  var star = required ? ' <span style="color:#ff6b6b">*必須</span>' : ' <span style="color:var(--sub);font-size:11px">(任意)</span>';
+  var opts = '<option value="">選択してください</option>' + keys.map(function(k){
+    return '<option value="'+esc(k)+'">'+esc(meta[k].ic?meta[k].ic+' ':'')+esc(meta[k].label)+'</option>';
+  }).join('');
+  return '<div style="margin-top:8px">'
+    +'<label for="'+id+'" style="display:block;font-size:12.5px;color:var(--sub);margin-bottom:3px">'+esc(label)+star+'</label>'
+    +'<select id="'+id+'" data-required="'+(required?'1':'0')+'" class="selectfield">'+opts+'</select></div>';
+}
+function chipRowHtml(target, labels){
+  return '<div class="chiprow">'+labels.map(function(c){
+    return '<button type="button" class="chip" data-target="'+esc(target)+'" data-line="'+esc(c)+'">'+esc(c)+'</button>';
+  }).join('')+'</div>';
 }
 
 function seedOutcomeBadge(rec){
@@ -373,14 +413,19 @@ async function initSeedbox(){
     +'background:var(--local-bg,rgba(192,122,18,.12));border:1px solid var(--local,#c07a12);font-size:12.5px;'
     +'color:var(--local,#c07a12);display:flex;align-items:center;gap:8px;flex-wrap:wrap"></div>'
     +'<div id="seedWizard">'
-    +'<div style="font-size:12px;color:var(--sub);margin-bottom:6px">📝 新規アプリの依頼＝*必須の4項目を埋めないと送信できません（曖昧な一言指示を防ぐため）</div>'
+    +'<div style="font-size:12px;color:var(--sub);margin-bottom:6px">📝 新規の依頼＝*必須の項目を埋めないと送信できません（曖昧な一言指示を防ぐため）</div>'
+    +seedSelectHtml('seedGenre','種別', GENRE_OPTS, GENRE_META, true)
+    +seedSelectHtml('seedPattern','制作パターン', PATTERN_OPTS, PATTERN_META, true)
+    +'<div style="font-size:11px;color:var(--muted);margin:2px 0 8px">※現在はどの種別でも同じ自律ビルドパイプラインが処理します（画像/音楽/動画専用エンジンへの自動振り分けは今後対応・種別は記録用タグ）</div>'
     +'<input id="seedTitle" type="text" data-required="1" placeholder="タイトル（何を作るか一言）" style="width:100%;'
     +'box-sizing:border-box;padding:9px;border-radius:9px;border:1px solid var(--border);background:var(--bg);'
     +'color:var(--ink);font-family:inherit;font-size:14px">'
     +seedFieldHtml('seedWant','やりたいこと','何のためのツールか。誰が何をするか',2,true)
     +seedFieldHtml('seedInput','入力','画面に何を入力させるか。項目名と型を具体的に',2,true)
     +seedFieldHtml('seedOutput','出力・動作','ボタンを押したら何が起きるか。保存先やファイル形式なども',2,true)
+    +chipRowHtml('seedOutput', OUTPUT_CHIPS)
     +seedFieldHtml('seedLook','見た目の希望','色・レイアウトの好みがあれば。無ければ空欄でOK（おまかせ）',1,false)
+    +chipRowHtml('seedLook', LOOK_CHIPS)
     +seedFieldHtml('seedAvoid','やらないこと','範囲外にしたいこと（例: サーバー通信はしない）',2,true)
     +'</div>'
     +'<div id="seedImproveWrap" style="display:none;margin-top:8px">'
@@ -390,10 +435,13 @@ async function initSeedbox(){
     +'</div>'
     +'<div style="margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
     +'<button id="seedsend" disabled style="padding:9px 18px;border:0;border-radius:10px;background:var(--accent);color:#fff;'
-    +'font-weight:600;font-size:14px;cursor:not-allowed;opacity:.5">📮 送信</button>'
+    +'font-weight:600;font-size:14px;cursor:not-allowed;opacity:.5">➕ セットに追加</button>'
+    +'<button id="seedsendall" style="display:none;padding:9px 18px;border:0;border-radius:10px;background:var(--busy);color:#fff;'
+    +'font-weight:600;font-size:14px;cursor:pointer">🚀 まとめて送信</button>'
     +'<button id="seedrefresh" style="padding:9px 14px;border:0;border-radius:10px;background:var(--muted);color:var(--ink);'
     +'font-weight:600;font-size:13px;cursor:pointer">🔄 更新</button>'
     +'<span id="seedmsg" style="font-size:13px;color:var(--sub)"></span></div>'
+    +'<div id="tasksetbox" class="tsbox"></div>'
     +'<div id="seedhist" style="margin-top:16px">読み込み中…</div>';
 
   var msg = document.getElementById('seedmsg');
@@ -402,9 +450,77 @@ async function initSeedbox(){
   var wizard = document.getElementById('seedWizard');
   var improveWrap = document.getElementById('seedImproveWrap');
   var sendBtn = document.getElementById('seedsend');
-  var WIZ_REQUIRED = ['seedTitle','seedWant','seedInput','seedOutput','seedAvoid'];
-  var WIZ_ALL = ['seedTitle','seedWant','seedInput','seedOutput','seedLook','seedAvoid'];
+  var sendAllBtn = document.getElementById('seedsendall');
+  var tasksetBox = document.getElementById('tasksetbox');
+  var targetApp = null;   // ★改良モード(2026-07-08): nullなら新規(ウィザード/タスクセット)、appdir文字列なら「そのアプリを改良」送信(自由記述)。
+  var WIZ_REQUIRED = ['seedGenre','seedPattern','seedTitle','seedWant','seedInput','seedOutput','seedAvoid'];
+  var WIZ_ALL = ['seedGenre','seedPattern','seedTitle','seedWant','seedInput','seedOutput','seedLook','seedAvoid'];
   var WIZ_LABELS = {seedWant:'やりたいこと', seedInput:'入力', seedOutput:'出力・動作', seedLook:'見た目の希望', seedAvoid:'やらないこと'};
+
+  // ★タスクセット(2026-07-09)＝複数タスクをブラウザ内で積んでから直列送信するキュー。ブラウザを閉じても残るようlocalStorageへ保存。
+  var TASKSET_KEY='hoshi_seed_taskset_v1';
+  var taskSet = (function(){ try{ return JSON.parse(localStorage.getItem(TASKSET_KEY)||'[]'); }catch(e){ return []; } })();
+  function saveTaskSet(){ try{ localStorage.setItem(TASKSET_KEY, JSON.stringify(taskSet)); }catch(e){} }
+
+  function updateSendLabel(){ sendBtn.textContent = targetApp ? '📮 送信' : '➕ セットに追加'; }
+
+  function renderTaskSet(){
+    var queuedN = taskSet.filter(function(t){ return t.status==='queued'; }).length;
+    sendAllBtn.style.display = (!targetApp && queuedN) ? 'inline-block' : 'none';
+    sendAllBtn.textContent = '🚀 まとめて送信（'+queuedN+'件）';
+    if(!taskSet.length){ tasksetBox.innerHTML=''; return; }
+    var STATUS_BADGE={
+      queued:'<span class="badge b-prep">未送信</span>',
+      sending:'<span class="badge b-busy"><span class="bd"></span>送信中</span>',
+      sent:'<span class="badge b-ok">送信済み</span>',
+      failed:'<span class="badge b-off">失敗</span>'
+    };
+    tasksetBox.innerHTML = '<div style="font-size:12px;color:var(--sub);margin:10px 0 4px">📋 タスクセット（'+taskSet.length+'件・上から順に直列送信）</div>'
+      + taskSet.map(function(t){
+        var g = GENRE_META[t.genre] || {ic:'❔', label:t.genre||'-'};
+        var p = PATTERN_META[t.pattern] || {label:t.pattern||'-'};
+        var editBtn = (t.status==='queued'||t.status==='failed') ? '<button type="button" class="tsbtn ts-edit" data-id="'+t.id+'">✏️編集</button>' : '';
+        var delBtn = (t.status!=='sending') ? '<button type="button" class="tsbtn ts-del" data-id="'+t.id+'">🗑</button>' : '';
+        var errNote = (t.status==='failed' && t.error) ? '<div class="tstag" style="color:var(--down)">'+esc(t.error)+'</div>' : '';
+        return '<div class="tsrow"><span class="tsico">'+g.ic+'</span><div class="tsmeta">'
+          +'<div class="tstitle">'+esc(t.title)+'</div><div class="tstag">'+esc(g.label)+' ・ '+esc(p.label)+'</div>'+errNote+'</div>'
+          +(STATUS_BADGE[t.status]||'')+editBtn+delBtn+'</div>';
+      }).join('');
+  }
+
+  tasksetBox.addEventListener('click', function(ev){
+    var delBtn = ev.target.closest('.ts-del');
+    if(delBtn){
+      taskSet = taskSet.filter(function(t){ return t.id!==delBtn.getAttribute('data-id'); });
+      saveTaskSet(); renderTaskSet();
+      return;
+    }
+    var editBtn = ev.target.closest('.ts-edit');
+    if(editBtn){
+      var id = editBtn.getAttribute('data-id');
+      var item = taskSet.filter(function(t){ return t.id===id; })[0];
+      if(!item) return;
+      setTargetApp(null);
+      fillWizardFrom(item.text);
+      taskSet = taskSet.filter(function(t){ return t.id!==id; });   // 編集中はキューから外す＝再度「セットに追加」で戻す
+      saveTaskSet(); renderTaskSet(); checkValid();
+      box.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+  });
+
+  // ★チップ(2026-07-09)＝出力形式・見た目トーンの定番選択肢をワンタップでテキスト欄へbullet追記(自由記述と共存)。
+  wizard.addEventListener('click', function(ev){
+    var chip = ev.target.closest('.chip');
+    if(!chip) return;
+    chip.classList.toggle('active');
+    var ta = document.getElementById(chip.getAttribute('data-target'));
+    var marker = chip.getAttribute('data-line');   // textarea保持は生の行。bullets()が組立時に「- 」を一括付与する(二重ダッシュ防止)
+    var lines = ta.value.split('\n').map(function(s){ return s.trim(); }).filter(Boolean);
+    var idx = lines.indexOf(marker);
+    if(idx===-1) lines.push(marker); else lines.splice(idx,1);
+    ta.value = lines.join('\n');
+    checkValid();
+  });
 
   function setSendEnabled(ok){
     sendBtn.disabled = !ok;
@@ -421,29 +537,43 @@ async function initSeedbox(){
     setSendEnabled(allOk);
   }
 
-  WIZ_ALL.forEach(function(id){ document.getElementById(id).addEventListener('input', checkValid); });
+  WIZ_ALL.forEach(function(id){
+    document.getElementById(id).addEventListener('input', checkValid);
+    document.getElementById(id).addEventListener('change', checkValid);
+  });
   document.getElementById('seedImproveText').addEventListener('input', checkValid);
 
   function buildWizardText(){
     function bullets(v){ return v.trim().split('\n').map(function(l){ return '- '+l; }).join('\n'); }
     var title = document.getElementById('seedTitle').value.trim();
     var look = document.getElementById('seedLook').value.trim();
-    return title+'\n\nやりたいこと:\n'+bullets(document.getElementById('seedWant').value)
+    var gKey = document.getElementById('seedGenre').value, pKey = document.getElementById('seedPattern').value;
+    var genre = GENRE_META[gKey] ? GENRE_META[gKey].label : '';
+    var pattern = PATTERN_META[pKey] ? PATTERN_META[pKey].label : '';
+    return title+'\n\n種別: '+genre+'\nパターン: '+pattern
+      +'\n\nやりたいこと:\n'+bullets(document.getElementById('seedWant').value)
       +'\n\n入力:\n'+bullets(document.getElementById('seedInput').value)
       +'\n\n出力・動作:\n'+bullets(document.getElementById('seedOutput').value)
       +'\n\n見た目の希望:\n'+(look?bullets(look):'- おまかせ')
       +'\n\nやらないこと:\n'+bullets(document.getElementById('seedAvoid').value);
   }
 
-  function clearWizard(){ WIZ_ALL.forEach(function(id){ document.getElementById(id).value=''; }); }
+  function clearWizard(){
+    WIZ_ALL.forEach(function(id){ document.getElementById(id).value=''; });
+    wizard.querySelectorAll('.chip.active').forEach(function(c){ c.classList.remove('active'); });
+  }
 
   // 「編集して再送信」用: 過去の送信テキスト(構造化テンプレ or 旧・自由記述)をウィザードへ復元する。
-  // 旧形式(マーカー無し)は情報を失わないよう全文を「やりたいこと」欄へ落とす。
+  // 旧形式(マーカー無し)は情報を失わないよう全文を「やりたいこと」欄へ落とす。種別/パターンは無ければ空のまま(再選択を促す)。
   function fillWizardFrom(text){
     clearWizard();
     var firstNl = text.indexOf('\n');
     var title = firstNl===-1 ? text : text.slice(0, firstNl);
     var body = firstNl===-1 ? '' : text.slice(firstNl+1);
+    var gm = body.match(/(?:^|\n)種別:\s*(.+)/);
+    if(gm){ var gKey=GENRE_OPTS.filter(function(k){ return GENRE_META[k].label===gm[1].trim(); })[0]; if(gKey) document.getElementById('seedGenre').value=gKey; }
+    var pm = body.match(/(?:^|\n)パターン:\s*(.+)/);
+    if(pm){ var pKey=PATTERN_OPTS.filter(function(k){ return PATTERN_META[k].label===pm[1].trim(); })[0]; if(pKey) document.getElementById('seedPattern').value=pKey; }
     var labels = ['やりたいこと','入力','出力・動作','見た目の希望','やらないこと'];
     var found = false;
     for(var i=0;i<labels.length;i++){
@@ -469,14 +599,13 @@ async function initSeedbox(){
     return found;
   }
 
-  // ★改良モード(2026-07-08): nullなら新規アプリ(ウィザード)、appdir文字列なら「そのアプリを改良」送信(自由記述)になる。
-  var targetApp = null;
   function setTargetApp(appdir){
     targetApp = appdir;
+    updateSendLabel();
     if(!appdir){
       targetBar.style.display='none'; targetBar.innerHTML='';
       improveWrap.style.display='none'; wizard.style.display='block';
-      checkValid();
+      checkValid(); renderTaskSet();
       return;
     }
     targetBar.style.display='flex';
@@ -485,8 +614,57 @@ async function initSeedbox(){
       + 'color:inherit;cursor:pointer;font-size:12px;text-decoration:underline">✕ 解除して新規作成に戻す</button>';
     document.getElementById('seedTargetClear').addEventListener('click', function(){ setTargetApp(null); });
     wizard.style.display='none'; improveWrap.style.display='block';
-    checkValid();
+    checkValid(); renderTaskSet();
   }
+
+  function addToTaskSet(){
+    taskSet.push({
+      id: Date.now()+'_'+Math.random().toString(36).slice(2,7),
+      title: document.getElementById('seedTitle').value.trim(),
+      genre: document.getElementById('seedGenre').value,
+      pattern: document.getElementById('seedPattern').value,
+      text: buildWizardText(),
+      status: 'queued'
+    });
+    saveTaskSet();
+    clearWizard();
+    checkValid();
+    renderTaskSet();
+    document.getElementById('seedTitle').focus();
+    msg.textContent = 'セットに追加しました（'+taskSet.length+'件・まとめて送信で直列処理）';
+    setTimeout(function(){ msg.textContent=''; }, 2500);
+  }
+
+  sendAllBtn.addEventListener('click', async function(){
+    var queuedIdx = taskSet.map(function(t,i){ return t.status==='queued'?i:-1; }).filter(function(i){ return i>=0; });
+    if(!queuedIdx.length) return;
+    sendAllBtn.disabled = true;
+    var okN=0, ngN=0;
+    for(var qi=0; qi<queuedIdx.length; qi++){
+      var t = taskSet[queuedIdx[qi]];
+      t.status='sending'; saveTaskSet(); renderTaskSet();
+      try{
+        var r = await fetchWithTimeout(ck.origin+'/api/seed', {
+          method:'POST',
+          headers:{'X-Cockpit-Key':ck.k,'Content-Type':'application/json','ngrok-skip-browser-warning':'true'},
+          body: JSON.stringify({text:t.text})
+        }, 15000);
+        var d = await r.json().catch(function(){return {};});
+        if(r.ok && d.ok){ t.status='sent'; okN++; }
+        else { t.status='failed'; t.error='送信失敗: '+(d.msg||r.status); ngN++; }
+      }catch(e){
+        t.status='failed'; t.error=(e&&e.name==='AbortError')?'タイムアウト（15秒）':'通信エラー: '+(e&&e.message||e); ngN++;
+      }
+      saveTaskSet(); renderTaskSet();
+    }
+    taskSet = taskSet.filter(function(t){ return t.status!=='sent'; });   // 送信済み以降の真の状態は下の実行履歴に譲る
+    saveTaskSet();
+    sendAllBtn.disabled = false;
+    renderTaskSet();
+    msg.textContent = ngN ? (okN+'件送信・'+ngN+'件失敗（失敗はセットに残っています・再送信できます）') : (okN+'件すべて送信しました（キュー待ち）');
+    setTimeout(function(){ msg.textContent=''; }, 6000);
+    refreshHistory();
+  });
 
   async function refreshHistory(){
     hist.innerHTML = '<div class="empty">読み込み中…</div>';
@@ -530,20 +708,21 @@ async function initSeedbox(){
     document.getElementById('seedImproveText').focus();
   });
 
+  // ★新規モードは即時送信でなく「セットに追加」(タスクセットへ積む)。改良モードは従来どおり即時送信。
   sendBtn.addEventListener('click', async function(){
     if(sendBtn.disabled) return;
-    var text = targetApp ? document.getElementById('seedImproveText').value : buildWizardText();
+    if(!targetApp){ addToTaskSet(); return; }
+    var text = document.getElementById('seedImproveText').value;
     if(!text.trim()){ msg.textContent='入力してください'; return; }
-    msg.textContent = targetApp ? '送信中…（改良依頼）' : '送信中…';
+    msg.textContent = '送信中…（改良依頼）';
     try{
       var r = await fetchWithTimeout(ck.origin+'/api/seed', {
         method:'POST',
         headers:{'X-Cockpit-Key':ck.k,'Content-Type':'application/json','ngrok-skip-browser-warning':'true'},
-        body: JSON.stringify(targetApp ? {text:text, target_app:targetApp} : {text:text})
+        body: JSON.stringify({text:text, target_app:targetApp})
       }, 15000);
       var d = await r.json().catch(function(){return {};});
       if(r.ok && d.ok){
-        clearWizard();
         document.getElementById('seedImproveText').value='';
         msg.textContent='送信しました（キュー待ち）';
         setTargetApp(null);
@@ -557,7 +736,9 @@ async function initSeedbox(){
     }
   });
 
+  updateSendLabel();
   checkValid();
+  renderTaskSet();
   refreshHistory();
 }
 initSeedbox();
