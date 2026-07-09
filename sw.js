@@ -1,7 +1,7 @@
 // ★HOSHI 管制塔 PWA サービスワーカー
 // 役割: アプリ外殻(HTML/アイコン)をキャッシュしてオフラインでも即開く。
 //       ただし status.json は常に最新をネットワークから取る(失敗時のみ最後の値)。
-const CACHE = 'hoshi-kanseito-v20';
+const CACHE = 'hoshi-kanseito-v21';   // P9(2026-07-09): index.html→home.html リダイレクト化 / apps.json 集約
 const SHELL = [
   './',
   'home.html',

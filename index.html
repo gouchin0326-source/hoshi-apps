@@ -3,97 +3,39 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>★HOSHI アプリ・ハブ</title>
+<title>★HOSHI</title>
+<meta name="theme-color" content="#141413">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<!-- ★P9(2026-07-09) 公開ハブ整理統合: 唯一のホーム=home.html(社長室)。ルート(index.html)は
+     ここに着地した訪問者を確実にホームへ送るだけの薄いリダイレクト。旧「アプリ一覧」は
+     apps.json へ集約し 広報部(pr.html)のカタログに一本化した。=index/home 不一致の解消。 -->
+<meta http-equiv="refresh" content="0; url=home.html">
+<link rel="canonical" href="home.html">
+<script>location.replace('home.html');</script>
 <style>
-  :root{
-    --bg:#f7f7f5; --card:#ffffff; --ink:#1a1a19; --sub:#5f5e5a;
-    --border:#e3e2db; --accent:#2a78d6; --accent-ink:#0c447c; --ok:#0f6e56; --ok-bg:#e1f5ee;
-  }
+  :root{ --bg:#f7f7f5; --ink:#1a1a19; --sub:#5f5e5a; --accent-ink:#0c447c; --chip:#f0efea; --border:#e3e2db; }
   @media (prefers-color-scheme: dark){
-    :root{ --bg:#141413; --card:#1e1e1c; --ink:#f2f1ea; --sub:#b7b6ac;
-           --border:#33322e; --accent:#3987e5; --accent-ink:#b5d4f4; --ok:#5dcaa5; --ok-bg:#0f2e26; }
+    :root{ --bg:#141413; --ink:#f2f1ea; --sub:#b7b6ac; --accent-ink:#b5d4f4; --chip:#26251f; --border:#33322e; }
   }
-  *{box-sizing:border-box}
+  html,body{height:100%}
   body{margin:0;background:var(--bg);color:var(--ink);
        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
-       line-height:1.6;-webkit-text-size-adjust:100%}
-  .wrap{max-width:640px;margin:0 auto;padding:24px 16px 48px}
-  header{margin-bottom:8px}
-  h1{font-size:22px;font-weight:600;margin:0 0 4px}
-  .lead{color:var(--sub);font-size:14px;margin:0 0 20px}
-  .status{display:inline-flex;align-items:center;gap:6px;background:var(--ok-bg);color:var(--ok);
-          font-size:13px;font-weight:500;padding:5px 12px;border-radius:8px;margin-bottom:20px}
-  .status .dot{width:8px;height:8px;border-radius:50%;background:var(--ok)}
-  .grid{display:grid;gap:12px}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;
-        padding:16px 18px;text-decoration:none;color:inherit;display:flex;align-items:center;gap:14px}
-  .card:active{transform:scale(0.99)}
-  .ico{width:44px;height:44px;border-radius:12px;background:var(--ok-bg);color:var(--accent-ink);
-       display:flex;align-items:center;justify-content:center;font-size:22px;flex:0 0 auto}
-  .meta{flex:1;min-width:0}
-  .name{font-size:16px;font-weight:600;margin:0}
-  .desc{font-size:13px;color:var(--sub);margin:2px 0 0}
-  .go{color:var(--accent);font-size:14px;font-weight:500;white-space:nowrap}
-  .note{margin-top:28px;padding:14px 16px;background:var(--card);border:1px solid var(--border);
-        border-radius:12px;font-size:13px;color:var(--sub)}
-  .note b{color:var(--ink);font-weight:600}
-  footer{margin-top:24px;color:var(--sub);font-size:12px;text-align:center}
+       display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.6}
+  .box{padding:24px}
+  .mark{font-size:34px;font-weight:700;letter-spacing:.02em}
+  .msg{color:var(--sub);font-size:14px;margin-top:6px}
+  .go{display:inline-block;margin-top:16px;padding:8px 16px;font-size:14px;font-weight:600;
+      color:var(--accent-ink);background:var(--chip);border:1px solid var(--border);border-radius:10px;text-decoration:none}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <a href="home.html" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;margin-bottom:14px;font-size:13px;font-weight:600;color:#fff;background:#0c447c;border-radius:9px;text-decoration:none">⌂ ★HOSHI ホーム</a>
-  <header>
-    <h1>★HOSHI アプリ・ハブ</h1>
-    <p class="lead">カードをタップすると、その場でアプリが開いて動きます（ダウンロード不要）。</p>
-  </header>
-
-  <div class="status"><span class="dot"></span>公開中 — 動作確認済みのアプリ</div>
-
-  <div class="grid">
-    <a class="card" href="apps/issue-3/index.html">
-      <div class="ico">¥</div>
-      <div class="meta">
-        <p class="name">税込計算ツール</p>
-        <p class="desc">個数×単価に税10%を足して計算</p>
-      </div>
-      <span class="go">開く →</span>
-    </a>
-
-    <a class="card" href="apps/issue-2/index.html">
-      <div class="ico">字</div>
-      <div class="meta">
-        <p class="name">文字数カウンター</p>
-        <p class="desc">入力した文章の文字数を数える</p>
-      </div>
-      <span class="go">開く →</span>
-    </a>
-
-    <a class="card" href="apps/clock/index.html">
-      <div class="ico">時</div>
-      <div class="meta">
-        <p class="name">時計</p>
-        <p class="desc">現在時刻を表示するシンプル時計</p>
-      </div>
-      <span class="go">開く →</span>
-    </a>
-
-    <a class="card" href="status.html" style="border-color:var(--accent)">
-      <div class="ico" style="background:var(--accent);color:#fff">塔</div>
-      <div class="meta">
-        <p class="name">管制塔（開発状況）</p>
-        <p class="desc">作業台・待ち行列・結果をリアルタイム表示</p>
-      </div>
-      <span class="go">見る →</span>
-    </a>
+  <div class="box">
+    <div class="mark">★HOSHI</div>
+    <p class="msg">ホームへ移動しています…</p>
+    <noscript><p class="msg">自動で移動しない場合は下のボタンから。</p></noscript>
+    <a class="go" href="home.html">⌂ ★HOSHI ホームを開く →</a>
   </div>
-
-  <div class="note">
-    <b>この置き場について</b><br>
-    ここに出しているのは公開してよい動作確認用アプリだけです。会社の業務ツールなど非公開のものは、ここには載せません（別の非公開ルートで扱います）。
-  </div>
-
-  <footer>★HOSHI · GitHub Pages 配信</footer>
-</div>
 </body>
 </html>

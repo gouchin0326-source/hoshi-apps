@@ -1,2 +1,5 @@
 # local-only status signature (change-detection cache; never publish)
 .status.sig
+
+# local rollback backups (P9 2026-07-09) — never publish
+*.bak*
