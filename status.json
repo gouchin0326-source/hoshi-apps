@@ -1,22 +1,14 @@
 {
-  "generated_at": "2026-07-09 10:19:05",
+  "generated_at": "2026-07-09 10:25:05",
   "gpu": {
-    "occupant": "sera_kv_gen（sera_pipeline:2026-07_p12-smoketest）",
-    "note": "経過35s / 目安あと約7分",
-    "vram_used_gb": 14.1,
+    "occupant": "モデル待機中（アイドル）",
+    "note": "生成は完了済み・モデルがVRAMに残っています",
+    "vram_used_gb": 11.0,
     "vram_total_gb": 15.9,
-    "util": 99,
+    "util": 0,
     "lock": {
-      "locked": true,
-      "holder": {
-        "pid": 6984,
-        "session": "sera_pipeline:2026-07_p12-smoketest",
-        "job": "sera_kv_gen",
-        "started_at": "2026-07-09T10:18:29+0900",
-        "age_sec": 35,
-        "alive": true,
-        "est_minutes": 8
-      },
+      "locked": false,
+      "holder": null,
       "stale": false
     }
   },
@@ -121,7 +113,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 37
+    "push_today": 38
   },
   "ai_works": [
     {
@@ -198,10 +190,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 65,
-    "mem_pct": 80,
+    "cpu_pct": 0,
+    "mem_pct": 85,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 255.6,
+    "disk_used_gb": 255.7,
     "disk_free_gb": 1606.1
   }
 }
