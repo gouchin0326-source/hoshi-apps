@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>★HOSHI 研究室</title>
+<meta name="theme-color" content="#141413">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="★HOSHI 研究室">
+<style>
+  :root{
+    --bg:#f7f7f5; --card:#ffffff; --ink:#1a1a19; --sub:#5f5e5a; --muted:#898781;
+    --border:#e3e2db; --accent:#2a78d6; --accent-ink:#0c447c; --chip:#f0efea;
+    --ok:#0f6e56; --ok-bg:#e1f5ee; --busy:#534ab7; --busy-bg:#eeedfe;
+    --down:#a32d2d; --down-bg:#fcebeb; --wait:#8a6d0f; --wait-bg:#fbf1d6;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#141413; --card:#1e1e1c; --ink:#f2f1ea; --sub:#b7b6ac; --muted:#8b8a82;
+      --border:#33322e; --accent:#3987e5; --accent-ink:#b5d4f4; --chip:#26251f;
+      --ok:#5dcaa5; --ok-bg:#0f2e26; --busy:#afa9ec; --busy-bg:#241f4d;
+      --down:#f09595; --down-bg:#3a1414; --wait:#e3c04a; --wait-bg:#332b12; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);line-height:1.65;-webkit-text-size-adjust:100%;
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
+  .wrap{max-width:720px;margin:0 auto;padding:16px 16px 48px}
+  .home{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;margin-bottom:12px;font-size:13px;
+        font-weight:600;color:#fff;background:#0c447c;border-radius:9px;text-decoration:none}
+  h1{font-size:22px;font-weight:700;margin:0 0 2px}
+  .lead{color:var(--sub);font-size:13px;margin:0 0 14px}
+  h2{font-size:13px;font-weight:600;color:var(--muted);margin:22px 0 8px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:10px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{font-size:13px;padding:6px 12px;border-radius:999px;background:var(--chip);color:var(--sub)}
+  .chip b{color:var(--ink);font-variant-numeric:tabular-nums}
+  .pill{display:inline-block;font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:999px;margin-right:6px;vertical-align:1px}
+  .p-ok{background:var(--ok-bg);color:var(--ok)} .p-ng{background:var(--down-bg);color:var(--down)}
+  .p-new{background:var(--busy-bg);color:var(--busy)} .p-keep{background:var(--wait-bg);color:var(--wait)}
+  .rtitle{font-size:15px;font-weight:700;margin:0 0 4px}
+  .rverdict{font-size:13.5px;margin:0 0 8px}
+  .rbody{font-size:13px;color:var(--sub);margin:0}
+  .rbody b{color:var(--ink)}
+  .votes{font-size:11.5px;color:var(--muted);margin-top:8px}
+  ul.tight{margin:6px 0 0;padding-left:1.2em;font-size:13px;color:var(--sub)}
+  ul.tight li{margin:3px 0}
+  ul.tight b{color:var(--ink)}
+  .pillar{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-top:1px solid var(--border)}
+  .pillar:first-of-type{border-top:0}
+  .pillar .pi{font-size:19px;flex:0 0 28px;text-align:center}
+  .pillar .pt{font-size:13.5px}
+  .pillar .pt b{display:block;font-size:14px}
+  .pillar .pt span{color:var(--sub);font-size:12.5px}
+  .hl{border-left:4px solid var(--accent)}
+  .note{margin-top:22px;padding:14px 16px;background:var(--card);border:1px solid var(--border);border-radius:12px;font-size:13px;color:var(--sub)}
+  .note b{color:var(--ink)}
+  footer{margin-top:18px;color:var(--muted);font-size:11.5px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="home" href="home.html">⌂ ★HOSHI ホーム</a>
+  <h1>🔬 研究室</h1>
+  <p class="lead">深い調査で「<b>本当に確かめられた知識</b>」だけを集める部署。たくさんのAIが手分けして世界中の文献を調べ、別のAIが「それは本当か？」と<b>反証</b>を試み、生き残った知見だけをここに載せます。</p>
+
+  <h2>2026-07-10 大調査の成果サマリー</h2>
+  <div class="card">
+    <div class="chips">
+      <span class="chip">🔍 調査 <b>9本</b></span>
+      <span class="chip">📚 精読ソース <b>約130</b></span>
+      <span class="chip">⚖️ 検証した主張 <b>150</b></span>
+      <span class="chip">✅ 生き残り <b>80</b></span>
+      <span class="chip">❌ 棄却 <b>70</b></span>
+    </div>
+    <p class="rbody" style="margin-top:10px">検証方法: 1つの主張ごとに<b>3体のAIが独立に「反証しろ」という役目で審査</b>し、2票以上の反証で棄却。世の中の「効く」という主張の<b>半分近くが落ちました</b>——残ったものだけが、これからの開発の土台になります。</p>
+  </div>
+
+  <h2>⭐ いちばん大きな成果 — 開発の中心思想「5本柱」を制定</h2>
+  <div class="card hl">
+    <div class="pillar"><div class="pi">♿</div><div class="pt"><b>① インクルーシブデザイン</b><span>誰も置き去りにしない。世界標準（WCAG 2.2）を規範に、画面の言葉は「やさしい日本語」で。国の指針とも照合済み（矛盾ゼロ＋新ルール6つ発見）。</span></div></div>
+    <div class="pillar"><div class="pi">📄</div><div class="pt"><b>② HTML First</b><span>1つのHTMLファイルで完結・ビルド不要・中身を誰でも読める形で配る。2026年に学術論文にもなった考え方と一致。</span></div></div>
+    <div class="pillar"><div class="pi">💾</div><div class="pt"><b>③ 部分的ローカルファースト</b><span>データは使う人のPCの中に。ブラウザ保存は消えることがあるので<b>📤控えの保存を全アプリ必須</b>に。</span></div></div>
+    <div class="pillar"><div class="pi">🪜</div><div class="pt"><b>④ ゆるやかな坂（gentle slope）</b><span>使う人が道具を自分で育てられる——「触って使う→設定を変える→中身を編集」と段階的に。2025年の新しい設計哲学から採用。</span></div></div>
+    <div class="pillar"><div class="pi">🛡️</div><div class="pt"><b>⑤ AI品質統治</b><span>AIが書いたコードはAI特有の壊れ方をする（意図の取り違えが最多）。それを狙い撃つ検証を必ず通す。自動テスト全部合格でも「完成」ではなく、現場の人の5分確認で完成。</span></div></div>
+  </div>
+
+  <h2>🏆 特筆: ★HOSHIの自前実験が「世界の研究」と一致した</h2>
+  <div class="card hl">
+    <p class="rbody">このPCで実際に測って得た知見が、その後の調査で世界の実証研究と<b>4件連続で一致</b>しました。</p>
+    <ul class="tight">
+      <li><b>大きなファイルは「断片だけAIに書かせて機械で貼り戻す」が正解</b> — 差分(diff)を書かせる方式は大型AIでも精度2割と判明。うちの方式が正しかった</li>
+      <li><b>過去作品をそのまま見せると真似してしまう</b>（歌詞生成で実測9/13行が丸写し）— 原因はAI側の性質だと世界の研究でも確認。検索の精度を上げても解決しない</li>
+      <li><b>お手本（テンプレ）で誘導するのが最も効く</b> — 「ゼロから書かせない」が研究でも裏付け</li>
+      <li><b>失敗したらもう1回、は2回まで</b> — 自動リトライの効果は世間の宣伝ほどではない（当方の実測でも効果ゼロ、世界の検証でも数値主張は棄却）</li>
+    </ul>
+    <p class="votes">「形にして実測してから信じる」——この開発方針が方法論として世界水準で正しいことの証明になりました。</p>
+  </div>
+
+  <h2>各調査の結果（9本）</h2>
+
+  <div class="card">
+    <p class="rtitle">🧭 開発の中心思想（フル調査）</p>
+    <p class="rverdict"><span class="pill p-new">新発見</span>5本柱の材料を発掘・制定</p>
+    <p class="rbody">「gentle slope（ゆるやかな坂）」「HTML First」という2つの新しい設計哲学を発掘。アクセシビリティの世界標準はWCAG 2.2が現行regulation（2025年に国際標準化）で、次期3.0は2028年まで完成しないことも確定。<b>「認知のしやすさは自動チェックでは検証できない＝人の確認が必須」というW3C公式見解</b>が、実機確認を大切にする従来のやり方を裏付けました。</p>
+    <p class="votes">22確認 / 3棄却</p>
+  </div>
+
+  <div class="card">
+    <p class="rtitle">🗣 やさしい日本語（軽量調査）</p>
+    <p class="rverdict"><span class="pill p-ok">裏取り完了</span>国の指針と照合＝矛盾ゼロ</p>
+    <p class="rbody">アプリの画面文言ルール15条を、出入国在留管理庁・文化庁の公式ガイドラインと照合。全て整合し、さらに<b>新ルール6つ</b>（3つ以上は箇条書き・推測表現の禁止・範囲記号「〜」の禁止など）を追加してルール集v2に。</p>
+  </div>
+
+  <div class="card">
+    <p class="rtitle">📡 アプリの配り方・保存の作法（軽量調査）</p>
+    <p class="rverdict"><span class="pill p-keep">現状維持</span>現行方式を3点とも追認</p>
+    <p class="rbody">ブラウザ保存が約7日で消え得る仕様は健在→<b>📤控え保存の義務は正しい</b>。共有フォルダ方式はChrome/Edge限定と確定→社内前提ではOK。スマホのホーム画面アプリ化も日本では健在。</p>
+  </div>
+
+  <div class="card">
+    <p class="rtitle">🛡️ AIが書いたコードの検証手法</p>
+    <p class="rverdict"><span class="pill p-new">新手法2つ</span>＋「やってはいけない」3つ</p>
+    <p class="rbody">採用=<b>わざと壊したコードを検証器が何%見抜けるか測る「変異注入」</b>（検証力に物差しがつく）と、<b>要求1行↔テスト1本の対応表</b>（意図の取り違え対策）。やってはいけない=小型AIに品質判定させる（提示の仕方だけで判定が最大56ポイント動く）・小型AIにテストをゼロから書かせる・自動リトライの効果を当てにする。</p>
+    <p class="votes">15確認 / 10棄却</p>
+  </div>
+
+  <div class="card">
+    <p class="rtitle">🖥️ 小型ローカルAI（14B級）の使いこなし</p>
+    <p class="rverdict"><span class="pill p-ok">自前実測2件が世界と一致</span></p>
+    <p class="rbody">新しく採用候補になったのは「<b>候補を10個作らせて選ぶ</b>」方式（精度+5〜20%・査読論文）と「<b>修復リトライは2回で打ち切り</b>」則。一方で「丸写し問題の解決法」は世界の文献でもまだ確立しておらず、<b>うちの実測が世界最先端のデータ</b>という状態。</p>
+    <p class="votes">7確認 / 18棄却（検証がもっとも厳しく機能した回）</p>
+  </div>
+
+  <div class="card">
+    <p class="rtitle">🏛️ 6本目の柱はあるか？（設計哲学の追試）</p>
+    <p class="rverdict"><span class="pill p-keep">結論: ない</span>5本柱で確定</p>
+    <p class="rbody">流行の4候補（progressive enhancement・デザイントークン・カームテクノロジー・プライバシーバイデザイン）を検証→いずれも柱には値せず。デザイントークンは「小規模なら素のCSS変数で十分」と実務側も一致＝<b>今のやり方が正解</b>。「通知は既定ゼロ」など使える部分だけ既存柱に吸収。</p>
+    <p class="votes">11確認 / 14棄却</p>
+  </div>
+
+  <div class="card">
+    <p class="rtitle">🤝 属人化解消の学術的裏付け</p>
+    <p class="rverdict"><span class="pill p-ok">設計は学術と整合</span>＋最大の敵が判明</p>
+    <p class="rbody">「その仕事、あの人しかできない」を解消する道具箱の設計が、判断知識を引き出す実証済み手法（CDM）と構造一致。そして最大の障壁は技術ではなく<b>「知識を出すと自分の価値が下がる」という気持ち（実証で障壁の42%と最多）</b>。→記録した人の名前を「教えてくれた人」として残す設計に反映。</p>
+    <p class="votes">17確認 / 8棄却</p>
+  </div>
+
+  <div class="card">
+    <p class="rtitle">🎨 画像・音楽・動画の生成AI 2026年動向</p>
+    <p class="rverdict"><span class="pill p-keep">現状維持</span>乗り換え根拠なし＋ライセンス確定</p>
+    <p class="rbody">「新型が凄い」系のネット情報は検証にかけたら<b>17件全滅</b>（誇大発表と実測の乖離がこの分野で最も酷い）。今の制作スタック（画像・音楽・動画の4本柱）は動かす必要なし。収穫は<b>商用ライセンスの一次確認</b>（音楽・動画の主力モデルが商用利用可と原文で確定）と、「同じ歌手の声を保ち続ける技術」が世界的にまだ空白という発見。</p>
+    <p class="votes">8確認 / 17棄却</p>
+  </div>
+
+  <div class="card">
+    <p class="rtitle">💡 調査のやり方そのものも進化（副産物）</p>
+    <p class="rverdict"><span class="pill p-new">eco版調査ハーネス</span>コスト約1/3で同品質</p>
+    <p class="rbody">機械的な作業（検索・精読・検証投票）を軽量AIに、判断（問いの分解・統合）を上位AIに分担させる<b>eco版</b>を開発。5回の実測でコストは従来の約1/3・検証の厳しさはそのまま——今後の調査はこの方式が標準になります。</p>
+  </div>
+
+  <div class="note">
+    <b>この部屋の約束</b>: ここに載るのは「AIが3票の反証審査を生き残った知見」だけです。棄却された主張も「信じてはいけないリスト」として内部に保存し、同じ誤情報に二度と騙されない仕組みにしています。出典付きの詳細レポートは研究文書（内部保管）にあります。
+  </div>
+
+  <footer>★HOSHI 研究室 ／ 2026-07-10 大調査 ／ 完全ローカル志向・検証第一</footer>
+</div>
+</body>
+</html>
