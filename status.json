@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-07-10 17:01:06",
+  "generated_at": "2026-07-10 17:07:06",
   "gpu": {
     "occupant": "copy_ab_experiment_#17（fable5-20260710）",
-    "note": "経過191s / 目安あと約56分",
-    "vram_used_gb": 10.4,
+    "note": "経過551s / 目安あと約50分",
+    "vram_used_gb": 10.2,
     "vram_total_gb": 15.9,
-    "util": 97,
+    "util": 98,
     "lock": {
       "locked": true,
       "holder": {
@@ -13,7 +13,7 @@
         "session": "fable5-20260710",
         "job": "copy_ab_experiment_#17",
         "started_at": "2026-07-10T16:57:54+0900",
-        "age_sec": 191,
+        "age_sec": 551,
         "alive": true,
         "est_minutes": 60
       },
@@ -41,7 +41,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-10 16:59",
+    "updated": "2026-07-10 17:05",
     "current": null
   },
   "queue": [
@@ -121,7 +121,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 98
+    "push_today": 99
   },
   "ai_works": [
     {
@@ -198,8 +198,8 @@
     }
   ],
   "resources": {
-    "cpu_pct": 4,
-    "mem_pct": 42,
+    "cpu_pct": 5,
+    "mem_pct": 50,
     "mem_total_gb": 31.7,
     "disk_used_gb": 260.1,
     "disk_free_gb": 1601.6
