@@ -1,0 +1,2656 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>購買サーチ v31.2</title>
+<script src="lib/chart.umd.min.js"></script>
+<script src="lib/xlsx.full.min.js"></script>
+<script src="ocr_postprocess.js"></script>
+<style>
+:root{
+  --bg:#0a0e1a; --bg-card:#161b2e; --bg-elev:#1f2640;
+  --text:#ecf0f1; --text-sub:#aeb9c4; --text-mute:#8b93b8;
+  --cyan:#22d3ee; --green:#10b981; --orange:#f59e0b; --red:#ef4444;
+  --border:#2a3150; --border-strong:#3a4470;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI','Meiryo',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6}
+a{color:var(--cyan)}
+kbd{background:var(--bg-elev);border:1px solid var(--border-strong);border-radius:3px;padding:1px 6px;font-size:11px}
+.wrap{max-width:1100px;margin:0 auto;padding:0 16px 60px}
+
+/* ヘッダー */
+header{background:linear-gradient(135deg,rgba(34,211,238,0.10),rgba(59,130,246,0.05));border-bottom:1px solid var(--border);padding:16px 0;margin-bottom:18px}
+header .wrap{padding-top:0;padding-bottom:0}
+.logo{font-size:20px;font-weight:800;color:var(--cyan);display:flex;align-items:center;gap:8px;margin:0}/* V29: h1化に伴いデフォルト余白を打消し=見た目不変 */
+.logo .sub{font-size:11px;font-weight:400;color:var(--text-mute);letter-spacing:1px}
+
+/* 検索バー */
+.searchbar{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:18px}
+.searchbar .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.searchbar input[type=text]{flex:1;min-width:200px;padding:10px 14px;background:var(--bg);border:1px solid var(--border-strong);border-radius:8px;color:var(--text);font-size:15px}
+.searchbar input[type=text]:focus{outline:none;border-color:var(--cyan)}
+.btn{padding:9px 16px;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;background:var(--bg-elev);color:var(--text);transition:opacity .15s}
+.btn:hover{opacity:.88}
+.btn.primary{background:linear-gradient(135deg,var(--cyan),#3b82f6);color:#06121f}
+.btn.green{background:var(--green);color:#04150d}
+.btn.ghost{background:transparent;border:1px solid var(--border-strong);color:var(--text-sub)}
+.btn.sm{padding:4px 10px;font-size:11.5px}
+.site-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.pill{padding:4px 11px;border-radius:20px;font-size:11.5px;cursor:pointer;border:1px solid var(--border-strong);background:transparent;color:var(--text-sub);user-select:none}
+.pill.on{background:var(--cyan);color:#06121f;border-color:var(--cyan);font-weight:700}
+.searchbar .hint{font-size:11px;color:var(--text-mute);margin-top:8px}
+
+/* 統計バー */
+.stats{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.stat{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:10px 16px;flex:1;min-width:120px}
+.stat .v{font-size:20px;font-weight:800;color:var(--cyan)}
+.stat .l{font-size:11px;color:var(--text-mute)}
+
+/* グループ */
+.group{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;margin-bottom:14px;overflow:hidden}
+.group-head{display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;background:var(--bg-elev);user-select:none}
+.group-head:hover{background:#252d4d}
+.group-name{font-size:15px;font-weight:800;color:var(--text)}
+.group-meta{font-size:11.5px;color:var(--text-mute)}
+.group-spacer{flex:1}
+.group-toggle{font-size:13px;color:var(--text-sub);transition:transform .2s}
+.group.collapsed .group-toggle{transform:rotate(-90deg)}
+.group.collapsed .group-body{display:none}
+.group-body{padding:12px 16px}
+.group-actions{display:flex;gap:6px}
+
+/* 商品カード */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.card{background:var(--bg-elev);border:1px solid var(--border);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;position:relative}
+.card.best{border-color:var(--green);box-shadow:0 0 0 1px var(--green) inset}
+.card-img{height:90px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:6px;overflow:hidden}
+.card-img img{max-height:90px;max-width:100%;object-fit:contain}
+.card-img .noimg{color:#999;font-size:11px}
+.card-site{font-size:10px;padding:1px 7px;border-radius:8px;background:var(--bg);color:var(--text-sub);align-self:flex-start}
+.card-site.Amazon{background:#ff9900;color:#06121f}
+.card-site.楽天{background:#bf0000;color:#fff}
+.card-site.Yahoo{background:#ff0033;color:#fff}
+.card-site.MonotaRO{background:#009b4c;color:#fff}
+.card-site.オレンジブック{background:#f57c00;color:#fff}
+.card-site.ミスミ{background:#003e92;color:#fff}
+.card-title{font-size:12px;font-weight:600;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:34px}
+.card-price{font-size:18px;font-weight:800;color:var(--green)}
+.card-price .yen{font-size:12px}
+.card-trend{font-size:11px;font-weight:700}
+.card-trend.down{color:var(--green)}
+.card-trend.up{color:var(--red)}
+.card-trend.flat{color:var(--text-mute)}
+.card-delivery{font-size:10.5px;color:var(--text-mute)}
+.card-score{position:absolute;top:8px;right:8px;font-size:11px;font-weight:800;padding:2px 7px;border-radius:8px;background:var(--bg);border:1px solid var(--border-strong)}
+.card-score.gold{background:var(--orange);color:#1a1000;border-color:var(--orange)}
+.card-score.silver{background:#9ca3af;color:#0a0a0a;border-color:#9ca3af}
+.card-btns{display:flex;gap:6px;margin-top:auto;flex-wrap:wrap}/* V29.1: 44px化でカード幅を超える分は折り返し（はみ出し修正・干場実機FB 07-10） */
+.card-btns .btn{flex:1}
+.card-btns .btn.icon{flex:0 0 auto;padding:4px 6px;min-width:40px;min-height:36px}/* V29.1: タップ域確保と1段収まりの両立（44→40px） */
+#staleBanner{display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:var(--bg-card);border:1px solid var(--orange);border-radius:10px;padding:8px 12px;margin:10px 0;font-size:13px;color:var(--text)}/* V29: 鮮度バナー */
+#staleBanner.hidden{display:none}
+/* V31.1: 🧺チーム籠を右側に並べて1画面で見る表示（干場FB・切替=ヘッダー🧺ボタン・状態は記憶） */
+#teamPanel{position:fixed;top:0;right:0;bottom:0;width:min(460px,44vw);background:var(--bg);border-left:2px solid var(--border-strong);z-index:40;display:flex;flex-direction:column;box-shadow:-8px 0 24px #0004}
+#teamPanel.hidden{display:none}
+#teamPanel .tp-head{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-elev);border-bottom:1px solid var(--border);font-size:13px;font-weight:700}
+#teamPanel iframe{flex:1;border:none;width:100%;background:var(--bg)}
+body.teampanel{padding-right:min(460px,44vw)}
+@media(max-width:1099px){#teamPanel,#teamPanel.hidden{display:none}body.teampanel{padding-right:0}}/* 狭い画面は従来どおり別ウィンドウで開く */
+.card-btns .btn.icon.pin-on{color:#f59e0b;border-color:#f59e0b;font-weight:800}
+.card-pin{position:absolute;top:8px;left:8px;font-size:14px;color:#f59e0b;text-shadow:0 0 6px rgba(245,158,11,.45)}
+
+/* 価格グラフ */
+.chart-box{margin-top:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;height:200px}
+
+/* 空状態 */
+.empty{text-align:center;padding:50px 20px;color:var(--text-mute)}
+.empty .big{font-size:40px;margin-bottom:14px}
+.empty h2{color:var(--text-sub);font-size:16px;margin-bottom:10px}
+.empty ol{display:inline-block;text-align:left;font-size:13px;line-height:2;color:var(--text-sub)}
+
+/* トースト */
+#toast{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--bg-card);border:1px solid var(--cyan);border-left:4px solid var(--cyan);border-radius:8px;padding:10px 16px;font-size:12.5px;box-shadow:0 6px 20px rgba(0,0,0,.5);min-width:220px;animation:slidein .25s}
+.toast.warn{border-color:var(--orange);border-left-color:var(--orange)}
+.toast.err{border-color:var(--red);border-left-color:var(--red)}
+.toast .tt{font-weight:700;margin-bottom:2px}
+@keyframes slidein{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* モーダル */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:var(--bg-card);border:1px solid var(--border-strong);border-radius:12px;padding:22px;max-width:480px;width:100%}
+.modal h2{font-size:16px;margin-bottom:14px;color:var(--cyan)}
+.modal input[type=text]{width:100%;padding:9px 12px;background:var(--bg);border:1px solid var(--border-strong);border-radius:7px;color:var(--text);font-size:14px;margin-bottom:12px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+.hidden{display:none!important}
+.text-mute{color:var(--text-mute)}
+/* v24: ワイドモーダル（一括更新・価格ウォッチ）と表 */
+.modal.wide{max-width:840px}
+.wtable{width:100%;border-collapse:collapse;font-size:12px}
+.wtable th,.wtable td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}
+.wtable th{color:var(--text-mute);font-size:11px;position:sticky;top:0;background:var(--bg-card);z-index:1}
+.wtable td.num{text-align:right}
+.wtable td.tt{max-width:260px;overflow:hidden;text-overflow:ellipsis}
+.wtable input{width:90px;padding:4px 8px;background:var(--bg);border:1px solid var(--border-strong);border-radius:6px;color:var(--text);font-size:12px;text-align:right}
+.tbl-scroll{max-height:46vh;overflow:auto;border:1px solid var(--border);border-radius:8px}
+/* v24: 同意ゲート */
+#consentGate{position:fixed;inset:0;z-index:99000;background:rgba(4,6,14,.93);display:flex;align-items:center;justify-content:center;padding:20px}
+#consentGate .cg-box{max-width:560px;width:100%;background:var(--bg-card);border:1px solid var(--border-strong);border-radius:12px;padding:24px;max-height:92vh;overflow:auto}
+#consentGate h2{font-size:17px;color:var(--cyan);margin-bottom:12px}
+#consentGate ul{margin:10px 0 14px 20px;font-size:12.5px;line-height:1.9;color:var(--text-sub)}
+#consentGate label{display:flex;gap:8px;align-items:flex-start;font-size:13px;cursor:pointer;background:var(--bg-elev);border:1px solid var(--border-strong);border-radius:8px;padding:10px 12px}
+#consentGate .btn:disabled{opacity:.35;cursor:not-allowed}
+/* ===== v28: ♿ インクルーシブデザイン（見やすさ設定） ===== */
+/* キーボード操作: フォーカス位置を常に可視化 */
+:focus-visible{outline:3px solid var(--cyan);outline-offset:2px;border-radius:4px}
+/* 文字サイズ: 大 / 特大（Edge配布前提のためzoomで全体を等倍拡大＝レイアウト崩れなし） */
+body.a11y-lg{zoom:1.15}
+body.a11y-xl{zoom:1.3}
+/* くっきり表示（ハイコントラスト）: 白地・黒文字・太字・強い枠線。🌓背景より優先 */
+body.a11y-contrast{--bg:#ffffff;--bg-card:#ffffff;--bg-elev:#f2f2f2;--text:#000000;--text-sub:#111111;--text-mute:#333333;--cyan:#005a9e;--green:#006644;--orange:#8a4b00;--red:#b00020;--border:#000000;--border-strong:#000000}
+body.a11y-contrast .btn,body.a11y-contrast .pill{border:2px solid #000;font-weight:800}
+body.a11y-contrast .btn.primary{background:#005a9e;color:#fff}
+body.a11y-contrast .btn.green{background:#006644;color:#fff}
+body.a11y-contrast .card,body.a11y-contrast .group,body.a11y-contrast .stat,body.a11y-contrast .searchbar{border:2px solid #000}
+body.a11y-contrast .toast{border-width:2px;border-left-width:6px}
+body.a11y-contrast :focus-visible{outline:4px solid #b00020}
+/* ボタンに名前を表示（アイコンだけでは分からない人向け） */
+.blabel{display:none}
+body.a11y-labels .blabel{display:inline;margin-left:3px;font-size:10.5px;font-weight:700}
+body.a11y-labels .card-btns .btn.icon{flex:1 1 auto;padding:6px 8px}
+/* ゆったり表示（行間・余白・タップ領域を拡大） */
+body.a11y-space{line-height:2}
+body.a11y-space .btn{padding:12px 18px}
+body.a11y-space .btn.sm{padding:9px 14px;font-size:12.5px}
+body.a11y-space .pill{padding:8px 16px;font-size:12.5px}
+body.a11y-space .card{gap:10px;padding:14px}
+body.a11y-space .cards{grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+body.a11y-space .card-btns .btn.icon{padding:9px 13px}
+/* ライトテーマ（🌓 背景ボタンで切替） */
+body.light{--bg:#f3f5f9;--bg-card:#ffffff;--bg-elev:#e9edf4;--text:#1b2430;--text-sub:#3f4c63;--text-mute:#69768f;--border:#d7dde8;--border-strong:#b9c3d4}
+body.light .group-head:hover{background:#dde4ef}
+body.light .toast{box-shadow:0 6px 20px rgba(60,70,90,.25)}
+body.light .card-img{border:1px solid var(--border)}
+/* === スマホ対応（個人の価格調査をスマホで） 640px以下 === */
+@media(max-width:640px){
+  /* ヘッダー: 1行詰め込みで潰れていたのを折返し＋横書き固定に */
+  header .wrap{flex-wrap:wrap;gap:6px 8px}
+  .logo{font-size:20px;line-height:1.25}
+  .logo .sub{display:none}                       /* 長い副題は狭幅で隠す（版数はタブ名にあり） */
+  header .wrap>span{display:none}                 /* 詰め用スペーサを無効化しボタンを左詰め */
+  header .btn.sm{white-space:nowrap;flex:0 0 auto;font-size:12px;padding:6px 9px}
+  /* モーダル: 画面幅にフィット（中の表は既存の横スクロールで対応） */
+  .modal{padding:18px}
+  .modal.wide{max-width:100%}
+  /* 横はみ出しの保険 */
+  html,body{overflow-x:hidden}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap" style="display:flex;align-items:center;gap:10px">
+    <h1 class="logo">🔎 購買サーチ <span class="sub">v31.2 — 買いたいものを集めて、価格を追う</span></h1><!-- V29: 文書見出し階層のh1（見た目は.logoで不変） -->
+    <span style="flex:1"></span>
+    <button class="btn ghost sm" id="teamBasketBtn" title="チーム買い物籠を開く（届け先別の籠にみんなで入れて、精査・承認して買う）">🧺 チーム籠</button><!-- V31 -->
+    <button class="btn ghost sm" id="howtoBtn" title="価格の追い方（3ステップ）の図解をもう一度見る">❓ 使い方</button><!-- V29 -->
+    <button class="btn ghost sm" id="a11yBtn" title="文字の大きさ・くっきり表示・ボタンの名前表示など、自分に合う見やすさに変えられます">♿ 見やすさ</button>
+    <button class="btn ghost sm" id="themeBtn" title="背景の白／黒を切り替え">🌓 背景</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- 検索バー -->
+  <div class="searchbar">
+    <div class="row">
+      <input type="text" id="kw" placeholder="買いたいもの（例：ボールペン、付箋、軍手）" aria-label="買いたいものの検索キーワード" autocomplete="off">
+      <button class="btn primary" id="searchBtn">🌐 EC で検索</button>
+      <button class="btn ghost" id="closeTabsBtn" style="display:none">🚪 開いたタブを閉じる</button>
+    </div>
+    <div class="site-pills" id="sitePills"></div>
+    <div class="add-row" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px">
+      <button class="btn green sm" id="manualAddBtn">✏️ 手動で追加</button>
+      <button class="btn ghost sm" id="importXlsxBtn">📄 Excelで取込</button>
+      <input type="file" id="xlsxFileInput" accept=".xlsx,.xlsm,.csv" class="hidden">
+      <button class="btn ghost sm hidden" id="favCheckBtn" title="★お気に入りの商品ページをまとめて開いて価格を確認">📈 ★の価格をチェック</button>
+      <button class="btn ghost sm hidden" id="bulkUpdateBtn" title="登録商品の今日の価格をまとめて更新（半自動巡回 または 手入力）">🔄 価格を一括更新</button>
+      <button class="btn ghost sm hidden" id="watchBtn" title="全商品の価格推移をまとめて確認（最安・最高・平均・前回比）">📊 価格ウォッチ</button>
+      <button class="btn ghost sm hidden" id="reportBtn" title="比較表＋価格推移つきの印刷用レポートを書き出し（発注検討・上長確認用）">📑 検討レポート</button>
+      <button class="btn ghost sm hidden" id="poBtn" title="選んだ商品から捺印欄つきの注文書を作成・印刷（転記作業なし）">🧾 注文書</button><!-- V30 -->
+      <button class="btn ghost sm hidden" id="ordersBtn" title="発注記録の一覧・集計（今月/累計・現在価格との差・CSV出力）">🧾 発注管理</button>
+      <button class="btn ghost sm" id="shareBtn" title="チームの共有フォルダ（Box等）経由で商品リスト・価格履歴を持ち寄り（社内限定）">🤝 チーム共有</button>
+      <span style="flex:1"></span>
+      <button class="btn ghost sm" id="backupBtn" title="商品リスト・価格履歴・追加サイトをまるごと1ファイルに保存（別PCへの引越しにも）">💾 控えを保存</button>
+      <button class="btn ghost sm" id="restoreBtn" title="「💾 控えを保存」で作ったファイルから復元（今のデータと合体もできます）">📥 復元</button>
+      <input type="file" id="restoreFileInput" accept=".json,application/json" class="hidden">
+      <button class="btn ghost sm" id="resetBtn">🗑 全リセット</button>
+    </div>
+    <div class="row hidden" id="filterRow" style="margin-top:8px">
+      <input type="text" id="filterBox" placeholder="🔎 絞り込み — 品名・サイト・フォルダ・メモの一部を入力（例：ボールペン）" autocomplete="off" style="font-size:13px;padding:7px 12px">
+      <button class="btn ghost sm" id="filterClearBtn" title="絞り込みを解除">解除</button>
+    </div>
+    <div class="hint" id="kwChipRow" style="margin-top:8px;display:none">📁 いま集めているフォルダ: <b id="kwChipName" style="color:var(--cyan)"></b>（検索後に取り込んだ商品はこのフォルダに入ります）<button class="btn ghost sm" id="kwClearBtn" title="フォルダ固定を解除して自動分類に戻す" style="margin-left:6px">解除</button></div>
+    <div class="hint" style="margin-top:8px">💡 <b>拡張機能</b>があれば、EC サイトで商品を<b>クリック</b>するだけでこのリストに自動で集まります（EC ページの「★ このページを記録」ボタンも利用可）。<b>拡張が無くても</b>「✏️ 手動で追加」「📄 Excelで取込」で価格比較できます。</div>
+    <div class="hint" id="bridgeStatus" style="margin-top:6px">🔌 拡張連携: 確認中…</div>
+  </div>
+
+  <!-- 統計 -->
+  <div id="staleBanner" class="hidden"></div><!-- V29: 鮮度の能動化（記録が古い時だけ・1日1回） -->
+  <div class="stats" id="stats"></div>
+
+  <!-- グループリスト -->
+  <div id="groupList"></div>
+
+  <!-- 空状態 -->
+  <div class="empty hidden" id="emptyState">
+    <div class="big">🛒</div>
+    <h2>まだ商品がありません</h2>
+    <p class="text-mute" style="font-size:13px;margin-bottom:14px">集め方は2通り。<b>拡張機能が無くても</b>使えます。</p>
+    <ol>
+      <li><b>拡張機能あり</b>：上で「EC で検索」→ 気になる商品を<b>クリック</b>すると自動で集まります</li>
+      <li><b>拡張機能なし</b>：「✏️ 手動で追加」または「📄 Excelで取込」で登録します</li>
+      <li>同じ商品を後日また見ると、<b>価格変動</b>が記録されます</li>
+    </ol>
+    <div style="margin-top:18px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+      <button class="btn green sm" id="emptyManualBtn">✏️ 手動で追加</button>
+      <button class="btn ghost sm" id="emptyImportBtn">📄 Excelで取込</button>
+      <button class="btn ghost sm" id="demoBtn">🚀 サンプルで動きを見る</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- V31.1: チーム籠サイドパネル（1画面で個人+チームを見る・iframeでチーム画面をそのまま表示） -->
+<div id="teamPanel" class="hidden" role="complementary" aria-label="チーム買い物籠パネル">
+  <div class="tp-head">🧺 チーム買い物籠
+    <span style="flex:1"></span>
+    <button class="btn sm" id="tpConnect" title="チーム籠の共有フォルダ（Box）を選んで接続（ブラウザの制限でパネルの中からは選べないため、ここから選びます）">📁 フォルダ接続</button>
+    <button class="btn ghost sm" id="tpPopout" title="別ウィンドウで大きく開く">⧉ 別窓</button>
+    <button class="btn ghost sm" id="tpClose" aria-label="チーム籠パネルを閉じる" title="パネルを閉じる（🧺ボタンで再表示）">✕</button>
+  </div>
+  <iframe id="tpFrame" title="チーム買い物籠"></iframe>
+</div>
+<div id="toast" role="status" aria-live="polite"></div><!-- V29: 通知をスクリーンリーダーへ読み上げ -->
+<div id="modalRoot"></div>
+<!-- 致命エラー/起動失敗の可視オーバーレイ（白画面回避） -->
+<div id="fatalOverlay" class="hidden" style="position:fixed;inset:0;z-index:99999;background:rgba(10,14,26,.96);display:flex;align-items:center;justify-content:center;padding:24px">
+  <div style="max-width:560px;background:#161b2e;border:1px solid #ef4444;border-left:4px solid #ef4444;border-radius:12px;padding:24px">
+    <div style="font-size:17px;font-weight:800;color:#ef4444;margin-bottom:10px">⚠ 画面の起動に問題が発生しました</div>
+    <div id="fatalOverlayMsg" style="font-size:13px;line-height:1.7;color:#aeb9c4;white-space:pre-wrap;word-break:break-word"></div>
+    <div style="margin-top:16px;font-size:12px;color:#8b93b8">対処: 再読み込みしても直らない場合は、このツールのファイル一式（lib フォルダ含む）が揃っているか確認してください。</div>
+    <div style="margin-top:16px;text-align:right"><button class="btn primary" onclick="location.reload()">🔄 再読み込み</button></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+// =============================================================
+// 堅牢起動レイヤ（白画面/無言失敗の回避）
+// =============================================================
+function showFatal(message){
+  try{
+    var ov=document.getElementById('fatalOverlay'), ms=document.getElementById('fatalOverlayMsg');
+    if(ov&&ms){ ms.textContent=String(message||'原因不明のエラー'); ov.classList.remove('hidden'); }
+  }catch(_e){}
+}
+window.addEventListener('error', function(ev){
+  try{ console.error('runtime error', (ev&&(ev.error||ev.message))||ev); }catch(_e){}
+  try{ if(typeof toast==='function') toast('エラーが発生しました', (ev&&(ev.message||(ev.error&&ev.error.message)))||'', 'err', 6000); }catch(_e){}
+});
+window.addEventListener('unhandledrejection', function(ev){ try{ console.error('unhandledrejection', ev&&ev.reason); }catch(_e){} });
+function chartLibReady(){ return typeof window.Chart==='function'; }
+// グループ名→DOM安全なcanvas id（描画側と参照側で同一の変換を使い不整合を防ぐ）
+function chartId(name){ return 'chart_'+encodeURIComponent(String(name)).replace(/[%.!~*'()-]/g,'_'); }
+function showChartMissing(name){
+  try{
+    var cv=document.getElementById(chartId(name));
+    var box=cv&&cv.closest?cv.closest('.chart-box'):null;
+    if(box){ box.textContent=''; var d=document.createElement('div'); d.className='text-mute'; d.style.cssText='font-size:12px;text-align:center;padding:18px'; d.textContent='📈 価格グラフ部品を読み込めませんでした（lib/chart.umd.min.js）。価格・値下がりの数値表示はそのままご利用いただけます。'; box.appendChild(d); }
+  }catch(_e){}
+}
+
+// テーマ切替（🌓 背景）
+function applyTheme(t){ try{ document.body.classList.toggle('light', t==='light'); }catch(_e){} }
+// ===== v28: ♿ 見やすさ設定（インクルーシブデザイン） =====
+// 誰か専用の別版を作るのではなく、全員が自分に合わせて切り替えられる形にする（端末ごとに保存）
+let a11y = { font:'std', contrast:false, labels:false, space:false };
+function a11yLoad(){
+  const v = safeParse('psv22_a11y', null);
+  if(v && typeof v==='object'){
+    a11y.font = (v.font==='lg'||v.font==='xl') ? v.font : 'std';
+    a11y.contrast = !!v.contrast;
+    a11y.labels = !!v.labels;
+    a11y.space = !!v.space;
+  }
+}
+function a11ySave(){ try{ localStorage.setItem('psv22_a11y', JSON.stringify(a11y)); }catch(_e){} }
+function applyA11y(){
+  const b=document.body;
+  b.classList.toggle('a11y-lg', a11y.font==='lg');
+  b.classList.toggle('a11y-xl', a11y.font==='xl');
+  b.classList.toggle('a11y-contrast', a11y.contrast);
+  b.classList.toggle('a11y-labels', a11y.labels);
+  b.classList.toggle('a11y-space', a11y.space);
+}
+window.openA11y = function(){
+  openModal(`
+    <h2>♿ 見やすさの設定</h2>
+    <p class="text-mute" style="font-size:12.5px;margin-bottom:12px">自分に合う表示に変えられます。変更はその場で反映され、<b>この端末にだけ</b>保存されます（他の人には影響しません）。</p>
+    <div style="margin-bottom:12px">
+      <div style="font-size:12.5px;font-weight:700;margin-bottom:6px">🔠 文字の大きさ</div>
+      <label style="margin-right:14px;cursor:pointer"><input type="radio" name="ayFont" value="std" ${a11y.font==='std'?'checked':''}> 標準</label>
+      <label style="margin-right:14px;cursor:pointer"><input type="radio" name="ayFont" value="lg" ${a11y.font==='lg'?'checked':''}> 大きい</label>
+      <label style="cursor:pointer"><input type="radio" name="ayFont" value="xl" ${a11y.font==='xl'?'checked':''}> 特大</label>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:6px">
+      <label style="cursor:pointer;font-size:13px"><input type="checkbox" id="ayContrast" ${a11y.contrast?'checked':''}> 🔲 <b>くっきり表示</b> — 白地に黒文字・太い枠線（まぶしさや色の見分けが苦手な方に）</label>
+      <label style="cursor:pointer;font-size:13px"><input type="checkbox" id="ayLabels" ${a11y.labels?'checked':''}> 🔤 <b>ボタンに名前を表示</b> — ★や📈などの記号に文字の説明を付けます</label>
+      <label style="cursor:pointer;font-size:13px"><input type="checkbox" id="aySpace" ${a11y.space?'checked':''}> 📐 <b>ゆったり表示</b> — 行間とボタンを大きく（押し間違い防止）</label>
+    </div>
+    <p class="text-mute" style="font-size:11.5px">キーボードだけでも操作できます（Tabで移動・Enterで決定・Escで閉じる）。</p>
+    <div class="modal-actions">
+      <button class="btn ghost" id="ayReset">↩ すべて標準に戻す</button>
+      <button class="btn primary" onclick="closeModal()">完了</button>
+    </div>
+  `);
+  const sync=()=>{ a11ySave(); applyA11y(); };
+  $$('#modalRoot input[name="ayFont"]').forEach(rd=>{
+    rd.onchange=()=>{ if(rd.checked){ a11y.font=rd.value; sync(); } };
+  });
+  const c=$('#ayContrast'); if(c) c.onchange=()=>{ a11y.contrast=c.checked; sync(); };
+  const l=$('#ayLabels'); if(l) l.onchange=()=>{ a11y.labels=l.checked; sync(); };
+  const sp=$('#aySpace'); if(sp) sp.onchange=()=>{ a11y.space=sp.checked; sync(); };
+  const rs=$('#ayReset');
+  if(rs) rs.onclick=()=>{
+    a11y={font:'std',contrast:false,labels:false,space:false};
+    sync(); closeModal(); openA11y();
+    toast('↩ 標準の表示に戻しました','','');
+  };
+};
+// 収集先フォルダ表示チップ
+function updateKwChip(){
+  const row=document.getElementById('kwChipRow'), nm=document.getElementById('kwChipName');
+  if(!row||!nm) return;
+  if(state.lastKeyword){
+    const tok=(state.lastKeyword.split(/[\s　]+/)[0]||state.lastKeyword);
+    nm.textContent=canonicalizeGroup(tok);
+    row.style.display='';
+  }else{
+    row.style.display='none';
+  }
+}
+
+// =============================================================
+// 購買サーチ v24 — 購入支援ツール（2 ツール分割のフェーズ1）
+// ※ファイル名 purchase_search_v22.html は拡張(host_bridge.js)の識別子のため変更しない
+// =============================================================
+const $ = (s,r)=>(r||document).querySelector(s);
+const $$ = (s,r)=>Array.from((r||document).querySelectorAll(s));
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+// v24.1: ローカル日付（toISOStringはUTC=日本の朝9時前は前日になり、履歴日付・同日上書き・日次レート制限がずれるため）
+function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function yen(n){return n==null?'-':'¥'+Number(n).toLocaleString();}
+// プロトコル検証: http(s) のみ通す。javascript: 等のスキーマ injection を無害化
+function safeUrl(u){u=String(u==null?'':u);return /^https?:\/\//i.test(u)?u:'#';}
+
+// ----- EC サイト定義 -----
+const SITES = [
+  {id:'Amazon',     url:'https://www.amazon.co.jp/s?k='},
+  {id:'楽天',       url:'https://search.rakuten.co.jp/search/mall/'},
+  {id:'Yahoo',      url:'https://shopping.yahoo.co.jp/search?p='},
+  {id:'MonotaRO',   url:'https://www.monotaro.com/s/q-'},
+  {id:'オレンジブック', url:'https://www.orange-book.com/ja/c/search/?searchText='},
+  {id:'ミスミ',     url:'https://jp.misumi-ec.com/vona2/result/?Keyword='},
+];
+const SITE_TRUST = {'MonotaRO':90,'オレンジブック':90,'ミスミ':95,'Amazon':85,'楽天':80,'Yahoo':75,'その他':70};
+
+// ----- 状態 -----
+let state = { items:[], groupMeta:{}, activeSites:['Amazon','楽天','MonotaRO'], lastKeyword:'' };
+const charts = {};
+// v25: ユーザー追加の検索サイト（{id,url}・psv22_customSites）。組込SITESと合わせて allSites() で参照する
+let customSites = [];
+function allSites(){ return SITES.concat(customSites); }
+// v25: 絞り込みテキスト（保存しない・画面内だけの一時状態）
+let filterText = '';
+// v25: 旧データ読込時の欠損フィールド補完（targetPrice=狙い値・note=メモ）
+// v27: tags=タグ(複数)・orders=発注記録[{d,q,p,note}] を追加
+function normalizeItem(it){
+  if(!it || typeof it!=='object') return it;
+  if(typeof it.targetPrice!=='number' || !isFinite(it.targetPrice) || it.targetPrice<=0) it.targetPrice=null;
+  if(typeof it.note!=='string') it.note='';
+  if(!Array.isArray(it.priceHistory)) it.priceHistory=[];
+  if(!Array.isArray(it.tags)) it.tags=[];
+  it.tags=it.tags.filter(t=>typeof t==='string'&&t.trim()).map(t=>t.trim().slice(0,20)).slice(0,10);
+  if(!Array.isArray(it.orders)) it.orders=[];
+  it.orders=it.orders.filter(o=>o&&typeof o==='object'&&typeof o.d==='string'&&isFinite(Number(o.q))&&Number(o.q)>0&&isFinite(Number(o.p))&&Number(o.p)>=0)
+    .map(o=>({d:o.d, q:Number(o.q), p:Number(o.p), note:typeof o.note==='string'?o.note.slice(0,40):''}));
+  return it;
+}
+
+function safeParse(key, fallback){
+  try{
+    const raw = localStorage.getItem(key);
+    if(raw==null) return fallback;
+    return JSON.parse(raw);
+  }catch(e){
+    console.error('localStorage 破損: '+key, e);
+    try{ if(typeof toast==='function') toast('保存データの一部が壊れています', key+' を初期化しました', 'warn', 6000); }catch(_e){}
+    return fallback;
+  }
+}
+function load(){
+  const items = safeParse('psv22_items', []);
+  state.items = (Array.isArray(items) ? items : []).map(normalizeItem);
+  const gm = safeParse('psv22_groupMeta', {});
+  state.groupMeta = (gm && typeof gm==='object' && !Array.isArray(gm)) ? gm : {};
+  const as = safeParse('psv22_activeSites', null);
+  if(Array.isArray(as)) state.activeSites = as;
+  try{ const lk=localStorage.getItem('psv22_lastKw'); if(typeof lk==='string') state.lastKeyword=lk; }catch(_e){}
+  // v25: 追加サイト（形式が壊れていたら捨てる・組込と同名は無視）
+  const cs = safeParse('psv22_customSites', []);
+  customSites = (Array.isArray(cs)?cs:[]).filter(s=>
+    s && typeof s.id==='string' && s.id.trim() && typeof s.url==='string' && /^https?:\/\//i.test(s.url)
+    && !SITES.some(b=>b.id===s.id));
+}
+function save(){
+  try{
+    localStorage.setItem('psv22_items', JSON.stringify(state.items));
+    localStorage.setItem('psv22_groupMeta', JSON.stringify(state.groupMeta));
+    localStorage.setItem('psv22_activeSites', JSON.stringify(state.activeSites));
+    localStorage.setItem('psv22_lastKw', state.lastKeyword||'');
+    localStorage.setItem('psv22_customSites', JSON.stringify(customSites));
+  }catch(e){
+    console.error('save失敗', e);
+    if(typeof toast==='function') toast('保存できませんでした','ブラウザの保存容量が一杯か、保存が許可されていない可能性があります（画像の多い商品を減らすと改善することがあります）','err',8000);
+  }
+}
+
+// ----- V29: 取得ヘルス（サイト別の価格読み取り成功/失敗ログ）-----
+// ECサイト側の画面変更でセレクタが切れると価格が静かに読めなくなる（サイレント空振り）。
+// 受信のたびにサイト別で ok/fail を記録し、連続failを「読み取り不調」としてダッシュボードに可視化する。
+let captureLog = safeParse('psv22_captureLog', {}) || {};
+function captureLogRecord(site, ok){
+  const s = String(site||'その他');
+  const e = captureLog[s] = captureLog[s] || {ok:0, fail:0, lastOk:null, lastFail:null, recent:[]};
+  if(ok){ e.ok++; e.lastOk=today(); } else { e.fail++; e.lastFail=today(); }
+  e.recent.push({d:today(), r: ok?'ok':'fail'});
+  if(e.recent.length>30) e.recent=e.recent.slice(-30);  // サイトごと直近30イベントに丸め
+  try{ localStorage.setItem('psv22_captureLog', JSON.stringify(captureLog)); }catch(_e){}
+}
+function captureFailStreak(site){
+  const e=captureLog[site]; if(!e||!e.recent||!e.recent.length) return 0;
+  let n=0; for(let i=e.recent.length-1;i>=0;i--){ if(e.recent[i].r==='fail')n++; else break; }
+  return n;
+}
+function sickSites(){ return Object.keys(captureLog).filter(s=>captureFailStreak(s)>=3); }
+
+// ----- V29: 鮮度の能動化 -----
+const BASE_TITLE = document.title;  // タブタイトルのバッジ用（版表記に依存しない）
+window.dismissStaleBanner = function(){
+  try{ localStorage.setItem('psv22_staleNagDate', today()); }catch(_e){}
+  const sb=document.getElementById('staleBanner'); if(sb) sb.classList.add('hidden');
+};
+
+// ----- グループ推定 -----
+// 「ボールペン 黒」→「ボールペン」。検索キーワードの主要語を採用
+function guessGroup(keyword, title){
+  let k = (keyword||'').trim();
+  if(k){
+    const tok = k.split(/[\s　]+/).filter(Boolean);
+    if(tok.length) return tok[0].slice(0,20);
+  }
+  // キーワードがなければタイトル先頭の名詞っぽい部分（PR/広告などの飾り語は除去）
+  let t = (title||'').trim().replace(/【?\s*(PR|AD|広告|スポンサー)\s*】?/gi,' ').trim();
+  if(t){
+    const m = t.match(/[ぁ-んァ-ヶ一-龠ーA-Za-z0-9]{2,12}/);
+    if(m) return m[0];
+  }
+  return 'その他';
+}
+
+// ----- カテゴリ正規化（同義語＋既存グループへの吸収で「大きい括り」に保つ）-----
+const GROUP_SYNONYMS = [
+  ['モニター','モニタ','ディスプレイ','ワイドディスプレイ','液晶モニタ','液晶ディスプレイ'],
+  ['付箋','ふせん','ポストイット','ポスト・イット'],
+  ['ノートPC','ノートパソコン','ラップトップ'],
+  ['USBメモリ','USBフラッシュ','フラッシュメモリ'],
+];
+function canonicalizeGroup(raw){
+  let g=(raw||'').trim();
+  if(!g) return 'その他';
+  try{ g=g.normalize('NFKC'); }catch(_e){}
+  // 1) 同義語辞書: 一致したら代表語（先頭）へ
+  const low=g.toLowerCase();
+  for(const set of GROUP_SYNONYMS){
+    if(set.some(s=>s.toLowerCase()===low)){ g=set[0]; break; }
+  }
+  // 2) 既存グループへの吸収: 片方がもう片方を含む（2文字以上）なら既存名に寄せる
+  //    例: 「ワイドディスプレイ」⊃「ディスプレイ」→ 既存の「ディスプレイ」へ
+  const names=Object.keys(groupItems());
+  for(const n of names){
+    if(n==='その他'||n.length<2||g.length<2) continue;
+    if(n===g) return n;
+    if(g.includes(n)||n.includes(g)) return n;
+  }
+  return g;
+}
+
+// ----- V29.1: 商品URLの正規化キー -----
+// ECサイトは再訪時に追跡パラメータ（Amazonの/ref=・?qid= 等）をURLへ付けるため、
+// 生URLの完全一致では「同じ商品の再クリック」が別商品として複製され、価格履歴が積み上がらない。
+// 商品を一意に示す部分だけでキー化して照合する（保存URL自体は変えない=「買う」はそのまま）。
+function productKey(u){
+  u = String(u||'');
+  try{
+    // Amazon: ASIN（/dp/XXXXXXXXXX・/gp/product/XXXXXXXXXX）で一意化
+    let m = u.match(/amazon\.co\.jp\/(?:.*\/)?(?:dp|gp\/product)\/([A-Z0-9]{10})/i);
+    if(m) return 'amazon:'+m[1].toUpperCase();
+    const url = new URL(u);
+    // MonotaRO: /g/商品番号
+    m = url.pathname.match(/^\/g\/(\d+)/);
+    if(/(^|\.)monotaro\.com$/.test(url.hostname) && m) return 'monotaro:'+m[1];
+    // 楽天市場・Yahoo!ショッピング: パスが商品を示す（クエリは追跡系）
+    if(/(^|\.)rakuten\.co\.jp$/.test(url.hostname) || /(^|\.)yahoo\.co\.jp$/.test(url.hostname)) return url.hostname+url.pathname;
+    // それ以外（ミスミ=?ProductCode等クエリが商品本体のサイトがある）: 生URLのまま照合
+    return u;
+  }catch(_e){ return u; }  // demo:// や manual:// はそのまま
+}
+
+// ----- 商品の追加/更新（価格履歴つき）-----
+function upsertItem(data){
+  if(!data || !data.url) return;
+  const price = (data.price!=null && data.price!=='') ? Number(data.price) : null;
+  const _pk = productKey(data.url);  // V29.1: 正規化キーで照合（追跡パラメータ違いを同一商品と認識）
+  const idx = state.items.findIndex(it=>productKey(it.url)===_pk);
+  if(idx>=0){
+    // 既存 → 価格履歴に追加
+    // v25.1: 日付ベース記録に統一（同日=上書き／日付が変われば同価格でも毎日1点記録）。
+    // 旧実装は「価格が変わった時だけ」追加だったため、毎日確認しても同価格だと履歴が増えず
+    // 「最終記録日」も古いままになり、同日中の変動は同一日付の重複行になっていた（手動記録と不整合）。
+    const it = state.items[idx];
+    if(price!=null){
+      const t = today();
+      it.priceHistory = it.priceHistory||[];
+      const last = it.priceHistory[it.priceHistory.length-1];
+      if(last && last.d===t){ last.p = price; }
+      else { it.priceHistory.push({d:t, p:price}); }
+      it.price = price;
+    }
+    it.title = data.title || it.title;
+    if(data.image) it.image = data.image;
+    if(data.delivery) it.delivery = data.delivery;
+    it.updatedAt = new Date().toISOString();
+    return {item:it, isNew:false};
+  }
+  // 新規
+  const grp = canonicalizeGroup(guessGroup(data.keyword, data.title));
+  const it = {
+    id: 'i_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),
+    group: grp,
+    site: data.site||'その他',
+    title: data.title||'(商品名なし)',
+    price: price,
+    image: data.image||'',
+    url: data.url,
+    maker: data.maker||'',
+    delivery: data.delivery||'',
+    keyword: data.keyword||'',
+    priceHistory: price!=null ? [{d:today(), p:price}] : [],
+    addedAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    pinned: false,
+    targetPrice: null,  // v25: 狙い値
+    note: '',           // v25: メモ（品番・発注単位など）
+    tags: [],           // v27: タグ（複数分類）
+    orders: [],         // v27: 発注記録 [{d,q,p,note}]
+  };
+  state.items.unshift(it);
+  return {item:it, isNew:true};
+}
+
+// ----- スコア計算（価格50/納期30/信頼20）-----
+function deliveryScore(t){
+  t = (t||'').toLowerCase();
+  if(/即日|当日|今日/.test(t)) return 100;
+  if(/翌日|明日|24時間/.test(t)) return 90;
+  if(/2.{0,2}日|3.{0,2}日/.test(t)) return 75;
+  if(/4.{0,2}日|5.{0,2}日|1.{0,2}週/.test(t)) return 60;
+  if(/送料無料/.test(t)) return 70;
+  return 50;
+}
+function calcScore(item, peers){
+  const prices = peers.map(p=>p.price).filter(p=>p!=null&&p>0);
+  let ps = 50;
+  if(item.price!=null && prices.length){
+    const mn=Math.min(...prices), mx=Math.max(...prices);
+    ps = mn===mx ? 100 : Math.round(100-((item.price-mn)/(mx-mn))*50);
+  }
+  const ds = deliveryScore(item.delivery);
+  const ts = SITE_TRUST[item.site]||70;
+  return Math.round(ps*0.5 + ds*0.3 + ts*0.2);
+}
+function scoreClass(s){ return s>=85?'gold':s>=75?'silver':''; }
+
+// ----- 価格変動 -----
+function priceTrend(item){
+  const h = item.priceHistory||[];
+  if(h.length<2) return null;
+  const cur = h[h.length-1].p, prev = h[h.length-2].p;
+  const diff = cur-prev;
+  if(diff===0) return {dir:'flat', text:'変動なし'};
+  if(diff<0) return {dir:'down', text:'↓¥'+Math.abs(diff).toLocaleString()+' 値下がり'};
+  return {dir:'up', text:'↑¥'+diff.toLocaleString()+' 値上がり'};
+}
+// 価格履歴の統計（最安・最高・平均・記録日数）。価格追跡の中核指標
+function priceStats(item){
+  const ps=(item.priceHistory||[]).map(h=>h.p).filter(p=>p!=null&&p>0);
+  if(!ps.length) return null;
+  const min=Math.min(...ps), max=Math.max(...ps);
+  const avg=Math.round(ps.reduce((a,b)=>a+b,0)/ps.length);
+  return {min, max, avg, n:(item.priceHistory||[]).length, cur:item.price};
+}
+// 現在価格が過去最安（かつ2回以上記録）か＝「今が買い時」のサイン
+function isAllTimeLow(item){
+  const s=priceStats(item);
+  if(!s || s.n<2 || item.price==null) return false;
+  return item.price<=s.min;
+}
+// v25: 狙い値（自分で決めた買値の上限）以下になったか＝もう一つの「買い時」サイン
+function isTargetHit(item){
+  return item.targetPrice!=null && item.price!=null && item.price<=item.targetPrice;
+}
+// ----- v26: 記録の鮮度（最終記録日からの経過日数）-----
+const STALE_DAYS = 7;  // この日数以上 記録が無い商品を「記録が古い」として案内
+function lastRecDate(item){ const h=item.priceHistory||[]; return h.length?h[h.length-1].d:null; }
+function daysSinceRec(item){
+  const d=lastRecDate(item); if(!d) return null;
+  const t=new Date(d+'T00:00:00').getTime();
+  if(!isFinite(t)) return null;
+  return Math.floor((Date.now()-t)/86400000);
+}
+function isStale(item){ const n=daysSinceRec(item); return n!=null && n>=STALE_DAYS; }
+// v27: 30日前の価格（履歴の持ち越し値）と変動率
+function priceAgo(item, days){
+  const h=item.priceHistory||[];
+  if(!h.length) return null;
+  const d=new Date(Date.now()-days*86400000);
+  const cut=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  const past=h.filter(x=>x.d<=cut);
+  return past.length ? past[past.length-1].p : null;
+}
+function pct30(item){
+  const p0=priceAgo(item,30);
+  if(p0==null || !p0 || item.price==null) return null;
+  return Math.round((item.price-p0)/p0*1000)/10;  // 小数1桁%
+}
+// v26: レポート用ミニ推移グラフ（依存なしのインラインSVG・印刷可）
+function sparkSvg(item){
+  const h=item.priceHistory||[];
+  if(h.length<2) return '<span style="color:#94a3b8;font-size:10px">記録1回</span>';
+  const ps=h.map(x=>x.p);
+  const mn=Math.min(...ps), mx=Math.max(...ps);
+  const W=120, H=26, pad=3;
+  const pts=h.map((x,i)=>{
+    const px=pad+(W-2*pad)*i/(h.length-1);
+    const py=mx===mn?H/2:pad+(H-2*pad)*(1-(x.p-mn)/(mx-mn));
+    return px.toFixed(1)+','+py.toFixed(1);
+  });
+  const last=pts[pts.length-1].split(',');
+  return '<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="vertical-align:middle">'
+    +'<polyline points="'+pts.join(' ')+'" fill="none" stroke="#1F3864" stroke-width="1.5"/>'
+    +'<circle cx="'+last[0]+'" cy="'+last[1]+'" r="2.4" fill="#C9962F"/></svg>';
+}
+// v25: 絞り込み一致判定（品名・サイト・フォルダ・メモを横断・大小文字/全半角ゆらぎ吸収）
+function matchesFilter(it, q){
+  if(!q) return true;
+  const norm=s=>{ s=String(s==null?'':s); try{ s=s.normalize('NFKC'); }catch(_e){} return s.toLowerCase(); };
+  const hay=norm(it.title)+'\n'+norm(it.site)+'\n'+norm(it.group)+'\n'+norm(it.note)+'\n'+norm(it.maker)+'\n'+norm((it.tags||[]).join(' '));  // v27: タグも対象
+  return norm(q).split(/[\s　]+/).filter(Boolean).every(t=>hay.indexOf(t)>=0);
+}
+
+// ----- 描画 -----
+function render(){
+  // 統計
+  const totalItems = state.items.length;
+  // v25: 絞り込み（表示だけを絞る・データは全件保持）
+  const q = (filterText||'').trim();
+  const visible = q ? state.items.filter(it=>matchesFilter(it,q)) : state.items;
+  const groups = groupItems(visible);
+  const gNames = Object.keys(groups);
+  const buyNow = state.items.filter(i=>isAllTimeLow(i)||isTargetHit(i)).length;
+  const staleN = state.items.filter(isStale).length;  // v26: 記録の鮮度
+  // V29: 鮮度の能動化＝タブタイトルのバッジ＋起動バナー（1日1回・×で当日は再表示しない）
+  document.title = BASE_TITLE + (staleN?`（要更新${staleN}）`:'');
+  const sb=document.getElementById('staleBanner');
+  if(sb){
+    let nag=null; try{ nag=localStorage.getItem('psv22_staleNagDate'); }catch(_e){}
+    const showBanner = staleN>0 && nag!==today();
+    sb.classList.toggle('hidden', !showBanner);
+    if(showBanner) sb.innerHTML = `📅 <b>${staleN}件</b>の価格記録が${STALE_DAYS}日以上前です。最新の価格を記録しませんか？`
+      +`<button class="btn sm primary" onclick="openBulkUpdate('__stale')">🔄 古い順に一括更新</button>`
+      +`<button class="btn sm ghost" onclick="dismissStaleBanner()" aria-label="このお知らせを今日は閉じる" title="今日はもう表示しない">✕</button>`;
+  }
+  $('#stats').innerHTML = totalItems ? `
+    <div class="stat"><div class="v">${totalItems}</div><div class="l">気になる商品</div></div>
+    <div class="stat"><div class="v">${state.items.filter(i=>i.pinned).length}</div><div class="l">★ お気に入り</div></div>
+    <div class="stat"><div class="v">${Object.keys(groupItems()).length}</div><div class="l">グループ</div></div>
+    <div class="stat"><div class="v">${state.items.filter(i=>(i.priceHistory||[]).length>=2).length}</div><div class="l">価格変動を追跡中</div></div>
+    ${buyNow?`<div class="stat"><div class="v" style="color:var(--green)">${buyNow}</div><div class="l">🔽🎯 買い時サイン</div></div>`:''}
+    ${staleN?`<div class="stat" style="cursor:pointer" onclick="openBulkUpdate('__stale')" title="クリックで「記録が古い順」の一括更新を開きます"><div class="v" style="color:var(--orange)">${staleN}</div><div class="l">📅 記録が古い（${STALE_DAYS}日+）</div></div>`:''}
+    ${Object.keys(captureLog).length?(sickSites().length
+      ?`<div class="stat" style="cursor:pointer" onclick="openCaptureHealth()" title="このサイトの価格読み取りが連続で失敗しています（サイト側の画面変更の可能性）。クリックで詳細"><div class="v" style="color:var(--red,#ef4444)">${sickSites().length}</div><div class="l">🩺 読み取り不調サイト</div></div>`
+      :`<div class="stat" style="cursor:pointer" onclick="openCaptureHealth()" title="拡張機能による価格読み取りの調子。クリックで詳細"><div class="v" style="color:var(--green)">✓</div><div class="l">🩺 読み取り正常</div></div>`):''}
+    ${q?`<div class="stat"><div class="v" style="color:var(--orange)">${visible.length}</div><div class="l">🔎 絞り込み中</div></div>`:''}
+  ` : '';
+  // v25: 絞り込み行は商品がある時だけ表示
+  const fr=document.getElementById('filterRow');
+  if(fr) fr.classList.toggle('hidden', totalItems===0);
+  // 空状態
+  $('#emptyState').classList.toggle('hidden', totalItems>0);
+  // ★一括価格チェックボタン（URL付きお気に入りがある時のみ表示）
+  const favBtn=document.getElementById('favCheckBtn');
+  if(favBtn) favBtn.classList.toggle('hidden', !state.items.some(i=>i.pinned && /^https?:\/\//i.test(i.url||'')));
+  // 一括更新・価格ウォッチは商品が1件でもあれば表示
+  const buBtn=document.getElementById('bulkUpdateBtn');
+  if(buBtn) buBtn.classList.toggle('hidden', totalItems===0);
+  const wBtn=document.getElementById('watchBtn');
+  if(wBtn) wBtn.classList.toggle('hidden', totalItems===0);
+  const rpBtn=document.getElementById('reportBtn');
+  if(rpBtn) rpBtn.classList.toggle('hidden', totalItems===0);  // v26
+  const poB=document.getElementById('poBtn');
+  if(poB) poB.classList.toggle('hidden', totalItems===0);  // V30
+  const odBtn=document.getElementById('ordersBtn');
+  if(odBtn) odBtn.classList.toggle('hidden', totalItems===0);  // v27
+  // グループリスト
+  const box = $('#groupList');
+  if(!totalItems){ box.innerHTML=''; return; }
+  if(q && !visible.length){ box.innerHTML='<div class="empty"><div class="big">🔎</div><h2>「'+esc(q)+'」に一致する商品がありません</h2><p class="text-mute" style="font-size:12.5px">品名・サイト・フォルダ・メモの一部で検索できます。「解除」で全件表示に戻ります。</p></div>'; return; }
+  // グループは更新が新しい順
+  gNames.sort((a,b)=>{
+    const at=Math.max(...groups[a].map(i=>new Date(i.updatedAt).getTime()));
+    const bt=Math.max(...groups[b].map(i=>new Date(i.updatedAt).getTime()));
+    return bt-at;
+  });
+  box.innerHTML = gNames.map(name=>renderGroup(name, groups[name])).join('');
+  // グラフ描画（展開中のグループのみ）
+  gNames.forEach(name=>{
+    const meta = state.groupMeta[name]||{};
+    if(!meta.collapsed) drawChart(name, groups[name]);
+  });
+}
+
+function groupItems(list){
+  const g = {};
+  (list||state.items).forEach(it=>{
+    const k = it.group||'その他';
+    (g[k]=g[k]||[]).push(it);
+  });
+  return g;
+}
+
+function renderGroup(name, items){
+  const meta = state.groupMeta[name]||{};
+  const collapsed = !!meta.collapsed;
+  const prices = items.map(i=>i.price).filter(p=>p!=null&&p>0);
+  const lo = prices.length?Math.min(...prices):null;
+  const hi = prices.length?Math.max(...prices):null;
+  const scored = items.map(it=>({it, sc:calcScore(it, items)}));
+  scored.sort((a,b)=> ((b.it.pinned?1:0)-(a.it.pinned?1:0)) || ((a.it.price??Infinity)-(b.it.price??Infinity)));
+  const bestUrl = lo!=null ? (scored.find(s=>s.it.price===lo)||{}).it?.url : null;
+  return `
+  <div class="group ${collapsed?'collapsed':''}" data-g="${esc(name)}">
+    <div class="group-head" data-act="toggle" data-g="${esc(name)}">
+      <span class="group-toggle">▼</span>
+      <span class="group-name">📁 ${esc(name)}</span>
+      <span class="group-meta">${items.length}件${prices.length?` ・ 最安 ${yen(lo)} 〜 ${yen(hi)}`:''}</span>
+      <span class="group-spacer"></span>
+      <span class="group-actions">
+        <button class="btn ghost sm" data-act="rename" data-g="${esc(name)}">✏ 名前</button>
+        <button class="btn ghost sm" data-act="delgrp" data-g="${esc(name)}" title="このフォルダの商品をすべて削除">🗑</button>
+      </span>
+    </div>
+    <div class="group-body">
+      <div class="cards">
+        ${scored.map(({it,sc})=>renderCard(it,sc,it.url===bestUrl)).join('')}
+      </div>
+      <div class="chart-box"><canvas id="${chartId(name)}"></canvas></div>
+    </div>
+  </div>`;
+}
+
+function renderCard(it, sc, isBest){
+  const tr = priceTrend(it);
+  const sCls = scoreClass(sc);
+  return `
+  <div class="card ${isBest?'best':''}">
+    ${it.pinned?'<div class="card-pin" title="お気に入り">★</div>':''}
+    <div class="card-score ${sCls}" title="価格・納期・信頼の総合点">${sc}</div>
+    <div class="card-img">${it.image?`<img src="${esc(safeUrl(it.image))}" alt="${esc(it.title)} の商品画像" onerror="this.parentNode.innerHTML='<span class=noimg>画像なし</span>'" referrerpolicy="no-referrer">`:'<span class="noimg">画像なし</span>'}</div>
+    <span class="card-site ${esc(it.site)}">${esc(it.site)}</span>
+    <div class="card-title" title="${esc(it.title)}">${esc(it.title)}</div>
+    <div class="card-price"><span class="yen">¥</span>${it.price!=null?Number(it.price).toLocaleString():'—'}${isBest?' 🏆':''}</div>
+    ${it.price==null?`<div class="card-trend" style="color:var(--orange);font-weight:800">⚠ 価格未取得 — 📈記録から手入力できます</div>`:''}
+    ${tr?`<div class="card-trend ${tr.dir}">${tr.text}</div>`:((it.priceHistory||[]).length?'<div class="card-trend flat">価格記録1回</div>':'')}
+    ${isAllTimeLow(it)?'<div class="card-trend down" style="font-weight:800">🔽 過去最安を更新中</div>':''}
+    ${isTargetHit(it)?`<div class="card-trend down" style="font-weight:800">🎯 狙い値 ${yen(it.targetPrice)} 以下（買い時）</div>`:(it.targetPrice!=null?`<div class="card-delivery">🎯 狙い値 ${yen(it.targetPrice)}</div>`:'')}
+    ${it.delivery?`<div class="card-delivery">🚚 ${esc(it.delivery)}</div>`:''}
+    ${it.note?`<div class="card-delivery" title="${esc(it.note)}">📝 ${esc(it.note.slice(0,40))}</div>`:''}
+    ${(it.tags&&it.tags.length)?`<div style="display:flex;gap:4px;flex-wrap:wrap">${it.tags.map(tg=>`<span class="pill" style="padding:1px 8px;font-size:10px" data-act="tagf" data-tag="${esc(tg)}" title="クリックでこのタグに絞り込み">🏷${esc(tg)}</span>`).join('')}</div>`:''}
+    ${(it.orders&&it.orders.length)?`<div class="card-delivery">🧾 最終発注 ${esc(String(it.orders[it.orders.length-1].d).slice(5))} ¥${Number(it.orders[it.orders.length-1].p).toLocaleString()}×${Number(it.orders[it.orders.length-1].q)}</div>`:''}
+    ${(it.priceHistory&&it.priceHistory.length)?`<div class="card-delivery" style="color:var(--text-mute)">📅 価格の記録日 ${esc(String(it.priceHistory[it.priceHistory.length-1].d||'').slice(5))}</div>`:''}
+    ${isStale(it)?`<div class="card-trend" style="color:var(--orange);font-weight:800">📅 ${daysSinceRec(it)}日前の記録 — 要更新</div>`:''}
+    <div class="card-btns">
+      ${/^https?:\/\//i.test(it.url||'')?`<a class="btn green sm" href="${esc(safeUrl(it.url))}" target="_blank" rel="noopener">🛒 買う</a>`:`<span class="btn green sm" style="opacity:.4;cursor:not-allowed" title="この商品には購入ページのURLがありません（手動追加・Excel取込の商品）">🛒 買う</span>`}
+      <button class="btn ghost sm icon ${it.pinned?'pin-on':''}" data-act="pin" data-id="${esc(it.id)}" aria-label="${it.pinned?'お気に入りを解除':'お気に入りに追加'}" title="${it.pinned?'お気に入りを解除':'お気に入りに追加（グループ先頭に固定）'}">${it.pinned?'★':'☆'}<span class="blabel">お気に入り</span></button>
+      <button class="btn ghost sm icon" data-act="rec" data-id="${esc(it.id)}" aria-label="今日の価格を記録" title="今日の価格を記録して変動を追跡">📈<span class="blabel">記録</span></button>
+      <button class="btn ghost sm icon" data-act="graph" data-id="${esc(it.id)}" aria-label="価格推移グラフと発注記録" title="この商品の価格推移グラフ（全期間/3ヶ月/1ヶ月・狙い値ライン）と発注記録">📊<span class="blabel">推移</span></button>
+      <button class="btn ghost sm icon" data-act="target" data-id="${esc(it.id)}" aria-label="狙い値・タグ・メモを設定" title="狙い値（この値段まで下がったら買う）・タグ・メモを設定">🎯<span class="blabel">狙い値</span></button>
+      <button class="btn ghost sm icon" data-act="team" data-id="${esc(it.id)}" aria-label="チームの買い物籠へ購入依頼" title="この商品をチーム買い物籠へ購入依頼（品名・単価が自動で入ります）">🧺<span class="blabel">依頼</span></button>
+      <button class="btn ghost sm icon" data-act="move" data-id="${esc(it.id)}" aria-label="グループを変更" title="グループ変更">📁<span class="blabel">移動</span></button>
+      <button class="btn ghost sm icon" data-act="del" data-id="${esc(it.id)}" aria-label="この商品を削除" title="削除">✕<span class="blabel">削除</span></button>
+    </div>
+  </div>`;
+}
+
+function drawChart(name, items){
+  const cv = document.getElementById(chartId(name));
+  if(!cv) return;
+  if(!chartLibReady()){ showChartMissing(name); return; }
+  if(charts[name]){ charts[name].destroy(); }
+  // 価格履歴がある商品だけ（★お気に入りを優先表示）
+  const tracked = items.filter(i=>(i.priceHistory||[]).length>=1);
+  tracked.sort((a,b)=>(b.pinned?1:0)-(a.pinned?1:0));
+  // 全日付を集める
+  const dateSet = new Set();
+  tracked.forEach(i=>i.priceHistory.forEach(h=>dateSet.add(h.d)));
+  const dates = Array.from(dateSet).sort();
+  if(dates.length<1){ return; }
+  // v23: 日付が変わったらグラフを今日まで延長（最終価格を持ち越して描画）
+  const tdy=today();
+  if(dates[dates.length-1]!==tdy) dates.push(tdy);
+  const colors = ['#22d3ee','#10b981','#f59e0b','#ef4444','#a855f7','#3b82f6'];
+  const datasets = tracked.slice(0,6).map((it,i)=>({
+    label: (it.title||'').slice(0,16),
+    data: dates.map(d=>{
+      const h = it.priceHistory.filter(x=>x.d<=d).pop();
+      return h?h.p:null;
+    }),
+    borderColor: colors[i%colors.length],
+    backgroundColor: colors[i%colors.length]+'30',
+    tension:0.3, spanGaps:true, pointRadius:3,
+  }));
+  const lightMode=document.body.classList.contains('light');
+  const legC=lightMode?'#3f4c63':'#95a5a6', axisC=lightMode?'#69768f':'#6c7293', gridC=lightMode?'#d7dde8':'#2a3150';
+  charts[name] = new Chart(cv.getContext('2d'),{
+    type:'line',
+    data:{labels:dates, datasets},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{color:legC,font:{size:10},boxWidth:12}}},
+      scales:{
+        x:{ticks:{color:axisC,font:{size:10}},grid:{color:gridC}},
+        y:{ticks:{color:axisC,font:{size:10},callback:v=>'¥'+Number(v).toLocaleString()},grid:{color:gridC}}
+      }
+    }
+  });
+}
+
+// ----- 操作 -----
+window.toggleGroup = function(name){
+  const m = state.groupMeta[name] = state.groupMeta[name]||{};
+  m.collapsed = !m.collapsed;
+  save(); render();
+};
+window.renameGroup = function(name){
+  openModal(`
+    <h2>📁 グループ名の変更・統合</h2>
+    <p class="text-mute" style="font-size:12px;margin-bottom:10px">「${esc(name)}」の新しい名前を入力。<br>既存グループ名と同じにすると<b>統合</b>されます。</p>
+    <input type="text" id="mdlGroupName" value="${esc(name)}" list="renameGrpList">
+    <datalist id="renameGrpList">${Object.keys(groupItems()).filter(g=>g!==name).map(g=>`<option value="${esc(g)}">`).join('')}</datalist>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">キャンセル</button>
+      <button class="btn primary" id="mdlOk">変更</button>
+    </div>
+  `);
+  setTimeout(()=>{
+    const inp = $('#mdlGroupName'); inp.focus(); inp.select();
+    $('#mdlOk').onclick = ()=>{
+      const nv = inp.value.trim();
+      if(!nv){ closeModal(); return; }
+      state.items.forEach(it=>{ if(it.group===name) it.group=nv; });
+      if(state.groupMeta[name] && nv!==name){
+        state.groupMeta[nv] = state.groupMeta[nv]||state.groupMeta[name];
+        delete state.groupMeta[name];
+      }
+      if(nv!==name && charts[name]){ try{ charts[name].destroy(); }catch(_e){} delete charts[name]; }
+      save(); render(); closeModal();
+      toast('グループを更新','「'+nv+'」','');
+    };
+  },0);
+};
+window.moveItem = function(id){
+  const it = state.items.find(x=>x.id===id);
+  if(!it) return;
+  const groups = Object.keys(groupItems());
+  openModal(`
+    <h2>📁 グループを変更</h2>
+    <p class="text-mute" style="font-size:12px;margin-bottom:10px">「${esc(it.title.slice(0,30))}」の移動先グループ名</p>
+    <input type="text" id="mdlMove" value="${esc(it.group)}" list="grpList">
+    <datalist id="grpList">${groups.map(g=>`<option value="${esc(g)}">`).join('')}</datalist>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">キャンセル</button>
+      <button class="btn primary" id="mdlOk">移動</button>
+    </div>
+  `);
+  setTimeout(()=>{
+    const inp=$('#mdlMove'); inp.focus(); inp.select();
+    $('#mdlOk').onclick=()=>{
+      const nv=inp.value.trim(); if(!nv){closeModal();return;}
+      it.group=nv; save(); render(); closeModal();
+      toast('移動しました','→ '+nv,'');
+    };
+  },0);
+};
+window.togglePin = function(id){
+  const it = state.items.find(x=>x.id===id);
+  if(!it) return;
+  it.pinned = !it.pinned;
+  save(); render();
+  if(it.pinned){
+    const tracked=(it.priceHistory||[]).length>=2;
+    toast('★ お気に入りに追加', tracked?'価格変動を追跡中です':'「📈 ★の価格をチェック」や各カードの 📈 で価格を記録すると変動を追跡できます','',6000);
+  }else{
+    toast('お気に入りを解除',(it.title||'').slice(0,30),'');
+  }
+};
+// ★お気に入りの価格を一括チェック（商品ページをユーザー操作で開くだけ＝自動アクセスなし）
+window.checkFavPrices = function(){
+  const favs = state.items.filter(i=>i.pinned && /^https?:\/\//i.test(i.url||''));
+  if(!favs.length){ toast('対象なし','★お気に入りに商品ページURL付きの商品がありません','warn',6000); return; }
+  // v24.1: ★が9件以上は取りこぼしが出るため、一括更新（★範囲・バッチ巡回）へ誘導＝全件を数回に分けて開ける
+  if(favs.length>8){
+    openBulkUpdate('__fav');
+    toast('★が'+favs.length+'件あります','8件を超えるため「価格を一括更新」に切り替えました。「▶ 開く」を数回押せば全件開けます','',8000);
+    return;
+  }
+  const list = favs.slice(0,8);
+  if(!rateGate(list.length)) return;  // v24: レート制限
+  let opened=0, blocked=0;
+  list.forEach(f=>{ const w=window.open(f.url,'_blank'); if(w){opened++;openedTabs.push(w);} else blocked++; });
+  updateCloseTabsBtn();
+  if(blocked) toast('一部ブロック',blocked+'件がポップアップブロックされました。アドレスバーのアイコンで許可を','warn',6000);
+  if(opened) toast('📈 価格チェック',opened+'件の商品ページを開きました。拡張機能があれば商品クリックで価格が再記録されます（無ければ各カードの 📈 で記録）','',8000);
+};
+// V31.1: 🧺 チーム籠パネル（広い画面=右側に並べて1画面表示・狭い画面=別ウィンドウ・状態は記憶）
+let _tpSeq=0;
+function teamPanelWide(){ return window.innerWidth>=1100; }
+window.teamPanelOpen = function(reloadFrame){
+  if(!teamPanelWide()){ const w=window.open('team_basket.html','psv22_team'); if(!w) toast('チーム籠を開けませんでした','同じフォルダの team_basket.html を直接開いてください','warn',7000); return; }
+  const p=document.getElementById('teamPanel'), f=document.getElementById('tpFrame');
+  p.classList.remove('hidden'); document.body.classList.add('teampanel');
+  if(!f.getAttribute('src') || reloadFrame) f.src='team_basket.html?p='+(++_tpSeq);
+  try{ localStorage.setItem('psv22_teamPanel','on'); }catch(_e){}
+};
+window.teamPanelClose = function(){
+  document.getElementById('teamPanel').classList.add('hidden');
+  document.body.classList.remove('teampanel');
+  try{ localStorage.setItem('psv22_teamPanel','off'); }catch(_e){}
+};
+window.teamPanelToggle = function(){
+  const p=document.getElementById('teamPanel');
+  if(p.classList.contains('hidden')||!teamPanelWide()) teamPanelOpen(false); else teamPanelClose();
+};
+// 🧺 チーム籠へ購入依頼（品名/単価/URL等を流し込み・パネル表示中はパネル内でフォームが開く）
+window.sendToTeamBasket = function(id){
+  const it = state.items.find(x=>x.id===id);
+  if(!it) return;
+  try{ localStorage.setItem('psv22_teamPrefill', JSON.stringify({
+    title:it.title||'', url:/^https?:/i.test(it.url||'')?it.url:'', site:it.site||'', price:it.price!=null?it.price:'', maker:it.maker||''
+  })); }catch(_e){}
+  if(teamPanelWide()) teamPanelOpen(true);  // フレーム再読込→チーム側initがprefillを拾って依頼フォームを開く
+  else{ const w=window.open('team_basket.html','psv22_team'); if(!w) toast('チーム籠を開けませんでした','同じフォルダの team_basket.html を直接開いてください','warn',7000); }
+};
+
+// V29: 🩺 取得ヘルス詳細（サイト別の読み取り成績・セレクタ切れの早期発見）
+window.openCaptureHealth = function(){
+  const sick = sickSites();
+  const rows = Object.keys(captureLog).sort().map(s=>{
+    const e=captureLog[s], streak=captureFailStreak(s);
+    const mark = streak>=3?'🔴 不調':(streak>0?'🟡 直近失敗':'🟢 正常');
+    const dots = (e.recent||[]).slice(-10).map(x=>x.r==='ok'?'🟢':'🔴').join('');
+    return `<tr><td><b>${esc(s)}</b></td><td>${mark}</td><td>${e.ok}回</td><td>${e.fail}回</td><td>${esc(e.lastOk||'—')}</td><td style="letter-spacing:2px">${dots}</td></tr>`;
+  }).join('');
+  openModal(`
+    <h2>🩺 価格読み取りの調子</h2>
+    <p class="text-mute" style="font-size:12px;line-height:1.7;margin-bottom:10px">拡張機能がECサイトから価格を読み取れたか（🟢成功／🔴失敗）の記録です。<b>🔴が3回以上続くサイトは、サイト側の画面が変わって読み取れなくなっている可能性</b>があります。その場合も 📈記録 ボタンからの手入力で価格追跡は続けられます。</p>
+    ${sick.length?`<p style="font-size:12.5px;color:var(--orange);font-weight:700;margin-bottom:8px">⚠ 不調: ${sick.map(esc).join(' / ')} — 拡張機能の更新が必要かもしれません（管理者へ連絡）</p>`:''}
+    <div style="overflow-x:auto"><table class="wtable"><thead><tr><th>サイト</th><th>状態</th><th>成功</th><th>失敗</th><th>最終成功日</th><th>直近10回</th></tr></thead><tbody>${rows||'<tr><td colspan=6>まだ記録がありません</td></tr>'}</tbody></table></div>
+    <div class="modal-actions"><button class="btn primary" onclick="closeModal()">閉じる</button></div>
+  `);
+};
+
+window.recordPrice = function(id){
+  const it = state.items.find(x=>x.id===id);
+  if(!it) return;
+  openModal(`
+    <h2>📈 価格を記録（変動を追跡）</h2>
+    <p class="text-mute" style="font-size:12px;margin-bottom:10px">「${esc((it.title||'').slice(0,30))}」の今日の価格を入力すると履歴に追加され、値上がり・値下がりを追跡できます。${it.price!=null?'<br>前回の記録: '+yen(it.price):''}</p>
+    <input type="text" id="rpPrice" placeholder="今日の価格（円・数字のみ）" aria-label="今日の価格（円・数字のみ）" inputmode="numeric" value="${it.price!=null?it.price:''}">
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">キャンセル</button>
+      <button class="btn primary" id="rpOk">記録</button>
+    </div>
+  `);
+  setTimeout(()=>{
+    const inp=$('#rpPrice'); if(inp){ inp.focus(); inp.select(); }
+    const ok=$('#rpOk');
+    if(ok) ok.onclick=()=>{
+      const praw=(inp&&inp.value?inp.value:'').replace(/[^\d.]/g,'');
+      if(praw===''){ toast('価格を入力してください','数字のみで入力します','warn'); return; }
+      const price=Number(praw);
+      it.priceHistory = it.priceHistory||[];
+      const t=today();
+      const last=it.priceHistory[it.priceHistory.length-1];
+      if(last && last.d===t){ last.p=price; }
+      else { it.priceHistory.push({d:t, p:price}); }
+      it.price=price;
+      it.updatedAt=new Date().toISOString();
+      save(); render(); closeModal();
+      const tr=priceTrend(it);
+      toast('📈 価格を記録しました', tr?tr.text:yen(price), '');
+    };
+  },0);
+};
+// v25: 🎯 狙い値とメモの設定
+window.setTarget = function(id){
+  const it = state.items.find(x=>x.id===id);
+  if(!it) return;
+  openModal(`
+    <h2>🎯 狙い値・タグ・メモ</h2>
+    <p class="text-mute" style="font-size:12px;margin-bottom:10px">「${esc((it.title||'').slice(0,30))}」<br><b>狙い値</b>＝この値段まで下がったら買う、という自分の上限。現在価格が狙い値以下になるとカードと価格ウォッチに🎯買い時サインが出ます。${it.price!=null?'<br>現在価格: '+yen(it.price):''}</p>
+    <input type="text" id="tgPrice" placeholder="狙い値（円・数字のみ・空欄で解除）" inputmode="numeric" value="${it.targetPrice!=null?it.targetPrice:''}">
+    <input type="text" id="tgTags" placeholder="タグ（カンマ区切り・複数可）例：至急, 定期購買, 佐藤さん依頼" value="${esc((it.tags||[]).join(', '))}" maxlength="200">
+    <input type="text" id="tgNote" placeholder="メモ（任意）例：品番AB-123・10個入り" value="${esc(it.note||'')}" maxlength="100">
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">キャンセル</button>
+      <button class="btn primary" id="tgOk">保存</button>
+    </div>
+  `);
+  setTimeout(()=>{
+    const pi=$('#tgPrice'); if(pi){ pi.focus(); pi.select(); }
+    const ok=$('#tgOk');
+    if(ok) ok.onclick=()=>{
+      const praw=($('#tgPrice').value||'').replace(/[^\d.]/g,'');
+      it.targetPrice = praw==='' ? null : Number(praw);
+      if(it.targetPrice!=null && (!isFinite(it.targetPrice)||it.targetPrice<=0)) it.targetPrice=null;
+      // v27: タグ（カンマ/読点/空白区切り・重複除去・最大10個）
+      it.tags = Array.from(new Set(($('#tgTags').value||'').split(/[,、\s　]+/).map(t=>t.trim().slice(0,20)).filter(Boolean))).slice(0,10);
+      it.note = ($('#tgNote').value||'').trim().slice(0,100);
+      save(); render(); closeModal();
+      toast('🎯 保存しました', (it.targetPrice!=null?('狙い値 '+yen(it.targetPrice)+(isTargetHit(it)?' — 今が買い時です！':'')):'狙い値なし')+(it.tags.length?'・🏷'+it.tags.length:''), '');
+    };
+  },0);
+};
+// v26: 📊 商品個別の価格推移グラフ（全期間/3ヶ月/1ヶ月・🎯狙い値ライン）
+let _igChart=null;
+window.openItemGraph = function(id){
+  const it = state.items.find(x=>x.id===id);
+  if(!it) return;
+  const h = (it.priceHistory||[]).slice();
+  if(!h.length){ toast('まだ記録がありません','📈ボタンで今日の価格を記録すると推移を見られます','warn',6000); return; }
+  const s = priceStats(it);
+  openModal(`
+    <h2>📊 価格推移 — ${esc((it.title||'').slice(0,34))}</h2>
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+      <button class="btn ghost sm" data-per="0" id="igAll">全期間</button>
+      <button class="btn ghost sm" data-per="90">3ヶ月</button>
+      <button class="btn ghost sm" data-per="30">1ヶ月</button>
+      <span class="text-mute" style="font-size:12px;flex:1">
+        最安 <b style="color:var(--green)">${s?yen(s.min):'—'}</b> ／ 最高 ${s?yen(s.max):'—'} ／ 平均 ${s?yen(s.avg):'—'} ／ 記録 ${s?s.n:0}回
+        ${it.targetPrice!=null?` ／ 🎯狙い値 <b style="color:var(--orange)">${yen(it.targetPrice)}</b>`:''}
+      </span>
+    </div>
+    <div style="height:260px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px"><canvas id="igCv"></canvas></div>
+    <div style="margin-top:10px">
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <b style="font-size:12.5px">🧾 発注記録</b>
+        <input type="text" id="odQ" placeholder="数量" aria-label="発注数量" inputmode="numeric" style="width:70px;margin-bottom:0">
+        <input type="text" id="odP" placeholder="単価(円)" aria-label="発注単価（円）" inputmode="numeric" style="width:100px;margin-bottom:0" value="${it.price!=null?it.price:''}">
+        <input type="text" id="odN" placeholder="メモ(任意)" aria-label="発注メモ（任意）" style="flex:1;min-width:110px;margin-bottom:0" maxlength="40">
+        <button class="btn green sm" id="odAdd">＋ 記録</button>
+      </div>
+      <div id="odList" style="margin-top:6px"></div>
+    </div>
+    <div class="modal-actions"><button class="btn primary" onclick="closeModal()">閉じる</button></div>
+  `);
+  const mdl=$('#modalRoot .modal'); if(mdl) mdl.classList.add('wide');
+  const cv=$('#igCv');
+  if(!chartLibReady()){ if(cv&&cv.parentNode) cv.parentNode.textContent='📈 グラフ部品(lib/chart.umd.min.js)を読み込めませんでした。数値表示はご利用いただけます。'; return; }
+  const paint=(days)=>{
+    let list=h;
+    if(days>0){
+      const cut=new Date(Date.now()-days*86400000);
+      const cutS=cut.getFullYear()+'-'+String(cut.getMonth()+1).padStart(2,'0')+'-'+String(cut.getDate()).padStart(2,'0');
+      list=h.filter(x=>x.d>=cutS);
+      if(!list.length) list=h.slice(-1);  // 期間内ゼロなら直近1点だけ
+    }
+    const labels=list.map(x=>x.d);
+    const tdy=today();
+    const vals=list.map(x=>x.p);
+    if(labels[labels.length-1]!==tdy){ labels.push(tdy); vals.push(list[list.length-1].p); }  // 今日まで持ち越し描画
+    const lightMode=document.body.classList.contains('light');
+    const axisC=lightMode?'#69768f':'#6c7293', gridC=lightMode?'#d7dde8':'#2a3150';
+    const datasets=[{label:'価格', data:vals, borderColor:'#22d3ee', backgroundColor:'#22d3ee30', tension:0.25, pointRadius:3, spanGaps:true}];
+    if(it.targetPrice!=null) datasets.push({label:'🎯狙い値', data:labels.map(()=>it.targetPrice), borderColor:'#f59e0b', borderDash:[7,5], pointRadius:0, fill:false});
+    if(_igChart){ try{ _igChart.destroy(); }catch(_e){} _igChart=null; }
+    _igChart=new Chart(cv.getContext('2d'),{ type:'line', data:{labels, datasets},
+      options:{responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{position:'bottom',labels:{color:lightMode?'#3f4c63':'#95a5a6',font:{size:10},boxWidth:12}}},
+        scales:{x:{ticks:{color:axisC,font:{size:10}},grid:{color:gridC}},
+                y:{ticks:{color:axisC,font:{size:10},callback:v=>'¥'+Number(v).toLocaleString()},grid:{color:gridC}}}}});
+  };
+  $$('#modalRoot [data-per]').forEach(b=>{
+    b.onclick=()=>{ $$('#modalRoot [data-per]').forEach(x=>x.classList.remove('primary')); b.classList.add('primary'); paint(Number(b.getAttribute('data-per'))||0); };
+  });
+  const ia=$('#igAll'); if(ia) ia.classList.add('primary');
+  paint(0);
+  // v27: 🧾発注記録（この商品の詳細画面に集約）
+  const paintOrders=()=>{
+    const box=$('#odList'); if(!box) return;
+    const os=(it.orders||[]).slice().reverse();
+    box.innerHTML = os.length ? `<div class="tbl-scroll" style="max-height:20vh"><table class="wtable">
+      <thead><tr><th>日付</th><th>数量</th><th>単価</th><th>金額</th><th>メモ</th><th></th></tr></thead>
+      <tbody>${os.map((o,ri)=>`<tr>
+        <td>${esc(o.d)}</td><td class="num">${o.q}</td><td class="num">${yen(o.p)}</td>
+        <td class="num" style="font-weight:700">${yen(o.q*o.p)}</td><td>${esc(o.note||'')}</td>
+        <td><button class="btn ghost sm" data-odel="${(it.orders.length-1-ri)}">🗑</button></td>
+      </tr>`).join('')}</tbody></table></div>`
+      : '<span class="text-mute" style="font-size:11.5px">発注したら数量・単価を記録すると、支払実績と価格推移を突き合わせられます（🧾発注管理に集計されます）</span>';
+    $$('#odList [data-odel]').forEach(b=>{
+      b.onclick=()=>{
+        const oi=Number(b.getAttribute('data-odel'));
+        if(!confirm('この発注記録を削除しますか?')) return;
+        it.orders.splice(oi,1); save(); render(); paintOrders();
+      };
+    });
+  };
+  const oa=$('#odAdd');
+  if(oa) oa.onclick=()=>{
+    const q=Number(($('#odQ').value||'').replace(/[^\d.]/g,''));
+    const p=Number(($('#odP').value||'').replace(/[^\d.]/g,''));
+    if(!isFinite(q)||q<=0){ toast('数量を入力してください','1以上の数字','warn'); return; }
+    if(!isFinite(p)||($('#odP').value||'').trim()===''){ toast('単価を入力してください','円・数字のみ','warn'); return; }
+    it.orders=it.orders||[];
+    it.orders.push({d:today(), q:q, p:p, note:($('#odN').value||'').trim().slice(0,40)});
+    it.orders.sort((a,b)=>String(a.d).localeCompare(String(b.d)));
+    save(); render(); paintOrders();
+    $('#odQ').value=''; $('#odN').value='';
+    toast('🧾 発注を記録しました', yen(p)+' × '+q+' = '+yen(q*p),'');
+  };
+  paintOrders();
+};
+// ----- v27: 🧾 発注管理（全発注記録の一覧・集計・CSV）-----
+function allOrders(){
+  const rows=[];
+  state.items.forEach(it=>(it.orders||[]).forEach((o,oi)=>rows.push({it,o,oi})));
+  rows.sort((a,b)=>String(b.o.d).localeCompare(String(a.o.d)));  // 新しい順
+  return rows;
+}
+window.openOrders = function(){
+  const rows=allOrders();
+  const ym=today().slice(0,7);
+  const sumMonth=rows.filter(r=>String(r.o.d).slice(0,7)===ym).reduce((a,r)=>a+r.o.q*r.o.p,0);
+  const sumAll=rows.reduce((a,r)=>a+r.o.q*r.o.p,0);
+  openModal(`
+    <h2>🧾 発注管理 — 記録の一覧と集計</h2>
+    ${rows.length?`
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:8px;font-size:13px">
+      <span>今月の発注額 <b style="color:var(--cyan)">${yen(sumMonth)}</b></span>
+      <span>累計 <b>${yen(sumAll)}</b>（${rows.length}件）</span>
+      <span class="text-mute" style="font-size:11.5px">「差」＝発注単価−現在価格（プラス=今のほうが安い）</span>
+    </div>
+    <div class="tbl-scroll">
+      <table class="wtable">
+        <thead><tr><th>日付</th><th>品名</th><th>サイト</th><th>数量</th><th>単価</th><th>金額</th><th>現在価格</th><th>差</th><th>メモ</th><th></th></tr></thead>
+        <tbody>${rows.map((r,ri)=>{
+          const diff=(r.it.price!=null)?(r.o.p-r.it.price):null;
+          return `<tr>
+            <td>${esc(r.o.d)}</td>
+            <td class="tt" title="${esc(r.it.title)}">${esc((r.it.title||'').slice(0,30))}</td>
+            <td>${esc(r.it.site||'')}</td>
+            <td class="num">${r.o.q}</td>
+            <td class="num">${yen(r.o.p)}</td>
+            <td class="num" style="font-weight:700">${yen(r.o.q*r.o.p)}</td>
+            <td class="num">${yen(r.it.price)}</td>
+            <td class="num ${diff!=null?(diff>0?'card-trend down':(diff<0?'card-trend up':'')):''}" style="font-size:11.5px" title="${diff!=null&&diff>0?'今なら1個あたり'+yen(diff)+'安く買えます':''}">${diff!=null?((diff>0?'+':'')+diff.toLocaleString()):'—'}</td>
+            <td>${esc(r.o.note||'')}</td>
+            <td><button class="btn ghost sm" data-orow="${ri}">🗑</button></td>
+          </tr>`;}).join('')}</tbody>
+      </table>
+    </div>`
+    :'<p class="text-mute" style="font-size:12.5px;margin-bottom:10px">発注記録はまだありません。各商品カードの <b>📊</b>（価格推移）画面で、発注したら数量と単価を「＋ 記録」してください。支払実績と価格推移を突き合わせられるようになります。</p>'}
+    <div class="modal-actions">
+      ${rows.length?'<button class="btn ghost" id="odCsv">📄 CSV出力</button>':''}
+      <button class="btn primary" onclick="closeModal()">閉じる</button>
+    </div>
+  `);
+  const mdl=$('#modalRoot .modal'); if(mdl) mdl.classList.add('wide');
+  $$('#modalRoot [data-orow]').forEach(b=>{
+    b.onclick=()=>{
+      const r=rows[Number(b.getAttribute('data-orow'))];
+      if(!r||!confirm('「'+(r.it.title||'').slice(0,24)+'」の '+r.o.d+' の発注記録を削除しますか?')) return;
+      r.it.orders.splice(r.oi,1);
+      save(); render(); openOrders();
+    };
+  });
+  const cs=$('#odCsv');
+  if(cs) cs.onclick=()=>{
+    const head=['日付','品名','サイト','グループ','数量','単価','金額','現在価格','差(単価-現在)','メモ'];
+    const lines=[head.join(',')];
+    rows.forEach(r=>lines.push([r.o.d, r.it.title||'', r.it.site||'', r.it.group||'その他',
+      r.o.q, r.o.p, r.o.q*r.o.p, r.it.price!=null?r.it.price:'',
+      r.it.price!=null?(r.o.p-r.it.price):'', r.o.note||''].map(csvCell).join(',')));
+    const blob=new Blob([String.fromCharCode(0xFEFF)+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download='購買サーチ_発注記録_'+today()+'.csv';
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1000);
+    toast('📄 CSV出力', rows.length+'件の発注記録を書き出しました','');
+  };
+};
+// v23: フォルダ毎のリセット
+window.deleteGroup = function(name){
+  const targets = state.items.filter(i=>(i.group||'その他')===name);
+  if(!targets.length){ toast('対象なし','このフォルダに商品がありません','warn'); return; }
+  if(!confirm('フォルダ「'+name+'」の商品 '+targets.length+' 件をすべて削除しますか？\n（価格履歴も消えます・取り消せません）')) return;
+  state.items = state.items.filter(i=>(i.group||'その他')!==name);
+  delete state.groupMeta[name];
+  if(charts[name]){ try{ charts[name].destroy(); }catch(_e){} delete charts[name]; }
+  save(); render();
+  toast('フォルダを削除','「'+name+'」（'+targets.length+'件）','');
+};
+window.removeItem = function(id){
+  const it = state.items.find(x=>x.id===id);
+  if(!it) return;
+  if(!confirm('「'+(it.title||'').slice(0,40)+'」をリストから削除しますか？')) return;
+  state.items = state.items.filter(x=>x.id!==id);
+  save(); render();
+  toast('削除しました','','');
+};
+
+// ----- 拡張からの受信 -----
+// 自動取得・クリック取得（構造化データ）
+window.receiveFromExtension = function(batch){
+  try{
+    const items = (batch && batch._batch) ? batch.items : [batch];
+    if(!items || !items.length) return;
+    let added=0, updated=0, missed=0;  // V29: missed=価格を読み取れなかった件数
+    items.forEach(d=>{
+      // v23: アプリで検索した語を収集フォルダとして固定（ECサイト側のキーワードゆれ/PR等を上書き）
+      if(d && state.lastKeyword){ d.keyword = state.lastKeyword; }
+      // V29: 取得ヘルス記録（価格が取れたか＝セレクタ生存の実測）
+      const ok = !!(d && d.price!=null && Number(d.price)>0);
+      captureLogRecord(d&&d.site, ok);
+      if(!ok) missed++;
+      const r = upsertItem(d);
+      if(r){ r.isNew?added++:updated++; }
+    });
+    save(); render();
+    if(added||updated){
+      toast('✨ 取り込み完了',
+        (added?added+'件 追加':'')+(added&&updated?' / ':'')+(updated?updated+'件 価格更新':''),'');
+    }
+    // V29: 空振りは成功と別建てで警告（従来は「取り込み完了」に紛れて不可視だった）
+    if(missed){
+      toast('⚠ '+missed+'件は価格を読み取れませんでした',
+        'サイト側の画面変更の可能性があります。商品カードの 📈記録 から手入力できます','warn',9000);
+    }
+  }catch(e){ console.error(e); toast('受信エラー',e.message,'err'); }
+};
+// 📷 画面キャプチャ受信 → OCR
+window.receiveImageFromExtension = function(dataUrl){
+  if(!dataUrl || dataUrl.indexOf('data:image')!==0){ toast('画像エラー','有効な画像ではありません','err'); return; }
+  runOcr(dataUrl);
+};
+// 拡張ブリッジ(host_bridge.js)からの受信 — EC クリック/★記録/📷OCR がここに自動で届く
+window.addEventListener('message', function(ev){
+  if(ev.source!==window || !ev.data || ev.data.__psv22_bridge!==true) return;
+  // 出所確証: 同一オリジン（file:// 運用では 'null'）以外からのメッセージは受理しない（汚染データ注入の防止）
+  if(ev.origin && ev.origin!=='null' && ev.origin!==location.origin) return;
+  window.__bridgeSeen = true;
+  var bs=document.getElementById('bridgeStatus');
+  if(bs) bs.innerHTML='🟢 <b style="color:var(--green)">拡張連携 有効</b> — EC サイトで商品をクリックすると自動で集まります';
+  if(ev.data.hello) return;  // 起動あいさつのみ（取込なし）
+  try{ receiveFromExtension({_batch:true, items: ev.data.items||[]}); }
+  catch(e){ console.error('bridge受信失敗', e); }
+});
+
+// 拡張からの URL ハッシュ受信（scripting 経路が失敗した時のフォールバック）
+function handleHash(){
+  if(location.hash.indexOf('#paste=')!==0) return;
+  try{
+    const batch = JSON.parse(decodeURIComponent(location.hash.substring(7)));
+    history.replaceState(null,'',location.pathname); // 先に hash クリア（再実行防止）
+    receiveFromExtension(batch);
+  }catch(e){ console.error('hash受信失敗',e); toast('受信エラー','データ形式が不正です','err'); }
+}
+
+// ----- OCR（📷キャプチャ用、Tesseract.js）-----
+let _tess=null;
+function loadTesseract(){
+  return new Promise((res,rej)=>{
+    if(window.Tesseract){res(window.Tesseract);return;}
+    // スタンドアロンHTMLは外部CDNに接続しない方針（オフライン・社内環境対応）。
+    // 画面OCRは同梱エンジンを持つ拡張機能版でご利用ください。
+    rej(new Error('画面OCRは拡張機能版でご利用ください（このページ単体では外部接続しないため無効です）'));
+  });
+}
+async function runOcr(dataUrl){
+  toast('📷 解析中','OCRで商品情報を読み取っています...','');
+  try{
+    await loadTesseract();
+    if(!_tess){ _tess = await window.Tesseract.createWorker(['jpn','eng'],1); }
+    const blob = await (await fetch(dataUrl)).blob();
+    const {data} = await _tess.recognize(blob);
+    const txt = data.text||'';
+    const got = extractFromOcr(txt);
+    if(!got || got.price==null){
+      toast('読み取り不可','価格が認識できませんでした。範囲を変えて再試行を','warn');
+      return;
+    }
+    // OCR は URL を取れない → 一意キーを生成
+    got.url = 'ocr://'+Date.now();
+    receiveFromExtension(got);
+  }catch(e){ console.error(e); toast('OCR失敗',e.message,'err'); }
+}
+function extractFromOcr(text){
+  if(!text) return null;
+  // OCR後処理層(ocr_postprocess.js): 全角→半角正規化・スペース除去してから抽出
+  if(window.OCRPost) text = window.OCRPost.cleanOcrText(text);
+  const pm = text.match(/[¥￥]\s*([\d,]+)/) || text.match(/([\d,]+)\s*円/);
+  const price = pm ? Number(pm[1].replace(/,/g,'')) : null;
+  const lines = text.split(/\r?\n/).map(s=>s.trim())
+    .filter(s=>s.length>=4 && !/^[¥￥\d,円\s]+$/.test(s));
+  const title = lines.sort((a,b)=>b.length-a.length)[0] || '(商品名なし)';
+  let site='その他';
+  if(/amazon/i.test(text))site='Amazon';
+  else if(/楽天|rakuten/i.test(text))site='楽天';
+  else if(/yahoo/i.test(text))site='Yahoo';
+  else if(/monotaro|モノタロウ/i.test(text))site='MonotaRO';
+  return {site, title:title.slice(0,120), price, keyword:''};
+}
+
+// ----- v24: レート制限（適法性担保）-----
+// EC タブを開く全操作（EC検索・★チェック・一括更新の半自動巡回）の共通ゲート。
+// 前回 open から 5 秒間隔 ＋ 60回/時 ＋ 200回/日。localStorage psv22_rate={h:{k,n},d:{k,n},ts}
+const RATE = { GAP_MS:5000, PER_HOUR:60, PER_DAY:200 };
+function rateLoad(){
+  const r = safeParse('psv22_rate', null);
+  const hk = new Date().toISOString().slice(0,13), dk = today();
+  const v = (r && typeof r==='object') ? r : {};
+  if(!v.h || v.h.k!==hk) v.h = {k:hk, n:0};
+  if(!v.d || v.d.k!==dk) v.d = {k:dk, n:0};
+  if(typeof v.ts!=='number') v.ts = 0;
+  return v;
+}
+function rateSave(r){ try{ localStorage.setItem('psv22_rate', JSON.stringify(r)); }catch(_e){} }
+// n=これから開くタブ数。許可なら消費して true、超過はトーストで案内して false
+function rateGate(n){
+  n = Math.max(1, Number(n)||1);
+  const r = rateLoad(), now = Date.now();
+  const wait = RATE.GAP_MS - (now - r.ts);
+  if(wait > 0){
+    toast('⏱ 少し間隔をあけてください', 'ページを開く操作は5秒間隔です（あと'+Math.ceil(wait/1000)+'秒）', 'warn');
+    return false;
+  }
+  if(r.h.n + n > RATE.PER_HOUR){
+    toast('⏱ 1時間の上限に達しました', 'ページを開けるのは1時間に'+RATE.PER_HOUR+'回までです（現在 '+r.h.n+'回）。時間をおいて再開してください', 'warn', 7000);
+    return false;
+  }
+  if(r.d.n + n > RATE.PER_DAY){
+    toast('⏱ 本日の上限に達しました', 'ページを開けるのは1日に'+RATE.PER_DAY+'回までです（本日 '+r.d.n+'回）。明日また利用できます', 'warn', 7000);
+    return false;
+  }
+  r.ts = now; r.h.n += n; r.d.n += n;
+  rateSave(r);
+  return true;
+}
+
+// ----- EC 一括検索 -----
+let openedTabs = [];
+function ecSearch(){
+  const kw = $('#kw').value.trim();
+  if(!kw){ toast('キーワードを入力','買いたいものを入力してください','warn'); $('#kw').focus(); return; }
+  const sites = allSites().filter(s=>state.activeSites.includes(s.id));  // v25: 追加サイトも対象（開く経路・レート制限は従来と同一）
+  if(!sites.length){ toast('サイト未選択','検索するサイトを1つ以上選んでください','warn'); return; }
+  if(!rateGate(sites.length)) return;  // v24: レート制限（開くタブ数ぶん消費）
+  // v23: 検索した文字を収集先フォルダとして固定
+  state.lastKeyword = kw;
+  save(); updateKwChip();
+  let opened=0, blocked=0;
+  sites.forEach(s=>{
+    const w = window.open(s.url+encodeURIComponent(kw),'_blank');
+    if(w){ opened++; openedTabs.push(w); } else blocked++;
+  });
+  updateCloseTabsBtn();
+  if(blocked) toast('一部ブロック',blocked+'サイトがポップアップブロックされました。アドレスバーのアイコンで許可を','warn',6000);
+  else toast('🌐 EC 検索',opened+'サイトを開きました。気になる商品をクリックすると自動でここに集まります','',6000);
+}
+// 開いた EC タブの管理
+function updateCloseTabsBtn(){
+  openedTabs = openedTabs.filter(w=>{ try{ return w && !w.closed; }catch(e){ return false; } });
+  const btn = $('#closeTabsBtn');
+  if(!btn) return;
+  if(openedTabs.length){
+    btn.style.display='';
+    btn.textContent='🚪 開いたタブを閉じる ('+openedTabs.length+')';
+  }else{
+    btn.style.display='none';
+  }
+}
+function closeAllTabs(){
+  let n=0;
+  openedTabs.forEach(w=>{ try{ if(w && !w.closed){ w.close(); n++; } }catch(e){} });
+  openedTabs=[];
+  updateCloseTabsBtn();
+  toast(n?'タブを閉じました':'閉じる対象なし', n?(n+'個の EC タブを閉じました'):'EC 検索で開いたタブはありません','');
+}
+// 全データのリセット
+function resetAll(){
+  if(!state.items.length){ toast('データなし','リセットする商品がありません','warn'); return; }
+  if(!confirm('気になる商品リストを全て削除します。\n商品 '+state.items.length+' 件と価格履歴がすべて消えます。\n\nよろしいですか？（取り消せません）')) return;
+  state.items=[]; state.groupMeta={};
+  Object.keys(charts).forEach(k=>{ try{ charts[k].destroy(); }catch(e){} delete charts[k]; });
+  save(); render();
+  toast('リセット完了','全データを削除しました','');
+}
+
+// ----- サイト pill -----
+function renderPills(){
+  $('#sitePills').innerHTML = allSites().map(s=>
+    `<span class="pill ${state.activeSites.includes(s.id)?'on':''}" data-s="${esc(s.id)}">${esc(s.id)}</span>`
+  ).join('') + `<span class="pill" id="siteMgrPill" title="検索サイトを追加・削除（アスクルなど普段の調達先を足せます）">➕ サイト追加</span>`;
+  $$('#sitePills .pill').forEach(p=>{
+    if(p.id==='siteMgrPill'){ p.onclick=openSiteManager; return; }
+    p.onclick=()=>{
+      const id=p.dataset.s;
+      if(state.activeSites.includes(id)) state.activeSites=state.activeSites.filter(x=>x!==id);
+      else state.activeSites.push(id);
+      save(); renderPills();
+    };
+  });
+}
+// ----- v25: 検索サイトの追加・削除（データ駆動化）-----
+// 追加サイトは「EC で検索」の対象に増えるだけ＝タブを開く経路・レート制限・手動起点の原則は不変
+window.openSiteManager = function(){
+  const rows = customSites.length ? customSites.map(s=>`
+    <tr>
+      <td>${esc(s.id)}</td>
+      <td class="tt" title="${esc(s.url)}" style="max-width:320px">${esc(s.url)}</td>
+      <td><button class="btn ghost sm" data-delsite="${esc(s.id)}">🗑 削除</button></td>
+    </tr>`).join('') : '<tr><td colspan="3" class="text-mute">追加したサイトはまだありません</td></tr>';
+  openModal(`
+    <h2>➕ 検索サイトの追加・削除</h2>
+    <p class="text-mute" style="font-size:12px;line-height:1.8;margin-bottom:10px">普段の調達先（アスクル・カウネットなど）を足すと「🌐 EC で検索」の対象になります。<br><b>検索URL</b>＝そのサイトで何かを検索した後、アドレスバーのURLから<b>検索語より前の部分</b>を貼り付けてください。<br>例：アスクルで「ペン」を検索 → <span style="word-break:break-all">https://www.askul.co.jp/s/?searchWord=ペン</span> → 貼るのは <b>https://www.askul.co.jp/s/?searchWord=</b> まで</p>
+    <div class="tbl-scroll" style="max-height:30vh;margin-bottom:12px">
+      <table class="wtable">
+        <thead><tr><th>サイト名</th><th>検索URL</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <input type="text" id="nsName" aria-label="追加するサイト名" placeholder="サイト名（例：アスクル・12文字まで）" maxlength="12">
+    <input type="text" id="nsUrl" aria-label="追加するサイトの検索URL" placeholder="検索URL（https:// で始まり、検索語の直前まで）">
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">閉じる</button>
+      <button class="btn primary" id="nsAdd">➕ 追加</button>
+    </div>
+  `);
+  const mdl=$('#modalRoot .modal'); if(mdl) mdl.classList.add('wide');
+  $$('#modalRoot [data-delsite]').forEach(b=>{
+    b.onclick=function(){
+      const id=b.getAttribute('data-delsite');
+      customSites=customSites.filter(s=>s.id!==id);
+      state.activeSites=state.activeSites.filter(x=>x!==id);
+      save(); renderPills(); openSiteManager();
+      toast('サイトを削除','「'+id+'」（登録済み商品はそのまま残ります）','');
+    };
+  });
+  const add=$('#nsAdd');
+  if(add) add.onclick=function(){
+    const name=($('#nsName').value||'').trim().normalize('NFKC');
+    const url=($('#nsUrl').value||'').trim();
+    if(!name){ toast('サイト名を入力してください','例：アスクル','warn'); return; }
+    if(allSites().some(s=>s.id===name)){ toast('同じ名前のサイトがあります','別の名前にしてください','warn'); return; }
+    if(!/^https?:\/\/.+/i.test(url)){ toast('検索URLが不正です','https:// で始まるURLを貼り付けてください','warn'); return; }
+    customSites.push({id:name, url:url});
+    if(!state.activeSites.includes(name)) state.activeSites.push(name);
+    save(); renderPills(); openSiteManager();
+    toast('➕ サイトを追加','「'+name+'」を検索対象に加えました','');
+  };
+};
+
+// ----- トースト -----
+function toast(title, msg, kind, ms){
+  const t=document.createElement('div');
+  t.className='toast'+(kind==='warn'?' warn':kind==='err'?' err':'');
+  t.innerHTML=`<div class="tt">${esc(title)}</div>${msg?`<div>${esc(msg)}</div>`:''}`;
+  $('#toast').appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, ms||3500);
+}
+
+// ----- モーダル -----
+let _modalOpener=null;  // V29: モーダルを開いた要素（閉時にフォーカスを返す）
+function openModal(html){
+  _modalOpener = document.activeElement;
+  $('#modalRoot').innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" role="dialog" aria-modal="true" tabindex="-1">${html}</div></div>`;
+  // v24.1: リスナーは innerHTML で破棄される .modal-bg 側に付ける（常駐の #modalRoot に付けると開くたびに蓄積する）
+  var bg=$('#modalRoot .modal-bg');
+  var mdl=$('#modalRoot .modal');
+  // V29: aria-label=モーダル見出し(h2)の文言をそのまま名前に
+  if(mdl){ var h2=mdl.querySelector('h2'); if(h2) mdl.setAttribute('aria-label', h2.textContent.trim()); }
+  if(bg) bg.addEventListener('keydown',function(e){
+    if(e.key==='Enter' && e.target && e.target.tagName==='INPUT'){ e.preventDefault(); var ok=bg.querySelector('.btn.primary'); if(ok) ok.click(); }
+    else if(e.key==='Escape'){ closeModal(); }
+    else if(e.key==='Tab' && mdl){
+      // V29: フォーカストラップ（Tabをモーダル内で循環・支援技術/キーボード利用者が背後に迷い出ない）
+      var f=[].filter.call(mdl.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])'),
+        function(x){ return !x.disabled && x.offsetParent!==null; });
+      if(!f.length) return;
+      var first=f[0], last=f[f.length-1];
+      if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
+      else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
+    }
+  });
+  // V29: 開時フォーカス（最初の操作可能要素へ・なければモーダル自身）
+  if(mdl){ var ff=mdl.querySelector('input,select,textarea,button'); try{ (ff||mdl).focus(); }catch(_e){} }
+}
+window.closeModal=function(){
+  $('#modalRoot').innerHTML='';
+  // V29: 呼出元へフォーカス返却（消えた要素なら何もしない）
+  try{ if(_modalOpener && document.contains(_modalOpener)) _modalOpener.focus(); }catch(_e){}
+  _modalOpener=null;
+};
+
+// ----- サンプルデータ -----
+function loadDemo(){
+  const demo = [
+    {site:'MonotaRO',title:'三菱鉛筆 油性ボールペン 黒 0.7mm',price:88,image:'',url:'demo://1',delivery:'翌日出荷',keyword:'ボールペン'},
+    {site:'Amazon',title:'ゼブラ 油性ボールペン スラリ 黒',price:110,image:'',url:'demo://2',delivery:'明日お届け',keyword:'ボールペン'},
+    {site:'楽天',title:'パイロット ボールペン アクロボール 黒',price:99,image:'',url:'demo://3',delivery:'2-3日',keyword:'ボールペン'},
+    {site:'MonotaRO',title:'ポスト・イット 強粘着ふせん 75x75',price:298,image:'',url:'demo://4',delivery:'当日出荷',keyword:'付箋'},
+    {site:'Amazon',title:'3M ポストイット 付箋 ノート 混色',price:340,image:'',url:'demo://5',delivery:'翌日',keyword:'付箋'},
+  ];
+  demo.forEach(d=>upsertItem(d));
+  // ボールペン1件に過去価格を仕込み（変動デモ）
+  const b = state.items.find(i=>i.url==='demo://1');
+  if(b){ b.priceHistory=[{d:'2026-05-09',p:105},{d:'2026-05-16',p:88}]; }
+  save(); render();
+  toast('🚀 サンプル投入','三菱鉛筆に2回分の価格記録が入っています。カードの 📊推移 を押すとグラフの見本が見られます','',8000);
+}
+
+// ----- 手動追加 / Excel取込（拡張なしでも価格比較できる導線）-----
+window.openManualAdd = function(){
+  openModal(`
+    <h2>✏️ 商品を手動で追加</h2>
+    <p class="text-mute" style="font-size:12px;margin-bottom:10px">拡張機能を使わなくても、ここから商品を登録して価格を比較できます。</p>
+    <input type="text" id="maTitle" placeholder="商品名（必須）例：三菱鉛筆 ボールペン 0.7mm" aria-label="商品名（必須）">
+    <input type="text" id="maPrice" placeholder="価格（円・数字のみ）例：120" inputmode="numeric" aria-label="価格（円・数字のみ）">
+    <input type="text" id="maGroup" placeholder="グループ（任意）例：ボールペン" aria-label="グループ（任意）">
+    <input type="text" id="maSite" placeholder="購入先（任意）例：MonotaRO" aria-label="購入先（任意）">
+    <input type="text" id="maUrl" placeholder="商品URL（任意・http/https のみ「買う」で開けます）" aria-label="商品URL（任意）">
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">キャンセル</button>
+      <button class="btn primary" id="maOk">追加</button>
+    </div>
+  `);
+  setTimeout(function(){
+    var t=document.getElementById('maTitle'); if(t) t.focus();
+    var ok=document.getElementById('maOk');
+    if(ok) ok.onclick=function(){
+      var title=(document.getElementById('maTitle').value||'').trim();
+      if(!title){ toast('商品名が必要です','商品名を入力してください','warn'); return; }
+      var praw=(document.getElementById('maPrice').value||'').replace(/[^\d.]/g,'');
+      var price = praw!=='' ? Number(praw) : null;
+      var grp=(document.getElementById('maGroup').value||'').trim();
+      var site=(document.getElementById('maSite').value||'').trim()||'その他';
+      var url=(document.getElementById('maUrl').value||'').trim();
+      var key = url || ('manual://'+Date.now()+'_'+Math.random().toString(36).slice(2,7));
+      var r=upsertItem({ site:site, title:title, price:price, url:key, keyword:grp, delivery:'' });
+      if(r && grp){ r.item.group=canonicalizeGroup(grp); }
+      save(); render(); closeModal();
+      toast('追加しました', title.slice(0,30), '');
+    };
+  },0);
+};
+function _pickCol(row, keys){
+  var i,k,rk;
+  for(i=0;i<keys.length;i++){ if(row[keys[i]]!=null && String(row[keys[i]]).trim()!=='') return row[keys[i]]; }
+  rk=Object.keys(row);
+  for(i=0;i<keys.length;i++){ for(k=0;k<rk.length;k++){ if(rk[k].indexOf(keys[i])>=0 && String(row[rk[k]]).trim()!=='') return row[rk[k]]; } }
+  return '';
+}
+function _numOrNull(v){ if(v==null) return null; var s=String(v).replace(/[^\d.]/g,''); return s===''?null:Number(s); }
+window.importXlsxFiles = function(files){
+  if(!files || !files.length) return;
+  if(typeof window.XLSX==='undefined'){ toast('Excel取込を利用できません','表計算ライブラリ（lib/xlsx.full.min.js）が見つかりません','warn',6000); return; }
+  var f=files[0];
+  var isCsv=/\.csv$/i.test(f.name||'');
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      var wb;
+      if(isCsv){
+        // CSV は文字コードを判定（UTF-8 で化けたら Shift-JIS で再デコード）してから解析
+        var buf=new Uint8Array(ev.target.result), txt='';
+        try{ txt=new TextDecoder('utf-8',{fatal:false}).decode(buf); }catch(_e){}
+        if(!txt || txt.indexOf('�')>=0){ try{ txt=new TextDecoder('shift_jis').decode(buf); }catch(_e2){} }
+        wb=window.XLSX.read(txt, {type:'string'});
+      }else{
+        wb=window.XLSX.read(ev.target.result, {type:'array'});
+      }
+      var ws=wb.Sheets[wb.SheetNames[0]];
+      var rows=window.XLSX.utils.sheet_to_json(ws, {defval:''});
+      var added=0;
+      rows.forEach(function(row){
+        var title=_pickCol(row,['品名','商品名','名称','商品','title']);
+        if(!title) return;
+        var price=_numOrNull(_pickCol(row,['支払単価','単価','価格','金額','price']));
+        var site=_pickCol(row,['購入先','発注先','店舗','サイト','メーカー','site'])||'その他';
+        var grp=_pickCol(row,['グループ','分類','カテゴリ','group'])||'';
+        var url=_pickCol(row,['URL','url','リンク'])||'';
+        var key=url || ('xlsx://'+Date.now()+'_'+added+'_'+Math.random().toString(36).slice(2,6));
+        var r=upsertItem({ site:String(site), title:String(title).slice(0,120), price:price, url:key, keyword:String(grp) });
+        if(r && grp){ r.item.group=canonicalizeGroup(String(grp)); }
+        added++;
+      });
+      save(); render();
+      toast(added?'取込完了':'取込0件', added?(added+'件を取り込みました'):'「品名」の列が見つかりませんでした。1行目に見出し（品名・価格・URL など）を入れてください', added?'':'warn', 7000);
+    }catch(e){ console.error(e); toast('Excel取込エラー', (e&&e.message)||'ファイルを読めませんでした','err',6000); }
+  };
+  reader.onerror=function(){ toast('読込エラー','ファイルを読めませんでした','err'); };
+  reader.readAsArrayBuffer(f);
+};
+// ----- v24: 🔄 価格の一括更新（半自動巡回 or 手入力）-----
+// 半自動巡回＝URL有の商品を「▶ 次のページを開く」ボタンで1件ずつ開く（毎回ユーザー操作起点・レート制限順守・自動巡回なし）
+function buTargets(scope){
+  let list = state.items.slice();
+  if(scope==='__fav') list = list.filter(i=>i.pinned);
+  else if(scope==='__stale'){  // v26: 記録が古い商品を、古い順に
+    list = list.filter(isStale);
+    list.sort((a,b)=>String(lastRecDate(a)||'').localeCompare(String(lastRecDate(b)||'')));
+  }
+  else if(scope!=='__all') list = list.filter(i=>(i.group||'その他')===scope);
+  return list;
+}
+window.openBulkUpdate = function(presetScope){
+  // onclick から呼ばれると第1引数は MouseEvent になるため、文字列以外は無視
+  if(typeof presetScope!=='string') presetScope=null;
+  if(!state.items.length){ toast('対象なし','商品がまだありません','warn'); return; }
+  const groups = Object.keys(groupItems());
+  openModal(`
+    <h2>🔄 価格を一括更新</h2>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px;font-size:12.5px">
+      <span>範囲:</span>
+      <select id="buScope" style="padding:6px 10px;background:var(--bg);border:1px solid var(--border-strong);border-radius:7px;color:var(--text);font-size:12.5px">
+        <option value="__all">全件</option>
+        <option value="__fav">★ お気に入りのみ</option>
+        <option value="__stale">📅 記録が古い（${STALE_DAYS}日以上前・古い順）</option>
+        ${groups.map(g=>`<option value="${esc(g)}">📁 ${esc(g)}</option>`).join('')}
+      </select>
+      <span style="flex:1"></span>
+      <label style="cursor:pointer"><input type="radio" name="buMode" id="buModeAuto" checked> 🌐 半自動巡回</label>
+      <label style="cursor:pointer"><input type="radio" name="buMode" id="buModeManual"> ✏️ 手入力</label>
+    </div>
+    <div id="buAutoBox">
+      <p class="text-mute" style="font-size:12px;line-height:1.8;margin-bottom:10px">URL のある商品ページを、<b>あなたのボタン操作で</b>まとめて開きます（1クリックで最大8件＝「★の価格をチェック」と同水準・5秒間隔のレート制限つき・<b>ボタンを押さない限り次は開きません＝自動巡回なし</b>）。拡張機能が入っていれば、開いたページで商品を<b>クリック</b>すると今日の価格が再記録されます。</p>
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        <label style="font-size:12px">1回で開く件数:
+          <select id="buBatch" style="padding:5px 8px;background:var(--bg);border:1px solid var(--border-strong);border-radius:7px;color:var(--text);font-size:12px">
+            <option value="1">1件ずつ</option>
+            <option value="3">3件</option>
+            <option value="5" selected>5件</option>
+            <option value="8">8件</option>
+          </select>
+        </label>
+        <span id="buProg" style="font-weight:700;color:var(--cyan)"></span>
+        <span id="buCur" class="text-mute" style="font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+        <button class="btn green" id="buNext">▶ 開く</button>
+      </div>
+    </div>
+    <div id="buManualBox" class="hidden">
+      <p class="text-mute" style="font-size:12px;margin-bottom:8px">各商品の<b>今日の価格</b>を入力して保存すると、価格履歴に追記されます（同じ日の記録は上書き）。空欄の商品は変更されません。</p>
+      <div class="tbl-scroll">
+        <table class="wtable">
+          <thead><tr><th>商品</th><th>サイト</th><th>現在価格</th><th>今日の価格（円）</th></tr></thead>
+          <tbody id="buBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">閉じる</button>
+      <button class="btn primary hidden" id="buSave">💾 入力した価格を保存</button>
+    </div>
+  `);
+  const mdl = $('#modalRoot .modal'); if(mdl) mdl.classList.add('wide');
+  let queue=[], qIdx=0;
+  const scopeSel=$('#buScope'), autoBox=$('#buAutoBox'), manBox=$('#buManualBox'),
+        prog=$('#buProg'), cur=$('#buCur'), nextBtn=$('#buNext'), saveBtn=$('#buSave'),
+        body=$('#buBody'), rAuto=$('#buModeAuto'), rMan=$('#buModeManual');
+  function isManual(){ return !!(rMan && rMan.checked); }
+  function rebuild(){
+    const targets = buTargets(scopeSel ? scopeSel.value : '__all');
+    if(isManual()){
+      autoBox.classList.add('hidden'); manBox.classList.remove('hidden'); saveBtn.classList.remove('hidden');
+      body.innerHTML = targets.length ? targets.map(it=>`
+        <tr>
+          <td class="tt" title="${esc(it.title)}">${esc((it.title||'').slice(0,40))}</td>
+          <td>${esc(it.site)}</td>
+          <td class="num">${yen(it.price)}</td>
+          <td class="num"><input data-bid="${esc(it.id)}" inputmode="numeric" placeholder="未入力=変更なし"></td>
+        </tr>`).join('') : '<tr><td colspan="4" class="text-mute">この範囲に商品がありません</td></tr>';
+    }else{
+      manBox.classList.add('hidden'); saveBtn.classList.add('hidden'); autoBox.classList.remove('hidden');
+      queue = targets.filter(i=>/^https?:\/\//i.test(i.url||''));
+      qIdx = 0;
+      updateAuto();
+    }
+  }
+  function batchSize(){
+    const sel=document.getElementById('buBatch');
+    return Math.min(Math.max(1, Number(sel&&sel.value)||5), 8);
+  }
+  function updateAuto(){
+    if(!queue.length){
+      prog.textContent='対象 0 件';
+      cur.textContent='この範囲に商品ページURL付きの商品がありません（手入力モードをご利用ください）';
+      nextBtn.disabled=true;
+      nextBtn.textContent='▶ 開く';
+      return;
+    }
+    const rem = queue.length - qIdx;
+    nextBtn.disabled = rem<=0;
+    prog.textContent = '進捗 '+qIdx+' / '+queue.length;
+    if(rem>0){
+      const b = Math.min(batchSize(), rem);
+      nextBtn.textContent = '▶ 次の'+b+'件を開く';
+      const extra = b>1 ? '（ほか'+(b-1)+'件）' : '';
+      cur.textContent = '次: '+(queue[qIdx].title||'').slice(0,36)+extra;
+    }else{
+      nextBtn.textContent = '▶ 開く';
+      cur.textContent = '✅ すべて開きました。開いたページで商品をクリックすると価格が再記録されます';
+    }
+  }
+  if(presetScope && scopeSel && Array.from(scopeSel.options).some(o=>o.value===presetScope)) scopeSel.value=presetScope;
+  if(scopeSel) scopeSel.onchange=rebuild;
+  if(rAuto) rAuto.onchange=rebuild;
+  if(rMan) rMan.onchange=rebuild;
+  var bsel=document.getElementById('buBatch'); if(bsel) bsel.onchange=updateAuto;
+  if(nextBtn) nextBtn.onclick=function(){
+    const rem = queue.length - qIdx;
+    if(rem<=0) return;
+    const b = Math.min(batchSize(), rem);
+    if(!rateGate(b)) return;
+    let opened=0, blocked=false;
+    for(let k=0;k<b;k++){
+      const it=queue[qIdx];
+      const w=window.open(safeUrl(it.url),'_blank');
+      if(w){ openedTabs.push(w); qIdx++; opened++; }
+      else { blocked=true; break; }  // ブロックされたら以降は開かず待機（開けた分だけ進捗を進める）
+    }
+    updateCloseTabsBtn();
+    if(blocked) toast('ポップアップブロック','アドレスバーのアイコンからポップアップを許可して、もう一度「開く」を押してください','warn',7000);
+    else if(opened>1) toast('🌐 '+opened+'件を開きました','開いた各ページで商品をクリックすると価格が再記録されます','',5000);
+    updateAuto();
+  };
+  if(saveBtn) saveBtn.onclick=function(){
+    let n=0;
+    $$('#buBody input[data-bid]').forEach(inp=>{
+      const raw=(inp.value||'').replace(/[^\d.]/g,'');
+      if(raw==='') return;
+      const it=state.items.find(x=>x.id===inp.getAttribute('data-bid'));
+      if(!it) return;
+      const price=Number(raw);
+      it.priceHistory=it.priceHistory||[];
+      const t=today(), last=it.priceHistory[it.priceHistory.length-1];
+      if(last && last.d===t){ last.p=price; } else { it.priceHistory.push({d:t,p:price}); }
+      it.price=price;
+      it.updatedAt=new Date().toISOString();
+      n++;
+    });
+    if(!n){ toast('入力なし','価格を入力した商品がありません','warn'); return; }
+    save(); render(); closeModal();
+    toast('🔄 一括更新 完了', n+'件の今日の価格を記録しました','',6000);
+  };
+  rebuild();
+};
+
+// ----- v24: 📊 価格ウォッチ（全商品の価格推移サマリー＋CSV出力）-----
+function watchRows(){
+  const rows = state.items.map(it=>({it, s:priceStats(it), tr:priceTrend(it)}));
+  rows.sort((a,b)=> String(a.it.group||'').localeCompare(String(b.it.group||''),'ja') ||
+                    String(a.it.title||'').localeCompare(String(b.it.title||''),'ja'));
+  return rows;
+}
+function trendText(tr){ return tr ? tr.text : '—'; }
+window.openPriceWatch = function(){
+  if(!state.items.length){ toast('対象なし','商品がまだありません','warn'); return; }
+  // v27: 30日変動率を事前計算＋列クリックでソート
+  const rows = watchRows().map(r=>Object.assign(r,{p30:pct30(r.it)}));
+  const rowHtml = ({it,s,tr,p30}) => `
+          <tr>
+            <td>${esc(it.group||'その他')}</td>
+            <td class="tt" title="${esc(it.title)}">${isAllTimeLow(it)?'🔽 ':''}${isTargetHit(it)?'🎯 ':''}${esc((it.title||'').slice(0,36))}</td>
+            <td>${esc(it.site)}</td>
+            <td class="num" style="font-weight:700;color:var(--green)">${yen(it.price)}</td>
+            <td class="num">${s?yen(s.min):'—'}</td>
+            <td class="num">${s?yen(s.max):'—'}</td>
+            <td class="num">${s?yen(s.avg):'—'}</td>
+            <td class="num">${it.targetPrice!=null?yen(it.targetPrice):'—'}</td>
+            <td class="${tr?('card-trend '+tr.dir):'text-mute'}" style="font-size:11.5px">${esc(trendText(tr))}</td>
+            <td class="num ${p30!=null?(p30<0?'card-trend down':(p30>0?'card-trend up':'')):''}" style="font-size:11.5px">${p30!=null?((p30>0?'+':'')+p30+'%'):'—'}</td>
+            <td class="num">${s?s.n:0}</td>
+          </tr>`;
+  // ソートキー: data-k → 値取り出し（null は常に末尾）
+  const keyFns={
+    group:r=>r.it.group||'', title:r=>r.it.title||'', site:r=>r.it.site||'',
+    price:r=>r.it.price, min:r=>r.s?r.s.min:null, max:r=>r.s?r.s.max:null, avg:r=>r.s?r.s.avg:null,
+    target:r=>r.it.targetPrice, p30:r=>r.p30, n:r=>r.s?r.s.n:0
+  };
+  let sortK=null, sortDir=1;
+  openModal(`
+    <h2>📊 価格ウォッチ — 全商品の価格推移</h2>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+      <p class="text-mute" style="font-size:12px;flex:1;margin:0">${rows.length}件。<b>🔽</b>=過去最安 / <b>🎯</b>=狙い値以下（買い時サイン）。<b>見出しクリックで並べ替え</b>（もう一度で昇降切替）。</p>
+      <label style="font-size:12px;cursor:pointer;white-space:nowrap"><input type="checkbox" id="pwBuyOnly"> 🔽🎯 買い時のみ</label>
+    </div>
+    <div class="tbl-scroll">
+      <table class="wtable">
+        <thead><tr>
+          <th data-k="group" style="cursor:pointer">📁 グループ</th><th data-k="title" style="cursor:pointer">品名</th><th data-k="site" style="cursor:pointer">サイト</th>
+          <th data-k="price" style="cursor:pointer">現在</th><th data-k="min" style="cursor:pointer">最安</th><th data-k="max" style="cursor:pointer">最高</th>
+          <th data-k="avg" style="cursor:pointer">平均</th><th data-k="target" style="cursor:pointer">🎯狙い値</th><th>前回比</th>
+          <th data-k="p30" style="cursor:pointer" title="30日前の記録価格との比較">30日比</th><th data-k="n" style="cursor:pointer">回数</th>
+        </tr></thead>
+        <tbody id="pwBody"></tbody>
+      </table>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="pwCsv">📄 CSV出力</button>
+      <button class="btn primary" onclick="closeModal()">閉じる</button>
+    </div>
+  `);
+  const mdl = $('#modalRoot .modal'); if(mdl) mdl.classList.add('wide');
+  const csvBtn=$('#pwCsv');
+  if(csvBtn) csvBtn.onclick=exportWatchCsv;
+  const buyChk=$('#pwBuyOnly'), body=$('#pwBody');
+  const paint=()=>{
+    let list = (buyChk&&buyChk.checked) ? rows.filter(r=>isAllTimeLow(r.it)||isTargetHit(r.it)) : rows.slice();
+    if(sortK){
+      const f=keyFns[sortK];
+      list.sort((a,b)=>{
+        const va=f(a), vb=f(b);
+        if(va==null&&vb==null) return 0;
+        if(va==null) return 1;   // nullは常に末尾
+        if(vb==null) return -1;
+        return (typeof va==='string' ? va.localeCompare(vb,'ja') : va-vb)*sortDir;
+      });
+    }
+    body.innerHTML = list.length ? list.map(rowHtml).join('') : '<tr><td colspan="11" class="text-mute">買い時サインの商品はまだありません（🔽過去最安 または 🎯狙い値以下 が対象）</td></tr>';
+  };
+  $$('#modalRoot th[data-k]').forEach(th=>{
+    th.onclick=()=>{
+      const k=th.getAttribute('data-k');
+      if(sortK===k){ sortDir*=-1; } else { sortK=k; sortDir=1; }
+      $$('#modalRoot th[data-k]').forEach(x=>x.textContent=x.textContent.replace(/ [▲▼]$/,''));
+      th.textContent=th.textContent.replace(/ [▲▼]$/,'')+' '+(sortDir>0?'▲':'▼');
+      paint();
+    };
+  });
+  if(buyChk) buyChk.onchange=paint;
+  paint();
+};
+function csvCell(v){
+  const s=String(v==null?'':v);
+  return /[",\r\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+}
+function exportWatchCsv(){
+  const rows = watchRows();
+  const head = ['グループ','品名','サイト','現在価格','最安','最高','平均','狙い値','前回比','30日変動率%','タグ','記録回数','最終記録日','過去最安フラグ','狙い値到達','メモ','URL'];
+  const lines = [head.join(',')];
+  rows.forEach(({it,s,tr})=>{
+    const hist=it.priceHistory||[];
+    const p30=pct30(it);
+    lines.push([
+      it.group||'その他', it.title||'', it.site||'',
+      it.price!=null?it.price:'', s?s.min:'', s?s.max:'', s?s.avg:'',
+      it.targetPrice!=null?it.targetPrice:'',
+      trendText(tr), p30!=null?p30:'', (it.tags||[]).join(' '), s?s.n:0,
+      hist.length?hist[hist.length-1].d:'',
+      isAllTimeLow(it)?'過去最安':'',
+      isTargetHit(it)?'狙い値以下':'',
+      it.note||'',
+      /^https?:\/\//i.test(it.url||'')?it.url:''
+    ].map(csvCell).join(','));
+  });
+  // BOM 付き UTF-8（Excel で文字化けさせない）
+  const blob = new Blob([String.fromCharCode(0xFEFF)+lines.join('\r\n')], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '購買サーチ_価格ウォッチ_'+today()+'.csv';
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  toast('📄 CSV出力', rows.length+'件を書き出しました','');
+}
+
+// ----- v26: 📑 購買検討レポート（比較表＋推移スパークラインつき印刷用HTML・端末内書き出しのみ）-----
+// ===== V30: 🧾 注文書（EC取得情報を流し込み→手修正→捺印欄つきA4印刷・転記レス） =====
+let poSettings = safeParse('psv22_poSettings', null) || {
+  dept:'', requester:'',
+  accounts:[],   // 勘定科目 [{c:コード, n:名}] — 自分で設定（干場要件）
+  centers:[],    // 原価センタ [{c,n}] — 同上
+  stamps:['起案者','課長承認','工場長承認','購買処理'],  // 捺印欄（既定4・編集可）
+  seq:{d:'', n:0}  // 注文書番号の日内連番
+};
+function poSave(){ try{ localStorage.setItem('psv22_poSettings', JSON.stringify(poSettings)); }catch(_e){} }
+function poPeekNo(){ const t=today().replace(/-/g,''); const n=(poSettings.seq.d===t?poSettings.seq.n:0)+1; return 'PO-'+t+'-'+String(n).padStart(2,'0'); }
+function poCommitNo(){ const t=today().replace(/-/g,''); if(poSettings.seq.d!==t) poSettings.seq={d:t,n:0}; poSettings.seq.n++; poSave(); }
+
+// ⚙ リスト設定（勘定科目・原価センタ・捺印欄・起案者情報）
+window.openPoSettings = function(){
+  const listRows=(arr,cls)=>arr.map((x,i)=>`<tr><td><input class="${cls}c" value="${esc(x.c)}" placeholder="コード" style="width:90px;margin-bottom:0"></td><td><input class="${cls}n" value="${esc(x.n)}" placeholder="名称" style="margin-bottom:0"></td><td><button class="btn ghost sm" data-podel="${cls}:${i}" aria-label="この行を削除">✕</button></td></tr>`).join('');
+  openModal(`
+    <h2>⚙ 注文書の設定</h2>
+    <p class="text-mute" style="font-size:12px;margin-bottom:8px">一度設定すれば、次回からは選ぶだけになります（この端末に保存・💾控えにも含まれます）。</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <input id="poDept" value="${esc(poSettings.dept)}" placeholder="起案部署（例：製造部）" aria-label="起案部署" style="flex:1;min-width:150px">
+      <input id="poReq" value="${esc(poSettings.requester)}" placeholder="起案者名" aria-label="起案者名" style="flex:1;min-width:120px">
+    </div>
+    <b style="font-size:12.5px">📒 勘定科目リスト</b>
+    <div style="overflow-x:auto"><table class="wtable" id="poAccT"><thead><tr><th>コード</th><th>科目名</th><th></th></tr></thead><tbody>${listRows(poSettings.accounts,'poA')}</tbody></table></div>
+    <button class="btn ghost sm" id="poAccAdd">＋ 科目を追加</button>
+    <b style="font-size:12.5px;display:block;margin-top:10px">🏭 原価センタリスト</b>
+    <div style="overflow-x:auto"><table class="wtable" id="poCenT"><thead><tr><th>コード</th><th>センタ名</th><th></th></tr></thead><tbody>${listRows(poSettings.centers,'poC')}</tbody></table></div>
+    <button class="btn ghost sm" id="poCenAdd">＋ センタを追加</button>
+    <b style="font-size:12.5px;display:block;margin-top:10px">🖋 捺印欄（起案の流れ順に入力 → 印刷では<b>右端が起案者</b>・左へ承認が進む並びになります）</b>
+    <input id="poStamps" value="${esc(poSettings.stamps.join('、'))}" aria-label="捺印欄の名称（読点区切り）" placeholder="例：起案者、課長承認、工場長承認、購買処理">
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">キャンセル</button>
+      <button class="btn primary" id="poSetOk">保存</button>
+    </div>
+  `);
+  const mdl=$('#modalRoot .modal'); if(mdl) mdl.classList.add('wide');
+  const addRow=(tid,cls)=>{ const tb=$('#'+tid+' tbody'); const tr=document.createElement('tr');
+    tr.innerHTML=`<td><input class="${cls}c" placeholder="コード" style="width:90px;margin-bottom:0"></td><td><input class="${cls}n" placeholder="名称" style="margin-bottom:0"></td><td><button class="btn ghost sm" data-podel="new" aria-label="この行を削除">✕</button></td>`;
+    tb.appendChild(tr); };
+  $('#poAccAdd').onclick=()=>addRow('poAccT','poA');
+  $('#poCenAdd').onclick=()=>addRow('poCenT','poC');
+  $('#modalRoot .modal').addEventListener('click',function(e){ const b=e.target.closest('[data-podel]'); if(b){ b.closest('tr').remove(); } });
+  $('#poSetOk').onclick=function(){
+    const collect=(tid,cls)=>[...$('#'+tid).querySelectorAll('tbody tr')].map(tr=>({c:(tr.querySelector('.'+cls+'c').value||'').trim(), n:(tr.querySelector('.'+cls+'n').value||'').trim()})).filter(x=>x.c||x.n);
+    poSettings.dept=($('#poDept').value||'').trim();
+    poSettings.requester=($('#poReq').value||'').trim();
+    poSettings.accounts=collect('poAccT','poA');
+    poSettings.centers=collect('poCenT','poC');
+    const st=($('#poStamps').value||'').split(/[、,]/).map(s=>s.trim()).filter(Boolean);
+    poSettings.stamps=st.length?st:['起案者','課長承認','工場長承認','購買処理'];
+    poSave(); closeModal();
+    toast('⚙ 注文書の設定を保存しました','科目'+poSettings.accounts.length+'件・センタ'+poSettings.centers.length+'件・捺印欄'+poSettings.stamps.length+'欄','');
+  };
+};
+
+// 🧾 注文書の作成モーダル
+window.openPurchaseOrder = function(){
+  if(!state.items.length){ toast('対象なし','商品がまだありません','warn'); return; }
+  const opts=(arr,ph)=>`<option value="">${arr.length?'（'+ph+'を選択）':'（未設定 — ⚙で登録）'}</option>`+arr.map((x,i)=>`<option value="${i}">${esc(x.c)} ${esc(x.n)}</option>`).join('');
+  const accO=opts(poSettings.accounts,'科目'), cenO=opts(poSettings.centers,'センタ');
+  const sorted=[...state.items].sort((a,b)=>(b.pinned?1:0)-(a.pinned?1:0));
+  const rows=sorted.map(it=>`
+    <tr data-poid="${esc(it.id)}">
+      <td><input type="checkbox" class="poSel" ${it.pinned?'checked':''} aria-label="この商品を注文書に含める"></td>
+      <td class="tt"><input class="poName" value="${esc(it.title)}" aria-label="品名" style="min-width:180px;margin-bottom:0;text-align:left">${it.maker?`<div class="text-mute" style="font-size:10px">${esc(it.maker)}</div>`:''}</td>
+      <td>${esc(it.site)}</td>
+      <td><input class="poPrice" inputmode="numeric" value="${it.price!=null?it.price:''}" aria-label="単価（円）" style="width:80px;margin-bottom:0"></td>
+      <td><input class="poQty" inputmode="numeric" value="1" aria-label="数量" style="width:55px;margin-bottom:0"></td>
+      <td class="poAmt num">—</td>
+      <td><select class="poAcc" aria-label="勘定科目" style="max-width:150px">${accO}</select></td>
+      <td><select class="poCen" aria-label="原価センタ" style="max-width:150px">${cenO}</select></td>
+      <td><input class="poReason" placeholder="購入理由" aria-label="この品目の購入理由" style="min-width:140px;margin-bottom:0"></td>
+    </tr>`).join('');
+  openModal(`
+    <h2>🧾 注文書を作る</h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <input type="date" id="poDate" value="${today()}" aria-label="注文書の日付" style="width:150px;margin-bottom:6px">
+      <input id="poNo" value="${poPeekNo()}" aria-label="注文書番号" style="width:170px;margin-bottom:6px">
+      <input id="poDept2" value="${esc(poSettings.dept)}" placeholder="起案部署" aria-label="起案部署" style="flex:1;min-width:130px;margin-bottom:6px">
+      <input id="poReq2" value="${esc(poSettings.requester)}" placeholder="起案者" aria-label="起案者" style="flex:1;min-width:100px;margin-bottom:6px">
+      <button class="btn ghost sm" onclick="closeModal();openPoSettings()" title="勘定科目・原価センタ・捺印欄のリスト設定">⚙ リスト設定</button>
+    </div>
+    <textarea id="poPurpose" rows="2" placeholder="購入目的（例：第一工場ラインの消耗品補充のため）" aria-label="購入目的" style="width:100%;background:var(--bg);border:1px solid var(--border-strong);border-radius:7px;color:var(--text);font-size:12.5px;padding:8px;margin-bottom:8px"></textarea>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px;font-size:12px">
+      <span>☑行に一括:</span>
+      <select id="poAccAll" aria-label="一括適用する勘定科目" style="max-width:160px">${accO}</select>
+      <select id="poCenAll" aria-label="一括適用する原価センタ" style="max-width:160px">${cenO}</select>
+      <button class="btn ghost sm" id="poApplyAll">適用</button>
+      <span class="text-mute" style="flex:1;text-align:right">発注先が複数のときは、サイトごとに1枚ずつ（改ページ）になります</span>
+    </div>
+    <div class="tbl-scroll"><table class="wtable">
+      <thead><tr><th>☑</th><th>品名（修正可）</th><th>発注先</th><th>単価</th><th>数量</th><th>金額</th><th>勘定科目</th><th>原価センタ</th><th>購入理由</th></tr></thead>
+      <tbody id="poRows">${rows}</tbody>
+    </table></div>
+    <div style="text-align:right;font-size:13px;font-weight:800;margin-top:6px">合計: <span id="poTotal">¥0</span></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">キャンセル</button>
+      <button class="btn primary" id="poGo">🖨 注文書を作る（印刷画面へ）</button>
+    </div>
+  `);
+  const mdl=$('#modalRoot .modal'); if(mdl) mdl.classList.add('wide');
+  const recalc=()=>{ let total=0;
+    $$('#poRows tr').forEach(tr=>{
+      const on=tr.querySelector('.poSel').checked;
+      const p=Number((tr.querySelector('.poPrice').value||'').replace(/[^\d.]/g,''))||0;
+      const q=Number((tr.querySelector('.poQty').value||'').replace(/[^\d.]/g,''))||0;
+      const amt=on?p*q:0; tr.querySelector('.poAmt').textContent=on&&q?('¥'+(p*q).toLocaleString()):'—';
+      total+=amt;
+    });
+    $('#poTotal').textContent='¥'+total.toLocaleString(); };
+  $('#poRows').addEventListener('input',recalc); $('#poRows').addEventListener('change',recalc); recalc();
+  $('#poApplyAll').onclick=()=>{ const a=$('#poAccAll').value, c=$('#poCenAll').value;
+    $$('#poRows tr').forEach(tr=>{ if(!tr.querySelector('.poSel').checked) return;
+      if(a!=='') tr.querySelector('.poAcc').value=a; if(c!=='') tr.querySelector('.poCen').value=c; }); };
+  $('#poGo').onclick=function(){
+    const lines=[];
+    $$('#poRows tr').forEach(tr=>{
+      if(!tr.querySelector('.poSel').checked) return;
+      const it=state.items.find(x=>x.id===tr.getAttribute('data-poid')); if(!it) return;
+      const p=Number((tr.querySelector('.poPrice').value||'').replace(/[^\d.]/g,''))||0;
+      const q=Number((tr.querySelector('.poQty').value||'').replace(/[^\d.]/g,''))||0;
+      if(q<=0) return;
+      const ai=tr.querySelector('.poAcc').value, ci=tr.querySelector('.poCen').value;
+      lines.push({it, name:(tr.querySelector('.poName').value||it.title).trim(), site:it.site, maker:it.maker||'', p, q,
+        acc: ai!==''?poSettings.accounts[Number(ai)]:null, cen: ci!==''?poSettings.centers[Number(ci)]:null,
+        reason:(tr.querySelector('.poReason').value||'').trim()});  // V30.1: 品目ごとの購入理由（明細右端・干場FB）
+    });
+    if(!lines.length){ toast('明細がありません','☑を付けて数量を入れてください','warn'); return; }
+    const doc={ date: $('#poDate').value||today(), no: ($('#poNo').value||'').trim()||poPeekNo(),
+      dept: ($('#poDept2').value||'').trim(), req: ($('#poReq2').value||'').trim(),
+      purpose: ($('#poPurpose').value||'').trim() };
+    if(doc.no===poPeekNo()) poCommitNo();  // 自動採番のまま使われたら連番を消費（手で変えたら消費しない）
+    exportPurchaseOrder(lines, doc);
+    // 発注記録へ自動追記（転記レスの本丸=カードの🧾最終発注・CSVにそのまま乗る）
+    const d=doc.date;
+    lines.forEach(l=>{ l.it.orders=l.it.orders||[]; l.it.orders.push({d:d, q:l.q, p:l.p, note:'注文書 '+doc.no}); });
+    save(); render(); closeModal();
+    toast('🧾 注文書を作成しました', doc.no+'（'+lines.length+'品目）— 各商品の発注記録にも自動で残しました','',8000);
+  };
+};
+
+// A4印刷HTMLの生成（発注先ごとに改ページ・捺印欄=設定の欄数）
+function exportPurchaseOrder(lines, doc){
+  const sites=[...new Set(lines.map(l=>l.site))];
+  // V30.1: 稟議の商習慣=右から左へ捺印が進む（右端=起案者・左へ承認が上がる・干場FB 07-10）
+  const stampsRtl = poSettings.stamps.slice().reverse();
+  const stampTd=stampsRtl.map(s=>`<td class="stH">${esc(s)}</td>`).join('');
+  const stampBox=stampsRtl.map(()=>`<td class="stB"></td>`).join('');
+  const pages=sites.map((site,si)=>{
+    const ls=lines.filter(l=>l.site===site);
+    const sum=ls.reduce((a,l)=>a+l.p*l.q,0);
+    const no=sites.length>1? doc.no+'-'+String(si+1).padStart(2,'0') : doc.no;
+    const trs=ls.map((l,i)=>`<tr><td class="c">${i+1}</td><td>${esc(l.name)}${l.maker?`<div class="mut">${esc(l.maker)}</div>`:''}</td><td class="c">${l.q}</td><td class="r">¥${l.p.toLocaleString()}</td><td class="r">¥${(l.p*l.q).toLocaleString()}</td><td class="c">${l.acc?esc(l.acc.c)+'<div class="mut">'+esc(l.acc.n)+'</div>':''}</td><td class="c">${l.cen?esc(l.cen.c)+'<div class="mut">'+esc(l.cen.n)+'</div>':''}</td><td>${esc(l.reason||'')}</td></tr>`).join('');
+    return `<section class="po">
+      <div class="head"><h1>注　文　書</h1><div class="meta">注文書番号: <b>${esc(no)}</b><br>日付: ${esc(doc.date)}</div></div>
+      <table class="stamps"><tr>${stampTd}</tr><tr>${stampBox}</tr></table>
+      <table class="info"><tr><th>発注先</th><td>${esc(site)}</td><th>起案部署</th><td>${esc(doc.dept)}</td><th>起案者</th><td>${esc(doc.req)}</td></tr></table>
+      <table class="lines"><thead><tr><th style="width:5%">No</th><th>品名</th><th style="width:7%">数量</th><th style="width:11%">単価</th><th style="width:12%">金額</th><th style="width:11%">勘定科目</th><th style="width:11%">原価センタ</th><th style="width:16%">購入理由</th></tr></thead>
+        <tbody>${trs}</tbody>
+        <tfoot><tr><td colspan="4" class="r"><b>合計</b></td><td class="r"><b>¥${sum.toLocaleString()}</b></td><td colspan="3"></td></tr></tfoot></table>
+      <div class="purpose"><b>購入目的:</b> ${esc(doc.purpose)||'　'}</div>
+    </section>`;
+  }).join('');
+  const html=`<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><title>${esc(doc.no)} 注文書</title><style>
+    @page{size:A4;margin:14mm} body{font-family:"Yu Gothic","Meiryo",sans-serif;color:#111;font-size:12px;margin:0}
+    .po{page-break-after:always;padding:4mm 0} .po:last-child{page-break-after:auto}
+    .head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2.5px solid #111;padding-bottom:4px}
+    h1{font-size:24px;letter-spacing:8px;margin:0} .meta{font-size:11.5px;text-align:right;line-height:1.7}
+    .stamps{border-collapse:collapse;margin:10px 0 6px auto} .stamps td{border:1px solid #111;text-align:center}
+    .stH{font-size:10px;padding:2px 6px;background:#f2f2f2;min-width:18mm} .stB{height:18mm}
+    .info{width:100%;border-collapse:collapse;margin:6px 0} .info th{background:#f2f2f2;font-size:10.5px;padding:4px;border:1px solid #999;width:9%} .info td{padding:4px 8px;border:1px solid #999}
+    .lines{width:100%;border-collapse:collapse;margin-top:4px} .lines th{background:#f2f2f2;border:1px solid #999;padding:5px;font-size:11px} .lines td{border:1px solid #999;padding:5px 6px;vertical-align:top}
+    .c{text-align:center} .r{text-align:right} .mut{color:#666;font-size:9.5px}
+    .purpose{border:1px solid #999;padding:8px;margin-top:8px;min-height:16mm;line-height:1.7}
+    .bar{position:fixed;top:0;left:0;right:0;background:#1a2233;color:#fff;padding:8px 14px;display:flex;gap:10px;align-items:center;font-size:13px}
+    .bar button{font-size:13px;padding:6px 16px;cursor:pointer} body.hasbar{padding-top:44px}
+    @media print{.bar{display:none} body.hasbar{padding-top:0}}
+  </style></head><body class="hasbar"><div class="bar">🧾 内容を確認して印刷してください（プリンタ選択で「PDFに保存」も可能）<span style="flex:1"></span><button onclick="window.print()">🖨 印刷</button><button onclick="window.close()">閉じる</button></div>${pages}</body></html>`;
+  const w=window.open('','_blank');
+  if(w && w.document){ w.document.write(html); w.document.close(); }
+  else{  // ポップアップ不可ならHTMLダウンロード（検討レポートと同型）
+    const blob=new Blob([String.fromCharCode(0xFEFF)+html],{type:'text/html;charset=utf-8'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=doc.no+'_注文書.html';
+    document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);
+    toast('注文書をファイルに保存しました','ダブルクリックで開いて印刷できます','',7000);
+  }
+}
+
+window.openReport = function(){
+  if(!state.items.length){ toast('対象なし','商品がまだありません','warn'); return; }
+  const groups = Object.keys(groupItems());
+  openModal(`
+    <h2>📑 検討レポートの書き出し</h2>
+    <p class="text-mute" style="font-size:12px;line-height:1.8;margin-bottom:10px">比較表＋価格推移（ミニグラフ）つきの<b>印刷用HTML</b>を書き出します。発注前の検討や上長への説明にそのまま使えます。書き出したファイルはブラウザで開いて印刷／PDF保存できます。</p>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px;font-size:12.5px">
+      <span>範囲:</span>
+      <select id="rpScope" style="padding:6px 10px;background:var(--bg);border:1px solid var(--border-strong);border-radius:7px;color:var(--text);font-size:12.5px">
+        <option value="__all">全件</option>
+        <option value="__fav">★ お気に入りのみ</option>
+        ${groups.map(g=>`<option value="${esc(g)}">📁 ${esc(g)}</option>`).join('')}
+      </select>
+      <label style="cursor:pointer"><input type="checkbox" id="rpBuyOnly"> 🔽🎯 買い時サインの商品だけ</label>
+    </div>
+    <input type="text" id="rpTitle" value="購買検討レポート" maxlength="60">
+    <input type="text" id="rpAuthor" placeholder="作成者（任意）例：山田" maxlength="30">
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">閉じる</button>
+      <button class="btn primary" id="rpGo">📑 書き出す</button>
+    </div>
+  `);
+  const go=$('#rpGo');
+  if(go) go.onclick=function(){
+    let list = buTargets($('#rpScope').value);
+    if($('#rpBuyOnly').checked) list = list.filter(i=>isAllTimeLow(i)||isTargetHit(i));
+    if(!list.length){ toast('対象0件','この条件に合う商品がありません','warn'); return; }
+    const title=($('#rpTitle').value||'購買検討レポート').trim().slice(0,60);
+    const author=($('#rpAuthor').value||'').trim().slice(0,30);
+    exportReport(list, title, author);
+    closeModal();
+  };
+};
+function exportReport(list, title, author){
+  const dt=today();
+  const gmap=groupItems(list);
+  const gNames=Object.keys(gmap).sort((a,b)=>a.localeCompare(b,'ja'));
+  const buyN=list.filter(i=>isAllTimeLow(i)||isTargetHit(i)).length;
+  const allDates=list.flatMap(i=>(i.priceHistory||[]).map(h=>h.d)).sort();
+  let body='';
+  gNames.forEach(g=>{
+    const items=gmap[g].slice().sort((a,b)=>(a.price??Infinity)-(b.price??Infinity));
+    const prices=items.map(i=>i.price).filter(p=>p!=null&&p>0);
+    const lo=prices.length?Math.min(...prices):null;
+    body+='<h2>📁 '+esc(g)+' <span class="gm">'+items.length+'件'+(lo!=null?' ・ 最安 '+yen(lo):'')+'</span></h2>';
+    body+='<table><tr><th>品名</th><th>サイト</th><th>現在</th><th>最安</th><th>最高</th><th>平均</th><th>🎯狙い値</th><th>前回比</th><th>推移</th><th>最終記録</th><th>メモ</th></tr>';
+    items.forEach(it=>{
+      const s=priceStats(it), tr=priceTrend(it);
+      const best=(lo!=null&&it.price===lo);
+      const buy=isAllTimeLow(it)||isTargetHit(it);
+      body+='<tr'+(best?' class="best"':'')+'>'
+        +'<td class="tt">'+(it.pinned?'★ ':'')+(buy?'<span class="buy">'+(isAllTimeLow(it)?'🔽':'')+(isTargetHit(it)?'🎯':'')+'</span> ':'')+esc((it.title||'').slice(0,44))+(best?' 🏆':'')+'</td>'
+        +'<td>'+esc(it.site||'')+'</td>'
+        +'<td class="num pr">'+yen(it.price)+'</td>'
+        +'<td class="num">'+(s?yen(s.min):'—')+'</td>'
+        +'<td class="num">'+(s?yen(s.max):'—')+'</td>'
+        +'<td class="num">'+(s?yen(s.avg):'—')+'</td>'
+        +'<td class="num">'+(it.targetPrice!=null?yen(it.targetPrice):'—')+'</td>'
+        +'<td>'+esc(tr?tr.text:'—')+'</td>'
+        +'<td>'+sparkSvg(it)+'</td>'
+        +'<td>'+esc(lastRecDate(it)||'—')+'</td>'
+        +'<td class="memo">'+esc((it.note||'').slice(0,40))+'</td>'
+        +'</tr>';
+    });
+    body+='</table>';
+  });
+  const doc='<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>'+esc(title)+' ('+dt+')</title><style>'
+    +'body{font-family:"Yu Gothic UI","Meiryo",sans-serif;color:#1e293b;max-width:1000px;margin:0 auto;padding:24px;line-height:1.7}'
+    +'h1{color:#1F3864;border-bottom:3px solid #1F3864;padding-bottom:8px;font-size:22px}'
+    +'h2{color:#1F3864;font-size:15px;border-left:6px solid #C9962F;padding-left:10px;margin:26px 0 8px;break-after:avoid}'
+    +'h2 .gm{font-size:11.5px;color:#64748b;font-weight:400}'
+    +'.meta{font-size:12px;color:#475569;margin:10px 0 4px}'
+    +'.sumline{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 14px;font-size:13px;margin:10px 0}'
+    +'table{width:100%;border-collapse:collapse;font-size:11.5px;break-inside:avoid}'
+    +'th{background:#1F3864;color:#fff;padding:5px 7px;border:1px solid #cbd5e1;text-align:left;white-space:nowrap}'
+    +'td{padding:4px 7px;border:1px solid #cbd5e1;vertical-align:middle}'
+    +'tr:nth-child(even){background:#f8fafc}'
+    +'tr.best{background:#ecfdf5}'
+    +'td.num{text-align:right;white-space:nowrap}td.pr{font-weight:700;color:#047857}'
+    +'td.tt{max-width:250px}td.memo{max-width:130px;color:#475569}'
+    +'.buy{color:#B45309;font-weight:700}'
+    +'footer{margin-top:30px;font-size:11px;color:#64748b;border-top:1px solid #ddd;padding-top:8px}'
+    +'@media print{body{padding:0}table{page-break-inside:avoid}}'
+    +'</style></head><body>'
+    +'<h1>'+esc(title)+'</h1>'
+    +'<div class="meta">作成日: '+dt+(author?' ／ 作成者: '+esc(author):'')+(allDates.length?' ／ 記録期間: '+esc(allDates[0])+' 〜 '+esc(allDates[allDates.length-1]):'')+'</div>'
+    +'<div class="sumline">対象 <b>'+list.length+'件</b> ／ グループ '+gNames.length+' ／ 買い時サイン（🔽過去最安・🎯狙い値以下） <b>'+buyN+'件</b> ／ 🏆=グループ内最安</div>'
+    +body
+    +'<footer>購買サーチ v26 で作成（'+dt+'）。記録価格は取得時点の<b>参考値</b>です。発注前に必ず元の商品ページで最新の価格・条件をご確認ください。本レポートは業務検討用であり社外への提供はできません。</footer>'
+    +'</body></html>';
+  const blob=new Blob([String.fromCharCode(0xFEFF)+doc],{type:'text/html;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=(title.replace(/[\\/:*?"<>|]/g,'_')||'購買検討レポート')+'_'+dt+'.html';
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  toast('📑 レポートを書き出しました', list.length+'件（ブラウザで開いて印刷/PDF保存できます）','',7000);
+}
+
+// ----- v25: 💾 控え（まるごとバックアップ）と 📥 復元 -----
+// データはブラウザ内にしか無い＝端末の入替え・プロファイル削除で全履歴が消える。その保険。
+function exportBackup(){
+  if(!state.items.length && !customSites.length){ toast('データなし','保存する商品がまだありません','warn'); return; }
+  const payload = {
+    app:'購買サーチ', kind:'psv-backup', version:25, exportedAt:new Date().toISOString(),
+    items:state.items, groupMeta:state.groupMeta, activeSites:state.activeSites,
+    lastKeyword:state.lastKeyword, customSites:customSites,
+    poSettings:poSettings  // V30: 注文書の設定（勘定科目/原価センタ/捺印欄）も控えに含める
+  };
+  const blob = new Blob([JSON.stringify(payload,null,1)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '購買サーチ_控え_'+today()+'.json';
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  toast('💾 控えを保存', '商品'+state.items.length+'件・価格履歴・追加サイトをまとめて書き出しました。安全な場所に保管してください','',7000);
+}
+// 復元＝合体（既存優先で価格履歴を日付合体）: 別PCで記録した分を持ち寄る使い方に対応
+function mergeBackup(data){
+  let added=0, merged=0;
+  const byUrl = {};
+  state.items.forEach(it=>{ if(it.url) byUrl[it.url]=it; });
+  (Array.isArray(data.items)?data.items:[]).forEach(raw=>{
+    if(!raw || typeof raw!=='object' || !raw.url || !raw.title) return;
+    const im = normalizeItem(JSON.parse(JSON.stringify(raw)));
+    const ex = byUrl[im.url];
+    if(ex){
+      const seen={};
+      (ex.priceHistory||[]).forEach(h=>{ if(h&&h.d) seen[h.d]=true; });
+      (im.priceHistory||[]).forEach(h=>{ if(h&&h.d&&typeof h.p==='number'&&!seen[h.d]){ ex.priceHistory.push({d:h.d,p:h.p}); seen[h.d]=true; } });
+      ex.priceHistory.sort((a,b)=>String(a.d).localeCompare(String(b.d)));
+      if(ex.priceHistory.length) ex.price = ex.priceHistory[ex.priceHistory.length-1].p;
+      ex.pinned = ex.pinned || !!im.pinned;
+      if(ex.targetPrice==null && im.targetPrice!=null) ex.targetPrice = im.targetPrice;
+      if(!ex.note && im.note) ex.note = im.note;
+      // v27: タグは和集合・発注記録は(日付+数量+単価+メモ)一致を重複とみなして合体
+      ex.tags = Array.from(new Set((ex.tags||[]).concat(im.tags||[]))).slice(0,10);
+      ex.orders = ex.orders||[];
+      const okey=o=>o.d+'|'+o.q+'|'+o.p+'|'+(o.note||'');
+      const oseen=new Set(ex.orders.map(okey));
+      (im.orders||[]).forEach(o=>{ if(!oseen.has(okey(o))){ ex.orders.push(o); oseen.add(okey(o)); } });
+      ex.orders.sort((a,b)=>String(a.d).localeCompare(String(b.d)));
+      merged++;
+    }else{
+      if(state.items.some(x=>x.id===im.id)) im.id = 'i_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+      state.items.push(im); byUrl[im.url]=im; added++;
+    }
+  });
+  const gm = (data.groupMeta && typeof data.groupMeta==='object' && !Array.isArray(data.groupMeta)) ? data.groupMeta : {};
+  Object.keys(gm).forEach(k=>{ if(!(k in state.groupMeta)) state.groupMeta[k]=gm[k]; });
+  (Array.isArray(data.customSites)?data.customSites:[]).forEach(s=>{
+    if(s && typeof s.id==='string' && s.id.trim() && typeof s.url==='string' && /^https?:\/\//i.test(s.url) && !allSites().some(b=>b.id===s.id)){
+      customSites.push({id:s.id, url:s.url});
+    }
+  });
+  return {added, merged};
+}
+function replaceWithBackup(data){
+  state.items = (Array.isArray(data.items)?data.items:[]).filter(x=>x&&typeof x==='object'&&x.url&&x.title).map(normalizeItem);
+  const gm = (data.groupMeta && typeof data.groupMeta==='object' && !Array.isArray(data.groupMeta)) ? data.groupMeta : {};
+  state.groupMeta = gm;
+  if(Array.isArray(data.activeSites)) state.activeSites = data.activeSites.filter(x=>typeof x==='string');
+  if(typeof data.lastKeyword==='string') state.lastKeyword = data.lastKeyword;
+  customSites = (Array.isArray(data.customSites)?data.customSites:[]).filter(s=>
+    s && typeof s.id==='string' && s.id.trim() && typeof s.url==='string' && /^https?:\/\//i.test(s.url) && !SITES.some(b=>b.id===s.id));
+  Object.keys(charts).forEach(k=>{ try{ charts[k].destroy(); }catch(_e){} delete charts[k]; });
+}
+window.importBackupFile = function(files){
+  if(!files || !files.length) return;
+  const f = files[0];
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    let data=null;
+    try{ data = JSON.parse(String(ev.target.result||'')); }catch(e){ toast('復元できません','控えファイル（JSON）の形式が壊れています','err',6000); return; }
+    if(!data || data.kind!=='psv-backup' || !Array.isArray(data.items)){ toast('復元できません','このファイルは購買サーチの控えではありません（「💾 控えを保存」で作ったファイルを選んでください）','err',7000); return; }
+    const n = data.items.length;
+    openModal(`
+      <h2>📥 控えから復元</h2>
+      <p class="text-mute" style="font-size:12.5px;line-height:1.9;margin-bottom:12px">
+        控えの内容: 商品 <b>${n}件</b>${data.exportedAt?'（保存日 '+esc(String(data.exportedAt).slice(0,10))+'）':''}／追加サイト ${Array.isArray(data.customSites)?data.customSites.length:0}件<br>
+        <b>🧩 合体</b>＝今のデータは残し、同じ商品は価格履歴を合わせます（おすすめ・別PCの記録を持ち寄る時）<br>
+        <b>♻ 置き換え</b>＝今のデータを消して、控えの内容だけにします
+      </p>
+      <div class="modal-actions">
+        <button class="btn ghost" onclick="closeModal()">キャンセル</button>
+        <button class="btn ghost" id="rsReplace">♻ 置き換え</button>
+        <button class="btn primary" id="rsMerge">🧩 合体（おすすめ）</button>
+      </div>
+    `);
+    const mg=$('#rsMerge'), rp=$('#rsReplace');
+    if(mg) mg.onclick=function(){
+      const r = mergeBackup(data);
+      // V30: 控えに注文書設定があれば取り込む（自分の設定が空の時だけ=既存設定は上書きしない）
+      if(data.poSettings && !poSettings.accounts.length && !poSettings.centers.length){ poSettings=Object.assign(poSettings, data.poSettings); poSave(); }
+      save(); renderPills(); render(); closeModal();
+      toast('🧩 復元（合体）完了', r.added+'件 追加・'+r.merged+'件 履歴を合体しました','',7000);
+    };
+    if(rp) rp.onclick=function(){
+      if(!confirm('今の商品 '+state.items.length+' 件を消して、控えの内容（'+n+'件）だけにします。よろしいですか？')) return;
+      if(data.poSettings){ poSettings=Object.assign(poSettings, data.poSettings); poSave(); }  // V30: 置き換え時は控えの設定を採用
+      replaceWithBackup(data);
+      save(); renderPills(); render(); closeModal();
+      toast('♻ 復元（置き換え）完了', n+'件を読み込みました','',6000);
+    };
+  };
+  reader.onerror = function(){ toast('読込エラー','ファイルを読めませんでした','err'); };
+  reader.readAsText(f, 'utf-8');
+};
+
+// ----- v27: 🤝 チーム共有（社内の共有フォルダ＝Box等を郵便受けにして控えを持ち寄る）-----
+// 仕組み=各自が「購買サーチ_共有_<名前>.json」を共有フォルダへ書き出し、他の人のファイルを🧩合体で取り込む。
+// 通信は一切なし（ローカル/社内共有フォルダへのファイル読み書きのみ）。社外への提供は利用条件どおり禁止。
+const ShareDB={
+  _open(){ return new Promise((res,rej)=>{ const r=indexedDB.open('psv22_share',1);
+    r.onupgradeneeded=()=>{ r.result.createObjectStore('kv'); };
+    r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); },
+  async get(k){ const d=await this._open(); return new Promise((res,rej)=>{ const t=d.transaction('kv').objectStore('kv').get(k); t.onsuccess=()=>res(t.result); t.onerror=()=>rej(t.error); }); },
+  async set(k,v){ const d=await this._open(); return new Promise((res,rej)=>{ const t=d.transaction('kv','readwrite').objectStore('kv').put(v,k); t.onsuccess=()=>res(); t.onerror=()=>rej(t.error); }); },
+};
+async function shareEnsurePerm(handle){
+  try{
+    if((await handle.queryPermission({mode:'readwrite'}))==='granted') return true;
+    return (await handle.requestPermission({mode:'readwrite'}))==='granted';
+  }catch(_e){ return false; }
+}
+function shareUserName(){ try{ return localStorage.getItem('psv22_userName')||''; }catch(_e){ return ''; } }
+window.openShare = function(){
+  const supported = typeof window.showDirectoryPicker==='function';
+  openModal(`
+    <h2>🤝 チーム共有（社内限定）</h2>
+    <p class="text-mute" style="font-size:12px;line-height:1.8;margin-bottom:10px">
+      チームの<b>共有フォルダ（Box など）</b>を選ぶと、自分の商品リスト・価格履歴を
+      「購買サーチ_共有_<b>名前</b>.json」として置き、他のメンバーのファイルを<b>🧩合体</b>で取り込めます。
+      通信は一切なし（フォルダへのファイル読み書きのみ）。<b>同じ部署・同じ業務目的の社内共有に限ります</b>（社外提供は禁止・利用条件§2）。
+    </p>
+    <input type="text" id="shName" placeholder="あなたの名前（共有ファイル名に使います）例：干場" value="${esc(shareUserName())}" maxlength="20">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+      <button class="btn ghost" id="shPick" ${supported?'':'disabled'}>📁 共有フォルダを選ぶ</button>
+      <span id="shFolder" class="text-mute" style="font-size:12px">確認中…</span>
+    </div>
+    ${supported?'':'<p class="text-mute" style="font-size:12px;color:var(--orange)">⚠ このブラウザではフォルダ連携を使えません。「💾 控えを保存」→共有フォルダへ手動コピー→相手が「📥 復元→🧩合体」でも同じことができます。</p>'}
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">閉じる</button>
+      <button class="btn ghost" id="shIn" ${supported?'':'disabled'}>📥 共有から取り込む</button>
+      <button class="btn primary" id="shOut" ${supported?'':'disabled'}>📤 共有へ出す</button>
+    </div>
+  `);
+  const folderLbl=$('#shFolder');
+  const showFolder=async()=>{
+    if(!supported){ folderLbl.textContent='—'; return; }
+    try{ const h=await ShareDB.get('dir'); folderLbl.textContent=h?('選択中: '+h.name):'未選択（まず共有フォルダを選んでください）'; }
+    catch(_e){ folderLbl.textContent='未選択（まず共有フォルダを選んでください）'; }
+  };
+  showFolder();
+  const saveName=()=>{ const n=($('#shName').value||'').trim().slice(0,20); try{ localStorage.setItem('psv22_userName',n); }catch(_e){} return n; };
+  const pick=$('#shPick');
+  if(pick) pick.onclick=async()=>{
+    try{
+      const h=await window.showDirectoryPicker({mode:'readwrite'});
+      await ShareDB.set('dir',h);
+      showFolder();
+      toast('📁 共有フォルダを設定','「'+h.name+'」を使います','');
+    }catch(e){ if(e&&e.name!=='AbortError'){ console.error(e); toast('フォルダを選べませんでした',(e&&e.message)||'','err'); } }
+  };
+  const getDir=async()=>{
+    const h=await ShareDB.get('dir');
+    if(!h){ toast('共有フォルダが未選択です','まず「📁 共有フォルダを選ぶ」を押してください','warn'); return null; }
+    if(!(await shareEnsurePerm(h))){ toast('フォルダへのアクセスが許可されませんでした','もう一度お試しください','warn'); return null; }
+    return h;
+  };
+  const out=$('#shOut');
+  if(out) out.onclick=async()=>{
+    const name=saveName();
+    if(!name){ toast('名前を入力してください','共有ファイル名に使います','warn'); return; }
+    if(!state.items.length){ toast('データなし','共有する商品がまだありません','warn'); return; }
+    const dir=await getDir(); if(!dir) return;
+    try{
+      const payload={app:'購買サーチ', kind:'psv-backup', version:27, exportedAt:new Date().toISOString(), sharedBy:name,
+        items:state.items, groupMeta:state.groupMeta, activeSites:state.activeSites, lastKeyword:state.lastKeyword, customSites:customSites};
+      const fh=await dir.getFileHandle('購買サーチ_共有_'+name+'.json',{create:true});
+      const w=await fh.createWritable();
+      await w.write(JSON.stringify(payload));
+      await w.close();
+      toast('📤 共有へ出しました','購買サーチ_共有_'+name+'.json（商品'+state.items.length+'件）','',7000);
+    }catch(e){ console.error(e); toast('共有へ出せませんでした',(e&&e.message)||'フォルダの権限をご確認ください','err',7000); }
+  };
+  const inn=$('#shIn');
+  if(inn) inn.onclick=async()=>{
+    const name=saveName();
+    const dir=await getDir(); if(!dir) return;
+    try{
+      let files=0, added=0, merged=0, skipped=0;
+      const own='購買サーチ_共有_'+name+'.json';
+      for await (const entry of dir.values()){
+        if(entry.kind!=='file' || !/^購買サーチ_共有_.+\.json$/i.test(entry.name)) continue;
+        if(name && entry.name===own) continue;  // 自分のファイルは対象外
+        try{
+          const f=await entry.getFile();
+          const data=JSON.parse(await f.text());
+          if(!data || data.kind!=='psv-backup' || !Array.isArray(data.items)){ skipped++; continue; }
+          const r=mergeBackup(data);
+          added+=r.added; merged+=r.merged; files++;
+        }catch(_e){ skipped++; }
+      }
+      if(!files){ toast('取り込むファイルがありません','他のメンバーの「📤 共有へ出す」を待つか、フォルダをご確認ください','warn',7000); return; }
+      save(); renderPills(); render();
+      toast('📥 共有から取り込みました', files+'人分（追加'+added+'件・履歴合体'+merged+'件'+(skipped?'・スキップ'+skipped:'')+'）','',8000);
+    }catch(e){ console.error(e); toast('取り込みに失敗しました',(e&&e.message)||'','err',7000); }
+  };
+};
+
+// ----- V29: 使い方の図解（「検索した瞬間に推移が出る」という誤解を初回に解く）-----
+window.openHowTo = function(){
+  openModal(`
+    <h2>❓ 価格の追い方 — 3ステップ</h2>
+    <svg viewBox="0 0 660 170" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="価格の追い方3ステップの図解" style="width:100%;height:auto;margin:6px 0">
+      <g font-family="inherit">
+        <rect x="5" y="10" width="200" height="120" rx="10" fill="var(--bg)" stroke="var(--border)"/>
+        <text x="105" y="38" text-anchor="middle" font-size="15" font-weight="800" fill="var(--cyan)">① 検索</text>
+        <text x="105" y="62" text-anchor="middle" font-size="12" fill="var(--text)">「ボールペン」で検索</text>
+        <text x="105" y="82" text-anchor="middle" font-size="11" fill="var(--text-mute)">ECサイトのタブが開くだけ</text>
+        <text x="105" y="106" text-anchor="middle" font-size="11" font-weight="700" fill="var(--orange)">まだ価格は入りません</text>
+        <path d="M210,70 L245,70" stroke="var(--border-strong,#888)" stroke-width="2" marker-end="none"/><text x="227" y="62" text-anchor="middle" font-size="14" fill="var(--text-mute)">→</text>
+        <rect x="230" y="10" width="200" height="120" rx="10" fill="var(--bg)" stroke="var(--border)"/>
+        <text x="330" y="38" text-anchor="middle" font-size="15" font-weight="800" fill="var(--cyan)">② クリック</text>
+        <text x="330" y="62" text-anchor="middle" font-size="12" fill="var(--text)">気になる商品をクリック</text>
+        <text x="330" y="82" text-anchor="middle" font-size="11" fill="var(--text-mute)">その日の価格が1点 記録される</text>
+        <text x="330" y="106" text-anchor="middle" font-size="11" font-weight="700" fill="var(--green)">今日の1点 = スナップ写真</text>
+        <text x="452" y="62" text-anchor="middle" font-size="14" fill="var(--text-mute)">→</text>
+        <rect x="455" y="10" width="200" height="120" rx="10" fill="var(--bg)" stroke="var(--border)"/>
+        <text x="555" y="38" text-anchor="middle" font-size="15" font-weight="800" fill="var(--cyan)">③ 毎日重ねる</text>
+        <polyline points="490,100 515,88 540,92 565,72 590,78 615,60" fill="none" stroke="var(--green)" stroke-width="2.5"/>
+        <circle cx="490" cy="100" r="3" fill="var(--green)"/><circle cx="540" cy="92" r="3" fill="var(--green)"/><circle cx="615" cy="60" r="3" fill="var(--green)"/>
+        <text x="555" y="122" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text)">点が2つ以上で「推移」になる</text>
+        <text x="330" y="158" text-anchor="middle" font-size="11.5" fill="var(--text-mute)">🔄「価格を一括更新」や 📈記録 で毎日1点ずつ重ねると、値下がり・買い時が見えてきます</text>
+      </g>
+    </svg>
+    <p class="text-mute" style="font-size:12px;line-height:1.7">拡張機能が無い場合も「✏️ 手動で追加」「📄 Excelで取込」＋📈記録で同じように価格を追えます。記録が7日以上あくと「📅 記録が古い」でお知らせします。</p>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">閉じる</button>
+      ${state.items.length?'':`<button class="btn primary" onclick="closeModal();loadDemo()">🚀 見本を入れて試す</button>`}
+    </div>
+  `);
+  const mdl=$('#modalRoot .modal'); if(mdl) mdl.classList.add('wide');
+};
+
+function firstRunNote(){
+  try{
+    if(localStorage.getItem('psv22_agreed')!=='1') return;  // V29: 同意ゲートが先（通過時に呼び直される）
+    if(localStorage.getItem('psv22_seen')==='1') return;
+    localStorage.setItem('psv22_seen','1');
+    if(state.items.length>0) return;
+    openHowTo();  // V29: トースト1行 → 図解モーダルへ格上げ
+  }catch(_e){}
+}
+
+// ----- v24: 同意ゲート（初回のみ・利用条件に同意するまで全画面で操作を遮る）-----
+function consentGate(){
+  var agreed=false;
+  try{ agreed = localStorage.getItem('psv22_agreed')==='1'; }catch(_e){}
+  if(agreed) return;
+  var bg=document.createElement('div');
+  bg.id='consentGate';
+  bg.innerHTML=`
+    <div class="cg-box">
+      <h2>📋 ご利用の前に — 利用条件への同意</h2>
+      <p class="text-mute" style="font-size:12.5px">本ツールは「自分のブラウザに表示した価格を、自分の操作で手元にメモする」ための業務支援ツールです。以下の条件のもとでご利用ください（詳細: 同梱 <b>docs/利用条件.md</b>）。</p>
+      <ul>
+        <li><b>業務上の購買検討に限定</b>して使用します（私的転用・商用データ化をしません）</li>
+        <li>本ツールおよび収集データの<b>再配布・公開・第三者提供をしません</b></li>
+        <li><b>自動巡回はしません</b>。ページを開くのは必ず<b>自分のボタン操作を起点</b>とし、1回の操作で開くのは<b>限定された件数（最大8件）</b>までです（本ツールも自動巡回機能を持ちません）</li>
+        <li>記録された価格は<b>参考値</b>です。発注前に必ず<b>元の商品ページで最新価格を再確認</b>します</li>
+        <li>データは<b>この端末のブラウザ内にのみ</b>保存されます（外部送信なし）</li>
+      </ul>
+      <label><input type="checkbox" id="agChk" style="margin-top:3px"><span>上記の利用条件を読み、同意します</span></label>
+      <div class="modal-actions" style="margin-top:14px">
+        <button class="btn primary" id="agOk" disabled>同意して利用を開始</button>
+      </div>
+    </div>`;
+  document.body.appendChild(bg);
+  var chk=document.getElementById('agChk'), ok=document.getElementById('agOk');
+  if(chk&&ok){
+    chk.addEventListener('change', function(){ ok.disabled=!chk.checked; });
+    ok.addEventListener('click', function(){
+      if(!chk.checked) return;
+      try{ localStorage.setItem('psv22_agreed','1'); }catch(_e){}
+      bg.remove();
+      toast('同意を記録しました','ご利用ありがとうございます。条件の全文は docs/利用条件.md にあります','',6000);
+      setTimeout(firstRunNote, 400);  // V29: 同意通過後に初回図解（使い方3ステップ）を表示
+    });
+  }
+}
+
+// ----- 初期化 -----
+function init(){
+  try{
+    load();
+    renderPills();
+    render();
+    var sb=document.getElementById('searchBtn'); if(sb) sb.onclick=ecSearch;
+    var kwEl=document.getElementById('kw'); if(kwEl) kwEl.addEventListener('keydown',function(e){ if(e.key==='Enter') ecSearch(); });
+    var closeBtn=document.getElementById('closeTabsBtn'); if(closeBtn) closeBtn.onclick=closeAllTabs;
+    var resetBtn=document.getElementById('resetBtn'); if(resetBtn) resetBtn.onclick=resetAll;
+    var demoBtn=document.getElementById('demoBtn'); if(demoBtn) demoBtn.onclick=loadDemo;
+    var mab=document.getElementById('manualAddBtn'); if(mab) mab.onclick=openManualAdd;
+    var emb=document.getElementById('emptyManualBtn'); if(emb) emb.onclick=openManualAdd;
+    var fi=document.getElementById('xlsxFileInput');
+    var ix=document.getElementById('importXlsxBtn'); if(ix&&fi) ix.onclick=function(){ fi.click(); };
+    var eib=document.getElementById('emptyImportBtn'); if(eib&&fi) eib.onclick=function(){ fi.click(); };
+    if(fi) fi.addEventListener('change', function(e){ importXlsxFiles(e.target.files); e.target.value=''; });
+    var fcb=document.getElementById('favCheckBtn'); if(fcb) fcb.onclick=window.checkFavPrices;
+    // v25: 💾控え保存・📥復元・🔎絞り込み
+    var bk=document.getElementById('backupBtn'); if(bk) bk.onclick=exportBackup;
+    var rfi=document.getElementById('restoreFileInput');
+    var rb=document.getElementById('restoreBtn'); if(rb&&rfi) rb.onclick=function(){ rfi.click(); };
+    if(rfi) rfi.addEventListener('change', function(e){ importBackupFile(e.target.files); e.target.value=''; });
+    var fbx=document.getElementById('filterBox');
+    if(fbx) fbx.addEventListener('input', function(){ filterText=fbx.value; render(); });
+    var fcl=document.getElementById('filterClearBtn');
+    if(fcl) fcl.onclick=function(){ filterText=''; if(fbx) fbx.value=''; render(); };
+    // v24: 一括更新・価格ウォッチ
+    var bub=document.getElementById('bulkUpdateBtn'); if(bub) bub.onclick=window.openBulkUpdate;
+    var wb=document.getElementById('watchBtn'); if(wb) wb.onclick=window.openPriceWatch;
+    // v26: 検討レポート
+    var rpb=document.getElementById('reportBtn'); if(rpb) rpb.onclick=window.openReport;
+    var pob=document.getElementById('poBtn'); if(pob) pob.onclick=window.openPurchaseOrder;  // V30: 注文書
+    // v27: 発注管理・チーム共有
+    var odb=document.getElementById('ordersBtn'); if(odb) odb.onclick=window.openOrders;
+    var shb=document.getElementById('shareBtn'); if(shb) shb.onclick=window.openShare;
+    // v23: テーマ復元と切替（V29: 未選択ならOSのダーク/ライト設定に追従・🌓で一度選ぶと以後は手動優先）
+    var th=null; try{ th=localStorage.getItem('psv22_theme'); }catch(_e){}
+    if(!th){ th=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark'; }
+    applyTheme(th);
+    // v28: ♿ 見やすさ設定の復元と入口
+    a11yLoad(); applyA11y();
+    var ayb=document.getElementById('a11yBtn'); if(ayb) ayb.onclick=window.openA11y;
+    var htb=document.getElementById('howtoBtn'); if(htb) htb.onclick=window.openHowTo;  // V29: 使い方図解
+    var tbb=document.getElementById('teamBasketBtn'); if(tbb) tbb.onclick=window.teamPanelToggle;  // V31.1: パネル切替（狭い画面は別窓）
+    var tpc=document.getElementById('tpClose'); if(tpc) tpc.onclick=window.teamPanelClose;
+    var tpp=document.getElementById('tpPopout'); if(tpp) tpp.onclick=function(){ window.teamPanelClose(); var w=window.open('team_basket.html','psv22_team'); if(!w) toast('チーム籠を開けませんでした','','warn'); };
+    // V31.2: フォルダ選択はパネル(iframe)内から出せないブラウザ制限があるため、親画面のこのボタンで選ぶ
+    // （実機エラー「Cross origin sub frames aren't allowed to show a file picker」対応・干場FB 07-10）
+    var tpcn=document.getElementById('tpConnect');
+    if(tpcn) tpcn.onclick=async function(){
+      try{
+        var h=await window.showDirectoryPicker({mode:'readwrite'});
+        await ShareDB.set('teamdir',h);          // チーム画面と同じ保存場所（共有ストレージ）へ
+        await shareEnsurePerm(h);                // 親画面の操作なのでここで許可も取得できる
+        toast('📁 チーム籠フォルダを接続しました','「'+h.name+'」— パネルを読み直します','');
+        window.teamPanelOpen(true);              // 再読込→チーム画面が保存済みフォルダで自動接続
+      }catch(e){ if(e&&e.name!=='AbortError'){ console.error(e); toast('フォルダを選べませんでした',(e&&e.message)||'','err'); } }
+    };
+    window.addEventListener('message', function(ev){
+      if(ev&&ev.data&&ev.data.__psv22_teamNeedFolder){
+        toast('📁 チーム籠フォルダが未接続です','パネル上部の「📁 フォルダ接続」ボタンから共有フォルダを選んでください','warn',8000);
+        var b=document.getElementById('tpConnect'); if(b){ b.style.outline='3px solid var(--orange)'; setTimeout(function(){ b.style.outline=''; },5000); }
+      }
+    });
+    // 前回パネルを開いていたら復元（1画面で個人+チームを見る設定の記憶）
+    try{ if(localStorage.getItem('psv22_teamPanel')==='on' && window.innerWidth>=1100) window.teamPanelOpen(false); }catch(_e){}
+    var tb=document.getElementById('themeBtn');
+    if(tb) tb.onclick=function(){
+      var nx=document.body.classList.contains('light')?'dark':'light';
+      try{ localStorage.setItem('psv22_theme',nx); }catch(_e){}
+      applyTheme(nx); render();
+    };
+    // v23: 収集先フォルダチップ
+    var kc=document.getElementById('kwClearBtn');
+    if(kc) kc.onclick=function(){ state.lastKeyword=''; save(); updateKwChip(); toast('フォルダ固定を解除','以降は商品名などから自動分類します',''); };
+    updateKwChip();
+    // 拡張からのハッシュ受信（フォールバック経路）
+    window.addEventListener('hashchange', handleHash);
+    if(location.hash.indexOf('#paste=')===0) setTimeout(handleHash, 250);
+    firstRunNote();
+    consentGate();
+    // 拡張連携の死活表示（一定時間あいさつが来なければ「未検出」＋原因別の直し方を案内）
+    // V29.1: 新規配布PCで詰まりやすい3原因を、ガイドの該当ステップ付きで表示（干場実機FB 07-10）
+    setTimeout(function(){
+      if(!window.__bridgeSeen){ var bs=document.getElementById('bridgeStatus'); if(bs) bs.innerHTML=
+        '⚪ 拡張連携: 未検出（手動追加・Excel取込はそのまま使えます）。自動収集にしたい場合は上から順に確認: '
+        +'<b>❶ 「購買サーチ_起動.bat」から開き直す</b>（普通のブラウザで開くと拡張が繋がりません）'
+        +' → <b>❷ アドレスバーに edge://extensions</b> で「購買サーチ」が一覧にあるか（無ければガイド②の手動読み込み）'
+        +' → <b>❸ 詳細の「ファイルの URL へのアクセスを許可する」を ON</b>（ガイド③・OFFだと商品が届きません）→ このページを再読み込み。'; }
+    }, 2200);
+    // グループ/カード操作はイベント委譲で処理（inline onclick を廃し外部由来文字列のJS注入経路を排除）
+    document.addEventListener('click', function(e){
+      var el=e.target&&e.target.closest?e.target.closest('[data-act]'):null;
+      if(!el) return;
+      var act=el.getAttribute('data-act'), g=el.getAttribute('data-g'), id=el.getAttribute('data-id');
+      if(act==='tagf'){  // v27: タグクリックで絞り込み
+        var tg=el.getAttribute('data-tag')||'';
+        filterText=tg;
+        var fbx2=document.getElementById('filterBox'); if(fbx2) fbx2.value=tg;
+        render(); return;
+      }
+      if(act==='toggle') toggleGroup(g);
+      else if(act==='rename') renameGroup(g);
+      else if(act==='delgrp') deleteGroup(g);
+      else if(act==='pin') togglePin(id);
+      else if(act==='rec') recordPrice(id);
+      else if(act==='graph') openItemGraph(id);
+      else if(act==='target') setTarget(id);
+      else if(act==='team') sendToTeamBasket(id);
+      else if(act==='move') moveItem(id);
+      else if(act==='del') removeItem(id);
+    });
+  }catch(e){
+    console.error('init失敗', e);
+    showFatal('初期化に失敗しました。\n'+((e&&e.message)||e));
+  }
+}
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded', init);
+}else{
+  init();
+}
+</script>
+</body>
+</html>

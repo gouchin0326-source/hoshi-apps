@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>チーム買い物籠 v2.1 — 部門購買ダッシュボード</title>
+<style>
+/* ===== 購買サーチと同じ視覚言語（ダーク既定+ライト・♿見やすさ対応） ===== */
+:root{--bg:#0a0e1a;--bg-elev:#131a2e;--bg-card:#1a2233;--border:#2a3150;--border-strong:#3a4160;
+--text:#e8ecf5;--text-mute:#8a93ab;--cyan:#22d3ee;--green:#34d399;--orange:#f59e0b;--red:#ef4444;--purple:#a78bfa}
+body.light{--bg:#f2f4f9;--bg-elev:#ffffff;--bg-card:#ffffff;--border:#d7dde8;--border-strong:#b9c2d4;
+--text:#1c2433;--text-mute:#69768f;--cyan:#0891b2;--green:#059669;--orange:#d97706;--red:#dc2626;--purple:#7c3aed}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Segoe UI","Yu Gothic UI",system-ui,sans-serif;font-size:14px}
+:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+header{background:var(--bg-elev);border-bottom:1px solid var(--border);padding:10px 0;position:sticky;top:0;z-index:5}
+.wrap{max-width:1200px;margin:0 auto;padding:0 14px}
+h1.logo{font-size:20px;font-weight:800;color:var(--cyan);display:flex;align-items:center;gap:8px;margin:0}
+h1.logo .sub{font-size:11px;font-weight:400;color:var(--text-mute);letter-spacing:1px}
+.btn{background:var(--bg-card);border:1px solid var(--border-strong);color:var(--text);border-radius:8px;padding:9px 16px;font-size:13px;cursor:pointer;min-height:36px}
+.btn:hover{border-color:var(--cyan)}
+.btn.primary{background:var(--cyan);border-color:var(--cyan);color:#04121f;font-weight:800}
+.btn.green{background:var(--green);border-color:var(--green);color:#04121f;font-weight:800}
+.btn.ghost{background:transparent}
+.btn.sm{padding:5px 12px;font-size:12px;min-height:32px}
+.btn.warn{border-color:var(--orange);color:var(--orange)}
+input,select,textarea{background:var(--bg);border:1px solid var(--border-strong);border-radius:7px;color:var(--text);font-size:13px;padding:8px 10px;margin-bottom:8px;width:100%}
+label{font-size:12px;color:var(--text-mute);display:block;margin-bottom:2px}
+.bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 0}
+.hint{font-size:12px;color:var(--text-mute)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.tab{padding:8px 18px;border-radius:9px 9px 0 0;border:1px solid var(--border);border-bottom:none;background:var(--bg-elev);cursor:pointer;font-size:13px;font-weight:700;min-height:36px}
+.tab.on{background:var(--bg-card);color:var(--cyan);border-color:var(--border-strong)}
+.tab .n{font-size:11px;color:var(--text-mute);font-weight:400}
+.main{display:flex;gap:14px;align-items:flex-start}
+.basket{flex:1;min-width:0}
+.chatpane{width:320px;flex:0 0 auto;background:var(--bg-elev);border:1px solid var(--border);border-radius:10px;padding:10px;position:sticky;top:64px;max-height:calc(100vh - 90px);display:flex;flex-direction:column}
+@media(max-width:900px){.main{flex-direction:column}.chatpane{width:100%;position:static;max-height:340px}}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.card{background:var(--bg-elev);border:1px solid var(--border);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px}
+.card .t{font-weight:700;font-size:13.5px;line-height:1.4}
+.card .meta{font-size:11.5px;color:var(--text-mute);line-height:1.7}
+.card .price{font-size:16px;font-weight:800}
+.badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:800}
+.b-req{background:#f59e0b22;color:var(--orange);border:1px solid var(--orange)}
+.b-ok{background:#34d39922;color:var(--green);border:1px solid var(--green)}
+.b-asn{background:#a78bfa22;color:var(--purple);border:1px solid var(--purple)}
+.b-done{background:#22d3ee22;color:var(--cyan);border:1px solid var(--cyan)}
+.b-ng{background:#ef444422;color:var(--red);border:1px solid var(--red)}
+.card-btns{display:flex;gap:6px;margin-top:auto;flex-wrap:wrap}
+.summary{display:flex;gap:14px;flex-wrap:wrap;background:var(--bg-elev);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin:8px 0;font-size:13px;align-items:center}
+.summary b{font-size:16px}
+.lockline{border:1px solid var(--green);border-radius:10px;padding:8px 12px;margin:8px 0;font-size:13px;color:var(--green);font-weight:700;background:#34d3990f}
+.chatlog{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding:4px 0}
+.msg{background:var(--bg-card);border:1px solid var(--border);border-radius:9px;padding:6px 10px;font-size:12.5px;line-height:1.5}
+.msg .who{font-weight:800;font-size:11px;color:var(--cyan)}
+.msg .when{font-size:10px;color:var(--text-mute);margin-left:6px}
+.msg.mine{border-color:var(--cyan)}
+#toast{position:fixed;right:14px;bottom:14px;z-index:99;display:flex;flex-direction:column;gap:8px}
+.toastc{background:var(--bg-card);border:1px solid var(--border-strong);border-left:4px solid var(--cyan);border-radius:9px;padding:10px 14px;max-width:360px;font-size:12.5px;box-shadow:0 6px 24px #0006}
+.toastc.warn{border-left-color:var(--orange)}.toastc.err{border-left-color:var(--red)}
+.toastc .tt{font-weight:800;margin-bottom:2px}
+.modal-bg{position:fixed;inset:0;background:#000a;z-index:50;display:flex;align-items:center;justify-content:center;padding:14px}
+.modal{background:var(--bg-elev);border:1px solid var(--border-strong);border-radius:12px;padding:18px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto}
+.modal.wide{max-width:860px}
+.modal h2{margin:0 0 10px;font-size:16px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+.wtable{width:100%;border-collapse:collapse;font-size:12px}
+.wtable th,.wtable td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:left}
+.wtable th{color:var(--text-mute);font-size:11px}
+.hidden{display:none}
+.empty{padding:36px;text-align:center;color:var(--text-mute);border:2px dashed var(--border);border-radius:12px;margin-top:10px}
+/* V32: 📊全体ビュー（部門購買ダッシュボード=金額と状態が一目でわかるタイル） */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:8px 0}
+.metric{background:var(--bg-elev);border:1px solid var(--border);border-radius:10px;padding:10px 14px}
+.metric .l{font-size:11.5px;color:var(--text-mute)}
+.metric .v{font-size:22px;font-weight:800}
+.metric.warn .l,.metric.warn .v{color:var(--orange)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-top:6px}
+.tile{text-align:left;background:var(--bg-elev);border:1px solid var(--border);border-radius:12px;padding:12px 14px;cursor:pointer;color:var(--text);font-family:inherit;font-size:13px;display:flex;flex-direction:column;gap:6px}
+.tile:hover{border-color:var(--cyan)}
+.tile .nm{display:flex;align-items:center;gap:6px;font-size:13.5px;font-weight:800;width:100%}
+.tile .amt{font-size:24px;font-weight:800}
+.tile.zero .amt{color:var(--text-mute)}
+.pill{margin-left:auto;font-size:11px;font-weight:800;padding:2px 10px;border-radius:99px}
+.pill.wait{background:#f59e0b22;color:var(--orange);border:1px solid var(--orange)}
+.pill.okp{background:#34d39922;color:var(--green);border:1px solid var(--green)}
+.pill.mute{color:var(--text-mute);border:1px solid var(--border);font-weight:400}
+.mbar{display:flex;height:6px;border-radius:3px;overflow:hidden;background:var(--bg-card)}
+.tile .sub{font-size:11px;color:var(--text-mute);line-height:1.5}
+/* ♿見やすさ（購買サーチと同じ設定を共有・V32.3でくっきり/ゆったりも適用） */
+body.a11y-lg{zoom:1.15} body.a11y-xl{zoom:1.3}
+body.a11y-contrast{--bg:#ffffff;--bg-elev:#ffffff;--bg-card:#f4f4f4;--border:#555;--border-strong:#222;
+  --text:#000;--text-mute:#333;--cyan:#005a99;--green:#006633;--orange:#a34700;--red:#b00020;--purple:#5b21b6}
+body.a11y-contrast .btn,body.a11y-contrast input,body.a11y-contrast select,body.a11y-contrast textarea{border-width:2px}
+body.a11y-contrast :focus-visible{outline:3px solid #b00020}
+body.a11y-space{line-height:2}
+body.a11y-space .btn{padding:12px 20px;min-height:44px}
+body.a11y-space .btn.sm{padding:9px 16px;min-height:40px}
+body.a11y-space .card,body.a11y-space .tile{padding:16px;gap:10px}
+body.a11y-space .cards,body.a11y-space .tiles{gap:14px}
+</style>
+</head>
+<body>
+<header><div class="wrap" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+  <h1 class="logo">🧺 部門購買ダッシュボード <span class="sub">v2.0 — どの場所で・何が・いくらか、一目でわかる</span></h1>
+  <span style="flex:1"></span>
+  <button class="btn ghost sm" id="whoami" title="クリックで名前を変更できます"></button><!-- V32.2: 名前も後から変更可能に -->
+  <button class="btn ghost sm hidden" id="searchLink" title="購買サーチ（価格変動を追う個人ツール）を別画面で開く">🔎 価格を調べる</button><!-- V32 -->
+  <button class="btn ghost sm" id="a11yBtn" title="文字の大きさ・くっきり表示・ゆったり表示を自分に合わせて変えられます（購買サーチと共通の設定）">♿ 見やすさ</button>
+  <button class="btn ghost sm" id="helpBtn" title="使い方の説明">❓ 使い方</button>
+  <button class="btn ghost sm" id="themeBtn" title="背景の白／黒を切り替え">🌓 背景</button>
+</div></header>
+
+<div class="wrap">
+  <div class="bar">
+    <button class="btn" id="pickBtn" title="チーム共通の共有フォルダ（Box）を選びます。接続済みでも、ここから別のフォルダへいつでも変更できます（キャンセル=今のまま）">📁 チーム籠フォルダ（選択・変更）</button>
+    <span class="hint" id="folderLbl">未接続</span>
+    <span style="flex:1"></span>
+    <button class="btn ghost sm" id="prevDay" aria-label="前の日の籠">◀</button>
+    <input type="date" id="dayPick" aria-label="表示する日" style="width:150px;margin-bottom:0">
+    <button class="btn ghost sm" id="nextDay" aria-label="次の日の籠">▶</button>
+    <button class="btn ghost sm" id="todayBtn">📅 今日</button>
+    <button class="btn primary sm" id="reloadBtn" title="共有フォルダを読み直して最新にする">🔄 更新</button>
+    <button class="btn ghost sm" id="cfgBtn" title="届け先・責任者・担当・リストの管理（管理者用）">⚙ 管理</button>
+  </div>
+  <!-- V32: 📊全体ビュー（既定）=部門購買ダッシュボード -->
+  <div id="dashView" class="hidden">
+    <div class="metrics" id="dashMetrics"></div>
+    <div class="bar" style="padding:2px 0"><button class="btn green" id="dashAdd">➕ 買いたいものを入れる（購入依頼）</button>
+      <span class="hint" style="flex:1;text-align:right">タイルを押すとその籠の中身へ　色帯=🟠依頼中/🟢承認済/濃緑=発注済</span></div>
+    <div class="tiles" id="dashTiles"></div>
+    <div class="empty hidden" id="dashEmpty">⚙管理で届け先を登録すると、ここに籠のタイルが並びます。</div>
+  </div>
+  <div class="tabs hidden" id="destTabs"></div>
+  <div class="main hidden" id="basketView">
+    <div class="basket">
+      <div id="lockLine"></div>
+      <div class="summary" id="summaryBar"></div>
+      <div class="bar" style="padding:4px 0">
+        <button class="btn green" id="addBtn">➕ 買いたいものを入れる（購入依頼）</button>
+        <span style="flex:1"></span>
+        <span class="hint" id="approveArea"></span>
+      </div>
+      <div class="cards" id="cards"></div>
+      <div class="empty hidden" id="emptyBox"></div>
+    </div>
+    <div class="chatpane">
+      <b style="font-size:13px">💬 伝言板 <span class="hint" id="chatScope"></span></b>
+      <div class="chatlog" id="chatLog" aria-live="polite"></div>
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <input id="chatInput" placeholder="メッセージ（Enterで送信）" aria-label="伝言板のメッセージ" style="margin-bottom:0">
+        <button class="btn primary sm" id="chatSend">送信</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="modalRoot"></div>
+
+<script>
+'use strict';
+// =====================================================================
+// チーム買い物籠 v1（購買サーチ V31・2026-07-10）
+// 仕組み: Box等の共有フォルダを「共通データ置き場」に、各自が自分のファイル
+// ev_<名前>.jsonl にだけ追記する（1人1ファイル=同時利用でも競合しない）。
+// 読む時は全員分を合成して現在の籠を組み立てる。通信は一切なし。
+// =====================================================================
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const yen=n=>'¥'+Number(n||0).toLocaleString();
+function today(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function nextDay(s){ const d=new Date(s+'T00:00:00'); d.setDate(d.getDate()+1); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function nowIso(){ return new Date().toISOString(); }
+
+// ---- トースト / モーダル（購買サーチV29と同じ♿仕様: dialog+フォーカストラップ+Esc） ----
+function toast(t,m,kind,ms){ const el=document.createElement('div'); el.className='toastc'+(kind==='warn'?' warn':kind==='err'?' err':'');
+  el.innerHTML='<div class="tt">'+esc(t)+'</div>'+(m?'<div>'+esc(m)+'</div>':'');
+  $('#toast').appendChild(el); setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity .3s';setTimeout(()=>el.remove(),300);},ms||4000); }
+let _mOpener=null;
+function openModal(html){
+  _mOpener=document.activeElement;
+  $('#modalRoot').innerHTML='<div class="modal-bg"><div class="modal" role="dialog" aria-modal="true" tabindex="-1">'+html+'</div></div>';
+  const bg=$('#modalRoot .modal-bg'), mdl=$('#modalRoot .modal');
+  const h2=mdl.querySelector('h2'); if(h2) mdl.setAttribute('aria-label',h2.textContent.trim());
+  bg.addEventListener('click',e=>{ if(e.target===bg) closeModal(); });
+  bg.addEventListener('keydown',e=>{
+    if(e.key==='Escape') closeModal();
+    else if(e.key==='Tab'){
+      const f=[...mdl.querySelectorAll('button,[href],input,select,textarea')].filter(x=>!x.disabled&&x.offsetParent!==null);
+      if(!f.length) return; const first=f[0], last=f[f.length-1];
+      if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+      else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+    }
+  });
+  const ff=mdl.querySelector('input,select,textarea,button'); try{(ff||mdl).focus();}catch(_e){}
+}
+window.closeModal=function(){ $('#modalRoot').innerHTML=''; try{ if(_mOpener&&document.contains(_mOpener))_mOpener.focus(); }catch(_e){} _mOpener=null; };
+
+// ---- フォルダ接続（購買サーチ🤝と同じIndexedDB永続化・キーは teamdir） ----
+const DB={ _open(){ return new Promise((res,rej)=>{ const r=indexedDB.open('psv22_share',1);
+    r.onupgradeneeded=()=>{ r.result.createObjectStore('kv'); };
+    r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); },
+  async get(k){ const d=await this._open(); return new Promise((res,rej)=>{ const t=d.transaction('kv').objectStore('kv').get(k); t.onsuccess=()=>res(t.result); t.onerror=()=>rej(t.error); }); },
+  async set(k,v){ const d=await this._open(); return new Promise((res,rej)=>{ const t=d.transaction('kv','readwrite').objectStore('kv').put(v,k); t.onsuccess=()=>res(); t.onerror=()=>rej(t.error); }); } };
+async function ensurePerm(h){ try{ if((await h.queryPermission({mode:'readwrite'}))==='granted') return true;
+  return (await h.requestPermission({mode:'readwrite'}))==='granted'; }catch(_e){ return false; } }
+// V31.2: パネル（iframe）の中ではブラウザ制限でフォルダ選択ダイアログを出せない
+// （実機エラー「Cross origin sub frames aren't allowed to show a file picker」）
+// → iframe内では親画面（購買サーチ）の「📁 フォルダ接続」に選んでもらい、保存済みハンドルを共有ストレージ経由で使う。
+const IN_FRAME=(function(){ try{ return window.self!==window.top; }catch(_e){ return true; } })();
+function askParentForFolder(){
+  try{ window.parent.postMessage({__psv22_teamNeedFolder:true},'*'); }catch(_e){}
+  toast('パネルの中からはフォルダを選べません','パネル上部の「📁 フォルダ接続」から選んでください（ブラウザの制限です）。⧉別窓で開いて選ぶこともできます','warn',9000);
+}
+async function getDir(interactive){
+  let h=null; try{ h=await DB.get('teamdir'); }catch(_e){}
+  if(h && await ensurePerm(h)) return h;
+  if(!interactive) return null;
+  if(IN_FRAME){ askParentForFolder(); return null; }
+  try{ h=await window.showDirectoryPicker({mode:'readwrite'}); await DB.set('teamdir',h); return h; }
+  catch(e){ if(e&&e.name!=='AbortError') toast('フォルダを選べませんでした',(e&&e.message)||'','err'); return null; }
+}
+
+// ---- 自分の名前（購買サーチと共通キー） ----
+function myName(){ try{ return localStorage.getItem('psv22_userName')||''; }catch(_e){ return ''; } }
+function setMyName(n){ try{ localStorage.setItem('psv22_userName',n); }catch(_e){} }
+
+// =====================================================================
+// コア（純関数・自己テスト可能）: JSONL読取 → イベント畳み込み → 籠の状態
+// =====================================================================
+function parseJsonl(text){ const out=[]; String(text||'').split('\n').forEach(l=>{ l=l.trim(); if(!l) return;
+  try{ const o=JSON.parse(l); if(o&&o.t) out.push(o); }catch(_e){/* 壊れ行は1行単位でスキップ */} }); return out; }
+
+function foldEvents(evs){
+  const reqs={}, chats=[], approvals={};   // approvals['届け先|日'] = {by,ts}
+  const sorted=[...evs].sort((a,b)=>String(a.ts||'').localeCompare(String(b.ts||'')));
+  for(const e of sorted){
+    if(e.t==='request' && e.id){ reqs[e.id]={...e, day:(e.day||String(e.ts||'').slice(0,10)), assignee:null, poNo:null, rejected:false, rejectReason:'', rejectBy:''}; }
+    else if(e.t==='approve' && e.dest && e.day){ approvals[e.dest+'|'+e.day]={by:e.by||'', ts:e.ts||''}; }
+    else if(e.t==='reject' && reqs[e.reqId]){ reqs[e.reqId].rejected=true; reqs[e.reqId].rejectReason=e.reason||''; reqs[e.reqId].rejectBy=e.by||''; }
+    else if(e.t==='assign' && reqs[e.reqId]){ reqs[e.reqId].assignee=e.assignee||e.by||''; }
+    else if(e.t==='ordered' && reqs[e.reqId]){ reqs[e.reqId].poNo=e.poNo||'(番号なし)'; }
+    else if(e.t==='chat'){ chats.push(e); }
+  }
+  // 状態: 見送り > 発注済 > 担当割当 > 承認済 > 依頼中
+  for(const id in reqs){ const r=reqs[id];
+    const approved=!!approvals[r.dest+'|'+r.day];
+    r.status = r.rejected?'見送り' : r.poNo?'発注済' : (approved&&r.assignee)?'担当割当' : approved?'承認済' : '依頼中';
+  }
+  return {reqs, chats, approvals};
+}
+// 承認確定済みの籠には入れない → 空いている次の日へ自動繰越
+function rolloverDay(dest, fromDay, approvals){ let d=fromDay, guard=0;
+  while(approvals[dest+'|'+d] && guard<62){ d=nextDay(d); guard++; } return d; }
+
+// V32: 届け先×日の集計（📊全体ビューのタイル用・純関数）
+function destSummary(dest, day, st){
+  const list=Object.values(st.reqs).filter(r=>r.dest===dest && r.day===day);
+  const cnt=s=>list.filter(r=>r.status===s).length;
+  const total=list.filter(r=>r.status!=='見送り').reduce((a,r)=>a+(Number(r.item&&r.item.price)||0)*(Number(r.qty)||1),0);
+  const by={}; list.forEach(r=>{ if(r.status!=='見送り') by[r.by]=(by[r.by]||0)+1; });
+  const ap=st.approvals[dest+'|'+day]||null;
+  return {n:list.length, total, req:cnt('依頼中'), ok:cnt('承認済')+cnt('担当割当'), done:cnt('発注済'), ng:cnt('見送り'),
+    approved:!!ap, approvedBy:ap?ap.by:'', approvedTs:ap?String(ap.ts||'').slice(11,16):'', by};
+}
+
+// ---- 自己テスト（?selftest でコンソール出力・実装の退行検知用） ----
+function _selftest(){
+  const evs=[
+    {t:'request',id:'r1',ts:'2026-07-10T01:00:00Z',by:'A',dest:'本社',day:'2026-07-10',item:{title:'ペン',price:100},center:{c:'C1',n:'一課'},account:{c:'61',n:'消耗品'},qty:2},
+    {t:'request',id:'r2',ts:'2026-07-10T02:00:00Z',by:'B',dest:'本社',day:'2026-07-10',item:{title:'手袋',price:200},qty:1},
+    {t:'approve',ts:'2026-07-10T03:00:00Z',by:'責',dest:'本社',day:'2026-07-10'},
+    {t:'assign',ts:'2026-07-10T04:00:00Z',by:'C',reqId:'r1',assignee:'C'},
+    {t:'ordered',ts:'2026-07-10T05:00:00Z',by:'C',reqId:'r1',poNo:'PO-1'},
+    {t:'reject',ts:'2026-07-10T04:30:00Z',by:'責',reqId:'r2',reason:'在庫あり'},
+    {t:'chat',ts:'2026-07-10T02:30:00Z',by:'B',dest:'本社',text:'これ急ぎ'},
+  ];
+  const {reqs,chats,approvals}=foldEvents(evs);
+  const t=[
+    ['r1=発注済', reqs.r1.status==='発注済'&&reqs.r1.poNo==='PO-1'],
+    ['r2=見送り+理由', reqs.r2.status==='見送り'&&reqs.r2.rejectReason==='在庫あり'],
+    ['承認記録', !!approvals['本社|2026-07-10']],
+    ['chat1件', chats.length===1],
+    ['繰越', rolloverDay('本社','2026-07-10',approvals)==='2026-07-11'],
+    ['壊れ行スキップ', parseJsonl('{"t":"chat","ts":"x","by":"a","text":"ok"}\nこわれた行\n').length===1],
+  ];
+  // V32: 集計（発注済200円×2+見送り除外=r1のみ有効…r1=ペン100×2 r2=手袋200×1見送り→total=200・done=1・ng=1・承認済）
+  const st={reqs, approvals, chats};
+  const s=destSummary('本社','2026-07-10',st);
+  t.push(['集計total(見送り除外)', s.total===200]);
+  t.push(['集計内訳', s.n===2 && s.done===1 && s.ng===1 && s.approved===true && s.approvedBy==='責']);
+  t.push(['依頼者内訳', s.by.A===1 && !s.by.B]);
+  return t.map(x=>(x[1]?'PASS ':'FAIL ')+x[0]);
+}
+
+// =====================================================================
+// 読み書き
+// =====================================================================
+let CFG=null, STATE={reqs:{},chats:[],approvals:{}}, VIEW={dest:null, day:today()};
+async function readAll(interactive){
+  const dir=await getDir(interactive); if(!dir){ $('#folderLbl').textContent= IN_FRAME?'未接続 — パネル上部の「📁 フォルダ接続」から共有フォルダを選んでください':'未接続 — 「📁 チーム籠フォルダ」でBoxの共有フォルダを選んでください'; return false; }
+  $('#folderLbl').textContent='接続中: '+dir.name;
+  let cfg=null; const evs=[];
+  try{
+    for await (const entry of dir.values()){
+      if(entry.kind!=='file') continue;
+      if(entry.name==='team_config.json'){ try{ cfg=JSON.parse(await (await entry.getFile()).text()); }catch(_e){ toast('設定ファイルが壊れています','team_config.json を⚙管理から作り直せます','warn'); } }
+      else if(/^ev_.+\.jsonl$/i.test(entry.name)){ evs.push(...parseJsonl(await (await entry.getFile()).text())); }
+    }
+  }catch(e){ console.error(e); toast('フォルダを読めませんでした',(e&&e.message)||'','err'); return false; }
+  CFG=cfg; STATE=foldEvents(evs);
+  if(!VIEW.dest && CFG && CFG.dests && CFG.dests.length) VIEW.dest=CFG.dests[0].name;
+  return true;
+}
+async function appendEvent(ev){
+  const dir=await getDir(true); if(!dir) return false;
+  const name=myName(); if(!name){ toast('先に名前を設定してください','','warn'); return false; }
+  try{
+    const fh=await dir.getFileHandle('ev_'+name+'.jsonl',{create:true});
+    let old=''; try{ old=await (await fh.getFile()).text(); }catch(_e){}
+    const w=await fh.createWritable();
+    await w.write(old + (old && !old.endsWith('\n') ? '\n':'') + JSON.stringify(ev)+'\n');
+    await w.close();
+    return true;
+  }catch(e){ console.error(e); toast('書き込めませんでした',(e&&e.message)||'Boxの同期状態を確認してください','err'); return false; }
+}
+async function writeConfig(cfg){
+  const dir=await getDir(true); if(!dir) return false;
+  try{ const fh=await dir.getFileHandle('team_config.json',{create:true});
+    const w=await fh.createWritable(); await w.write(JSON.stringify(cfg,null,1)); await w.close(); return true;
+  }catch(e){ console.error(e); toast('設定を保存できませんでした',(e&&e.message)||'','err'); return false; }
+}
+
+// =====================================================================
+// 描画
+// =====================================================================
+function destObj(){ return (CFG&&CFG.dests||[]).find(d=>d.name===VIEW.dest)||null; }
+function reqsOfView(){ return Object.values(STATE.reqs).filter(r=>r.dest===VIEW.dest && r.day===VIEW.day)
+  .sort((a,b)=>String(a.ts).localeCompare(String(b.ts))); }
+function isApprovedView(){ return !!STATE.approvals[VIEW.dest+'|'+VIEW.day]; }
+
+// V32: render=ビュー切替の司令塔（📊全体=既定 ／ 籠詳細）
+function setMode(m){ VIEW.mode=m; try{ localStorage.setItem('psv22_teamView',m); }catch(_e){} render(); }
+function render(){
+  $('#whoami').textContent=myName()?('👤 '+myName()):'名前未設定';
+  $('#dayPick').value=VIEW.day;
+  const dash=VIEW.mode!=='basket';
+  $('#dashView').classList.toggle('hidden', !dash);
+  $('#destTabs').classList.toggle('hidden', dash);
+  $('#basketView').classList.toggle('hidden', dash);
+  if(dash) renderDash(); else renderBasket();
+}
+// 📊 全体ビュー: 届け先タイル=「どの場所で・何件・いくら」が一目でわかる（干場V32ビジョン）
+function renderDash(){
+  const cfgDests=CFG&&CFG.dests||[];
+  // V32.2: ⚙で届け先を改名/削除しても、旧名で入った依頼が迷子にならないよう「一覧に無い届け先」もタイル化
+  const known=new Set(cfgDests.map(d=>d.name));
+  const orphans=[...new Set(Object.values(STATE.reqs).filter(r=>r.day===VIEW.day && r.dest && !known.has(r.dest)).map(r=>r.dest))];
+  const dests=cfgDests.concat(orphans.map(n=>({name:n, approver:'', _orphan:true})));
+  let tTotal=0, tReq=0, tDone=0, waiting=0;
+  const tiles=dests.map(d=>{
+    const s=destSummary(d.name, VIEW.day, STATE);
+    tTotal+=s.total; tReq+=(s.n-s.ng); tDone+=s.done;
+    const needsApproval=!s.approved && s.req>0; if(needsApproval) waiting++;
+    const pill= s.n===0?'<span class="pill mute">今日は空</span>' : s.approved?'<span class="pill okp">承認済</span>':'<span class="pill wait">承認待ち</span>';
+    const seg=(n,c,t)=>n?('<div style="flex:'+n+';background:'+c+'" title="'+t+n+'件"></div>'):'';
+    const bar=s.n-s.ng>0?('<div class="mbar" title="依頼中'+s.req+'・承認済'+s.ok+'・発注済'+s.done+'">'+seg(s.req,'var(--orange)','依頼中')+seg(s.ok,'#5DCAA5','承認済')+seg(s.done,'var(--green)','発注済')+'</div>'):'<div class="mbar"></div>';
+    const who=Object.keys(s.by).slice(0,3).map(n=>esc(n)+s.by[n]).join(' ');
+    const sub= s.n===0? ('責任者: '+esc(d.approver||'—'))
+      : ((s.n-s.ng)+'件 — 依頼中'+s.req+'／承認済'+s.ok+'／発注済'+s.done+(s.ng?'／見送り'+s.ng:'')
+        +'<br>責任者: '+esc(d.approver||'—')+(s.approved?('（承認 '+esc(s.approvedTs)+'）'):'（未承認）')+(who?('　依頼: '+who):''));
+    return '<button class="tile'+(s.n===0?' zero':'')+'" data-dest="'+esc(d.name)+'" aria-label="'+esc(d.name)+'の籠 '+s.total+'円 '+(s.n-s.ng)+'件を開く">'
+      +'<span class="nm">'+(d._orphan?'⚠ ':'🧺 ')+esc(d.name)+(d._orphan?' <span class="hint">(一覧に無い届け先)</span>':'')+pill+'</span>'
+      +'<span class="amt">'+yen(s.total)+'</span>'+bar
+      +'<span class="sub">'+sub+'</span></button>';
+  }).join('');
+  $('#dashMetrics').innerHTML=
+    '<div class="metric"><div class="l">'+esc(VIEW.day)+' の依頼合計</div><div class="v">'+yen(tTotal)+'</div></div>'
+    +'<div class="metric"><div class="l">依頼</div><div class="v">'+tReq+'件</div></div>'
+    +'<div class="metric'+(waiting?' warn':'')+'"><div class="l">承認待ちの籠</div><div class="v">'+waiting+'</div></div>'
+    +'<div class="metric"><div class="l">発注済</div><div class="v">'+tDone+'件</div></div>';
+  $('#dashTiles').innerHTML=tiles;
+  $('#dashEmpty').classList.toggle('hidden', dests.length>0);
+  $$('#dashTiles .tile').forEach(b=>b.onclick=()=>{ VIEW.dest=b.getAttribute('data-dest'); setMode('basket'); });
+  renderChat();
+}
+// 籠詳細ビュー（従来画面・先頭タブ=📊全体で戻る）
+function renderBasket(){
+  const cfgDests=CFG&&CFG.dests||[];
+  const known=new Set(cfgDests.map(d=>d.name));
+  const orphans=[...new Set(Object.values(STATE.reqs).filter(r=>r.day===VIEW.day && r.dest && !known.has(r.dest)).map(r=>r.dest))];
+  const allDests=cfgDests.map(d=>d.name).concat(orphans);
+  const tabs='<button class="tab" id="backDash">📊 全体</button>'+allDests.map(name=>{
+    const n=Object.values(STATE.reqs).filter(r=>r.dest===name&&r.day===VIEW.day).length;
+    const mark=known.has(name)?'🧺 ':'⚠ ';
+    return '<button class="tab'+(name===VIEW.dest?' on':'')+'" data-dest="'+esc(name)+'">'+mark+esc(name)+' <span class="n">'+n+'件</span></button>';
+  }).join('');
+  $('#destTabs').innerHTML=tabs||'<span class="hint">⚙管理で届け先を登録すると籠が出来ます</span>';
+  const bd=$('#backDash'); if(bd) bd.onclick=()=>setMode('dash');
+  $$('#destTabs .tab[data-dest]').forEach(b=>b.onclick=()=>{ VIEW.dest=b.getAttribute('data-dest'); render(); });
+  const list=reqsOfView();
+  // 承認状態
+  const ap=STATE.approvals[VIEW.dest+'|'+VIEW.day];
+  $('#lockLine').innerHTML= ap?('<div class="lockline">✅ この籠（'+esc(VIEW.dest)+'・'+esc(VIEW.day)+'）は <b>'+esc(ap.by)+'</b> が承認確定済みです。新しい依頼は自動で翌日籠に入ります。</div>'):'';
+  // サマリー
+  const sum=list.filter(r=>r.status!=='見送り').reduce((a,r)=>a+(Number(r.item&&r.item.price)||0)*(Number(r.qty)||1),0);
+  const cnt=s=>list.filter(r=>r.status===s).length;
+  $('#summaryBar').innerHTML= VIEW.dest? ('📦 <b>'+esc(VIEW.dest)+'</b>　'+esc(VIEW.day)+' の籠　合計 <b>'+yen(sum)+'</b>　'
+    +'<span class="badge b-req">依頼中 '+cnt('依頼中')+'</span> <span class="badge b-ok">承認済 '+cnt('承認済')+'</span> '
+    +'<span class="badge b-asn">担当割当 '+cnt('担当割当')+'</span> <span class="badge b-done">発注済 '+cnt('発注済')+'</span> '
+    +'<span class="badge b-ng">見送り '+cnt('見送り')+'</span>') : '📦 届け先を選んでください';
+  // 責任者ボタン
+  const dst=destObj(); const isApprover=dst&&dst.approver===myName();
+  $('#approveArea').innerHTML=(isApprover&&!ap&&list.some(r=>r.status==='依頼中'))
+    ? '<button class="btn green" id="approveBtn">✅ この籠を承認確定する（'+list.filter(r=>r.status==='依頼中').length+'件）</button>'
+    : (isApprover&&!ap&&list.length===0?'<span class="hint">（この籠はまだ空です）</span>':'');
+  const ab=$('#approveBtn'); if(ab) ab.onclick=doApprove;
+  // カード
+  const badge=s=>({'依頼中':'b-req','承認済':'b-ok','担当割当':'b-asn','発注済':'b-done','見送り':'b-ng'}[s]);
+  const canAssign=!CFG||!CFG.assignees||!CFG.assignees.length||CFG.assignees.includes(myName());
+  $('#cards').innerHTML=list.map(r=>{
+    const th=r.item&&r.item.title||'(品名なし)';
+    const btns=[];
+    if(r.status==='依頼中'&&isApprover) btns.push('<button class="btn warn sm" data-act="reject" data-id="'+esc(r.id)+'">見送り</button>');
+    if(r.status==='承認済'&&canAssign) btns.push('<button class="btn sm" data-act="assign" data-id="'+esc(r.id)+'">📋 担当を自分に</button>');
+    if(r.status==='担当割当'&&r.assignee===myName()) btns.push('<button class="btn green sm" data-act="ordered" data-id="'+esc(r.id)+'">✔ 発注済みにする</button>');
+    if(r.item&&r.item.url&&/^https?:/i.test(r.item.url)) btns.push('<a class="btn ghost sm" href="'+esc(r.item.url)+'" target="_blank" rel="noopener">🛒 商品ページ</a>');
+    btns.push('<button class="btn ghost sm" data-act="thread" data-id="'+esc(r.id)+'">💬 '+STATE.chats.filter(c=>c.reqId===r.id).length+'</button>');
+    return '<div class="card">'
+      +'<div><span class="badge '+badge(r.status)+'">'+esc(r.status)+(r.status==='担当割当'?'・'+esc(r.assignee):'')+(r.status==='発注済'?'・'+esc(r.poNo):'')+'</span></div>'
+      +'<div class="t">'+esc(th)+'</div>'
+      +'<div class="price">'+yen(r.item&&r.item.price)+' <span class="hint">× '+esc(r.qty||1)+'</span></div>'
+      +'<div class="meta">依頼: <b>'+esc(r.by)+'</b>　'+(r.item&&r.item.site?esc(r.item.site)+'　':'')
+      +(r.center?('🏭 '+esc(r.center.c)+' '+esc(r.center.n)+'　'):'')+(r.account?('📒 '+esc(r.account.c)+' '+esc(r.account.n)):'')
+      +(r.reason?('<br>理由: '+esc(r.reason)):'')
+      +(r.status==='見送り'?('<br><span style="color:var(--red)">見送り: '+esc(r.rejectReason)+'（'+esc(r.rejectBy)+'）</span>'):'')
+      +'</div><div class="card-btns">'+btns.join('')+'</div></div>';
+  }).join('');
+  $('#emptyBox').classList.toggle('hidden', list.length>0 || !VIEW.dest);
+  $('#emptyBox').textContent='この日の籠はまだ空です。「➕ 買いたいものを入れる」で最初の依頼を入れてください。';
+  $$('#cards [data-act]').forEach(b=>b.onclick=()=>cardAction(b.getAttribute('data-act'), b.getAttribute('data-id')));
+  renderChat();
+}
+function renderChat(){
+  // V32.2: 📊全体ビューでは伝言板も「全体」（全籠のやり取りを横断表示・籠名タグ付き）。籠詳細ではその籠+全体宛。
+  const dashMode=VIEW.mode!=='basket';
+  const scope=VIEW.chatReq?('品目スレッド'):(dashMode?'全体（すべての籠）':(VIEW.dest?('籠: '+VIEW.dest):'全体'));
+  $('#chatScope').textContent='（'+scope+'）'+(VIEW.chatReq?' ':'');
+  let msgs=STATE.chats;
+  if(VIEW.chatReq) msgs=msgs.filter(c=>c.reqId===VIEW.chatReq);
+  else if(dashMode) msgs=msgs.filter(c=>!c.reqId);
+  else msgs=msgs.filter(c=>!c.reqId && (!c.dest || c.dest===VIEW.dest));
+  const me=myName();
+  $('#chatLog').innerHTML=msgs.slice(-80).map(c=>'<div class="msg'+(c.by===me?' mine':'')+'"><span class="who">'+esc(c.by)+'</span>'
+    +(dashMode&&c.dest?'<span class="when">📦'+esc(c.dest)+'</span>':'')
+    +'<span class="when">'+esc(String(c.ts||'').slice(5,16).replace('T',' '))+'</span><div>'+esc(c.text)+'</div></div>').join('')
+    ||'<div class="hint" style="padding:14px">まだメッセージはありません</div>';
+  const back=VIEW.chatReq?'<button class="btn ghost sm" id="chatBack">← 籠の伝言板へ戻る</button>':'';
+  if(back&&!$('#chatBack')){ const d=document.createElement('div'); d.innerHTML=back; $('#chatLog').prepend(d.firstChild); $('#chatBack').onclick=()=>{ VIEW.chatReq=null; renderChat(); }; }
+  $('#chatLog').scrollTop=$('#chatLog').scrollHeight;
+}
+
+// =====================================================================
+// 操作
+// =====================================================================
+async function refresh(interactive){ const ok=await readAll(interactive); if(ok) render(); return ok; }
+
+function askName(then){
+  openModal('<h2>👤 あなたの名前</h2><p class="hint">依頼・承認・伝言板に表示され、記録ファイル名（ev_名前.jsonl）にも使われます。<br>'
+    +'⚠ <b>他のメンバーと同じ名前は使えません</b>（お互いの記録が混ざります）。同姓がいる場合はフルネームで。<br>'
+    +'名前を変えると記録ファイルが新しくなります（過去の依頼・承認は元の名前のまま残り、消えません）。</p>'
+    +'<input id="nmIn" maxlength="20" placeholder="例：干場" value="'+esc(myName())+'">'
+    +'<div class="modal-actions"><button class="btn primary" id="nmOk">決定</button></div>');
+  $('#nmOk').onclick=()=>{ const n=($('#nmIn').value||'').trim().replace(/[\\/:*?"<>|]/g,''); if(!n){ toast('名前を入れてください','','warn'); return; }
+    setMyName(n); closeModal(); render(); if(then) then(); };
+}
+
+window.openRequestForm=function(prefill){
+  if(!CFG||!CFG.dests||!CFG.dests.length){ toast('先に⚙管理で届け先を登録してください','','warn'); return; }
+  if(!myName()){ askName(()=>openRequestForm(prefill)); return; }
+  // V31.1: 品名は手入力でなく「個人の購買サーチで集めた商品」から選ぶのが既定（干場FB）。
+  // 入れるのは 届け先・原価センタ・勘定科目・購入理由（＋数量）だけ。手入力は補助に格下げ。
+  let personal=[]; try{ personal=(JSON.parse(localStorage.getItem('psv22_items')||'[]')||[]).filter(x=>x&&x.title); }catch(_e){}
+  let chosen = prefill||null;   // 選択中の商品（prefill=🧺ボタン経由なら確定済み）
+  const dOpts=CFG.dests.map(d=>'<option'+(d.name===VIEW.dest?' selected':'')+'>'+esc(d.name)+'</option>').join('');
+  const aOpts='<option value="">（勘定科目を選択）</option>'+(CFG.accounts||[]).map((x,i)=>'<option value="'+i+'">'+esc(x.c)+' '+esc(x.n)+'</option>').join('');
+  const cOpts='<option value="">（原価センタを選択）</option>'+(CFG.centers||[]).map((x,i)=>'<option value="'+i+'">'+esc(x.c)+' '+esc(x.n)+'</option>').join('');
+  const pOpts='<option value="">（購買サーチで集めた商品から選ぶ）</option>'
+    +personal.map((x,i)=>'<option value="'+i+'">'+esc((x.title||'').slice(0,40))+(x.price!=null?('｜¥'+Number(x.price).toLocaleString()):'')+(x.site?('｜'+esc(x.site)):'')+'</option>').join('');
+  openModal('<h2>➕ 購入依頼</h2>'
+    +(chosen
+      ? '<div id="rqChosen" style="background:var(--bg-card);border:1px solid var(--border);border-radius:9px;padding:8px 12px;margin-bottom:8px;font-size:13px"></div>'
+      : '<label for="rqPick">商品（購買サーチのリストから）</label><select id="rqPick">'+pOpts+'</select>'
+        +'<div id="rqChosen" style="background:var(--bg-card);border:1px solid var(--border);border-radius:9px;padding:8px 12px;margin-bottom:8px;font-size:13px;display:none"></div>'
+        +'<button class="btn ghost sm" id="rqManualBtn" style="margin-bottom:8px">✏️ リストにない物を手で入れる</button>'
+        +'<div id="rqManual" class="hidden">'
+        +'<label for="rqTitle">品名</label><input id="rqTitle" placeholder="例：三菱鉛筆 油性ボールペン 黒 0.7mm">'
+        +'<label for="rqPrice">単価（円）</label><input id="rqPrice" inputmode="numeric">'
+        +'<label for="rqUrl">商品URL（任意）</label><input id="rqUrl" placeholder="https://…">'
+        +'</div>')
+    +'<div style="display:flex;gap:8px"><div style="flex:1"><label for="rqDest">届け先（モノを受け取る場所）</label><select id="rqDest">'+dOpts+'</select></div>'
+    +'<div style="width:90px"><label for="rqQty">数量</label><input id="rqQty" inputmode="numeric" value="1"></div></div>'
+    +'<label for="rqCen">原価センタ（費用を使う部署）</label><select id="rqCen">'+cOpts+'</select>'
+    +'<label for="rqAcc">勘定科目（費用の種類）</label><select id="rqAcc">'+aOpts+'</select>'
+    +'<label for="rqReason">購入理由</label><input id="rqReason" placeholder="例：在庫切れ補充" value="'+esc((prefill&&prefill.reason)||'')+'">'
+    +'<div class="hint" id="rqRollNote"></div>'
+    +'<div class="modal-actions"><button class="btn ghost" onclick="closeModal()">キャンセル</button><button class="btn primary" id="rqOk">🧺 購入依頼確定</button></div>');
+  const showChosen=()=>{ const el=$('#rqChosen'); if(!el) return;
+    if(chosen){ el.style.display='block'; el.innerHTML='🛒 <b>'+esc(chosen.title||'')+'</b>　'+(chosen.price!=null&&chosen.price!==''?('¥'+Number(chosen.price).toLocaleString()):'')+(chosen.site?('　'+esc(chosen.site)):''); }
+    else el.style.display='none'; };
+  showChosen();
+  const pick=$('#rqPick');
+  if(pick) pick.onchange=()=>{ const i=pick.value; chosen = i===''?null:{title:personal[i].title, url:/^https?:/i.test(personal[i].url||'')?personal[i].url:'', site:personal[i].site||'', price:personal[i].price!=null?personal[i].price:'', maker:personal[i].maker||''};
+    showChosen(); const m=$('#rqManual'); if(m&&chosen) m.classList.add('hidden'); };
+  const mb=$('#rqManualBtn');
+  if(mb) mb.onclick=()=>{ $('#rqManual').classList.toggle('hidden'); if(!$('#rqManual').classList.contains('hidden')){ chosen=null; if(pick)pick.value=''; showChosen(); $('#rqTitle').focus(); } };
+  const rollNote=()=>{ const dest=$('#rqDest').value; const day=rolloverDay(dest, today(), STATE.approvals);
+    $('#rqRollNote').textContent= day!==today()?('⚠ 本日の「'+dest+'」籠は承認確定済みのため、この依頼は '+day+' の籠に入ります。'):''; };
+  $('#rqDest').onchange=rollNote; rollNote();
+  $('#rqOk').onclick=async()=>{
+    let item=null;
+    if(chosen && chosen.title){ item={title:chosen.title, url:chosen.url||'', site:chosen.site||'', price:Number(chosen.price)||0, maker:chosen.maker||''}; }
+    else{ const mEl=$('#rqManual');
+      const title=mEl&&!mEl.classList.contains('hidden')?($('#rqTitle').value||'').trim():'';
+      if(!title){ toast('商品を選んでください','リストから選ぶか、「✏️手で入れる」で品名を入力してください','warn'); return; }
+      item={title, url:($('#rqUrl').value||'').trim(), site:'', price:Number(($('#rqPrice').value||'').replace(/[^\d.]/g,''))||0, maker:''}; }
+    const cen=$('#rqCen').value, acc=$('#rqAcc').value;
+    if(cen===''){ toast('原価センタを選んでください','消費部署の仕分けに必要です','warn'); return; }
+    if(acc===''){ toast('勘定科目を選んでください','','warn'); return; }
+    const dest=$('#rqDest').value;
+    const day=rolloverDay(dest, today(), STATE.approvals);
+    const ev={t:'request', id:'r_'+Date.now()+'_'+Math.random().toString(36).slice(2,7), ts:nowIso(), by:myName(), dest, day,
+      item, qty:Number(($('#rqQty').value||'').replace(/[^\d.]/g,''))||1,
+      center:CFG.centers[Number(cen)], account:CFG.accounts[Number(acc)],
+      reason:($('#rqReason').value||'').trim()};
+    if(await appendEvent(ev)){ closeModal(); toast('🧺 購入依頼を入れました', item.title+(day!==today()?'（'+day+'の籠）':''),''); await refresh(false); }
+  };
+};
+
+async function doApprove(){
+  const list=reqsOfView().filter(r=>r.status==='依頼中');
+  const total=list.reduce((a,r)=>a+(Number(r.item.price)||0)*(Number(r.qty)||1),0);
+  // V32: 決裁サマリー（品目一覧+依頼者別小計）を見て確定できる・🖨決裁書印刷つき
+  const rows=list.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc((r.item.title||'').slice(0,30))+'</td><td>'+esc(r.by)+'</td>'
+    +'<td>'+(r.center?esc(r.center.n):'—')+'</td><td>'+(r.account?esc(r.account.n):'—')+'</td>'
+    +'<td style="text-align:right">'+yen((Number(r.item.price)||0)*(Number(r.qty)||1))+'</td></tr>').join('');
+  const by={}; list.forEach(r=>{ by[r.by]=(by[r.by]||0)+(Number(r.item.price)||0)*(Number(r.qty)||1); });
+  const bySub=Object.keys(by).map(n=>esc(n)+' '+yen(by[n])).join('　／　');
+  openModal('<h2>✅ 承認確定 — 決裁サマリー</h2>'
+    +'<p style="font-size:13px;line-height:1.7">「'+esc(VIEW.dest)+'」 '+esc(VIEW.day)+' の籠　依頼中 <b>'+list.length+'件</b>　合計 <b style="font-size:16px">'+yen(total)+'</b></p>'
+    +'<div style="overflow-x:auto;max-height:38vh;overflow-y:auto"><table class="wtable"><thead><tr><th>No</th><th>品名</th><th>依頼者</th><th>原価センタ</th><th>勘定科目</th><th style="text-align:right">金額</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+    +'<p class="hint" style="margin:8px 0">依頼者別: '+bySub+'</p>'
+    +'<p class="hint">確定後、この籠には新しい依頼を入れられません（以後は自動で翌日籠へ）。</p>'
+    +'<div class="modal-actions"><button class="btn ghost" onclick="closeModal()">キャンセル</button>'
+    +'<button class="btn" id="apPrint">✅ 承認して 🖨決裁書も印刷</button>'
+    +'<button class="btn green" id="apOk">✅ 承認確定する</button></div>');
+  const mdl=$('#modalRoot .modal'); if(mdl) mdl.classList.add('wide');
+  const commit=async(alsoPrint)=>{
+    if(await appendEvent({t:'approve', ts:nowIso(), by:myName(), dest:VIEW.dest, day:VIEW.day})){
+      if(alsoPrint) printApprovalDoc(VIEW.dest, VIEW.day, list, myName(), total);
+      closeModal(); toast('✅ 承認確定しました', VIEW.dest+'・'+VIEW.day,''); await refresh(false);
+    } };
+  $('#apOk').onclick=()=>commit(false);
+  $('#apPrint').onclick=()=>commit(true);
+}
+// V32: 🖨 決裁書（A4・紙決裁の職場向け・注文書と同型式）
+function printApprovalDoc(dest, day, list, approver, total){
+  const trs=list.map((r,i)=>'<tr><td class="c">'+(i+1)+'</td><td>'+esc(r.item.title||'')+'</td><td class="c">'+esc(r.by)+'</td>'
+    +'<td class="c">'+(r.center?esc(r.center.c)+'<div class="mut">'+esc(r.center.n)+'</div>':'')+'</td>'
+    +'<td class="c">'+(r.account?esc(r.account.c)+'<div class="mut">'+esc(r.account.n)+'</div>':'')+'</td>'
+    +'<td class="c">'+(r.qty||1)+'</td><td class="r">'+yen(r.item.price)+'</td><td class="r">'+yen((Number(r.item.price)||0)*(Number(r.qty)||1))+'</td>'
+    +'<td>'+esc(r.reason||'')+'</td></tr>').join('');
+  const html='<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><title>購買決裁書 '+esc(dest)+' '+esc(day)+'</title><style>'
+    +'@page{size:A4;margin:14mm} body{font-family:"Yu Gothic","Meiryo",sans-serif;color:#111;font-size:12px;margin:0}'
+    +'.head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2.5px solid #111;padding-bottom:4px}'
+    +'h1{font-size:22px;letter-spacing:6px;margin:0} .meta{font-size:11.5px;text-align:right;line-height:1.7}'
+    +'.stamps{border-collapse:collapse;margin:10px 0 6px auto} .stamps td{border:1px solid #111;text-align:center}'
+    +'.stH{font-size:10px;padding:2px 6px;background:#f2f2f2;min-width:18mm} .stB{height:18mm}'
+    +'table.lines{width:100%;border-collapse:collapse;margin-top:6px} .lines th{background:#f2f2f2;border:1px solid #999;padding:5px;font-size:11px} .lines td{border:1px solid #999;padding:5px 6px;vertical-align:top}'
+    +'.c{text-align:center}.r{text-align:right}.mut{color:#666;font-size:9.5px}'
+    +'.bar{position:fixed;top:0;left:0;right:0;background:#1a2233;color:#fff;padding:8px 14px;display:flex;gap:10px;align-items:center;font-size:13px}'
+    +'.bar button{font-size:13px;padding:6px 16px;cursor:pointer} body.hasbar{padding-top:44px} @media print{.bar{display:none} body.hasbar{padding-top:0}}'
+    +'</style></head><body class="hasbar"><div class="bar">🧾 決裁書 — 確認して印刷してください<span style="flex:1"></span><button onclick="window.print()">🖨 印刷</button><button onclick="window.close()">閉じる</button></div>'
+    +'<div class="head"><h1>購買決裁書</h1><div class="meta">届け先: <b>'+esc(dest)+'</b><br>対象日: '+esc(day)+'</div></div>'
+    +'<table class="stamps"><tr><td class="stH">承認（'+esc(approver)+'）</td></tr><tr><td class="stB"></td></tr></table>'
+    +'<table class="lines"><thead><tr><th style="width:5%">No</th><th>品名</th><th style="width:9%">依頼者</th><th style="width:11%">原価センタ</th><th style="width:11%">勘定科目</th><th style="width:6%">数量</th><th style="width:10%">単価</th><th style="width:11%">金額</th><th style="width:15%">購入理由</th></tr></thead>'
+    +'<tbody>'+trs+'</tbody><tfoot><tr><td colspan="7" class="r"><b>合計</b></td><td class="r"><b>'+yen(total)+'</b></td><td></td></tr></tfoot></table>'
+    +'</body></html>';
+  const w=window.open('','_blank');
+  if(w && w.document){ w.document.write(html); w.document.close(); }
+  else{ const blob=new Blob([String.fromCharCode(0xFEFF)+html],{type:'text/html;charset=utf-8'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='購買決裁書_'+dest+'_'+day+'.html';
+    document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000); }
+}
+async function cardAction(act,id){
+  const r=STATE.reqs[id]; if(!r) return;
+  if(act==='thread'){ VIEW.chatReq=id; renderChat(); $('#chatInput').focus(); return; }
+  if(act==='assign'){ if(await appendEvent({t:'assign',ts:nowIso(),by:myName(),reqId:id,assignee:myName()})){ toast('📋 担当になりました',r.item.title,''); await refresh(false);} return; }
+  if(act==='ordered'){
+    openModal('<h2>✔ 発注済みにする</h2><p class="hint">'+esc(r.item.title)+'</p><label for="odPo">注文書番号（任意）</label><input id="odPo" placeholder="例：PO-20260710-01">'
+      +'<div class="modal-actions"><button class="btn ghost" onclick="closeModal()">キャンセル</button><button class="btn green" id="odOk">✔ 発注済み</button></div>');
+    $('#odOk').onclick=async()=>{ if(await appendEvent({t:'ordered',ts:nowIso(),by:myName(),reqId:id,poNo:($('#odPo').value||'').trim()})){ closeModal(); toast('✔ 発注済みにしました',r.item.title,''); await refresh(false);} };
+    return; }
+  if(act==='reject'){
+    openModal('<h2>見送りにする</h2><p class="hint">'+esc(r.item.title)+'（依頼: '+esc(r.by)+'）</p><label for="rjWhy">理由（依頼者に見えます）</label><input id="rjWhy" placeholder="例：在庫があるため">'
+      +'<div class="modal-actions"><button class="btn ghost" onclick="closeModal()">キャンセル</button><button class="btn warn" id="rjOk">見送りにする</button></div>');
+    $('#rjOk').onclick=async()=>{ if(await appendEvent({t:'reject',ts:nowIso(),by:myName(),reqId:id,reason:($('#rjWhy').value||'').trim()})){ closeModal(); toast('見送りにしました',r.item.title,''); await refresh(false);} };
+    return; }
+}
+
+// ---- ⚙管理（team_config.json の編集・管理者=干場運用） ----
+window.openConfig=function(){
+  const c=CFG||{dests:[],assignees:[],members:[],accounts:[],centers:[]};
+  const dRows=(c.dests||[]).map(d=>'<tr><td><input class="cfD" value="'+esc(d.name)+'" placeholder="届け先名" style="margin-bottom:0"></td><td><input class="cfA" value="'+esc(d.approver||'')+'" placeholder="責任者名" style="margin-bottom:0"></td><td><button class="btn ghost sm cfDel" aria-label="行を削除">✕</button></td></tr>').join('');
+  const lRows=(arr,cls)=>(arr||[]).map(x=>'<tr><td><input class="'+cls+'c" value="'+esc(x.c)+'" placeholder="コード" style="width:90px;margin-bottom:0"></td><td><input class="'+cls+'n" value="'+esc(x.n)+'" placeholder="名称" style="margin-bottom:0"></td><td><button class="btn ghost sm cfDel" aria-label="行を削除">✕</button></td></tr>').join('');
+  openModal('<h2>⚙ チーム籠の管理（管理者用）</h2>'
+    +'<p class="hint">この設定は共有フォルダの team_config.json に保存され、チーム全員に反映されます。編集は管理者だけが行ってください。</p>'
+    +'<b style="font-size:12.5px">📦 届け先と責任者（承認者）</b>'
+    +'<table class="wtable" id="cfDests"><thead><tr><th>届け先</th><th>責任者（承認できる人）</th><th></th></tr></thead><tbody>'+dRows+'</tbody></table>'
+    +'<button class="btn ghost sm" id="cfDestAdd">＋ 届け先を追加</button>'
+    +'<b style="font-size:12.5px;display:block;margin-top:10px">🛒 発注担当（空なら誰でも担当になれます）</b>'
+    +'<input id="cfAsn" value="'+esc((c.assignees||[]).join('、'))+'" placeholder="例：山田、佐藤（読点区切り）">'
+    +'<b style="font-size:12.5px;display:block;margin-top:4px">📒 勘定科目リスト</b>'
+    +'<table class="wtable" id="cfAcc"><thead><tr><th>コード</th><th>科目名</th><th></th></tr></thead><tbody>'+lRows(c.accounts,'cfa')+'</tbody></table>'
+    +'<button class="btn ghost sm" id="cfAccAdd">＋ 科目を追加</button>'
+    +'<b style="font-size:12.5px;display:block;margin-top:10px">🏭 原価センタリスト</b>'
+    +'<table class="wtable" id="cfCen"><thead><tr><th>コード</th><th>センタ名</th><th></th></tr></thead><tbody>'+lRows(c.centers,'cfc')+'</tbody></table>'
+    +'<button class="btn ghost sm" id="cfCenAdd">＋ センタを追加</button>'
+    +'<div class="modal-actions"><button class="btn ghost" onclick="closeModal()">キャンセル</button><button class="btn primary" id="cfOk">保存（全員に反映）</button></div>');
+  const mdl=$('#modalRoot .modal'); mdl.classList.add('wide');
+  mdl.addEventListener('click',e=>{ const b=e.target.closest('.cfDel'); if(b) b.closest('tr').remove(); });
+  const addRow=(tid,html)=>{ const tr=document.createElement('tr'); tr.innerHTML=html; $('#'+tid+' tbody').appendChild(tr); };
+  $('#cfDestAdd').onclick=()=>addRow('cfDests','<td><input class="cfD" placeholder="届け先名" style="margin-bottom:0"></td><td><input class="cfA" placeholder="責任者名" style="margin-bottom:0"></td><td><button class="btn ghost sm cfDel" aria-label="行を削除">✕</button></td>');
+  $('#cfAccAdd').onclick=()=>addRow('cfAcc','<td><input class="cfac" placeholder="コード" style="width:90px;margin-bottom:0"></td><td><input class="cfan" placeholder="名称" style="margin-bottom:0"></td><td><button class="btn ghost sm cfDel" aria-label="行を削除">✕</button></td>');
+  $('#cfCenAdd').onclick=()=>addRow('cfCen','<td><input class="cfcc" placeholder="コード" style="width:90px;margin-bottom:0"></td><td><input class="cfcn" placeholder="名称" style="margin-bottom:0"></td><td><button class="btn ghost sm cfDel" aria-label="行を削除">✕</button></td>');
+  $('#cfOk').onclick=async()=>{
+    const dests=[...$('#cfDests tbody').querySelectorAll('tr')].map(tr=>({name:(tr.querySelector('.cfD').value||'').trim(), approver:(tr.querySelector('.cfA').value||'').trim()})).filter(d=>d.name);
+    const coll=(tid,cls)=>[...$('#'+tid+' tbody').querySelectorAll('tr')].map(tr=>({c:(tr.querySelector('.'+cls+'c').value||'').trim(), n:(tr.querySelector('.'+cls+'n').value||'').trim()})).filter(x=>x.c||x.n);
+    const cfg={dests, assignees:($('#cfAsn').value||'').split(/[、,]/).map(s=>s.trim()).filter(Boolean),
+      accounts:coll('cfAcc','cfa'), centers:coll('cfCen','cfc'), updated:nowIso(), updatedBy:myName()};
+    if(!dests.length){ toast('届け先を1つ以上登録してください','','warn'); return; }
+    if(await writeConfig(cfg)){ CFG=cfg; if(!VIEW.dest) VIEW.dest=dests[0].name; closeModal(); toast('⚙ 設定を保存しました','届け先'+dests.length+'件','' ); render(); }
+  };
+};
+
+// ---- V32.3: ♿ 見やすさ（購買サーチと共通キーpsv22_a11yを共有=どちらで変えても両方に効く） ----
+function a11yGet(){ try{ return JSON.parse(localStorage.getItem('psv22_a11y')||'null')||{font:'std',contrast:false,labels:false,space:false}; }catch(_e){ return {font:'std',contrast:false,labels:false,space:false}; } }
+function a11yApply(){ const a=a11yGet();
+  document.body.classList.toggle('a11y-lg', a.font==='lg');
+  document.body.classList.toggle('a11y-xl', a.font==='xl');
+  document.body.classList.toggle('a11y-contrast', !!a.contrast);
+  document.body.classList.toggle('a11y-space', !!a.space); }
+window.openA11y=function(){
+  const a=a11yGet();
+  openModal('<h2>♿ 見やすさの設定</h2>'
+    +'<p class="hint">自分に合う表示に変えられます。この設定は購買サーチと共通で、この端末に保存されます。</p>'
+    +'<b style="font-size:12.5px">文字の大きさ</b>'
+    +'<div style="display:flex;gap:14px;margin:6px 0 10px">'
+    +'<label style="cursor:pointer"><input type="radio" name="ayF" value="std" '+(a.font==='std'?'checked':'')+'> ふつう</label>'
+    +'<label style="cursor:pointer"><input type="radio" name="ayF" value="lg" '+(a.font==='lg'?'checked':'')+'> 大きい</label>'
+    +'<label style="cursor:pointer"><input type="radio" name="ayF" value="xl" '+(a.font==='xl'?'checked':'')+'> 特大</label></div>'
+    +'<label style="cursor:pointer;display:block;margin-bottom:8px"><input type="checkbox" id="ayC" '+(a.contrast?'checked':'')+'> くっきり表示（白い背景・黒い文字・太い枠線）</label>'
+    +'<label style="cursor:pointer;display:block"><input type="checkbox" id="ayS" '+(a.space?'checked':'')+'> ゆったり表示（行間とボタンを大きく・押し間違い防止）</label>'
+    +'<div class="modal-actions"><button class="btn primary" id="ayOk">この表示にする</button></div>');
+  $('#ayOk').onclick=()=>{
+    const f=($$('input[name="ayF"]').find(x=>x.checked)||{}).value||'std';
+    const v=Object.assign(a11yGet(), {font:f, contrast:$('#ayC').checked, space:$('#ayS').checked});
+    try{ localStorage.setItem('psv22_a11y', JSON.stringify(v)); }catch(_e){}
+    a11yApply(); closeModal(); toast('♿ 見やすさを変えました','いつでも♿ボタンで戻せます','');
+  };
+};
+
+// ---- ❓使い方 ----
+window.openHelp=function(first){
+  openModal('<h2>'+(first?'👋 はじめまして — 3つだけ覚えれば使えます':'❓ チーム買い物籠の使い方')+'</h2>'
+    +'<svg viewBox="0 0 640 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="使い方3ステップ: 名前を決める、フォルダをつなぐ、入れて承認" style="width:100%;height:auto;margin:4px 0 8px">'
+    +'<rect x="5" y="10" width="195" height="90" rx="10" fill="var(--bg)" stroke="var(--border)"/>'
+    +'<text x="102" y="40" text-anchor="middle" font-size="15" font-weight="800" fill="var(--cyan)">① 名前を決める</text>'
+    +'<text x="102" y="66" text-anchor="middle" font-size="11.5" fill="var(--text)">👤 自分の名前を入れる</text>'
+    +'<text x="102" y="86" text-anchor="middle" font-size="11" fill="var(--text-mute)">（最初の1回だけ）</text>'
+    +'<text x="212" y="60" text-anchor="middle" font-size="14" fill="var(--text-mute)">→</text>'
+    +'<rect x="222" y="10" width="195" height="90" rx="10" fill="var(--bg)" stroke="var(--border)"/>'
+    +'<text x="320" y="40" text-anchor="middle" font-size="15" font-weight="800" fill="var(--cyan)">② フォルダをつなぐ</text>'
+    +'<text x="320" y="66" text-anchor="middle" font-size="11.5" fill="var(--text)">📁 チームの共有フォルダを選ぶ</text>'
+    +'<text x="320" y="86" text-anchor="middle" font-size="11" fill="var(--text-mute)">（最初の1回だけ）</text>'
+    +'<text x="429" y="60" text-anchor="middle" font-size="14" fill="var(--text-mute)">→</text>'
+    +'<rect x="439" y="10" width="196" height="90" rx="10" fill="var(--bg)" stroke="var(--border)"/>'
+    +'<text x="537" y="40" text-anchor="middle" font-size="15" font-weight="800" fill="var(--green)">③ 入れる・見る</text>'
+    +'<text x="537" y="66" text-anchor="middle" font-size="11.5" fill="var(--text)">➕ 買いたいものを入れる</text>'
+    +'<text x="537" y="86" text-anchor="middle" font-size="11" fill="var(--text-mute)">籠は📊全体で一目でわかる</text>'
+    +'</svg>'
+    +'<ol style="font-size:13px;line-height:2;padding-left:20px">'
+    +'<li><b>📁 チーム籠フォルダ</b>で、チーム共通のBoxフォルダ（例: TM_共有\\_購買チーム籠）を選ぶ（初回のみ）</li>'
+    +'<li><b>➕ 買いたいものを入れる</b> — 届け先（モノを受け取る場所）・原価センタ（費用を使う部署）・勘定科目（費用の種類）を選んで<b>購入依頼確定</b>。むずかしい言葉は選ぶだけでOK、リストは管理者が用意しています</li>'
+    +'<li>その日の籠がみんなに見える。<b>💬伝言板</b>で精査のやり取り（品目ごとのスレッドも💬ボタンから）</li>'
+    +'<li>届け先の<b>責任者だけ</b>に「✅承認確定」ボタンが出る。確定後はその籠に入れられず、遅れた依頼は<b>自動で翌日籠</b>へ</li>'
+    +'<li>発注担当が「📋担当を自分に」→ ECで発注 →「✔発注済み」。誰が何をしたか全部記録に残る</li>'
+    +'</ol>'
+    +'<p class="hint">⚠ Boxの同期に数秒〜数分かかるため、リアルタイムではありません。🔄更新で最新を読み直せます。他の人の記録を書き換えることはできない仕組み（1人1ファイル）なので、同時に使っても壊れません。</p>'
+    +'<div class="modal-actions"><button class="btn primary" onclick="closeModal()">閉じる</button></div>');
+};
+
+// ---- 初期化 ----
+(function init(){
+  try{
+    // テーマ/♿は購買サーチの設定を継承
+    let th=null; try{ th=localStorage.getItem('psv22_theme'); }catch(_e){}
+    if(!th){ th=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark'; }
+    document.body.classList.toggle('light', th==='light');
+    // ♿設定はa11yApply()で一括適用（init後半で呼ぶ）
+    $('#themeBtn').onclick=()=>{ const nx=document.body.classList.contains('light')?'dark':'light'; try{ localStorage.setItem('psv22_theme',nx); }catch(_e){} document.body.classList.toggle('light',nx==='light'); };
+    $('#helpBtn').onclick=()=>openHelp(false);
+    var ab=$('#a11yBtn'); if(ab) ab.onclick=window.openA11y;  // V32.3: ♿見やすさ（チーム画面からも変更可）
+    a11yApply();
+    $('#whoami').onclick=()=>askName();  // V32.2: 名前の変更経路（フォルダ変更と同じ思想=一度決めたら変えられない、を無くす）
+    $('#cfgBtn').onclick=()=>{ if(!myName()){ askName(openConfig); } else openConfig(); };
+    $('#addBtn').onclick=()=>openRequestForm(null);
+    // V32: 既定は📊全体ビュー（前回の表示モードを記憶）・ダッシュボードからも依頼できる
+    try{ VIEW.mode=localStorage.getItem('psv22_teamView')||'dash'; }catch(_e){ VIEW.mode='dash'; }
+    var da=$('#dashAdd'); if(da) da.onclick=()=>openRequestForm(null);
+    // V32: 購買サーチ（価格調査の専門ツール）への導線＝単体表示の時だけ（パネル内では親が購買サーチ）
+    if(!IN_FRAME){ var sl=$('#searchLink'); if(sl){ sl.classList.remove('hidden');
+      sl.onclick=()=>{ var w=window.open('purchase_search_v22.html','psv22_search'); if(!w) toast('開けませんでした','同じフォルダの purchase_search_v22.html を直接開いてください','warn'); }; } }
+    const checkPrefill=()=>{ let pf=null; try{ pf=JSON.parse(localStorage.getItem('psv22_teamPrefill')||'null'); }catch(_e){}
+      if(pf && CFG && CFG.dests && CFG.dests.length){ try{ localStorage.removeItem('psv22_teamPrefill'); }catch(_e){} openRequestForm(pf); } };
+    // V32.1: 接続済みでも📁を押せば別フォルダへ変更できる（従来=保存済みを使い回すだけで変更不能だった・干場FB 07-10）
+    // キャンセルすれば現状のフォルダのまま。パネル内は親画面の「📁フォルダ接続」へ誘導（同じく毎回選び直し可）。
+    const pickFolder=async()=>{
+      if(IN_FRAME){ askParentForFolder(); return; }
+      try{
+        const h=await window.showDirectoryPicker({mode:'readwrite'});
+        await DB.set('teamdir',h);
+        if(await refresh(false)){ toast('📁 フォルダを設定しました','「'+h.name+'」— 🔄更新でいつでも読み直せます',''); checkPrefill(); }
+      }catch(e){ if(e&&e.name!=='AbortError'){ console.error(e); toast('フォルダを選べませんでした',(e&&e.message)||'','err'); } }
+    };
+    $('#pickBtn').onclick=()=>{ if(!myName()){ askName(pickFolder); return; } pickFolder(); };
+    $('#reloadBtn').onclick=()=>refresh(false).then(ok=>{ if(ok) toast('🔄 最新を読み込みました','',''); });
+    $('#dayPick').onchange=e=>{ VIEW.day=e.target.value||today(); render(); };
+    $('#prevDay').onclick=()=>{ const d=new Date(VIEW.day+'T00:00:00'); d.setDate(d.getDate()-1); VIEW.day=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); render(); };
+    $('#nextDay').onclick=()=>{ VIEW.day=nextDay(VIEW.day); render(); };
+    $('#todayBtn').onclick=()=>{ VIEW.day=today(); render(); };
+    const send=async()=>{ const t=($('#chatInput').value||'').trim(); if(!t) return;
+      if(!myName()){ askName(); return; }
+      const ev={t:'chat', ts:nowIso(), by:myName(), text:t.slice(0,300)};
+      if(VIEW.chatReq) ev.reqId=VIEW.chatReq;
+      else if(VIEW.mode==='basket' && VIEW.dest) ev.dest=VIEW.dest;  // V32.2: 📊全体からの送信は全体宛
+      if(await appendEvent(ev)){ $('#chatInput').value=''; await refresh(false); } };
+    $('#chatSend').onclick=send;
+    $('#chatInput').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); send(); } });
+    VIEW.day=today();
+    render();
+    // V32.3: はじめての人には図解ガイドを自動表示（1回だけ・❓でいつでも再表示）
+    if(!myName()){ askName(()=>{ try{ if(localStorage.getItem('psv22_teamSeen')!=='1'){ localStorage.setItem('psv22_teamSeen','1'); openHelp(true); } }catch(_e){} }); }
+    else{ try{ if(localStorage.getItem('psv22_teamSeen')!=='1'){ localStorage.setItem('psv22_teamSeen','1'); openHelp(true); } }catch(_e){} }
+    // V31.1: フォルダ再接続の恒久化（干場FB=一度設定したら固定・開き直しても記憶）
+    // 場所はIndexedDBに記憶済み。ブラウザ仕様で「許可」だけが開き直しでprompt状態に戻るため、
+    // 最初のクリック/キー操作（=ユーザー操作）に乗せて自動で再許可する。ダイアログで「今後も許可」を
+    // 選べば以後は完全自動接続になる。フォルダ選択ダイアログを開き直す必要は無い。
+    (async()=>{
+      let h=null; try{ h=await DB.get('teamdir'); }catch(_e){}
+      const afterConnect=(ok)=>{ if(!ok) return;
+        let pf=null; try{ pf=JSON.parse(localStorage.getItem('psv22_teamPrefill')||'null'); }catch(_e){}
+        if(pf && CFG && CFG.dests && CFG.dests.length){ try{ localStorage.removeItem('psv22_teamPrefill'); }catch(_e){} openRequestForm(pf); } };
+      if(!h){
+        let pf=null; try{ pf=JSON.parse(localStorage.getItem('psv22_teamPrefill')||'null'); }catch(_e){}
+        if(pf) toast('購買サーチからの依頼を預かっています','📁でチーム籠フォルダに接続すると依頼フォームが開きます','warn',8000);
+        return;
+      }
+      let p='prompt'; try{ p=await h.queryPermission({mode:'readwrite'}); }catch(_e){}
+      if(p==='granted'){ afterConnect(await refresh(false)); return; }
+      $('#folderLbl').innerHTML='📁 前回のフォルダ「<b>'+esc(h.name)+'</b>」を記憶しています — <b>画面のどこかをクリック</b>すると再接続します';
+      const once=async()=>{
+        document.removeEventListener('pointerdown',once,true); document.removeEventListener('keydown',once,true);
+        if(await ensurePerm(h)){ toast('📁 再接続しました', h.name+'（許可ダイアログで「今後も許可」を選ぶと次回から全自動になります）','',7000); afterConnect(await refresh(false)); }
+        else $('#folderLbl').textContent='未接続 — 「📁 チーム籠フォルダ」から接続してください';
+      };
+      document.addEventListener('pointerdown',once,true);
+      document.addEventListener('keydown',once,true);
+    })();
+    if(location.search.indexOf('selftest')>=0){ console.log('SELFTEST:', _selftest()); }
+  }catch(e){ console.error('init失敗',e); document.body.insertAdjacentHTML('beforeend','<pre style="color:#f66;padding:20px">起動エラー: '+esc(e&&e.message)+'</pre>'); }
+})();
+</script>
+</body>
+</html>
