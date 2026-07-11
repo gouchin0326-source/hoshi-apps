@@ -979,6 +979,8 @@ window.checkFavPrices = function(){
   }
   const list = favs.slice(0,8);
   if(!rateGate(list.length)) return;  // v24: レート制限
+  // スマホ: 1件目だけ開き残りはリンク提示（ポップアップブロック回避）
+  if(openUrlsSmart(list.map(f=>f.url), '価格チェック')) return;
   let opened=0, blocked=0;
   list.forEach(f=>{ const w=window.open(f.url,'_blank'); if(w){opened++;openedTabs.push(w);} else blocked++; });
   updateCloseTabsBtn();
@@ -1422,6 +1424,28 @@ function rateGate(n){
 
 // ----- EC 一括検索 -----
 let openedTabs = [];
+// V32.4: スマホは1タップから複数タブを開けない（ポップアップブロック）。触感端末では
+// 1件目だけ開き、残りは「タップして開くリンク」で提示する（各タップ=個別ジェスチャ=通る）。
+function _touchOpen(){ try{ return window.matchMedia('(pointer:coarse)').matches || window.matchMedia('(max-width:760px)').matches; }catch(_e){ return false; } }
+function _openLinksModal(urls, title){
+  var lis = urls.map(function(u){
+    var label = String(u).replace(/^https?:\/\//,'').slice(0,48);
+    return '<a class="btn primary sm" style="display:flex;margin:6px 0;word-break:break-all;text-decoration:none" href="'+esc(safeUrl(u))+'" target="_blank" rel="noopener">🌐 '+esc(label)+'</a>';
+  }).join('');
+  openModal('<h2>🌐 ページを開く</h2><p class="text-mute" style="font-size:12px;margin-bottom:8px">スマホではまとめて開けないため、下を1つずつタップして開いてください。'+(title?'<br>（'+esc(title)+'）':'')+'</p>'+lis+'<div class="modal-actions"><button class="btn ghost" onclick="closeModal()">閉じる</button></div>');
+}
+// 触感端末なら処理してtrueを返す（呼び出し側は以降の一括openをスキップ）。PCならfalse=従来動作。
+function openUrlsSmart(urls, title){
+  urls = (urls||[]).filter(Boolean);
+  if(!urls.length) return true;
+  if(!_touchOpen()) return false;
+  var w = window.open(urls[0],'_blank');   // 1件目はジェスチャ内なのでスマホでも開ける
+  if(w) openedTabs.push(w);
+  var rest = w ? urls.slice(1) : urls;     // 1件目も弾かれたら全部リンクで出す
+  if(rest.length) _openLinksModal(rest, title);
+  updateCloseTabsBtn();
+  return true;
+}
 function ecSearch(){
   const kw = $('#kw').value.trim();
   if(!kw){ toast('キーワードを入力','買いたいものを入力してください','warn'); $('#kw').focus(); return; }
@@ -1431,6 +1455,8 @@ function ecSearch(){
   // v23: 検索した文字を収集先フォルダとして固定
   state.lastKeyword = kw;
   save(); updateKwChip();
+  // スマホ: 1件目だけ開き残りはリンク提示（ポップアップブロック回避）
+  if(openUrlsSmart(sites.map(s=>s.url+encodeURIComponent(kw)), 'EC検索: '+kw)) return;
   let opened=0, blocked=0;
   sites.forEach(s=>{
     const w = window.open(s.url+encodeURIComponent(kw),'_blank');
@@ -1760,6 +1786,7 @@ window.openBulkUpdate = function(presetScope){
     }
   }
   function batchSize(){
+    if(_touchOpen()) return 1;  // V32.4: スマホは1タップ1件（複数同時openはブロックされる）
     const sel=document.getElementById('buBatch');
     return Math.min(Math.max(1, Number(sel&&sel.value)||5), 8);
   }
