@@ -1341,6 +1341,53 @@ function handleHash(){
   }catch(e){ console.error('hash受信失敗',e); toast('受信エラー','データ形式が不正です','err'); }
 }
 
+// ===== V32.5: スマホ用「価格取り込みブックマークレット」 =====
+// スマホは拡張機能が使えないため、拡張(content_script)の解析処理を単体関数として持ち、
+// .toString()でブックマークレット化する。ECページで実行→ #paste= でこのアプリへ商品を渡す。
+// ※この関数はアプリ内では実行されず、文字列化してブックマークにするためだけに存在（自己完結・DOM/location/alertのみ使用）。
+function mobileGrabScrape(){
+  try{
+    var t=function(e){return e?e.textContent.trim().replace(/\s+/g,' '):'';};
+    var u=location.href, s='その他';
+    if(/amazon\.co\.jp/.test(u)){s='Amazon';}
+    else if(/rakuten\.co\.jp/.test(u)){s='楽天';}
+    else if(/yahoo\.co\.jp/.test(u)){s='Yahoo';}
+    else if(/monotaro\.com/.test(u)){s='MonotaRO';}
+    else if(/orange-book\.com/.test(u)){s='オレンジブック';}
+    else if(/misumi-ec\.com/.test(u)){s='ミスミ';}
+    var ti=document.title.replace(/\s*[|｜\-－].+$/,'').trim(), p='', m='', n='';
+    var g=document.body.innerText.match(/[¥￥]\s*([\d,]+)/); if(g){p=g[1].replace(/,/g,'');}
+    if(s==='Amazon'){var a=document.querySelector('#productTitle'); if(a){ti=t(a);} var b=document.querySelector('.a-price .a-offscreen,.a-price-whole'); if(b){p=t(b).replace(/[¥￥,\s]/g,'').replace(/\..+$/,'');} var c=document.querySelector('#bylineInfo'); if(c){m=t(c).replace(/ブランド:|より|の|＞/g,'').slice(0,40);}}
+    else if(s==='楽天'){var d=document.querySelector('h1,.item_name,[class*=ItemName]'); if(d){ti=t(d);} var e=document.querySelector('[class*=price],[class*=Price]'); if(e){var f=t(e).match(/([\d,]+)/); if(f){p=f[1].replace(/,/g,'');}}}
+    else if(s==='MonotaRO'){var h=document.querySelector('h1,.ttl-search-product__name'); if(h){ti=t(h);} var i=document.querySelector('[itemprop=price],.price__num'); if(i){var j=t(i).match(/([\d,]+)/); if(j){p=j[1].replace(/,/g,'');}} var k=document.querySelector('.itemNum,[class*=item-num]'); if(k){n=t(k);}}
+    else if(s==='Yahoo'){var l=document.querySelector('h1'); if(l){ti=t(l);}}
+    else if(s==='ミスミ'){var o=document.querySelector('h1,.product-name,[class*=ProductName]'); if(o){ti=t(o);}}
+    else if(s==='オレンジブック'){var q=document.querySelector('h1'); if(q){ti=t(q);}}
+    if(!ti){alert('商品名が読み取れませんでした。EC の商品ページで実行してください。');return;}
+    var it={site:s,title:ti,price:p?Number(p):null,partNo:n,maker:m,url:u,image:'',delivery:'',keyword:'',capturedAt:new Date().toISOString(),pageType:'product'};
+    location.href='https://gouchin0326-source.github.io/hoshi-apps/kobai/#paste='+encodeURIComponent(JSON.stringify({_batch:true,items:[it]}));
+  }catch(err){alert('取り込みエラー: '+err.message);}
+}
+var MOBILE_GRAB_BM='javascript:('+mobileGrabScrape.toString().replace(/[\r\n\t]+/g,' ').replace(/\s{2,}/g,' ')+')();';
+window.openMobileGrab=function(){
+  openModal('<h2>📱 スマホで価格を取り込む</h2>'
+   +'<p class="text-mute" style="font-size:12.5px;line-height:1.7;margin-bottom:10px">スマホは拡張機能が使えないため、<b>「価格取り込み」ボタン</b>を一度だけブックマークに登録します。EC の商品ページでこのボタンを押すと、価格・商品名を読み取ってこのアプリに追加します。</p>'
+   +'<div style="text-align:center;margin:10px 0"><a id="mgrabLink" class="btn primary" style="text-decoration:none;font-size:15px;padding:12px 18px">📥 価格取り込み</a><div class="text-mute" style="font-size:11px;margin-top:4px">PCはこのボタンをブックマークバーへドラッグ</div></div>'
+   +'<p class="text-mute" style="font-size:12px;margin:10px 0 4px">▼ スマホはこのコードをコピーして、ブックマークのURLに貼り付け</p>'
+   +'<textarea id="mgrabCode" readonly style="width:100%;height:64px;font-size:11px;padding:8px;border-radius:6px;border:1px solid var(--border-strong);background:var(--bg);color:var(--text)"></textarea>'
+   +'<div style="margin:6px 0"><button class="btn ghost sm" id="mgrabCopy">📋 コードをコピー</button></div>'
+   +'<div style="font-size:12px;line-height:1.8;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px">'
+   +'<b>📱 iPhone (Safari)</b><br>①適当なECページで 共有→「ブックマークを追加」②ブックマーク一覧→編集→さっきの項目のURLを上のコードに差し替え③名前を「価格取り込み」に。EC商品ページでブックマークから実行。<br><br>'
+   +'<b>📱 Android (Chrome)</b><br>①☆でブックマーク②ブックマーク編集でURLを上のコードに差し替え・名前を「価格取り込み」に③EC商品ページで、アドレスバーに「価格取り込み」と入力→出てきた候補をタップで実行。'
+   +'</div>'
+   +'<div class="modal-actions"><button class="btn ghost" onclick="closeModal()">閉じる</button></div>');
+  setTimeout(function(){
+    var lk=document.getElementById('mgrabLink'); if(lk){ lk.setAttribute('href',MOBILE_GRAB_BM); lk.onclick=function(ev){ ev.preventDefault(); toast('登録用ボタンです','PCはブックマークバーへドラッグ／スマホは下のコードをコピーしてください','',6000); return false; }; }
+    var ta=document.getElementById('mgrabCode'); if(ta){ ta.value=MOBILE_GRAB_BM; }
+    var cp=document.getElementById('mgrabCopy'); if(cp){ cp.onclick=function(){ var ta2=document.getElementById('mgrabCode'); try{ navigator.clipboard.writeText(MOBILE_GRAB_BM); toast('📋 コピーしました','ブックマークのURL欄に貼り付けてください',''); }catch(e){ if(ta2){ta2.focus();ta2.select();} toast('コード欄を選択しました','長押し→コピーしてください','warn'); } }; }
+  },0);
+};
+
 // ----- OCR（📷キャプチャ用、Tesseract.js）-----
 let _tess=null;
 function loadTesseract(){
@@ -2640,11 +2687,15 @@ function init(){
     // 拡張連携の死活表示（一定時間あいさつが来なければ「未検出」＋原因別の直し方を案内）
     // V29.1: 新規配布PCで詰まりやすい3原因を、ガイドの該当ステップ付きで表示（干場実機FB 07-10）
     setTimeout(function(){
-      if(!window.__bridgeSeen){ var bs=document.getElementById('bridgeStatus'); if(bs) bs.innerHTML=
+      if(!window.__bridgeSeen){ var bs=document.getElementById('bridgeStatus'); if(bs){
+        if(_touchOpen()){ bs.innerHTML=
+          '📱 スマホは拡張機能が使えません。<a href="#" onclick="openMobileGrab();return false;" style="color:var(--cyan);font-weight:800;text-decoration:underline">「価格取り込みボタン」を設定</a>すると、EC 商品ページから価格をワンタップで取り込めます（手動追加・Excel取込もそのまま使えます）。'; }
+        else { bs.innerHTML=
         '⚪ 拡張連携: 未検出（手動追加・Excel取込はそのまま使えます）。自動収集にしたい場合は上から順に確認: '
         +'<b>❶ 「購買サーチ_起動.bat」から開き直す</b>（普通のブラウザで開くと拡張が繋がりません）'
         +' → <b>❷ アドレスバーに edge://extensions</b> で「購買サーチ」が一覧にあるか（無ければガイド②の手動読み込み）'
         +' → <b>❸ 詳細の「ファイルの URL へのアクセスを許可する」を ON</b>（ガイド③・OFFだと商品が届きません）→ このページを再読み込み。'; }
+      } }
     }, 2200);
     // グループ/カード操作はイベント委譲で処理（inline onclick を廃し外部由来文字列のJS注入経路を排除）
     document.addEventListener('click', function(e){
