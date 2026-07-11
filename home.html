@@ -159,7 +159,7 @@ function zones(st){
     {k:'待ち', v:c.pending},
     {k:'完了', v:c.done}
   ];
-  return [
+  var Z=[
     { title:'制作 — 製造ラインで2分（誰が作ったか）', hero:true, tiles:[
       {cls:'local', ic:'🌙', tag:'LOCAL LLM · 完全自社所有 · ¥0', name:'ローカルLLM工房',
        desc:'画像・音楽・動画・MV（生成）＋自律ビルダー製アプリ。GPU単一レーンで駆動。',
@@ -181,6 +181,12 @@ function zones(st){
        href:PRIV+'/tree/main/system', ext:true, node:'docs', badge:''}
     ]}
   ];
+  // ★作品ゾーン=公開Pagesにも掲載(公開安全版=完成作品のみ・下書き/工房テストは非公開)。cf.[[hoshi-tenkyu-webgl-gallery]]
+  Z.push({title:'作品を観る', hero:false, tiles:[
+    {cls:'cloud', ic:'🌌', name:'星天球 ほしてんきゅう',
+     desc:'つくった作品を星にして、3Dで飛びながら観る美術館。', href:'tenkyu/index.html', node:'tenkyu', badge:'NEW'}
+  ]});
+  return Z;
 }
 
 var lastStatus=null;
