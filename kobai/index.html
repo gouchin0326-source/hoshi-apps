@@ -220,6 +220,8 @@ body.light .card-img{border:1px solid var(--border)}
     <div class="site-pills" id="sitePills"></div>
     <div class="add-row" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px">
       <button class="btn green sm" id="manualAddBtn">✏️ 手動で追加</button>
+      <button class="btn green sm" id="ocrAddBtn" title="スマホで撮った商品画面のスクショや写真を選ぶと、商品名・価格を読み取って追加します（画像解析／初回は数秒）">📷 画像から追加</button>
+      <input type="file" id="ocrFileInput" accept="image/*" class="hidden">
       <button class="btn ghost sm" id="importXlsxBtn">📄 Excelで取込</button>
       <input type="file" id="xlsxFileInput" accept=".xlsx,.xlsm,.csv" class="hidden">
       <button class="btn ghost sm hidden" id="favCheckBtn" title="★お気に入りの商品ページをまとめて開いて価格を確認">📈 ★の価格をチェック</button>
@@ -255,13 +257,15 @@ body.light .card-img{border:1px solid var(--border)}
   <div class="empty hidden" id="emptyState">
     <div class="big">🛒</div>
     <h2>まだ商品がありません</h2>
-    <p class="text-mute" style="font-size:13px;margin-bottom:14px">集め方は2通り。<b>拡張機能が無くても</b>使えます。</p>
+    <p class="text-mute" style="font-size:13px;margin-bottom:14px">集め方はいくつか。<b>拡張機能が無くても</b>使えます。</p>
     <ol>
-      <li><b>拡張機能あり</b>：上で「EC で検索」→ 気になる商品を<b>クリック</b>すると自動で集まります</li>
-      <li><b>拡張機能なし</b>：「✏️ 手動で追加」または「📄 Excelで取込」で登録します</li>
+      <li><b>📱 スマホ</b>：EC商品ページの<b>スクショを撮って</b>「📷 画像から追加」で選ぶと、商品名・価格を読み取って追加（画像解析）。または商品ページを<b>共有</b>→「購買サーチ」でもOK</li>
+      <li><b>💻 PC（拡張機能あり）</b>：上で「EC で検索」→ 気になる商品を<b>クリック</b>すると自動で集まります</li>
+      <li><b>共通</b>：「✏️ 手動で追加」「📄 Excelで取込」でも登録できます</li>
       <li>同じ商品を後日また見ると、<b>価格変動</b>が記録されます</li>
     </ol>
     <div style="margin-top:18px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+      <button class="btn green sm" id="emptyOcrBtn">📷 画像から追加</button>
       <button class="btn green sm" id="emptyManualBtn">✏️ 手動で追加</button>
       <button class="btn ghost sm" id="emptyImportBtn">📄 Excelで取込</button>
       <button class="btn ghost sm" id="demoBtn">🚀 サンプルで動きを見る</button>
@@ -2697,6 +2701,11 @@ function init(){
     var ix=document.getElementById('importXlsxBtn'); if(ix&&fi) ix.onclick=function(){ fi.click(); };
     var eib=document.getElementById('emptyImportBtn'); if(eib&&fi) eib.onclick=function(){ fi.click(); };
     if(fi) fi.addEventListener('change', function(e){ importXlsxFiles(e.target.files); e.target.value=''; });
+    // 📷 画像から追加（OCR）＝スマホでスクショ/写真を選ぶ→商品名・価格を読み取って追加
+    var ofi=document.getElementById('ocrFileInput');
+    var oab=document.getElementById('ocrAddBtn'); if(oab&&ofi) oab.onclick=function(){ ofi.click(); };
+    var eob=document.getElementById('emptyOcrBtn'); if(eob&&ofi) eob.onclick=function(){ ofi.click(); };
+    if(ofi) ofi.addEventListener('change', function(e){ var f=e.target.files&&e.target.files[0]; if(f) runOcr(f); e.target.value=''; });
     var fcb=document.getElementById('favCheckBtn'); if(fcb) fcb.onclick=window.checkFavPrices;
     // v25: 💾控え保存・📥復元・🔎絞り込み
     var bk=document.getElementById('backupBtn'); if(bk) bk.onclick=exportBackup;
