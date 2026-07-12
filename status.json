@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-07-12 20:01:05",
+  "generated_at": "2026-07-12 20:07:05",
   "gpu": {
     "occupant": "sera_mv_clip（sera_pipeline:2026-07_shuden）",
-    "note": "経過195s / 目安あと約0分",
+    "note": "経過138s / 目安あと約0分",
     "vram_used_gb": 14.3,
     "vram_total_gb": 15.9,
     "util": 100,
@@ -12,8 +12,8 @@
         "pid": 14660,
         "session": "sera_pipeline:2026-07_shuden",
         "job": "sera_mv_clip",
-        "started_at": "2026-07-12T19:57:49+0900",
-        "age_sec": 195,
+        "started_at": "2026-07-12T20:04:46+0900",
+        "age_sec": 138,
         "alive": true,
         "est_minutes": 3
       },
@@ -41,7 +41,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-12 19:59",
+    "updated": "2026-07-12 20:05",
     "current": null
   },
   "queue": [
@@ -123,7 +123,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 155
+    "push_today": 156
   },
   "ai_works": [
     {
@@ -200,8 +200,8 @@
     }
   ],
   "resources": {
-    "cpu_pct": 3,
-    "mem_pct": 43,
+    "cpu_pct": 11,
+    "mem_pct": 42,
     "mem_total_gb": 31.7,
     "disk_used_gb": 274.1,
     "disk_free_gb": 1587.7
