@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>購買サーチ v31.2</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#22d3ee">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="購買サーチ">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script src="lib/chart.umd.min.js"></script>
 <script src="lib/xlsx.full.min.js"></script>
 <script src="ocr_postprocess.js"></script>
@@ -1370,7 +1376,13 @@ function mobileGrabScrape(){
 }
 var MOBILE_GRAB_BM='javascript:('+mobileGrabScrape.toString().replace(/[\r\n\t]+/g,' ').replace(/\s{2,}/g,' ')+')();';
 window.openMobileGrab=function(){
-  openModal('<h2>📱 スマホで価格を取り込む</h2>'
+  openModal('<h2>📱 スマホで商品をリストに追加</h2>'
+   +'<div style="font-size:12.5px;line-height:1.8;background:linear-gradient(135deg,rgba(34,211,238,0.12),rgba(59,130,246,0.06));border:1px solid var(--border-strong);border-radius:10px;padding:12px;margin-bottom:12px">'
+   +'<b style="color:var(--cyan)">⭐ いちばんかんたん：「共有」で追加</b>（このアプリをホーム画面に追加＝インストールすると使えます）<br>'
+   +'<b>①</b> EC の商品ページを開く → <b>②</b> ブラウザの <b>共有</b>（⋮→共有 / 内蔵の共有ボタン）→ <b>③</b> 一覧から <b>「購買サーチ」</b> を選ぶ<br>'
+   +'<span class="text-mute">・<b>ページ（URL）を共有</b> → 商品名・URL・お店 が追加されます<br>・<b>画面のスクショを共有</b> → 画像を解析して <b>価格まで</b> 読み取って追加します（初回はエンジン準備で数秒）</span>'
+   +'</div>'
+   +'<p class="text-mute" style="font-size:12px;line-height:1.7;margin:14px 0 8px">▼ 以下は上級者向けの旧方式（ブックマークレット）。上の「共有」で足りる場合は不要です。</p>'
    +'<p class="text-mute" style="font-size:12.5px;line-height:1.7;margin-bottom:10px">スマホは拡張機能が使えないため、<b>「価格取り込み」ボタン</b>を一度だけブックマークに登録します。EC の商品ページでこのボタンを押すと、価格・商品名を読み取ってこのアプリに追加します。</p>'
    +'<div style="text-align:center;margin:10px 0"><a id="mgrabLink" class="btn primary" style="text-decoration:none;font-size:15px;padding:12px 18px">📥 価格取り込み</a><div class="text-mute" style="font-size:11px;margin-top:4px">PCはこのボタンをブックマークバーへドラッグ</div></div>'
    +'<p class="text-mute" style="font-size:12px;margin:10px 0 4px">▼ スマホはこのコードをコピーして、ブックマークのURLに貼り付け</p>'
@@ -1388,49 +1400,115 @@ window.openMobileGrab=function(){
   },0);
 };
 
-// ----- OCR（📷キャプチャ用、Tesseract.js）-----
+// ----- OCR（📷キャプチャ / スマホ共有スクショ用、同梱 Tesseract.js 日本語）-----
+// 外部CDNには接続しない方針を維持したまま、エンジン一式を lib/tesseract/ に同梱（オフライン可）。
 let _tess=null;
+function _tessBase(p){ return new URL('lib/tesseract/'+p, location.href).href; }
 function loadTesseract(){
   return new Promise((res,rej)=>{
     if(window.Tesseract){res(window.Tesseract);return;}
-    // スタンドアロンHTMLは外部CDNに接続しない方針（オフライン・社内環境対応）。
-    // 画面OCRは同梱エンジンを持つ拡張機能版でご利用ください。
-    rej(new Error('画面OCRは拡張機能版でご利用ください（このページ単体では外部接続しないため無効です）'));
+    const s=document.createElement('script');
+    s.src=_tessBase('tesseract.min.js');
+    s.onload=()=>{ window.Tesseract ? res(window.Tesseract) : rej(new Error('OCRエンジンの初期化に失敗しました')); };
+    s.onerror=()=>rej(new Error('OCRエンジン(同梱)の読み込みに失敗しました'));
+    document.head.appendChild(s);
   });
 }
-async function runOcr(dataUrl){
-  toast('📷 解析中','OCRで商品情報を読み取っています...','');
+async function getTessWorker(){
+  if(_tess) return _tess;
+  await loadTesseract();
+  _tess = await window.Tesseract.createWorker('jpn', 1, {
+    workerPath: _tessBase('worker.min.js'),
+    corePath:   _tessBase('tesseract-core-simd-lstm.wasm.js'),
+    langPath:   _tessBase('lang'),
+    gzip: false
+  });
+  return _tess;
+}
+// src は dataURL / Blob / File のいずれか可
+async function runOcr(src){
+  toast('📷 解析中','画像から商品情報を読み取っています…（初回はエンジン準備で数秒）','');
   try{
-    await loadTesseract();
-    if(!_tess){ _tess = await window.Tesseract.createWorker(['jpn','eng'],1); }
-    const blob = await (await fetch(dataUrl)).blob();
-    const {data} = await _tess.recognize(blob);
+    const worker = await getTessWorker();
+    const blob = (src instanceof Blob) ? src : await (await fetch(src)).blob();
+    const {data} = await worker.recognize(blob);
     const txt = data.text||'';
     const got = extractFromOcr(txt);
-    if(!got || got.price==null){
-      toast('読み取り不可','価格が認識できませんでした。範囲を変えて再試行を','warn');
+    if(!got || (got.price==null && got.title==='(商品名なし)')){
+      toast('読み取り不可','商品名・価格を認識できませんでした。商品名と価格が写る範囲で撮り直してください','warn',8000);
       return;
     }
-    // OCR は URL を取れない → 一意キーを生成
-    got.url = 'ocr://'+Date.now();
+    got.url = 'ocr://'+Date.now();      // OCRはURLを持たない→一意キー
+    got.pageType='product';
     receiveFromExtension(got);
-  }catch(e){ console.error(e); toast('OCR失敗',e.message,'err'); }
+    if(got.price==null){
+      toast('価格は未取得','商品はリストに追加しました。価格は商品カードの「📈記録」から入力できます','warn',8000);
+    }
+  }catch(e){ console.error(e); toast('OCR失敗',(e&&e.message)||String(e),'err'); }
 }
+// OCR全文 → {site,title,price}。価格の選別が肝（¥の誤読=\/Y を許容し、件数/ポイント/数量を除外）
 function extractFromOcr(text){
   if(!text) return null;
-  // OCR後処理層(ocr_postprocess.js): 全角→半角正規化・スペース除去してから抽出
+  // OCR後処理層(ocr_postprocess.js): 全角→半角正規化・スペース除去
   if(window.OCRPost) text = window.OCRPost.cleanOcrText(text);
-  const pm = text.match(/[¥￥]\s*([\d,]+)/) || text.match(/([\d,]+)\s*円/);
-  const price = pm ? Number(pm[1].replace(/,/g,'')) : null;
-  const lines = text.split(/\r?\n/).map(s=>s.trim())
-    .filter(s=>s.length>=4 && !/^[¥￥\d,円\s]+$/.test(s));
-  const title = lines.sort((a,b)=>b.length-a.length)[0] || '(商品名なし)';
-  let site='その他';
-  if(/amazon/i.test(text))site='Amazon';
-  else if(/楽天|rakuten/i.test(text))site='楽天';
-  else if(/yahoo/i.test(text))site='Yahoo';
-  else if(/monotaro|モノタロウ/i.test(text))site='MonotaRO';
-  return {site, title:title.slice(0,120), price, keyword:''};
+  return {site:detectSite(text), title:pickTitle(text), price:pickPrice(text), keyword:''};
+}
+// 価格抽出: Tesseractは ¥/￥ を \ や Y と誤読する→マークに含める。「件/pt/%/個/本…」等は除外。
+function pickPrice(text){
+  const t=(text||'').replace(/[，]/g,',');
+  const marked=[]; let m;
+  const re1=/[¥￥\\Yy]\s?([0-9][0-9,]{1,7})(?!\s?(?:件|pt|ポイント|ﾎﾟｲﾝﾄ|%|％))/g;
+  while((m=re1.exec(t))) marked.push(parseInt(m[1].replace(/,/g,''),10));
+  const re2=/([0-9][0-9,]{1,7})\s?円/g;
+  while((m=re2.exec(t))) marked.push(parseInt(m[1].replace(/,/g,''),10));
+  const valid=marked.filter(v=>v>=10 && v<=9999999);
+  return valid.length ? Math.max(...valid) : null;   // 価格文脈の数字の最大（=税込 or 本体）
+}
+function detectSite(text){
+  if(/amazon|アマゾン/i.test(text)) return 'Amazon';
+  if(/楽天|rakuten/i.test(text)) return '楽天';
+  if(/yahoo|ヤフー|ペイペイ|paypay/i.test(text)) return 'Yahoo';
+  if(/monotaro|モノタロウ/i.test(text)) return 'MonotaRO';
+  if(/askul|アスクル/i.test(text)) return 'アスクル';
+  if(/misumi|ミスミ/i.test(text)) return 'ミスミ';
+  if(/orange|オレンジブック/i.test(text)) return 'オレンジブック';
+  return 'その他';
+}
+// 商品名: 価格/店名/定型ノイズ行を除いた最長行を採用
+function pickTitle(text){
+  const NOISE=/^(送料|ポイント|税込|税抜|在庫|お気に入り|カート|この商品|レビュー|楽天市場|Amazon|Yahoo|モノタロウ|PayPay|あす楽|当日出荷|販売単位|品番|型番)/;
+  const lines=(text||'').split(/\r?\n/).map(s=>s.trim())
+    .filter(s=>s.length>=4 && !/^[¥￥\\Yy\d,円\s()（）]+$/.test(s) && !NOISE.test(s));
+  return lines.sort((a,b)=>b.length-a.length)[0]?.slice(0,120) || '(商品名なし)';
+}
+
+// ===== スマホ「共有→購買サーチ」の受け取り（Web Share Target 経由・SWがキャッシュに置いた物を拾う）=====
+// ①スクショ画像を共有→OCR ②ページ(URL/テキスト)を共有→そのままリスト化
+async function handleSharedIntent(){
+  const sp = new URLSearchParams(location.search);
+  if(sp.get('shared')!=='1') return;
+  history.replaceState(null,'',location.pathname);   // 二重処理防止でクエリを消す
+  let meta={title:'',text:'',url:''}, imgBlob=null;
+  try{
+    const cache = await caches.open('kobai-share-v1');
+    const mr = await cache.match('__share_meta'); if(mr){ meta = await mr.json(); }
+    const ir = await cache.match('__share_img');  if(ir){ imgBlob = await ir.blob(); }
+    await cache.delete('__share_meta'); await cache.delete('__share_img');
+  }catch(e){ console.error('共有受信失敗',e); }
+
+  if(imgBlob && imgBlob.size){ await runOcr(imgBlob); return; }   // スクショ→OCR
+
+  // URL/テキスト共有 → 商品名+URL+店名でリスト化（Androidは url が text に入ることが多い）
+  const rawUrl = (meta.url && /^https?:\/\//i.test(meta.url)) ? meta.url
+               : ((meta.text||'').match(/https?:\/\/[^\s]+/)||[])[0] || '';
+  let title = (meta.title||'').trim();
+  if(!title){ title = (meta.text||'').replace(/https?:\/\/[^\s]+/g,'').trim().slice(0,120); }
+  if(!rawUrl && !title){ toast('共有を受け取れませんでした','商品ページの「共有」→購買サーチ、または画面のスクショを共有してください','warn',8000); return; }
+  const it = { site: rawUrl?detectSite(rawUrl+' '+title):detectSite(title), title: title||'(共有された商品)',
+    price:null, partNo:'', maker:'', url: rawUrl||('share://'+Date.now()), image:'', delivery:'',
+    keyword:'', capturedAt:new Date().toISOString(), pageType:'product' };
+  receiveFromExtension(it);
+  toast('🔗 共有から追加','商品をリストに追加しました。価格は「📈記録」から入力できます','',8000);
 }
 
 // ----- v24: レート制限（適法性担保）-----
@@ -2682,6 +2760,8 @@ function init(){
     // 拡張からのハッシュ受信（フォールバック経路）
     window.addEventListener('hashchange', handleHash);
     if(location.hash.indexOf('#paste=')===0) setTimeout(handleHash, 250);
+    // スマホ「共有→購買サーチ」の受け取り（Web Share Target）
+    if(new URLSearchParams(location.search).get('shared')==='1') setTimeout(handleSharedIntent, 200);
     firstRunNote();
     consentGate();
     // 拡張連携の死活表示（一定時間あいさつが来なければ「未検出」＋原因別の直し方を案内）
@@ -2728,6 +2808,10 @@ if(document.readyState==='loading'){
   document.addEventListener('DOMContentLoaded', init);
 }else{
   init();
+}
+// PWA: Service Worker 登録（ホーム画面に追加→独立起動・外殻オフライン対応）
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 }
 </script>
 </body>
