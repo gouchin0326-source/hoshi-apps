@@ -3,7 +3,7 @@
    ② スマホの「共有→購買サーチ」を受け取る（Web Share Target）。
       共有はPOSTで来る→SWがサーバー無しで受け取り、キャッシュに一時保存→?shared=1 へ誘導。
       画像(スクショ)はアプリ側でOCR、URL/テキストはそのままリスト化する。 */
-const CACHE = "kobai-search-v2";
+const CACHE = "kobai-search-v3";
 const SHARE_CACHE = "kobai-share-v1";   // 共有ペイロードの一時置き場（activateで消さない）
 const SHELL = [
   "./",
@@ -61,7 +61,28 @@ self.addEventListener("fetch", (e) => {
   // 同一オリジンの外殻のみ扱う（外部ドメインはSWを介さずネット直行）
   if (url.origin !== self.location.origin) return;
   if (url.pathname.includes("/data/")) return;
-  // 外殻はネット優先→失敗時キャッシュ（オフラインでも起動する）
+
+  // HTMLナビゲーションは常に最新を取りに行く（cache:reload=HTTPキャッシュも無視）→更新が確実に反映される
+  if (e.request.mode === "navigate") {
+    e.respondWith(
+      fetch(new Request(e.request.url, { cache: "reload" }))
+        .then((r) => { const cp = r.clone(); caches.open(CACHE).then((c) => c.put("./index.html", cp).catch(() => {})); return r; })
+        .catch(() => caches.match(e.request).then((m) => m || caches.match("./index.html") || caches.match("./")))
+    );
+    return;
+  }
+
+  // 巨大な不変アセット(OCRエンジン/アイコン/wasm/traineddata)はキャッシュ優先＝9.6MBを毎回落とさない
+  if (/\/lib\/|\/icon-|\.wasm$|\.traineddata$/.test(url.pathname)) {
+    e.respondWith(
+      caches.match(e.request).then((m) => m || fetch(e.request).then((r) => {
+        const cp = r.clone(); caches.open(CACHE).then((c) => c.put(e.request, cp).catch(() => {})); return r;
+      }))
+    );
+    return;
+  }
+
+  // その他の外殻はネット優先→失敗時キャッシュ（オフラインでも起動する）
   e.respondWith(
     fetch(e.request)
       .then((r) => { const cp = r.clone(); caches.open(CACHE).then((c) => c.put(e.request, cp).catch(() => {})); return r; })
