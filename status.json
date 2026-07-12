@@ -1,14 +1,22 @@
 {
-  "generated_at": "2026-07-12 17:37:07",
+  "generated_at": "2026-07-12 17:43:05",
   "gpu": {
-    "occupant": "空き（アイドル）",
-    "note": "誰も使っていません",
-    "vram_used_gb": 1.1,
+    "occupant": "sera_kv_gen（sera_pipeline:2026-07_shuden）",
+    "note": "経過105s / 目安あと約6分",
+    "vram_used_gb": 13.3,
     "vram_total_gb": 15.9,
-    "util": 1,
+    "util": 100,
     "lock": {
-      "locked": false,
-      "holder": null,
+      "locked": true,
+      "holder": {
+        "pid": 14660,
+        "session": "sera_pipeline:2026-07_shuden",
+        "job": "sera_kv_gen",
+        "started_at": "2026-07-12T17:41:19+0900",
+        "age_sec": 105,
+        "alive": true,
+        "est_minutes": 8
+      },
       "stale": false
     }
   },
@@ -19,7 +27,7 @@
     },
     {
       "name": "生成 (ComfyUI)",
-      "up": false
+      "up": true
     },
     {
       "name": "チャットUI (Open WebUI)",
@@ -33,7 +41,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-12 17:35",
+    "updated": "2026-07-12 17:41",
     "current": null
   },
   "queue": [
@@ -115,7 +123,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 131
+    "push_today": 132
   },
   "ai_works": [
     {
@@ -193,9 +201,9 @@
   ],
   "resources": {
     "cpu_pct": 5,
-    "mem_pct": 44,
+    "mem_pct": 80,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 270.9,
+    "disk_used_gb": 271.0,
     "disk_free_gb": 1590.8
   }
 }
