@@ -1,22 +1,14 @@
 {
-  "generated_at": "2026-07-13 18:25:05",
+  "generated_at": "2026-07-13 18:31:06",
   "gpu": {
-    "occupant": "illust_hizakara_L2（Fable5-20260713）",
-    "note": "経過220s / 目安あと約8分",
-    "vram_used_gb": 13.0,
+    "occupant": "モデル待機中（アイドル）",
+    "note": "生成は完了済み・モデルがVRAMに残っています",
+    "vram_used_gb": 10.4,
     "vram_total_gb": 15.9,
-    "util": 100,
+    "util": 0,
     "lock": {
-      "locked": true,
-      "holder": {
-        "pid": 3668,
-        "session": "Fable5-20260713",
-        "job": "illust_hizakara_L2",
-        "started_at": "2026-07-13T18:21:25+0900",
-        "age_sec": 220,
-        "alive": true,
-        "est_minutes": 12
-      },
+      "locked": false,
+      "holder": null,
       "stale": false
     }
   },
@@ -41,7 +33,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-13 18:23",
+    "updated": "2026-07-13 18:29",
     "current": null
   },
   "queue": [
@@ -109,7 +101,7 @@
     }
   ],
   "requests": {
-    "today": 156,
+    "today": 167,
     "hist": {
       "2026-07-02": 430,
       "2026-07-03": 612,
@@ -124,7 +116,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 118
+    "push_today": 119
   },
   "ai_works": [
     {
@@ -201,10 +193,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 7,
-    "mem_pct": 74,
+    "cpu_pct": 8,
+    "mem_pct": 88,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 293.3,
-    "disk_free_gb": 1568.4
+    "disk_used_gb": 280.5,
+    "disk_free_gb": 1581.3
   }
 }
