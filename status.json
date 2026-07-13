@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-07-13 17:07:05",
+  "generated_at": "2026-07-13 17:13:05",
   "gpu": {
-    "occupant": "モデル待機中（アイドル）",
-    "note": "生成は完了済み・モデルがVRAMに残っています",
-    "vram_used_gb": 10.3,
+    "occupant": "コード開発（ローカルLLM）",
+    "note": "qwen2.5:3b",
+    "vram_used_gb": 12.6,
     "vram_total_gb": 15.9,
     "util": 0,
     "lock": {
@@ -33,7 +33,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-13 17:05",
+    "updated": "2026-07-13 17:11",
     "current": null
   },
   "queue": [
@@ -116,7 +116,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 105
+    "push_today": 106
   },
   "ai_works": [
     {
@@ -194,9 +194,9 @@
   ],
   "resources": {
     "cpu_pct": 6,
-    "mem_pct": 87,
+    "mem_pct": 88,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 279.9,
-    "disk_free_gb": 1581.9
+    "disk_used_gb": 280.1,
+    "disk_free_gb": 1581.6
   }
 }
