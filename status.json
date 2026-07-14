@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-14 20:49:05",
+  "generated_at": "2026-07-14 20:55:05",
   "gpu": {
     "occupant": "モデル待機中（アイドル）",
     "note": "生成は完了済み・モデルがVRAMに残っています",
@@ -33,7 +33,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-14 20:47",
+    "updated": "2026-07-14 20:53",
     "current": null
   },
   "queue": [
@@ -117,7 +117,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 150
+    "push_today": 151
   },
   "ai_works": [
     {
