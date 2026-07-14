@@ -1,22 +1,14 @@
 {
-  "generated_at": "2026-07-14 19:31:05",
+  "generated_at": "2026-07-14 19:37:05",
   "gpu": {
-    "occupant": "healing_images（Opus-20260714）",
-    "note": "経過171s / 目安あと約7分",
-    "vram_used_gb": 13.3,
+    "occupant": "モデル待機中（アイドル）",
+    "note": "生成は完了済み・モデルがVRAMに残っています",
+    "vram_used_gb": 10.5,
     "vram_total_gb": 15.9,
-    "util": 100,
+    "util": 1,
     "lock": {
-      "locked": true,
-      "holder": {
-        "pid": 8068,
-        "session": "Opus-20260714",
-        "job": "healing_images",
-        "started_at": "2026-07-14T19:28:13+0900",
-        "age_sec": 171,
-        "alive": true,
-        "est_minutes": 10
-      },
+      "locked": false,
+      "holder": null,
       "stale": false
     }
   },
@@ -41,7 +33,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-14 19:29",
+    "updated": "2026-07-14 19:35",
     "current": null
   },
   "queue": [
@@ -125,7 +117,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 137
+    "push_today": 138
   },
   "ai_works": [
     {
@@ -202,10 +194,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 10,
-    "mem_pct": 64,
+    "cpu_pct": 2,
+    "mem_pct": 61,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 283.7,
+    "disk_used_gb": 283.8,
     "disk_free_gb": 1578.0
   }
 }
