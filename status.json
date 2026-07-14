@@ -1,14 +1,22 @@
 {
-  "generated_at": "2026-07-14 19:25:07",
+  "generated_at": "2026-07-14 19:31:05",
   "gpu": {
-    "occupant": "空き（アイドル）",
-    "note": "誰も使っていません",
-    "vram_used_gb": 0.8,
+    "occupant": "healing_images（Opus-20260714）",
+    "note": "経過171s / 目安あと約7分",
+    "vram_used_gb": 13.3,
     "vram_total_gb": 15.9,
-    "util": 0,
+    "util": 100,
     "lock": {
-      "locked": false,
-      "holder": null,
+      "locked": true,
+      "holder": {
+        "pid": 8068,
+        "session": "Opus-20260714",
+        "job": "healing_images",
+        "started_at": "2026-07-14T19:28:13+0900",
+        "age_sec": 171,
+        "alive": true,
+        "est_minutes": 10
+      },
       "stale": false
     }
   },
@@ -19,7 +27,7 @@
     },
     {
       "name": "生成 (ComfyUI)",
-      "up": false
+      "up": true
     },
     {
       "name": "チャットUI (Open WebUI)",
@@ -33,7 +41,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-14 19:23",
+    "updated": "2026-07-14 19:29",
     "current": null
   },
   "queue": [
@@ -117,7 +125,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 136
+    "push_today": 137
   },
   "ai_works": [
     {
@@ -194,8 +202,8 @@
     }
   ],
   "resources": {
-    "cpu_pct": 6,
-    "mem_pct": 37,
+    "cpu_pct": 10,
+    "mem_pct": 64,
     "mem_total_gb": 31.7,
     "disk_used_gb": 283.7,
     "disk_free_gb": 1578.0
