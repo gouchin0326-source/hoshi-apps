@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-16 14:31:06",
+  "generated_at": "2026-07-16 14:37:06",
   "gpu": {
     "occupant": "コード開発（ローカルLLM）",
     "note": "qwen3:14b",
@@ -33,7 +33,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-16 14:29",
+    "updated": "2026-07-16 14:35",
     "current": null
   },
   "queue": [
@@ -118,7 +118,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 87
+    "push_today": 88
   },
   "ai_works": [
     {
@@ -195,10 +195,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 5,
+    "cpu_pct": 4,
     "mem_pct": 58,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 292.9,
+    "disk_used_gb": 293.0,
     "disk_free_gb": 1568.8
   }
 }
