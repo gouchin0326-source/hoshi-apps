@@ -1,22 +1,14 @@
 {
-  "generated_at": "2026-07-18 12:19:06",
+  "generated_at": "2026-07-18 12:25:09",
   "gpu": {
-    "occupant": "run_wan22（run_wan22_cli）",
-    "note": "経過190s / 目安あと約4分",
-    "vram_used_gb": 13.7,
+    "occupant": "空き（アイドル）",
+    "note": "誰も使っていません",
+    "vram_used_gb": 1.0,
     "vram_total_gb": 15.9,
-    "util": 100,
+    "util": 2,
     "lock": {
-      "locked": true,
-      "holder": {
-        "pid": 31780,
-        "session": "run_wan22_cli",
-        "job": "run_wan22",
-        "started_at": "2026-07-18T12:15:53+0900",
-        "age_sec": 190,
-        "alive": true,
-        "est_minutes": 8
-      },
+      "locked": false,
+      "holder": null,
       "stale": false
     }
   },
@@ -27,7 +19,7 @@
     },
     {
       "name": "生成 (ComfyUI)",
-      "up": true
+      "up": false
     },
     {
       "name": "チャットUI (Open WebUI)",
@@ -49,7 +41,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-18 12:16",
+    "updated": "2026-07-18 12:22",
     "current": null
   },
   "queue": [
@@ -136,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 77
+    "push_today": 78
   },
   "ai_works": [
     {
@@ -213,8 +205,8 @@
     }
   ],
   "resources": {
-    "cpu_pct": 59,
-    "mem_pct": 60,
+    "cpu_pct": 6,
+    "mem_pct": 29,
     "mem_total_gb": 31.7,
     "disk_used_gb": 302.1,
     "disk_free_gb": 1559.6
