@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-07-19 11:37:07",
+  "generated_at": "2026-07-19 11:43:07",
   "gpu": {
     "occupant": "コード開発（ローカルLLM）",
     "note": "qwen2.5:7b, qwen3:14b",
     "vram_used_gb": 15.4,
     "vram_total_gb": 15.9,
-    "util": 2,
+    "util": 3,
     "lock": {
       "locked": false,
       "holder": null,
@@ -41,7 +41,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-19 11:34",
+    "updated": "2026-07-19 11:40",
     "current": null
   },
   "queue": [
@@ -128,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 48
+    "push_today": 49
   },
   "ai_works": [
     {
@@ -205,10 +205,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 4,
-    "mem_pct": 46,
+    "cpu_pct": 9,
+    "mem_pct": 49,
     "mem_total_gb": 31.7,
     "disk_used_gb": 309.1,
-    "disk_free_gb": 1552.6
+    "disk_free_gb": 1552.7
   }
 }
