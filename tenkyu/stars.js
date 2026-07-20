@@ -1,8 +1,28 @@
-/* 星天球 公開安全版データ（2026-07-11）。完成作品のみ・下書き/変種/工房テストは非公開。
+/* 星天球 公開安全版データ（2026-07-20更新・DB-407干場承認）。完成作品のみ・下書き/変種/工房テストは非公開。
    ★HOSHIローカル正本= works\cloud_ai\hoshi_tenkyu\ 。公開に出す作品を増減する時はここを編集。 */
 window.STARS = {
-  "count": 3,
+  "count": 5,
   "stars": [
+    {
+      "id": "w35c6c542da",
+      "title": "「膝から星が落ちた」サビMV L1版(静・5枚・叙情)",
+      "type": "video",
+      "image": null,
+      "audio": null,
+      "date": "2026-07-13",
+      "hue": 5,
+      "constellation": "2026-07"
+    },
+    {
+      "id": "wcf95abc6c6",
+      "title": "「終電」MV(2:30・連作静止画30カット)",
+      "type": "image",
+      "image": "assets/img/wcf95abc6c6.jpg",
+      "audio": "assets/audio/wcf95abc6c6.mp3",
+      "date": "2026-07-12",
+      "hue": 214,
+      "constellation": "2026-07"
+    },
     {
       "id": "w6c8f67f0ac",
       "title": "キービジュアル",
