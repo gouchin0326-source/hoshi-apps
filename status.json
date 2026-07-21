@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-21 14:49:06",
+  "generated_at": "2026-07-21 14:55:06",
   "gpu": {
     "occupant": "空き（アイドル）",
     "note": "誰も使っていません",
@@ -41,7 +41,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-21 14:48",
+    "updated": "2026-07-21 14:54",
     "current": null
   },
   "queue": [
@@ -128,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 81
+    "push_today": 82
   },
   "ai_works": [
     {
