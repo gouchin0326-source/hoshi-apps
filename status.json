@@ -1,22 +1,14 @@
 {
-  "generated_at": "2026-07-22 23:55:04",
+  "generated_at": "2026-07-23 00:01:04",
   "gpu": {
-    "occupant": "run_zimage（content_gokan_neko）",
-    "note": "経過3s / 目安あと約2分",
-    "vram_used_gb": 12.5,
+    "occupant": "モデル待機中（アイドル）",
+    "note": "生成は完了済み・モデルがVRAMに残っています",
+    "vram_used_gb": 11.3,
     "vram_total_gb": 15.9,
-    "util": 98,
+    "util": 1,
     "lock": {
-      "locked": true,
-      "holder": {
-        "pid": 35220,
-        "session": "content_gokan_neko",
-        "job": "run_zimage",
-        "started_at": "2026-07-22T23:55:00+0900",
-        "age_sec": 3,
-        "alive": true,
-        "est_minutes": 3
-      },
+      "locked": false,
+      "holder": null,
       "stale": false
     }
   },
@@ -49,7 +41,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-22 23:53",
+    "updated": "2026-07-22 23:59",
     "current": null
   },
   "queue": [
@@ -136,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 180
+    "push_today": 0
   },
   "ai_works": [
     {
@@ -213,10 +205,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 7,
-    "mem_pct": 43,
+    "cpu_pct": 11,
+    "mem_pct": 44,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 325.9,
+    "disk_used_gb": 326.0,
     "disk_free_gb": 1535.8
   }
 }
