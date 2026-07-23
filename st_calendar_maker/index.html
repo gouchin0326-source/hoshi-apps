@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STマスタ・カレンダーメーカー (v0.2)</title>
+<style>
+:root{--navy:#1F3864;--gold:#C9962F;--bg:#f1f5f9;--border:#cbd5e1;--danger:#C0392B;--ok:#1D9E75}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Yu Gothic UI","Meiryo",sans-serif;background:var(--bg);color:#1e293b;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+header{background:#fff;border-bottom:2px solid var(--navy);padding:8px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap}
+header h1{font-size:16px;margin:0;color:var(--navy)}
+.ver{font-size:10px;background:#e2e8f0;border-radius:8px;padding:2px 7px;color:#64748b}
+.tab{padding:8px 18px;border:none;background:none;font-weight:700;font-size:14px;color:#64748b;cursor:pointer;border-bottom:3px solid transparent}
+.tab.active{color:var(--navy);border-bottom-color:var(--gold)}
+.btn{padding:7px 13px;border-radius:7px;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:13px;font-weight:700}
+.btn:hover{background:#f1f5f9}
+.btn-pri{background:var(--navy);color:#fff;border-color:var(--navy)}
+.btn-gold{background:var(--gold);color:#3a2400;border-color:var(--gold)}
+main{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.view{flex:1;overflow:auto;padding:14px;display:none}
+.view.active{display:block}
+.bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.inp{padding:7px;border:1px solid var(--border);border-radius:6px;font-size:13px}
+table.m{width:100%;border-collapse:collapse;background:#fff;font-size:13px}
+table.m th{background:var(--navy);color:#fff;padding:7px;border:1px solid var(--border);position:sticky;top:0;white-space:nowrap}
+table.m td{padding:5px 8px;border:1px solid var(--border)}
+table.m tr:nth-child(even){background:#f8fafc}
+table.m tr.old td{color:#94a3b8;background:#f8fafc}
+.bdg{font-size:10px;font-weight:700;border-radius:6px;padding:1px 7px;color:#fff}
+.bdg.cur{background:var(--ok)}.bdg.old{background:#94a3b8}.bdg.fut{background:var(--gold);color:#3a2400}
+.months{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:12px}
+.mon{background:#fff;border:1px solid var(--border);border-radius:10px;padding:8px}
+.mon h4{margin:2px 0 6px;color:var(--navy);text-align:center;font-size:14px}
+.mgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:11px}
+.mgrid .wd{text-align:center;color:#94a3b8;font-weight:700}
+.day{min-height:34px;border-radius:5px;padding:2px 3px;cursor:pointer;border:1px solid #eef2f7;position:relative}
+.day:hover{outline:2px solid var(--gold)}
+.day.work{background:#fff}
+.day.off{background:#fdecec;border-color:#f5c6c6}
+.day.off .n{color:var(--danger)}
+.day .n{font-weight:700}
+.day .nm{font-size:8px;color:var(--danger);line-height:1.1;display:block;overflow:hidden}
+.day.ovr::after{content:"✎";position:absolute;top:1px;right:2px;font-size:8px;color:var(--gold)}
+.legend{font-size:11px;color:#64748b}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:none;align-items:center;justify-content:center}
+.modal-bg.on{display:flex}
+.modal{background:#fff;border-radius:12px;padding:18px;width:min(430px,92vw)}
+.modal label{font-size:11px;color:#64748b;font-weight:700;display:block;margin-top:8px}
+.modal input,.modal select{width:100%;padding:7px;border:1px solid var(--border);border-radius:6px;font-size:13px}
+#toast{position:fixed;bottom:18px;right:18px;background:#334155;color:#fff;padding:10px 18px;border-radius:8px;opacity:0;transition:.3s;pointer-events:none;z-index:200;font-size:13px;font-weight:700}
+#toast.show{opacity:1}
+.hint{font-size:11px;color:#94a3b8}
+</style>
+</head>
+<body>
+<header>
+  <h1>🗂 STマスタ・カレンダーメーカー <span class="ver">v0.2 / 生産管理ボードPro 次期開発 Step1 / 完全ローカル</span></h1>
+  <button class="tab active" id="tab-st" onclick="UI.go('st')">📐 品目STマスタ</button>
+  <button class="tab" id="tab-cal" onclick="UI.go('cal')">📅 稼働カレンダー</button>
+  <span style="flex:1"></span>
+  <button class="btn" onclick="Undo.run()" title="直前のCSV取込/祝日一括登録を1回だけ取り消せます">↩ 元に戻す</button>
+  <span class="hint">編集はこの端末に自動保存。チーム共有はCSV書き出しで。</span>
+</header>
+<main>
+  <!-- ST マスタ -->
+  <div id="v-st" class="view active">
+    <div class="bar">
+      <button class="btn btn-pri" onclick="ST.edit()">+ 新規登録</button>
+      <button class="btn" onclick="ST.revise()">📝 選択行を改定(新ST)</button>
+      <input class="inp" id="st-q" placeholder="🔍 品目コード/品名/ライン..." oninput="ST.ren()" style="width:220px">
+      <label class="hint"><input type="checkbox" id="st-old" onchange="ST.ren()"> 旧履歴も表示</label>
+      <span style="flex:1"></span>
+      <label class="btn">📂 CSV読込<input type="file" accept=".csv" style="display:none" onchange="ST.imp(this.files[0]);this.value=''"></label>
+      <button class="btn btn-gold" onclick="ST.exp()">📄 CSV書き出し</button>
+    </div>
+    <div class="hint" style="margin-bottom:8px">様式: <code>品目コード,品名,工場名,ライン名,ST分,有効開始日,備考</code> ／ 同じ品目×ラインに新しい有効開始日で登録すると「改定」になり、履歴が残ります(過去日の能率再計算用)。<b>※この品目ST CSVはボードv95.3β以降にそのまま取込できます(有効開始日の履歴つき・計画CSVに品目コード列があれば必要工数が品目ミックスで精密化)。カレンダーCSVも取込可。</b></div>
+    <table class="m"><thead><tr><th style="width:26px"></th><th>品目コード</th><th>品名</th><th>工場</th><th>ライン</th><th>ST(分/個)</th><th>有効開始日</th><th>状態</th><th>備考</th><th>操作</th></tr></thead><tbody id="st-body"></tbody></table>
+  </div>
+  <!-- カレンダー -->
+  <div id="v-cal" class="view">
+    <div class="bar">
+      <button class="btn" onclick="CAL.shift(-1)">◀</button>
+      <b id="cal-year" style="font-size:17px;color:var(--navy)">2026</b>
+      <button class="btn" onclick="CAL.shift(1)">▶</button>
+      <span class="legend">クリックで 稼働 ⇔ 休み を切替(右クリックで名称入力: 創立記念日等)。既定=土日休み・平日稼働。✎=既定から変更した日</span>
+      <span style="flex:1"></span>
+      <button class="btn" onclick="CAL.holidays()" title="日本の祝日(振替休日含む)を表示年へ一括で公休登録します">🎌 祝日を一括公休化</button>
+      <label class="btn">📂 CSV読込<input type="file" accept=".csv" style="display:none" onchange="CAL.imp(this.files[0]);this.value=''"></label>
+      <button class="btn btn-gold" onclick="CAL.exp(1)">📄 CSV書き出し(表示年)</button>
+      <button class="btn btn-gold" onclick="CAL.exp(2)" title="年度替わり用: 表示年と翌年をまとめて1ファイルに">📄 表示年+翌年</button>
+    </div>
+    <div class="hint" style="margin-bottom:8px">様式: <code>日付,区分,名称</code>(区分=稼働/公休)。書き出しは全日分の明示行(取り込む側の既定を上書きします — 祝日や会社休日は🎌一括登録や手動設定を忘れずに)。稼働日数の月計は各月の見出しに表示。</div>
+    <div class="months" id="cal-area"></div>
+  </div>
+</main>
+
+<div class="modal-bg" id="md-st"><div class="modal">
+  <h3 style="margin:0;color:var(--navy)" id="md-st-title">品目ST 登録</h3>
+  <input type="hidden" id="f-idx">
+  <label>品目コード *</label><input id="f-code">
+  <label>品名</label><input id="f-name">
+  <label>工場名 *</label><input id="f-fac" list="dl-fac"><datalist id="dl-fac"></datalist>
+  <label>ライン名 *</label><input id="f-line" list="dl-line"><datalist id="dl-line"></datalist>
+  <label>ST(分/個) *</label><input id="f-st" type="number" step="0.01" min="0.01">
+  <label>有効開始日 *</label><input id="f-from" type="date">
+  <label>備考</label><input id="f-note">
+  <div style="text-align:right;margin-top:14px">
+    <button class="btn" onclick="document.getElementById('md-st').classList.remove('on')">閉じる</button>
+    <button class="btn btn-pri" onclick="ST.save()">保存</button>
+  </div>
+</div></div>
+
+<div id="toast"></div>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const toast=m=>{const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600)};
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const todayISO=()=>{const d=new Date(),z=n=>(''+n).padStart(2,'0');return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())};
+const normISO=s=>{ // 「2026/1/5」等を正規化し、実在しない日付(2/30等)はnull
+  const m=String(s??'').trim().replace(/\//g,'-').match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if(!m)return null;
+  const y=+m[1],mo=+m[2],d=+m[3],dt=new Date(y,mo-1,d);
+  if(dt.getFullYear()!==y||dt.getMonth()!==mo-1||dt.getDate()!==d)return null;
+  return y+'-'+(''+mo).padStart(2,'0')+'-'+(''+d).padStart(2,'0')};
+const csvCell=c=>{c=(''+(c??'')).replace(/"/g,'""');return /[",\n]/.test(c)?'"'+c+'"':c};
+const dlCsv=(rows,name)=>{const csv=rows.map(r=>r.map(csvCell).join(',')).join('\r\n');
+  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1500);toast('書き出し: '+name)};
+const parseCsv=t=>{t=String(t).replace(/^﻿/,'');const rows=[];let i=0,f='',row=[],q=false;
+  while(i<t.length){const c=t[i];
+    if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i+=2;continue}q=false;i++;continue}f+=c;i++;continue}
+    if(c==='"'){q=true;i++;continue}
+    if(c===','){row.push(f);f='';i++;continue}
+    if(c==='\r'){i++;continue}
+    if(c==='\n'){row.push(f);rows.push(row);row=[];f='';i++;continue}
+    f+=c;i++}
+  if(f.length||row.length){row.push(f);rows.push(row)}
+  return rows.filter(r=>r.some(c=>c.trim()!==''))};
+const readFile=(f,cb)=>{const rd=new FileReader();rd.onload=e=>{let t;const buf=e.target.result;
+  t=new TextDecoder('utf-8').decode(buf);
+  if(t.indexOf('�')>=0){try{t=new TextDecoder('shift_jis').decode(buf)}catch(_){}}
+  cb(t)};rd.readAsArrayBuffer(f)};
+
+/* ===== 保存 ===== */
+const Store={
+  KEY:'ST_CAL_MAKER_V1',
+  data:{st:[],cal:{}},   // st:[{code,name,fac,line,st,from,note}] cal:{'YYYY-MM-DD':{kind:'work'|'off',name:''}} ※既定と違う日のみ
+  load(){try{const j=JSON.parse(localStorage.getItem(this.KEY));if(j){this.data.st=j.st||[];this.data.cal=j.cal||{}}}catch(e){}},
+  save(){try{localStorage.setItem(this.KEY,JSON.stringify(this.data))}catch(e){toast('⚠ 自動保存に失敗しました(保存領域不足の可能性)。CSV書き出しで退避を')}},
+};
+
+/* ===== 直前のCSV取込/一括操作の1段取り消し ===== */
+const Undo={
+  snap:null,label:'',
+  mark(label){this.snap=JSON.stringify(Store.data);this.label=label},
+  run(){if(!this.snap)return toast('戻せる操作がありません(取込・一括登録の直後のみ)');
+    Store.data=JSON.parse(this.snap);this.snap=null;Store.save();ST.selIdx=-1;ST.ren();CAL.ren();
+    toast('↩ '+this.label+'の前に戻しました')},
+};
+
+/* ===== 品目STマスタ ===== */
+const ST={
+  selIdx:-1,
+  sorted(){return [...Store.data.st].map((r,i)=>({...r,_i:i}))
+    .sort((a,b)=>a.code.localeCompare(b.code)||a.line.localeCompare(b.line)||b.from.localeCompare(a.from))},
+  status(r){ // 同一 品目×ライン 内で: 現行(有効開始日<=今日 の最新) / 旧 / 予定(未来)
+    const grp=Store.data.st.filter(x=>x.code===r.code&&x.line===r.line);
+    const today=todayISO();
+    const actives=grp.filter(x=>x.from<=today).map(x=>x.from).sort();
+    const curFrom=actives[actives.length-1];
+    if(r.from>today)return 'fut';
+    return r.from===curFrom?'cur':'old';
+  },
+  ren(){
+    this.selIdx=-1; // ラジオは再描画で未選択に戻るため、古い選択の誤改定を防ぐ
+    const q=($('st-q').value||'').trim(),showOld=$('st-old').checked;
+    const tb=$('st-body');
+    const rows=this.sorted().filter(r=>!q||[r.code,r.name,r.fac,r.line].some(v=>String(v).includes(q)));
+    tb.innerHTML=rows.map(r=>{
+      const st=this.status(r);
+      if(st==='old'&&!showOld)return '';
+      const bdg=st==='cur'?'<span class="bdg cur">現行</span>':st==='fut'?'<span class="bdg fut">予定</span>':'<span class="bdg old">旧</span>';
+      return '<tr class="'+(st==='old'?'old':'')+'">'
+        +'<td><input type="radio" name="st-sel" onclick="ST.selIdx='+r._i+'"></td>'
+        +'<td>'+esc(r.code)+'</td><td>'+esc(r.name)+'</td><td>'+esc(r.fac)+'</td><td>'+esc(r.line)+'</td>'
+        +'<td style="text-align:right;font-weight:700">'+esc(r.st)+'</td><td>'+esc(r.from)+'</td>'
+        +'<td>'+bdg+'</td><td>'+esc(r.note||'')+'</td>'
+        +'<td><button class="btn" style="padding:2px 8px;font-size:11px" onclick="ST.edit('+r._i+')">編集</button> '
+        +'<button class="btn" style="padding:2px 8px;font-size:11px;color:var(--danger)" onclick="ST.del('+r._i+')">削除</button></td></tr>'}).join('')
+      ||'<tr><td colspan="10" style="text-align:center;color:#94a3b8;padding:18px">データなし — 「+新規登録」または「📂CSV読込」から</td></tr>';
+    // datalist 更新
+    $('dl-fac').innerHTML=[...new Set(Store.data.st.map(r=>r.fac))].map(v=>'<option value="'+esc(v)+'">').join('');
+    $('dl-line').innerHTML=[...new Set(Store.data.st.map(r=>r.line))].map(v=>'<option value="'+esc(v)+'">').join('');
+  },
+  edit(i){
+    $('md-st-title').textContent=(i==null)?'品目ST 新規登録':'品目ST 編集';
+    $('f-idx').value=(i==null)?'':i;
+    const r=(i==null)?{code:'',name:'',fac:'',line:'',st:'',from:todayISO(),note:''}:Store.data.st[i];
+    $('f-code').value=r.code;$('f-name').value=r.name;$('f-fac').value=r.fac;$('f-line').value=r.line;
+    $('f-st').value=r.st;$('f-from').value=r.from;$('f-note').value=r.note||'';
+    $('md-st').classList.add('on');
+  },
+  revise(){ // 選択行をベースに新有効日の行を作る(改定)
+    if(this.selIdx<0||!Store.data.st[this.selIdx])return toast('改定する行のラジオボタンを選択してください');
+    const r=Store.data.st[this.selIdx];
+    this.edit();$('md-st-title').textContent='ST改定(新しい有効開始日で追加)';
+    $('f-code').value=r.code;$('f-name').value=r.name;$('f-fac').value=r.fac;$('f-line').value=r.line;
+    $('f-st').value=r.st;$('f-from').value=todayISO();$('f-note').value='';
+  },
+  save(){
+    const idx=$('f-idx').value;
+    const r={code:$('f-code').value.trim(),name:$('f-name').value.trim(),fac:$('f-fac').value.trim(),
+      line:$('f-line').value.trim(),st:parseFloat($('f-st').value),from:$('f-from').value,note:$('f-note').value.trim()};
+    if(!r.code||!r.fac||!r.line)return toast('品目コード・工場名・ライン名は必須です');
+    if(!(r.st>0))return toast('STは正の数で入力してください');
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(r.from))return toast('有効開始日を入力してください');
+    const dup=Store.data.st.findIndex((x,xi)=>xi!=idx&&x.code===r.code&&x.line===r.line&&x.from===r.from);
+    if(dup>=0)return toast('同じ品目×ライン×有効開始日が既にあります(編集で修正を)');
+    if(idx==='')Store.data.st.push(r);else Store.data.st[idx]=r;
+    Store.save();$('md-st').classList.remove('on');this.ren();toast('保存しました');
+  },
+  del(i){const r=Store.data.st[i];if(!confirm(r.code+' ('+r.line+' / '+r.from+'〜) を削除しますか?'))return;
+    Store.data.st.splice(i,1);this.selIdx=-1;Store.save();this.ren();toast('削除しました')},
+  exp(){
+    if(!Store.data.st.length)return toast('データがありません');
+    const rows=[['品目コード','品名','工場名','ライン名','ST分','有効開始日','備考']];
+    this.sorted().forEach(r=>rows.push([r.code,r.name,r.fac,r.line,r.st,r.from,r.note||'']));
+    dlCsv(rows,'品目STマスタ_'+todayISO().replace(/-/g,'')+'.csv');
+  },
+  imp(f){if(!f)return;readFile(f,t=>{
+    const rows=parseCsv(t);if(rows.length<2)return toast('データ行がありません');
+    const hd=rows[0].map(x=>x.trim());
+    const ci={code:hd.indexOf('品目コード'),name:hd.indexOf('品名'),fac:hd.indexOf('工場名'),line:hd.indexOf('ライン名'),st:hd.indexOf('ST分'),from:hd.indexOf('有効開始日'),note:hd.indexOf('備考')};
+    if(ci.code<0||ci.st<0)return toast('見出しに「品目コード」「ST分」が必要です');
+    Undo.mark('CSV取込(品目ST)');
+    let n=0,skip=0;
+    rows.slice(1).forEach(r=>{
+      const fromRaw=(r[ci.from]||'').trim();
+      const o={code:(r[ci.code]||'').trim(),name:(r[ci.name]||'').trim(),fac:(r[ci.fac]||'').trim(),
+        line:(r[ci.line]||'').trim(),st:parseFloat(String(r[ci.st]??'').replace(/,/g,'')),
+        from:fromRaw?normISO(fromRaw):todayISO(),note:ci.note>=0?(r[ci.note]||'').trim():''};
+      /* 手動登録と同じ必須条件+日付正規化(Excel再保存の2026/1/5形式や実在しない日付を排除) */
+      if(!o.code||!o.fac||!o.line||!(o.st>0)||!o.from){skip++;return}
+      const ex=Store.data.st.findIndex(x=>x.code===o.code&&x.line===o.line&&x.from===o.from);
+      if(ex>=0)Store.data.st[ex]=o;else Store.data.st.push(o);n++});
+    Store.save();this.ren();toast('CSV取込: '+n+'件'+(skip?'(必須欠落/日付不正のスキップ'+skip+'件)':'')+' — ↩で取り消せます');
+  })},
+};
+
+/* ===== 稼働カレンダー ===== */
+const CAL={
+  year:new Date().getFullYear(),
+  WD:['日','月','火','水','木','金','土'],
+  defKind(dow){return (dow===0||dow===6)?'off':'work'},
+  get(dISO,dow){const o=Store.data.cal[dISO];return o?o:{kind:this.defKind(dow),name:''}},
+  isOverride(dISO,dow){const o=Store.data.cal[dISO];return !!o&&(o.kind!==this.defKind(dow)||o.name)},
+  set(dISO,dow,kind,name,skipSave){
+    if(kind===this.defKind(dow)&&!name)delete Store.data.cal[dISO];
+    else Store.data.cal[dISO]={kind,name:name||''};
+    if(!skipSave)Store.save();
+  },
+  shift(n){this.year+=n;this.ren()},
+  toggle(dISO,dow){const cur=this.get(dISO,dow);this.set(dISO,dow,cur.kind==='work'?'off':'work',cur.name);this.ren()},
+  named(dISO,dow){const cur=this.get(dISO,dow);const nm=prompt('休日の名称(例: 創立記念日)。空欄=名称なし',cur.name||'');
+    if(nm===null)return;this.set(dISO,dow,nm?'off':cur.kind,nm.trim());this.ren()},
+  ren(){
+    $('cal-year').textContent=this.year;
+    const area=$('cal-area');let h='';
+    for(let m=1;m<=12;m++){
+      const dim=new Date(this.year,m,0).getDate();
+      let workN=0,cells='';
+      for(let i=0;i<this.WD.length;i++)cells+='<div class="wd">'+this.WD[i]+'</div>';
+      const first=new Date(this.year,m-1,1).getDay();
+      for(let i=0;i<first;i++)cells+='<div></div>';
+      for(let d=1;d<=dim;d++){
+        const dow=new Date(this.year,m-1,d).getDay();
+        const iso=this.year+'-'+(''+m).padStart(2,'0')+'-'+(''+d).padStart(2,'0');
+        const c=this.get(iso,dow);if(c.kind==='work')workN++;
+        cells+='<div class="day '+c.kind+(this.isOverride(iso,dow)?' ovr':'')+'" '
+          +'onclick="CAL.toggle(\''+iso+'\','+dow+')" oncontextmenu="event.preventDefault();CAL.named(\''+iso+'\','+dow+')" '
+          +'title="'+iso+' '+(c.kind==='work'?'稼働':'休み')+(c.name?(' / '+esc(c.name)):'')+'">'
+          +'<span class="n">'+d+'</span>'+(c.name?'<span class="nm">'+esc(c.name)+'</span>':'')+'</div>';
+      }
+      h+='<div class="mon"><h4>'+m+'月 <span style="font-size:11px;color:#64748b">(稼働'+workN+'日)</span></h4><div class="mgrid">'+cells+'</div></div>';
+    }
+    area.innerHTML=h;
+  },
+  exp(years){
+    years=years||1;
+    const rows=[['日付','区分','名称']];
+    for(let y=this.year;y<this.year+years;y++){
+      for(let m=1;m<=12;m++){const dim=new Date(y,m,0).getDate();
+        for(let d=1;d<=dim;d++){const dow=new Date(y,m-1,d).getDay();
+          const iso=y+'-'+(''+m).padStart(2,'0')+'-'+(''+d).padStart(2,'0');
+          const c=this.get(iso,dow);rows.push([iso,c.kind==='work'?'稼働':'公休',c.name||''])}}}
+    dlCsv(rows,'稼働カレンダー_'+this.year+(years>1?'-'+(this.year+years-1):'')+'.csv');
+  },
+  imp(f){if(!f)return;readFile(f,t=>{
+    const rows=parseCsv(t);if(rows.length<2)return toast('データ行がありません');
+    const hd=rows[0].map(x=>x.trim());
+    const ci={d:hd.indexOf('日付'),k:hd.indexOf('区分'),n:hd.indexOf('名称')};
+    if(ci.d<0||ci.k<0)return toast('見出しに「日付」「区分」が必要です');
+    Undo.mark('CSV取込(カレンダー)');
+    let n=0,skip=0;
+    rows.slice(1).forEach(r=>{
+      const norm=normISO(r[ci.d]); // 実在しない日付(2/30等)は幽霊エントリになるため排除
+      if(!norm){skip++;return}
+      const p=norm.split('-');
+      const dow=new Date(+p[0],+p[1]-1,+p[2]).getDay();
+      const kind=/公休|休/.test(r[ci.k]||'')?'off':'work';
+      this.set(norm,dow,kind,ci.n>=0?(r[ci.n]||'').trim():'',true);n++});
+    Store.save();this.ren();toast('カレンダー取込: '+n+'日分'+(skip?'(日付不正のスキップ'+skip+'件)':'')+' — ↩で取り消せます');
+  })},
+  /* ===== 日本の祝日(2000-2099年の計算式・振替休日/国民の休日対応) ===== */
+  jpHolidays(y){
+    const H={}; const add=(m,d,name)=>{H[m+'-'+d]=name};
+    const nthMon=(m,n)=>{const first=new Date(y,m-1,1).getDay();return 1+((8-first)%7)+(n-1)*7};
+    add(1,1,'元日');add(1,nthMon(1,2),'成人の日');add(2,11,'建国記念の日');add(2,23,'天皇誕生日');
+    add(3,Math.floor(20.8431+0.242194*(y-1980)-Math.floor((y-1980)/4)),'春分の日');
+    add(4,29,'昭和の日');add(5,3,'憲法記念日');add(5,4,'みどりの日');add(5,5,'こどもの日');
+    add(7,nthMon(7,3),'海の日');add(8,11,'山の日');add(9,nthMon(9,3),'敬老の日');
+    add(9,Math.floor(23.2488+0.242194*(y-1980)-Math.floor((y-1980)/4)),'秋分の日');
+    add(10,nthMon(10,2),'スポーツの日');add(11,3,'文化の日');add(11,23,'勤労感謝の日');
+    // 国民の休日(祝日に挟まれた平日: 敬老の日と秋分の日の間)
+    const list=Object.keys(H).map(k=>{const[m,d]=k.split('-').map(Number);return{m,d}});
+    list.forEach(a=>{const between={m:a.m,d:a.d+2};
+      if(H[between.m+'-'+between.d]&&!H[a.m+'-'+(a.d+1)]){
+        const dt=new Date(y,a.m-1,a.d+1);
+        if(dt.getDay()!==0)H[a.m+'-'+(a.d+1)]='国民の休日';}});
+    // 振替休日(祝日が日曜→直後の非祝日平日)
+    Object.keys(H).slice().forEach(k=>{const[m,d]=k.split('-').map(Number);
+      if(new Date(y,m-1,d).getDay()===0){
+        let nd=new Date(y,m-1,d+1);
+        while(H[(nd.getMonth()+1)+'-'+nd.getDate()])nd=new Date(y,nd.getMonth(),nd.getDate()+1);
+        H[(nd.getMonth()+1)+'-'+nd.getDate()]='振替休日';}});
+    return H;
+  },
+  holidays(){
+    const H=this.jpHolidays(this.year);
+    const items=Object.keys(H).map(k=>{const[m,d]=k.split('-').map(Number);return{m,d,name:H[k]}}).sort((a,b)=>a.m-b.m||a.d-b.d);
+    if(!confirm(this.year+'年の祝日 '+items.length+'日(振替休日含む)を公休として一括登録しますか?\n※手動で名称を付けた日は上書きしません(↩で取り消せます)'))return;
+    Undo.mark('祝日一括登録');
+    let n=0;
+    items.forEach(({m,d,name})=>{
+      const iso=this.year+'-'+(''+m).padStart(2,'0')+'-'+(''+d).padStart(2,'0');
+      const dow=new Date(this.year,m-1,d).getDay();
+      const cur=Store.data.cal[iso];
+      if(cur&&cur.name)return; // 手動の名称付き設定を尊重
+      this.set(iso,dow,'off',name,true);n++});
+    Store.save();this.ren();toast('🎌 祝日'+n+'日を公休登録しました — ↩で取り消せます');
+  },
+};
+
+/* ===== 画面切替 ===== */
+const UI={
+  go(v){document.querySelectorAll('.view').forEach(e=>e.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(e=>e.classList.remove('active'));
+    $('v-'+v).classList.add('active');$('tab-'+v).classList.add('active');
+    if(v==='st')ST.ren();else CAL.ren()},
+};
+
+Store.load();ST.ren();
+document.addEventListener('keydown',e=>{if(e.key==='Escape')$('md-st').classList.remove('on')});
+document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('on')}));
+</script>
+</body>
+</html>

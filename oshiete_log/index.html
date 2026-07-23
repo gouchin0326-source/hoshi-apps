@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎓 教えてログ v0.1β</title>
+<style>
+/* ============ 属人化解消ライン標準（完全ローカル・¥0・低スペックPC対応） ============ */
+:root{
+  --bg:#f6f7fa; --panel:#ffffff; --line:#d9dde6; --ink:#1f2430; --sub:#5f6675;
+  --navy:#2b4a7a; --navy2:#1d3557; --accent:#c9862a; --accent2:#a86f1d;
+  --ok:#2e7d32; --warn:#b3261e; --chip:#eef1f7; --zoom:1; --radius:10px;
+}
+html{font-size:calc(15px*var(--zoom));}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--ink);font-family:"Yu Gothic UI","Hiragino Kaku Gothic ProN",Meiryo,sans-serif;line-height:1.7;}
+button{font:inherit;cursor:pointer;}
+input,textarea,select{font:inherit;color:var(--ink);}
+/* ♿くっきり（ハイコントラスト） */
+body.clear{--bg:#fff;--panel:#fff;--line:#333;--ink:#000;--sub:#222;--navy:#00227a;--accent:#7a4a00;--chip:#e8e8e8;}
+body.clear .card,body.clear .panel,body.clear button,body.clear input,body.clear textarea,body.clear select{border-width:2px;}
+/* ♿ゆったり */
+body.roomy .card{padding:1.2rem;margin-bottom:1rem;}
+body.roomy .frow{margin-bottom:.9rem;}
+/* ♿focus可視化 */
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:4px;}
+
+header{background:var(--navy);color:#fff;padding:.7rem 1rem;display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;position:sticky;top:0;z-index:20;box-shadow:0 2px 8px rgba(0,0,0,.18);}
+header h1{font-size:1.15rem;letter-spacing:.05em;}
+header .cnt{font-size:.8rem;opacity:.85;}
+header .sp{flex:1;}
+.hbtn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:8px;padding:.3em .8em;font-size:.85rem;}
+.hbtn:hover{background:rgba(255,255,255,.24);}
+main{max-width:900px;margin:0 auto;padding:1rem 1rem 4rem;}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:1rem;margin-bottom:1rem;}
+.panel h2{font-size:1rem;color:var(--navy);margin-bottom:.6rem;letter-spacing:.04em;}
+
+/* 記録フォーム */
+.frow{display:flex;gap:.6rem;margin-bottom:.6rem;flex-wrap:wrap;align-items:center;}
+.frow label{font-size:.85rem;color:var(--sub);min-width:4.5em;}
+.frow input[type=text],.frow textarea{flex:1;min-width:200px;border:1px solid var(--line);border-radius:8px;padding:.45em .7em;background:#fff;}
+.frow textarea{min-height:5.5em;resize:vertical;}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;}
+.seg button{background:#fff;border:0;padding:.35em 1em;color:var(--sub);}
+.seg button[aria-pressed="true"]{background:var(--navy);color:#fff;}
+.btn{background:var(--navy);color:#fff;border:0;border-radius:8px;padding:.5em 1.3em;letter-spacing:.05em;}
+.btn:hover{background:var(--navy2);}
+.btn.sub{background:#fff;color:var(--navy);border:1px solid var(--navy);}
+.btn.warn{background:#fff;color:var(--warn);border:1px solid var(--warn);}
+.hint{font-size:.78rem;color:var(--sub);}
+
+/* タブ */
+.tabs{display:flex;gap:.4rem;margin-bottom:.8rem;flex-wrap:wrap;}
+.tabs button{background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:.35em 1em;color:var(--sub);}
+.tabs button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:bold;}
+
+/* 絞り込み */
+.filter{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.8rem;}
+.filter input[type=search]{flex:1;min-width:180px;border:1px solid var(--line);border-radius:99px;padding:.45em 1em;background:#fff;}
+.chip{display:inline-block;background:var(--chip);border:1px solid var(--line);border-radius:99px;padding:.1em .7em;font-size:.78rem;color:var(--sub);cursor:pointer;}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+.chip.person{border-style:dashed;}
+
+/* 記録カード */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:.9rem;margin-bottom:.7rem;}
+.card .top{display:flex;gap:.6rem;align-items:baseline;flex-wrap:wrap;}
+.card .topic{font-weight:bold;color:var(--navy);font-size:1.02rem;}
+.card .dir{font-size:.72rem;border-radius:6px;padding:0 .5em;color:#fff;background:var(--accent);}
+.card .dir.learned{background:var(--ok);}
+.card .meta{font-size:.78rem;color:var(--sub);}
+.card .body{margin:.45rem 0;white-space:pre-wrap;}
+.card .tagrow{display:flex;gap:.35rem;flex-wrap:wrap;margin:.3rem 0;}
+.card .ops{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem;}
+.card .ops button{font-size:.8rem;background:#fff;border:1px solid var(--line);border-radius:8px;padding:.25em .8em;color:var(--sub);}
+.card .ops button:hover{border-color:var(--navy);color:var(--navy);}
+
+/* FAQ・偏り */
+.rank{display:flex;flex-direction:column;gap:.5rem;}
+.rank .row{display:flex;align-items:center;gap:.7rem;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:.6rem .9rem;cursor:pointer;}
+.rank .row:hover{border-color:var(--accent);}
+.rank .no{font-weight:bold;color:var(--accent);min-width:2em;text-align:center;}
+.rank .t{flex:1;font-weight:bold;}
+.rank .n{font-size:.85rem;color:var(--sub);white-space:nowrap;}
+.badge{font-size:.72rem;border-radius:6px;padding:0 .5em;white-space:nowrap;}
+.badge.manual{background:#fff3e0;color:var(--accent2);border:1px solid var(--accent2);}
+.badge.risk{background:#fdecea;color:var(--warn);border:1px solid var(--warn);}
+.bar{height:8px;background:var(--chip);border-radius:99px;overflow:hidden;min-width:80px;flex:1;max-width:200px;}
+.bar i{display:block;height:100%;background:var(--accent);}
+.empty{color:var(--sub);text-align:center;padding:2rem 1rem;font-size:.9rem;}
+
+/* ♿パネル */
+.a11y-panel{position:fixed;top:54px;right:10px;z-index:30;background:var(--panel);border:2px solid var(--navy);border-radius:var(--radius);padding:1rem;display:none;box-shadow:0 8px 30px rgba(0,0,0,.25);max-width:min(320px,92vw);}
+.a11y-panel.on{display:block;}
+.a11y-row{display:flex;align-items:center;gap:.5rem;margin:.4rem 0;flex-wrap:wrap;}
+.a11y-row .lbl{font-size:.85rem;min-width:6.5em;}
+.a11y-row button{background:#fff;border:1px solid var(--line);border-radius:8px;padding:.3em .8em;font-size:.85rem;}
+.a11y-row button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent2);background:#fff3e0;font-weight:bold;}
+
+footer{max-width:900px;margin:0 auto;padding:0 1rem 2rem;color:var(--sub);font-size:.75rem;line-height:1.9;}
+footer b{color:var(--warn);}
+dialog{border:2px solid var(--navy);border-radius:var(--radius);padding:1.2rem;max-width:min(480px,92vw);}
+dialog::backdrop{background:rgba(0,0,0,.35);}
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;border-radius:99px;padding:.5em 1.4em;font-size:.85rem;z-index:40;opacity:0;transition:opacity .3s;pointer-events:none;}
+.toast.on{opacity:1;}
+@media(max-width:560px){.frow label{min-width:100%;}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎓 教えてログ <span style="font-size:.7em;opacity:.8;">v0.1β</span></h1>
+  <span class="cnt" id="cnt"></span>
+  <span class="sp"></span>
+  <button class="hbtn" id="btnExport">📤 書き出し</button>
+  <button class="hbtn" id="btnImport">📥 取り込み</button>
+  <button class="hbtn" id="btnFaqHtml">📚 FAQ集HTML</button>
+  <button class="hbtn" id="a11yFab" aria-expanded="false" aria-controls="a11yPanel">♿ 見やすさ</button>
+</header>
+
+<div class="a11y-panel" id="a11yPanel" role="dialog" aria-label="見やすさ設定">
+  <div class="a11y-row"><span class="lbl">文字の大きさ</span>
+    <button data-zoom="1">標準</button><button data-zoom="1.15">大きめ</button><button data-zoom="1.3">特大</button></div>
+  <div class="a11y-row"><span class="lbl">くっきり表示</span><button id="tglClear" aria-pressed="false">オン/オフ</button></div>
+  <div class="a11y-row"><span class="lbl">ゆったり間隔</span><button id="tglRoomy" aria-pressed="false">オン/オフ</button></div>
+</div>
+
+<main>
+  <!-- ⚡10秒記録 -->
+  <section class="panel" aria-label="記録フォーム">
+    <h2>⚡ 教えたら、その場で10秒記録</h2>
+    <div class="frow">
+      <label>向き</label>
+      <span class="seg" id="segDir">
+        <button data-dir="taught" aria-pressed="true">教えた</button>
+        <button data-dir="learned" aria-pressed="false">教わった</button>
+      </span>
+      <label style="min-width:auto;">教え手</label>
+      <input type="text" id="fTeacher" list="dlNames" placeholder="例: 佐藤" style="max-width:10em;">
+      <label style="min-width:auto;">相手(任意)</label>
+      <input type="text" id="fLearner" list="dlNames" placeholder="例: 田中" style="max-width:10em;">
+    </div>
+    <div class="frow">
+      <label>お題</label>
+      <input type="text" id="fTopic" list="dlTopics" placeholder="例: 月次締めのCSV取込手順（同じお題で揃えるとFAQ集計されます）">
+    </div>
+    <div class="frow">
+      <label>内容</label>
+      <textarea id="fContent" placeholder="教えた手順・コツ・注意点。次に同じ質問が来たらこのまま渡せる粒度で。"></textarea>
+    </div>
+    <div class="frow">
+      <label>タグ</label>
+      <input type="text" id="fTags" placeholder="カンマ区切り 例: 経理,締め,CSV">
+      <button class="btn" id="btnSave">💾 記録する</button>
+      <button class="btn sub hidden" id="btnCancelEdit" style="display:none;">✖ 編集をやめる</button>
+    </div>
+    <div class="hint">日付は自動。人名は「知の所在」を知るためだけに使います（下部の約束参照）。</div>
+    <datalist id="dlNames"></datalist>
+    <datalist id="dlTopics"></datalist>
+  </section>
+
+  <!-- タブ -->
+  <div class="tabs" role="tablist">
+    <button role="tab" data-tab="list" aria-pressed="true">📋 記録一覧</button>
+    <button role="tab" data-tab="faq" aria-pressed="false">📚 よく聞かれるTOP</button>
+    <button role="tab" data-tab="bias" aria-pressed="false">⚠ 偏りチェック</button>
+  </div>
+
+  <!-- 絞り込み＋一覧 -->
+  <section id="tab-list">
+    <div class="filter">
+      <input type="search" id="fSearch" placeholder="🔎 フリーワード（お題・内容・人・タグをAND検索）">
+      <span id="tagChips"></span>
+    </div>
+    <div id="list"></div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="tab-faq" style="display:none;">
+    <div class="panel">
+      <h2>📚 よく聞かれるTOP ＝ マニュアル化の優先順位</h2>
+      <p class="hint" style="margin-bottom:.6rem;">同じお題が繰り返し記録される＝口頭で回り続けている知識。回数3回以上は「📖マニュアル化候補」。お題のランキングであって、人のランキングではありません。</p>
+      <div class="rank" id="faqRank"></div>
+    </div>
+  </section>
+
+  <!-- 偏り -->
+  <section id="tab-bias" style="display:none;">
+    <div class="panel">
+      <h2>⚠ 教え手の偏りチェック ＝ 引き継ぎリスクの早期発見</h2>
+      <p class="hint" style="margin-bottom:.6rem;">複数回教えられているのに教え手が1人だけのお題＝その人が不在だと止まる知識。「第二走者」を立てる目印です。<b>評価や監視のためではありません。</b></p>
+      <div class="rank" id="biasRank"></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <b>たいせつな約束</b>：このログには人の名前が含まれます。目的は業務の改善（FAQ整備・マニュアル化・ダブル担当化）であり、<b>個人の評価や監視のために使わないでください</b>。データはこのPCのブラウザ内にのみ保存されます（通信は一切しません・社外持ち出し不可）。<br>
+  🎓 教えてログ v0.1β ／ 属人化解消セット ③分散する ／ 完全ローカル・¥0 ／ ★HOSHI 制作
+</footer>
+
+<input type="file" id="fileImport" accept=".json" style="display:none;">
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* 🎓 教えてログ v0.1β — 属人化解消セット③分散フェーズ
+   単一HTML・完全ローカル(localStorage)・通信0。XSS対策=esc()全経路。 */
+
+const $=(s,el)=>(el||document).querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const KEY="oshiete_log_v1", A11Y_KEY="oshiete_log_a11y";
+const LIMIT_WARN=4*1024*1024; /* localStorage 5MB目安の80%で警告 */
+
+let DB={entries:[]};
+let ui={dir:"taught",tab:"list",q:"",tags:new Set(),editId:null};
+
+/* ---------- 保存・読込（容量超過通知つき） ---------- */
+function load(){try{DB=JSON.parse(localStorage.getItem(KEY)||'{"entries":[]}');}catch(e){DB={entries:[]};}if(!Array.isArray(DB.entries))DB.entries=[];}
+function persist(){
+  const json=JSON.stringify(DB);
+  if(json.length>LIMIT_WARN){toast("⚠ 保存データが大きくなっています。📤書き出しで退避を推奨（上限約5MB）");}
+  try{localStorage.setItem(KEY,json);}
+  catch(e){alert("保存容量の上限に達しました。📤書き出しでバックアップ後、古い記録を削除してください。");}
+}
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const todayIso=()=>new Date().toISOString().slice(0,10);
+const normTopic=s=>String(s||"").trim().replace(/\s+/g," ");
+
+/* ---------- 記録フォーム ---------- */
+document.querySelectorAll("#segDir button").forEach(b=>b.addEventListener("click",()=>{
+  ui.dir=b.dataset.dir;
+  document.querySelectorAll("#segDir button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
+}));
+$("#btnSave").addEventListener("click",()=>{
+  const topic=normTopic($("#fTopic").value);
+  const content=$("#fContent").value.trim();
+  const teacher=$("#fTeacher").value.trim();
+  if(!topic){toast("お題を入れてください");$("#fTopic").focus();return;}
+  if(!content){toast("内容を入れてください");$("#fContent").focus();return;}
+  const tags=$("#fTags").value.split(/[,、]/).map(t=>t.trim()).filter(Boolean);
+  if(ui.editId){
+    const e=DB.entries.find(x=>x.id===ui.editId);
+    if(e){Object.assign(e,{topic,content,teacher,learner:$("#fLearner").value.trim(),tags,dir:ui.dir});}
+    ui.editId=null;$("#btnCancelEdit").style.display="none";toast("✏ 記録を更新しました");
+  }else{
+    DB.entries.unshift({id:uid(),date:todayIso(),dir:ui.dir,teacher,learner:$("#fLearner").value.trim(),topic,content,tags});
+    toast("💾 記録しました（"+topic+"）");
+  }
+  persist();clearForm();renderAll();
+});
+$("#btnCancelEdit").addEventListener("click",()=>{ui.editId=null;$("#btnCancelEdit").style.display="none";clearForm();});
+function clearForm(){$("#fTopic").value="";$("#fContent").value="";$("#fLearner").value="";$("#fTags").value="";}
+
+/* ---------- タブ ---------- */
+document.querySelectorAll(".tabs [data-tab]").forEach(b=>b.addEventListener("click",()=>{
+  ui.tab=b.dataset.tab;
+  document.querySelectorAll(".tabs [data-tab]").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
+  ["list","faq","bias"].forEach(t=>{$("#tab-"+t).style.display=(t===ui.tab)?"":"none";});
+  renderAll();
+}));
+
+/* ---------- 絞り込み ---------- */
+$("#fSearch").addEventListener("input",()=>{ui.q=$("#fSearch").value.trim().toLowerCase();renderList();});
+function matches(e){
+  if(ui.tags.size&&![...ui.tags].every(t=>(e.tags||[]).includes(t)))return false;
+  if(!ui.q)return true;
+  const hay=[e.topic,e.content,e.teacher,e.learner,(e.tags||[]).join(" ")].join(" ").toLowerCase();
+  return ui.q.split(/\s+/).every(w=>hay.includes(w));
+}
+
+/* ---------- 一覧描画 ---------- */
+function renderList(){
+  const all=DB.entries;
+  /* タグチップ（使用頻度順TOP12） */
+  const tc={};all.forEach(e=>(e.tags||[]).forEach(t=>tc[t]=(tc[t]||0)+1));
+  $("#tagChips").innerHTML=Object.entries(tc).sort((a,b)=>b[1]-a[1]).slice(0,12)
+    .map(([t])=>'<span class="chip'+(ui.tags.has(t)?" on":"")+'" data-tag="'+esc(t)+'" role="button" tabindex="0">'+esc(t)+"</span>").join(" ");
+  document.querySelectorAll("#tagChips .chip").forEach(c=>c.addEventListener("click",()=>{
+    const t=c.dataset.tag;ui.tags.has(t)?ui.tags.delete(t):ui.tags.add(t);renderList();
+  }));
+  const list=all.filter(matches);
+  $("#list").innerHTML=list.length?list.map(cardHtml).join(""):'<div class="empty">'+(all.length?"条件に合う記録がありません":"まだ記録がありません。上のフォームから最初の1件をどうぞ（10秒で終わります）")+"</div>";
+  list.forEach(e=>{
+    $("#relog_"+e.id).addEventListener("click",()=>relog(e));
+    $("#card_"+e.id).addEventListener("click",()=>exportCard(e));
+    $("#edit_"+e.id).addEventListener("click",()=>editEntry(e));
+    $("#del_"+e.id).addEventListener("click",()=>{if(confirm("この記録を削除しますか？\n「"+e.topic+"」")){DB.entries=DB.entries.filter(x=>x.id!==e.id);persist();renderAll();}});
+  });
+  $("#cnt").textContent=all.length?("記録 "+all.length+"件"+(list.length!==all.length?"（表示 "+list.length+"）":"")):"";
+}
+function cardHtml(e){
+  const dir=e.dir==="learned"?'<span class="dir learned">教わった</span>':'<span class="dir">教えた</span>';
+  const who=esc(e.teacher||"？")+(e.learner?" → "+esc(e.learner):"");
+  return '<div class="card">'
+    +'<div class="top"><span class="topic">'+esc(e.topic)+"</span>"+dir
+    +'<span class="meta">'+esc(e.date)+"　"+who+"</span></div>"
+    +'<div class="body">'+esc(e.content)+"</div>"
+    +((e.tags||[]).length?'<div class="tagrow">'+e.tags.map(t=>'<span class="chip">'+esc(t)+"</span>").join("")+"</div>":"")
+    +'<div class="ops">'
+    +'<button id="relog_'+e.id+'" title="同じことをまた教えたら押す（FAQ回数が増えます）">🔁 また聞かれた</button>'
+    +'<button id="card_'+e.id+'" title="この記録を1枚のHTMLカードに書き出し（渡すだけで説明が済む）">🃏 教えカード</button>'
+    +'<button id="edit_'+e.id+'">✏ 編集</button>'
+    +'<button id="del_'+e.id+'">🗑 削除</button>'
+    +"</div></div>";
+}
+function relog(e){
+  const learner=prompt("今回は誰に教えましたか？（空欄OK）","")||"";
+  DB.entries.unshift({id:uid(),date:todayIso(),dir:"taught",teacher:e.teacher,learner:learner.trim(),topic:e.topic,content:e.content,tags:(e.tags||[]).slice()});
+  persist();renderAll();toast("🔁 記録しました（"+e.topic+"＝計"+topicCount(e.topic)+"回目）");
+}
+function editEntry(e){
+  ui.editId=e.id;ui.dir=e.dir||"taught";
+  document.querySelectorAll("#segDir button").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.dir===ui.dir)));
+  $("#fTopic").value=e.topic;$("#fContent").value=e.content;$("#fTeacher").value=e.teacher||"";$("#fLearner").value=e.learner||"";$("#fTags").value=(e.tags||[]).join(",");
+  $("#btnCancelEdit").style.display="";window.scrollTo({top:0,behavior:"smooth"});$("#fTopic").focus();
+}
+const topicCount=t=>DB.entries.filter(e=>normTopic(e.topic)===normTopic(t)).length;
+
+/* ---------- FAQ（お題のランキング＝人は序列化しない） ---------- */
+function topicGroups(){
+  const g={};
+  DB.entries.forEach(e=>{const k=normTopic(e.topic);(g[k]=g[k]||[]).push(e);});
+  return Object.entries(g).sort((a,b)=>b[1].length-a[1].length);
+}
+function renderFaq(){
+  const groups=topicGroups();
+  const max=groups.length?groups[0][1].length:1;
+  $("#faqRank").innerHTML=groups.length?groups.slice(0,20).map(([t,es],i)=>{
+    const manual=es.length>=3?'<span class="badge manual">📖 マニュアル化候補</span>':"";
+    return '<div class="row" data-topic="'+esc(t)+'" role="button" tabindex="0">'
+      +'<span class="no">'+(i+1)+"</span><span class=\"t\">"+esc(t)+"</span>"+manual
+      +'<span class="bar"><i style="width:'+Math.round(es.length/max*100)+'%"></i></span>'
+      +'<span class="n">'+es.length+"回</span></div>";
+  }).join(""):'<div class="empty">記録が増えると、よく聞かれるお題が自動で並びます</div>';
+  wireRankJump("#faqRank");
+}
+/* ---------- 偏り（教え手1人だけのお題＝第二走者の目印） ---------- */
+function renderBias(){
+  const rows=topicGroups().filter(([t,es])=>es.length>=2).map(([t,es])=>{
+    const teachers=[...new Set(es.map(e=>(e.teacher||"").trim()).filter(Boolean))];
+    return {t,n:es.length,teachers};
+  });
+  const risky=rows.filter(r=>r.teachers.length===1);
+  const safe=rows.filter(r=>r.teachers.length>1);
+  let html="";
+  if(risky.length){
+    html+=risky.map(r=>'<div class="row" data-topic="'+esc(r.t)+'" role="button" tabindex="0">'
+      +'<span class="no">⚠</span><span class="t">'+esc(r.t)+'</span>'
+      +'<span class="badge risk">教え手が1人だけ（'+r.n+'回）</span>'
+      +'<span class="n">第二走者を立てる目印</span></div>').join("");
+  }
+  if(safe.length){
+    html+=safe.map(r=>'<div class="row" data-topic="'+esc(r.t)+'" role="button" tabindex="0">'
+      +'<span class="no">✅</span><span class="t">'+esc(r.t)+'</span>'
+      +'<span class="n">教え手'+r.teachers.length+'人＝分散OK</span></div>').join("");
+  }
+  $("#biasRank").innerHTML=html||'<div class="empty">同じお題が2回以上記録されると、偏りが見えるようになります</div>';
+  wireRankJump("#biasRank");
+}
+function wireRankJump(sel){
+  document.querySelectorAll(sel+" .row").forEach(r=>{
+    const go=()=>{ui.tab="list";ui.q=r.dataset.topic.toLowerCase();$("#fSearch").value=r.dataset.topic;
+      document.querySelectorAll(".tabs [data-tab]").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.tab==="list")));
+      ["list","faq","bias"].forEach(t=>{$("#tab-"+t).style.display=(t==="list")?"":"none";});renderList();window.scrollTo({top:0});};
+    r.addEventListener("click",go);
+    r.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}});
+  });
+}
+
+/* ---------- 教えカード（1記録→配布用HTML1枚） ---------- */
+function cardDocHtml(e){
+  return '<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>'+esc(e.topic)+' — 教えカード</title><style>body{font-family:"Yu Gothic UI",Meiryo,sans-serif;background:#f6f7fa;margin:0;padding:24px;color:#1f2430;line-height:1.9}.c{max-width:640px;margin:0 auto;background:#fff;border:1px solid #d9dde6;border-left:6px solid #c9862a;border-radius:12px;padding:24px}h1{font-size:1.2em;color:#2b4a7a;margin:0 0 4px}.m{font-size:.8em;color:#5f6675;margin-bottom:14px}.b{white-space:pre-wrap}.t{margin-top:14px;font-size:.78em;color:#5f6675}.f{max-width:640px;margin:10px auto 0;font-size:.72em;color:#8a90a0;text-align:center}</style></head><body><div class="c"><h1>🃏 '+esc(e.topic)+'</h1><div class="m">'+esc(e.date)+'　教え手: '+esc(e.teacher||"—")+'</div><div class="b">'+esc(e.content)+'</div>'+((e.tags||[]).length?'<div class="t">タグ: '+esc(e.tags.join(" / "))+"</div>":"")+'</div><div class="f">教えてログ（属人化解消セット）より書き出し・社外持ち出し不可</div></body></html>';
+}
+function exportCard(e){
+  download((e.topic||"card").replace(/[\\/:*?"<>|]/g,"_")+"_教えカード.html",cardDocHtml(e),"text/html");
+  toast("🃏 教えカードを書き出しました（渡すだけで説明が済みます）");
+}
+
+/* ---------- FAQ集HTML（お題ごとに最新の内容をまとめて1冊に） ---------- */
+$("#btnFaqHtml").addEventListener("click",()=>{
+  const groups=topicGroups();
+  if(!groups.length){toast("記録がまだありません");return;}
+  const body=groups.map(([t,es],i)=>{
+    const latest=es[0];
+    return '<div class="c"><h2>'+(i+1)+'. '+esc(t)+' <small>（記録'+es.length+'回）</small></h2><div class="b">'+esc(latest.content)+'</div><div class="m">最終記録 '+esc(latest.date)+'　教え手: '+esc(latest.teacher||"—")+"</div></div>";
+  }).join("");
+  const doc='<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>教えてFAQ集</title><style>body{font-family:"Yu Gothic UI",Meiryo,sans-serif;background:#f6f7fa;margin:0;padding:24px;color:#1f2430;line-height:1.9}h1{color:#2b4a7a;font-size:1.3em;max-width:720px;margin:0 auto 16px}.c{max-width:720px;margin:0 auto 14px;background:#fff;border:1px solid #d9dde6;border-radius:12px;padding:18px 22px}h2{font-size:1.05em;color:#2b4a7a;margin:0 0 6px}small{color:#c9862a;font-weight:normal}.b{white-space:pre-wrap}.m{margin-top:8px;font-size:.78em;color:#5f6675}.f{max-width:720px;margin:14px auto 0;font-size:.72em;color:#8a90a0;text-align:center}</style></head><body><h1>📚 教えてFAQ集（'+todayIso()+'時点・'+groups.length+'お題）</h1>'+body+'<div class="f">教えてログより書き出し・評価監視には使わない・社外持ち出し不可</div></body></html>';
+  download("教えてFAQ集_"+todayIso()+".html",doc,"text/html");
+  toast("📚 FAQ集を書き出しました");
+});
+
+/* ---------- 書き出し・取り込み（チーム共有=JSON合体・重複除去） ---------- */
+$("#btnExport").addEventListener("click",()=>{
+  download("教えてログ_"+todayIso()+".json",JSON.stringify({app:"oshiete_log",version:1,exported:new Date().toISOString(),entries:DB.entries},null,1),"application/json");
+  toast("📤 書き出しました（バックアップ／チーム共有用）");
+});
+$("#btnImport").addEventListener("click",()=>$("#fileImport").click());
+$("#fileImport").addEventListener("change",async ev=>{
+  const f=ev.target.files[0];ev.target.value="";if(!f)return;
+  try{
+    const data=JSON.parse(await f.text());
+    const inc=Array.isArray(data.entries)?data.entries:(Array.isArray(data)?data:null);
+    if(!inc)throw new Error("entriesがありません");
+    const ids=new Set(DB.entries.map(e=>e.id));
+    const sig=e=>[e.date,e.topic,e.teacher,e.content].join("|");
+    const sigs=new Set(DB.entries.map(sig));
+    let add=0;
+    for(const e of inc){
+      if(!e||!e.topic||!e.content)continue;
+      if(ids.has(e.id)||sigs.has(sig(e)))continue;
+      DB.entries.push({id:e.id||uid(),date:String(e.date||todayIso()).slice(0,10),dir:e.dir==="learned"?"learned":"taught",
+        teacher:String(e.teacher||"").slice(0,50),learner:String(e.learner||"").slice(0,50),
+        topic:normTopic(e.topic).slice(0,200),content:String(e.content).slice(0,5000),
+        tags:Array.isArray(e.tags)?e.tags.map(t=>String(t).slice(0,30)).slice(0,10):[]});
+      add++;
+    }
+    DB.entries.sort((a,b)=>(b.date||"").localeCompare(a.date||""));
+    persist();renderAll();
+    alert("📥 取り込み完了: 追加 "+add+"件（重複 "+(inc.length-add)+"件は除外）");
+  }catch(err){alert("取り込めませんでした: "+err.message);}
+});
+function download(name,text,mime){
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([text],{type:mime+";charset=utf-8"}));
+  a.download=name;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
+}
+
+/* ---------- datalist（入力補助＝表記ゆれ防止） ---------- */
+function renderDatalists(){
+  const names=new Set(),topics=new Set();
+  DB.entries.forEach(e=>{if(e.teacher)names.add(e.teacher);if(e.learner)names.add(e.learner);topics.add(e.topic);});
+  $("#dlNames").innerHTML=[...names].map(n=>'<option value="'+esc(n)+'">').join("");
+  $("#dlTopics").innerHTML=[...topics].slice(0,200).map(t=>'<option value="'+esc(t)+'">').join("");
+}
+
+/* ---------- toast ---------- */
+let toastTimer=null;
+function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("on");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("on"),2600);}
+
+/* ---------- ♿見やすさ（localStorage保存・属人化ライン標準） ---------- */
+function applyA11y(s){
+  document.documentElement.style.setProperty("--zoom",s.zoom||1);
+  document.body.classList.toggle("clear",!!s.clear);
+  document.body.classList.toggle("roomy",!!s.roomy);
+  document.querySelectorAll("[data-zoom]").forEach(b=>b.setAttribute("aria-pressed",String(Number(b.dataset.zoom)===(s.zoom||1))));
+  $("#tglClear").setAttribute("aria-pressed",String(!!s.clear));
+  $("#tglRoomy").setAttribute("aria-pressed",String(!!s.roomy));
+}
+function saveA11y(patch){
+  let s={};try{s=JSON.parse(localStorage.getItem(A11Y_KEY)||"{}");}catch(e){}
+  Object.assign(s,patch);
+  try{localStorage.setItem(A11Y_KEY,JSON.stringify(s));}catch(e){}
+  applyA11y(s);
+}
+$("#a11yFab").addEventListener("click",()=>{
+  const p=$("#a11yPanel");p.classList.toggle("on");
+  $("#a11yFab").setAttribute("aria-expanded",String(p.classList.contains("on")));
+});
+document.querySelectorAll("[data-zoom]").forEach(b=>b.addEventListener("click",()=>saveA11y({zoom:Number(b.dataset.zoom)})));
+$("#tglClear").addEventListener("click",()=>saveA11y({clear:$("#tglClear").getAttribute("aria-pressed")!=="true"}));
+$("#tglRoomy").addEventListener("click",()=>saveA11y({roomy:$("#tglRoomy").getAttribute("aria-pressed")!=="true"}));
+
+/* ---------- 起動 ---------- */
+function renderAll(){renderDatalists();renderList();renderFaq();renderBias();}
+load();
+try{applyA11y(JSON.parse(localStorage.getItem(A11Y_KEY)||"{}"));}catch(e){applyA11y({});}
+renderAll();
+</script>
+</body>
+</html>

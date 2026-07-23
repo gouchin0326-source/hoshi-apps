@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📅 業務カレンダー v0.1β</title>
+<style>
+/* ============ 属人化解消ライン標準（完全ローカル・¥0・低スペックPC対応） ============ */
+:root{
+  --bg:#f6f7fa; --panel:#ffffff; --line:#d9dde6; --ink:#1f2430; --sub:#5f6675;
+  --navy:#2b4a7a; --navy2:#1d3557; --accent:#c9862a; --accent2:#a86f1d;
+  --ok:#2e7d32; --warn:#b3261e; --chip:#eef1f7; --today:#fff6e5; --zoom:1; --radius:10px;
+}
+html{font-size:calc(15px*var(--zoom));}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--ink);font-family:"Yu Gothic UI","Hiragino Kaku Gothic ProN",Meiryo,sans-serif;line-height:1.7;}
+button{font:inherit;cursor:pointer;}
+input,textarea,select{font:inherit;color:var(--ink);}
+body.clear{--bg:#fff;--panel:#fff;--line:#333;--ink:#000;--sub:#222;--navy:#00227a;--accent:#7a4a00;--chip:#e8e8e8;--today:#fff3c4;}
+body.clear .card,body.clear .panel,body.clear button,body.clear input,body.clear select,body.clear textarea,body.clear .cal td{border-width:2px;}
+body.roomy .card{padding:1.2rem;margin-bottom:1rem;}
+body.roomy .frow{margin-bottom:.9rem;}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:4px;}
+
+header{background:var(--navy);color:#fff;padding:.7rem 1rem;display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;position:sticky;top:0;z-index:20;box-shadow:0 2px 8px rgba(0,0,0,.18);}
+header h1{font-size:1.15rem;letter-spacing:.05em;}
+header .cnt{font-size:.8rem;opacity:.85;}
+header .sp{flex:1;}
+.hbtn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:8px;padding:.3em .8em;font-size:.85rem;}
+.hbtn:hover{background:rgba(255,255,255,.24);}
+main{max-width:980px;margin:0 auto;padding:1rem 1rem 4rem;}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:1rem;margin-bottom:1rem;}
+.panel h2{font-size:1rem;color:var(--navy);margin-bottom:.6rem;letter-spacing:.04em;}
+.frow{display:flex;gap:.6rem;margin-bottom:.6rem;flex-wrap:wrap;align-items:center;}
+.frow label{font-size:.85rem;color:var(--sub);min-width:5.5em;}
+.frow input[type=text],.frow input[type=number],.frow input[type=date],.frow select,.frow textarea{border:1px solid var(--line);border-radius:8px;padding:.4em .7em;background:#fff;}
+.frow input[type=text]{flex:1;min-width:160px;}
+.frow textarea{flex:1;min-width:200px;min-height:3.2em;resize:vertical;}
+.frow input[type=number]{width:6em;}
+.btn{background:var(--navy);color:#fff;border:0;border-radius:8px;padding:.5em 1.3em;letter-spacing:.05em;}
+.btn:hover{background:var(--navy2);}
+.btn.sub{background:#fff;color:var(--navy);border:1px solid var(--navy);}
+.hint{font-size:.78rem;color:var(--sub);}
+.dowbox{display:inline-flex;gap:.2rem;flex-wrap:wrap;}
+.dowbox button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:.2em .6em;color:var(--sub);}
+.dowbox button[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:#fff;}
+
+.tabs{display:flex;gap:.4rem;margin-bottom:.8rem;flex-wrap:wrap;}
+.tabs button{background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:.35em 1em;color:var(--sub);}
+.tabs button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:bold;}
+
+/* カレンダー */
+.calbar{display:flex;align-items:center;gap:.6rem;margin-bottom:.6rem;flex-wrap:wrap;}
+.calbar .ym{font-size:1.15rem;font-weight:bold;color:var(--navy);min-width:8.5em;text-align:center;}
+.calbar button{background:#fff;border:1px solid var(--line);border-radius:8px;padding:.3em .9em;}
+.calbar button:hover{border-color:var(--navy);}
+.legend{font-size:.75rem;color:var(--sub);margin-left:auto;}
+table.cal{width:100%;border-collapse:collapse;table-layout:fixed;background:var(--panel);}
+.cal th{border:1px solid var(--line);padding:.3em;font-size:.8rem;color:var(--sub);background:var(--chip);}
+.cal th.sat{color:#2b4a7a;} .cal th.sun{color:var(--warn);}
+.cal td{border:1px solid var(--line);vertical-align:top;height:5.2em;padding:.15em .25em;cursor:pointer;}
+.cal td:hover{outline:2px solid var(--accent);outline-offset:-2px;}
+.cal td.off{background:#fafbfd;color:#b9bece;cursor:default;}
+.cal td.off:hover{outline:none;}
+.cal td.today{background:var(--today);}
+.cal td .d{font-size:.8rem;font-weight:bold;}
+.cal td.heat1{box-shadow:inset 0 -4px 0 #f3d9a8;}
+.cal td.heat2{box-shadow:inset 0 -4px 0 #e0a94f;}
+.cal td.heat3{box-shadow:inset 0 -4px 0 var(--warn);}
+.ev{display:block;font-size:.7rem;background:var(--chip);border-left:3px solid var(--navy);border-radius:3px;padding:0 .3em;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ev.nobk{border-left-color:var(--warn);}
+.more{font-size:.68rem;color:var(--sub);}
+
+/* 一覧・警告 */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:.9rem;margin-bottom:.7rem;}
+.card .top{display:flex;gap:.6rem;align-items:baseline;flex-wrap:wrap;}
+.card .nm{font-weight:bold;color:var(--navy);font-size:1.02rem;}
+.card .meta{font-size:.78rem;color:var(--sub);}
+.badge{font-size:.72rem;border-radius:6px;padding:0 .5em;white-space:nowrap;}
+.badge.risk{background:#fdecea;color:var(--warn);border:1px solid var(--warn);}
+.badge.okb{background:#e9f5ea;color:var(--ok);border:1px solid var(--ok);}
+.card .ops{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem;}
+.card .ops button{font-size:.8rem;background:#fff;border:1px solid var(--line);border-radius:8px;padding:.25em .8em;color:var(--sub);}
+.card .ops button:hover{border-color:var(--navy);color:var(--navy);}
+.empty{color:var(--sub);text-align:center;padding:2rem 1rem;font-size:.9rem;}
+
+/* 日詳細ダイアログ */
+dialog{border:2px solid var(--navy);border-radius:var(--radius);padding:1.1rem 1.3rem;max-width:min(520px,94vw);width:100%;}
+dialog::backdrop{background:rgba(0,0,0,.35);}
+dialog h3{color:var(--navy);font-size:1.05rem;margin-bottom:.5rem;}
+dialog .dv{border-top:1px dashed var(--line);padding:.5rem 0;}
+dialog .dv b{color:var(--navy);}
+dialog .dv .m{font-size:.8rem;color:var(--sub);}
+dialog .x{margin-top:.8rem;text-align:right;}
+
+/* ♿ */
+.a11y-panel{position:fixed;top:54px;right:10px;z-index:30;background:var(--panel);border:2px solid var(--navy);border-radius:var(--radius);padding:1rem;display:none;box-shadow:0 8px 30px rgba(0,0,0,.25);max-width:min(320px,92vw);}
+.a11y-panel.on{display:block;}
+.a11y-row{display:flex;align-items:center;gap:.5rem;margin:.4rem 0;flex-wrap:wrap;}
+.a11y-row .lbl{font-size:.85rem;min-width:6.5em;}
+.a11y-row button{background:#fff;border:1px solid var(--line);border-radius:8px;padding:.3em .8em;font-size:.85rem;}
+.a11y-row button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent2);background:#fff3e0;font-weight:bold;}
+
+footer{max-width:980px;margin:0 auto;padding:0 1rem 2rem;color:var(--sub);font-size:.75rem;line-height:1.9;}
+footer b{color:var(--warn);}
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;border-radius:99px;padding:.5em 1.4em;font-size:.85rem;z-index:40;opacity:0;transition:opacity .3s;pointer-events:none;}
+.toast.on{opacity:1;}
+@media(max-width:560px){.cal td{height:4em;} .ev{display:none;} .cal td .dots{font-size:.6rem;color:var(--navy);} }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📅 業務カレンダー <span style="font-size:.7em;opacity:.8;">v0.1β</span></h1>
+  <span class="cnt" id="cnt"></span>
+  <span class="sp"></span>
+  <button class="hbtn" id="btnMonthHtml">🖨 月表HTML</button>
+  <button class="hbtn" id="btnExport">📤 書き出し</button>
+  <button class="hbtn" id="btnImport">📥 取り込み</button>
+  <button class="hbtn" id="a11yFab" aria-expanded="false" aria-controls="a11yPanel">♿ 見やすさ</button>
+</header>
+
+<div class="a11y-panel" id="a11yPanel" role="dialog" aria-label="見やすさ設定">
+  <div class="a11y-row"><span class="lbl">文字の大きさ</span>
+    <button data-zoom="1">標準</button><button data-zoom="1.15">大きめ</button><button data-zoom="1.3">特大</button></div>
+  <div class="a11y-row"><span class="lbl">くっきり表示</span><button id="tglClear" aria-pressed="false">オン/オフ</button></div>
+  <div class="a11y-row"><span class="lbl">ゆったり間隔</span><button id="tglRoomy" aria-pressed="false">オン/オフ</button></div>
+</div>
+
+<main>
+  <!-- 登録フォーム -->
+  <section class="panel" aria-label="定例業務の登録">
+    <h2>➕ 定例業務を登録（頭の中の段取りをカレンダーに）</h2>
+    <div class="frow">
+      <label>業務名</label>
+      <input type="text" id="fName" placeholder="例: 月次締め処理／安全パトロール">
+      <label style="min-width:auto;">目安</label>
+      <input type="number" id="fMin" min="0" step="5" value="30"><span class="hint">分</span>
+    </div>
+    <div class="frow">
+      <label>いつ</label>
+      <select id="fType">
+        <option value="weekly">毎週（曜日）</option>
+        <option value="monthly">毎月（N日）</option>
+        <option value="monthEnd">毎月（月末）</option>
+        <option value="monthlyNth">毎月（第N曜）</option>
+        <option value="yearly">年1回（M月D日）</option>
+        <option value="once">単発（日付指定）</option>
+      </select>
+      <span id="ruleWeekly" class="dowbox"></span>
+      <span id="ruleMonthly" style="display:none;">毎月 <input type="number" id="fDay" min="1" max="31" value="25" style="width:4.5em;"> 日（無い月は月末に繰上げ）</span>
+      <span id="ruleMonthlyNth" style="display:none;">
+        第<select id="fNth"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="9">最終</option></select>
+        <select id="fNthDow"></select>曜日
+      </span>
+      <span id="ruleYearly" style="display:none;"><input type="number" id="fYM" min="1" max="12" value="4" style="width:4em;">月 <input type="number" id="fYD" min="1" max="31" value="1" style="width:4em;">日</span>
+      <span id="ruleOnce" style="display:none;"><input type="date" id="fOnce"></span>
+    </div>
+    <div class="frow">
+      <label>主担当</label><input type="text" id="fOwner" list="dlNames" placeholder="例: 佐藤" style="max-width:9em;">
+      <label style="min-width:auto;">第二走者</label><input type="text" id="fBackup" list="dlNames" placeholder="いない場合は空欄=⚠表示" style="max-width:13em;">
+    </div>
+    <div class="frow">
+      <label>手順メモ</label>
+      <textarea id="fNote" placeholder="手順の要点・マニュアルの場所・教えてログのお題名など"></textarea>
+    </div>
+    <div class="frow">
+      <label></label>
+      <button class="btn" id="btnSave">💾 登録する</button>
+      <button class="btn sub" id="btnCancelEdit" style="display:none;">✖ 編集をやめる</button>
+      <span class="hint">保存はこのPCのブラウザ内のみ（通信しません）</span>
+    </div>
+    <datalist id="dlNames"></datalist>
+  </section>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" data-tab="cal" aria-pressed="true">📅 カレンダー</button>
+    <button role="tab" data-tab="list" aria-pressed="false">📋 業務一覧</button>
+    <button role="tab" data-tab="risk" aria-pressed="false">⚠ 偏りチェック</button>
+  </div>
+
+  <section id="tab-cal">
+    <div class="calbar">
+      <button id="btnPrev" aria-label="前の月">◀</button>
+      <span class="ym" id="ymLabel"></span>
+      <button id="btnNext" aria-label="次の月">▶</button>
+      <button id="btnToday">今月</button>
+      <span class="legend">下線の色＝その日の負荷（目安時間合計）：薄=軽 〜 赤=重。赤枠チップ=第二走者なし</span>
+    </div>
+    <table class="cal" id="calTable"></table>
+  </section>
+
+  <section id="tab-list" style="display:none;">
+    <div id="taskList"></div>
+  </section>
+
+  <section id="tab-risk" style="display:none;">
+    <div class="panel">
+      <h2>⚠ 第二走者がいない定例業務 ＝ その人が不在だと止まる仕事</h2>
+      <p class="hint" style="margin-bottom:.6rem;">「第二走者」を決めて登録すると消えます。教えてログ・マニュアルスタジオで手順を残すのとセットで。<b>評価や監視のためではありません。</b></p>
+      <div id="riskList"></div>
+    </div>
+    <div class="panel">
+      <h2>⛰ 今月の負荷の山（目安時間の合計が多い日 TOP5）</h2>
+      <p class="hint" style="margin-bottom:.6rem;">特定の日への集中が見えたら、前倒しできる業務を移すヒントに。</p>
+      <div id="peakList"></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <b>たいせつな約束</b>：このカレンダーには担当者の名前が含まれます。目的は業務の改善（段取りの見える化・ダブル担当化・負荷の平準化）であり、<b>個人の評価や監視のために使わないでください</b>。データはこのPCのブラウザ内にのみ保存されます（通信は一切しません・社外持ち出し不可）。<br>
+  📅 業務カレンダー v0.1β ／ 属人化解消セット ③分散する ／ 完全ローカル・¥0 ／ ★HOSHI 制作
+</footer>
+
+<dialog id="dayDlg"><h3 id="dlgTitle"></h3><div id="dlgBody"></div><div class="x"><button class="btn sub" id="dlgClose">閉じる</button></div></dialog>
+<input type="file" id="fileImport" accept=".json" style="display:none;">
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* 📅 業務カレンダー v0.1β — 属人化解消セット③分散フェーズ
+   定例業務ルール→月間カレンダー自動展開。単一HTML・完全ローカル・通信0・XSS=esc()全経路 */
+
+const $=(s,el)=>(el||document).querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const KEY="gyomu_cal_v1", A11Y_KEY="gyomu_cal_a11y";
+const LIMIT_WARN=4*1024*1024;
+const DOWS=["日","月","火","水","木","金","土"];
+
+let DB={tasks:[]};
+let ui={tab:"cal",editId:null,ym:null};
+
+/* ---------- 保存・読込 ---------- */
+function load(){try{DB=JSON.parse(localStorage.getItem(KEY)||'{"tasks":[]}');}catch(e){DB={tasks:[]};}if(!Array.isArray(DB.tasks))DB.tasks=[];}
+function persist(){
+  const json=JSON.stringify(DB);
+  if(json.length>LIMIT_WARN)toast("⚠ 保存データが大きくなっています。📤書き出しで退避を推奨");
+  try{localStorage.setItem(KEY,json);}
+  catch(e){alert("保存容量の上限に達しました。📤書き出しでバックアップ後、不要な業務を削除してください。");}
+}
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+
+/* ---------- ルール展開（このアプリの心臓部） ---------- */
+const lastDay=(y,m)=>new Date(y,m,0).getDate(); /* m=1-12 */
+function occursOn(task,y,m,d){ /* y,m(1-12),d */
+  const r=task.rule||{};
+  const dow=new Date(y,m-1,d).getDay();
+  switch(r.type){
+    case "weekly": return Array.isArray(r.dows)&&r.dows.includes(dow);
+    case "monthly": {const ld=lastDay(y,m);const target=Math.min(r.day||1,ld);return d===target;}
+    case "monthEnd": return d===lastDay(y,m);
+    case "monthlyNth":{
+      if(dow!==r.dow)return false;
+      if(r.nth===9)return d>lastDay(y,m)-7;           /* 最終x曜 */
+      return Math.ceil(d/7)===r.nth;
+    }
+    case "yearly": return m===r.month&&d===Math.min(r.day||1,lastDay(y,m));
+    case "once": {const p=(r.date||"").split("-").map(Number);return p[0]===y&&p[1]===m&&p[2]===d;}
+    default: return false;
+  }
+}
+function ruleText(r){
+  switch((r||{}).type){
+    case "weekly": return "毎週 "+(r.dows||[]).slice().sort().map(d=>DOWS[d]).join("・")+"曜";
+    case "monthly": return "毎月 "+r.day+"日";
+    case "monthEnd": return "毎月 月末";
+    case "monthlyNth": return "毎月 "+(r.nth===9?"最終":"第"+r.nth)+DOWS[r.dow]+"曜";
+    case "yearly": return "年1回 "+r.month+"月"+r.day+"日";
+    case "once": return "単発 "+r.date;
+    default: return "?";
+  }
+}
+function monthMap(y,m){ /* {d: [task,...]} */
+  const map={};
+  const ld=lastDay(y,m);
+  for(let d=1;d<=ld;d++){
+    const hits=DB.tasks.filter(t=>occursOn(t,y,m,d));
+    if(hits.length)map[d]=hits;
+  }
+  return map;
+}
+
+/* ---------- フォーム ---------- */
+function buildRuleInputs(){
+  $("#ruleWeekly").innerHTML=DOWS.map((n,i)=>'<button type="button" data-dow="'+i+'" aria-pressed="'+(i===1?"true":"false")+'">'+n+"</button>").join("");
+  document.querySelectorAll("#ruleWeekly [data-dow]").forEach(b=>b.addEventListener("click",()=>b.setAttribute("aria-pressed",String(b.getAttribute("aria-pressed")!=="true"))));
+  $("#fNthDow").innerHTML=DOWS.map((n,i)=>'<option value="'+i+'"'+(i===1?" selected":"")+">"+n+"</option>").join("");
+}
+$("#fType").addEventListener("change",()=>{
+  const t=$("#fType").value;
+  $("#ruleWeekly").style.display=t==="weekly"?"":"none";
+  $("#ruleMonthly").style.display=t==="monthly"?"":"none";
+  $("#ruleMonthlyNth").style.display=t==="monthlyNth"?"":"none";
+  $("#ruleYearly").style.display=t==="yearly"?"":"none";
+  $("#ruleOnce").style.display=t==="once"?"":"none";
+});
+function ruleFromForm(){
+  const t=$("#fType").value;
+  if(t==="weekly"){
+    const dows=[...document.querySelectorAll('#ruleWeekly [aria-pressed="true"]')].map(b=>Number(b.dataset.dow));
+    if(!dows.length)return null;
+    return {type:"weekly",dows};
+  }
+  if(t==="monthly")return {type:"monthly",day:Math.min(31,Math.max(1,Number($("#fDay").value)||1))};
+  if(t==="monthEnd")return {type:"monthEnd"};
+  if(t==="monthlyNth")return {type:"monthlyNth",nth:Number($("#fNth").value),dow:Number($("#fNthDow").value)};
+  if(t==="yearly")return {type:"yearly",month:Math.min(12,Math.max(1,Number($("#fYM").value)||1)),day:Math.min(31,Math.max(1,Number($("#fYD").value)||1))};
+  if(t==="once"){const v=$("#fOnce").value;return v?{type:"once",date:v}:null;}
+  return null;
+}
+function ruleToForm(r){
+  $("#fType").value=r.type==="monthEnd"?"monthEnd":r.type;
+  $("#fType").dispatchEvent(new Event("change"));
+  if(r.type==="weekly")document.querySelectorAll("#ruleWeekly [data-dow]").forEach(b=>b.setAttribute("aria-pressed",String((r.dows||[]).includes(Number(b.dataset.dow)))));
+  if(r.type==="monthly")$("#fDay").value=r.day;
+  if(r.type==="monthlyNth"){$("#fNth").value=r.nth;$("#fNthDow").value=r.dow;}
+  if(r.type==="yearly"){$("#fYM").value=r.month;$("#fYD").value=r.day;}
+  if(r.type==="once")$("#fOnce").value=r.date;
+}
+$("#btnSave").addEventListener("click",()=>{
+  const name=$("#fName").value.trim();
+  if(!name){toast("業務名を入れてください");$("#fName").focus();return;}
+  const rule=ruleFromForm();
+  if(!rule){toast("「いつ」を設定してください（毎週は曜日を1つ以上）");return;}
+  const rec={name,rule,owner:$("#fOwner").value.trim(),backup:$("#fBackup").value.trim(),
+    minutes:Math.max(0,Number($("#fMin").value)||0),note:$("#fNote").value.trim()};
+  if(ui.editId){
+    const t=DB.tasks.find(x=>x.id===ui.editId);
+    if(t)Object.assign(t,rec);
+    ui.editId=null;$("#btnCancelEdit").style.display="none";toast("✏ 更新しました");
+  }else{
+    DB.tasks.push(Object.assign({id:uid()},rec));
+    toast("💾 登録しました（"+name+"＝"+ruleText(rule)+"）");
+  }
+  persist();clearForm();renderAll();
+});
+$("#btnCancelEdit").addEventListener("click",()=>{ui.editId=null;$("#btnCancelEdit").style.display="none";clearForm();});
+function clearForm(){$("#fName").value="";$("#fOwner").value="";$("#fBackup").value="";$("#fNote").value="";$("#fMin").value=30;}
+
+/* ---------- タブ ---------- */
+document.querySelectorAll(".tabs [data-tab]").forEach(b=>b.addEventListener("click",()=>{
+  ui.tab=b.dataset.tab;
+  document.querySelectorAll(".tabs [data-tab]").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
+  ["cal","list","risk"].forEach(t=>{$("#tab-"+t).style.display=(t===ui.tab)?"":"none";});
+  renderAll();
+}));
+
+/* ---------- カレンダー描画 ---------- */
+$("#btnPrev").addEventListener("click",()=>{shiftMonth(-1);});
+$("#btnNext").addEventListener("click",()=>{shiftMonth(1);});
+$("#btnToday").addEventListener("click",()=>{const n=new Date();ui.ym=[n.getFullYear(),n.getMonth()+1];renderCal();});
+function shiftMonth(dm){let [y,m]=ui.ym;m+=dm;if(m<1){m=12;y--;}if(m>12){m=1;y++;}ui.ym=[y,m];renderCal();}
+function renderCal(){
+  const [y,m]=ui.ym;
+  $("#ymLabel").textContent=y+"年 "+m+"月";
+  const map=monthMap(y,m);
+  const ld=lastDay(y,m);
+  const first=new Date(y,m-1,1).getDay();
+  const now=new Date();
+  const isToday=d=>now.getFullYear()===y&&now.getMonth()+1===m&&now.getDate()===d;
+  /* 負荷ヒート: 日毎の目安分合計 */
+  const loads={};let maxLoad=0;
+  for(const d in map){loads[d]=map[d].reduce((s,t)=>s+(t.minutes||0),0);maxLoad=Math.max(maxLoad,loads[d]);}
+  const heat=d=>{const L=loads[d]||0;if(!L||maxLoad===0)return "";const r=L/maxLoad;return r>0.75?"heat3":r>0.4?"heat2":"heat1";};
+  let html="<tr>"+DOWS.map((n,i)=>'<th class="'+(i===0?"sun":i===6?"sat":"")+'">'+n+"</th>").join("")+"</tr><tr>";
+  for(let i=0;i<first;i++)html+='<td class="off"></td>';
+  for(let d=1;d<=ld;d++){
+    const dow=(first+d-1)%7;
+    if(d>1&&dow===0)html+="</tr><tr>";
+    const evs=map[d]||[];
+    const shown=evs.slice(0,3).map(t=>'<span class="ev'+(!String(t.backup||"").trim()?" nobk":"")+'">'+esc(t.name)+"</span>").join("");
+    const more=evs.length>3?'<span class="more">他'+(evs.length-3)+"件</span>":"";
+    const dots=evs.length?'<span class="dots">●'+evs.length+"</span>":"";
+    html+='<td class="'+(isToday(d)?"today ":"")+heat(d)+'" data-day="'+d+'" tabindex="0" role="button" aria-label="'+m+"月"+d+"日 "+evs.length+'件">'
+      +'<span class="d">'+d+"</span> "+dots+shown+more+"</td>";
+  }
+  const lastDow=(first+ld-1)%7;
+  for(let i=lastDow+1;i<=6;i++)html+='<td class="off"></td>';
+  html+="</tr>";
+  $("#calTable").innerHTML=html;
+  document.querySelectorAll(".cal td[data-day]").forEach(td=>{
+    const open=()=>openDay(y,m,Number(td.dataset.day),map[Number(td.dataset.day)]||[]);
+    td.addEventListener("click",open);
+    td.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();open();}});
+  });
+  $("#cnt").textContent=DB.tasks.length?("定例 "+DB.tasks.length+"件"):"";
+}
+function openDay(y,m,d,evs){
+  $("#dlgTitle").textContent=y+"年"+m+"月"+d+"日（"+DOWS[new Date(y,m-1,d).getDay()]+"）の業務 "+evs.length+"件";
+  $("#dlgBody").innerHTML=evs.length?evs.map(t=>'<div class="dv"><b>'+esc(t.name)+"</b>"
+    +(!String(t.backup||"").trim()?' <span class="badge risk">第二走者なし</span>':"")
+    +'<div class="m">'+esc(ruleText(t.rule))+"　主担当: "+esc(t.owner||"—")+(t.backup?"　第二走者: "+esc(t.backup):"")+(t.minutes?"　目安"+t.minutes+"分":"")+"</div>"
+    +(t.note?'<div class="m" style="white-space:pre-wrap;">'+esc(t.note)+"</div>":"")
+    +"</div>").join(""):'<div class="empty">この日の定例はありません</div>';
+  $("#dayDlg").showModal();
+}
+$("#dlgClose").addEventListener("click",()=>$("#dayDlg").close());
+
+/* ---------- 一覧・偏り ---------- */
+function renderList(){
+  const el=$("#taskList");
+  el.innerHTML=DB.tasks.length?DB.tasks.map(t=>{
+    const bk=String(t.backup||"").trim();
+    return '<div class="card"><div class="top"><span class="nm">'+esc(t.name)+"</span>"
+      +(bk?'<span class="badge okb">第二走者: '+esc(bk)+"</span>":'<span class="badge risk">⚠ 第二走者なし</span>')
+      +'<span class="meta">'+esc(ruleText(t.rule))+"　主担当: "+esc(t.owner||"—")+(t.minutes?"　目安"+t.minutes+"分":"")+"</span></div>"
+      +(t.note?'<div class="meta" style="white-space:pre-wrap;margin-top:.3rem;">'+esc(t.note)+"</div>":"")
+      +'<div class="ops"><button id="edit_'+t.id+'">✏ 編集</button><button id="del_'+t.id+'">🗑 削除</button></div></div>';
+  }).join(""):'<div class="empty">まだ登録がありません。上のフォームから「頭の中の定例」を1つずつどうぞ</div>';
+  DB.tasks.forEach(t=>{
+    $("#edit_"+t.id).addEventListener("click",()=>{
+      ui.editId=t.id;$("#fName").value=t.name;$("#fOwner").value=t.owner||"";$("#fBackup").value=t.backup||"";
+      $("#fMin").value=t.minutes||0;$("#fNote").value=t.note||"";ruleToForm(t.rule);
+      $("#btnCancelEdit").style.display="";window.scrollTo({top:0,behavior:"smooth"});$("#fName").focus();
+    });
+    $("#del_"+t.id).addEventListener("click",()=>{if(confirm("削除しますか？\n「"+t.name+"」")){DB.tasks=DB.tasks.filter(x=>x.id!==t.id);persist();renderAll();}});
+  });
+}
+function renderRisk(){
+  const risky=DB.tasks.filter(t=>!String(t.backup||"").trim());
+  $("#riskList").innerHTML=risky.length?risky.map(t=>'<div class="card"><div class="top"><span class="nm">⚠ '+esc(t.name)+'</span><span class="meta">'+esc(ruleText(t.rule))+"　主担当: "+esc(t.owner||"—")+"</span></div></div>").join(""):'<div class="empty">✅ すべての定例に第二走者がいます</div>';
+  /* 今月の負荷TOP5 */
+  const [y,m]=ui.ym;const map=monthMap(y,m);
+  const days=Object.entries(map).map(([d,ts])=>({d:Number(d),n:ts.length,min:ts.reduce((s,t)=>s+(t.minutes||0),0)}))
+    .sort((a,b)=>b.min-a.min||b.n-a.n).slice(0,5).filter(x=>x.min>0||x.n>0);
+  $("#peakList").innerHTML=days.length?days.map((x,i)=>'<div class="card" style="padding:.5rem .9rem;"><b style="color:var(--accent);">'+(i+1)+"位</b>　"+m+"月"+x.d+"日（"+DOWS[new Date(y,m-1,x.d).getDay()]+"）　"+x.n+"件・目安 計"+x.min+"分</div>").join(""):'<div class="empty">今月の定例がまだありません</div>';
+}
+function renderDatalists(){
+  const names=new Set();
+  DB.tasks.forEach(t=>{if(t.owner)names.add(t.owner);if(t.backup)names.add(t.backup);});
+  $("#dlNames").innerHTML=[...names].map(n=>'<option value="'+esc(n)+'">').join("");
+}
+
+/* ---------- 月表HTML（掲示・印刷用） ---------- */
+$("#btnMonthHtml").addEventListener("click",()=>{
+  const [y,m]=ui.ym;const map=monthMap(y,m);const ld=lastDay(y,m);
+  if(!DB.tasks.length){toast("登録がまだありません");return;}
+  let rows="";
+  for(let d=1;d<=ld;d++){
+    const evs=map[d]||[];if(!evs.length)continue;
+    rows+="<tr><td>"+m+"/"+d+"（"+DOWS[new Date(y,m-1,d).getDay()]+"）</td><td>"
+      +evs.map(t=>esc(t.name)+"（"+esc(t.owner||"—")+(t.backup?"／"+esc(t.backup):"<b>／第二走者なし⚠</b>")+"）").join("<br>")+"</td></tr>";
+  }
+  const doc='<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>'+y+"年"+m+'月 業務カレンダー</title><style>body{font-family:"Yu Gothic UI",Meiryo,sans-serif;padding:24px;color:#1f2430}h1{font-size:1.2em;color:#2b4a7a}table{border-collapse:collapse;width:100%;max-width:760px}td,th{border:1px solid #999;padding:.4em .7em;vertical-align:top}td:first-child{white-space:nowrap;font-weight:bold}b{color:#b3261e}.f{margin-top:12px;font-size:.75em;color:#5f6675}</style></head><body><h1>📅 '+y+"年"+m+"月の定例業務（担当／第二走者）</h1><table><tr><th>日付</th><th>業務</th></tr>"+rows+'</table><div class="f">業務カレンダー（属人化解消セット）より書き出し・評価監視には使わない・社外持ち出し不可</div></body></html>';
+  download("業務カレンダー_"+y+"-"+String(m).padStart(2,"0")+".html",doc,"text/html");
+  toast("🖨 月表を書き出しました（印刷して掲示できます）");
+});
+
+/* ---------- 書き出し・取り込み ---------- */
+$("#btnExport").addEventListener("click",()=>{
+  download("業務カレンダー_"+new Date().toISOString().slice(0,10)+".json",
+    JSON.stringify({app:"gyomu_cal",version:1,exported:new Date().toISOString(),tasks:DB.tasks},null,1),"application/json");
+  toast("📤 書き出しました（バックアップ／チーム共有用）");
+});
+$("#btnImport").addEventListener("click",()=>$("#fileImport").click());
+$("#fileImport").addEventListener("change",async ev=>{
+  const f=ev.target.files[0];ev.target.value="";if(!f)return;
+  try{
+    const data=JSON.parse(await f.text());
+    const inc=Array.isArray(data.tasks)?data.tasks:(Array.isArray(data)?data:null);
+    if(!inc)throw new Error("tasksがありません");
+    const ids=new Set(DB.tasks.map(t=>t.id));
+    const sig=t=>[t.name,JSON.stringify(t.rule),t.owner].join("|");
+    const sigs=new Set(DB.tasks.map(sig));
+    let add=0;
+    for(const t of inc){
+      if(!t||!t.name||!t.rule||!t.rule.type)continue;
+      if(ids.has(t.id)||sigs.has(sig(t)))continue;
+      DB.tasks.push({id:t.id||uid(),name:String(t.name).slice(0,120),rule:t.rule,
+        owner:String(t.owner||"").slice(0,50),backup:String(t.backup||"").slice(0,50),
+        minutes:Math.max(0,Number(t.minutes)||0),note:String(t.note||"").slice(0,2000)});
+      add++;
+    }
+    persist();renderAll();
+    alert("📥 取り込み完了: 追加 "+add+"件（重複 "+(inc.length-add)+"件は除外）");
+  }catch(err){alert("取り込めませんでした: "+err.message);}
+});
+function download(name,text,mime){
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([text],{type:mime+";charset=utf-8"}));
+  a.download=name;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
+}
+
+/* ---------- toast・♿ ---------- */
+let toastTimer=null;
+function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("on");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("on"),2600);}
+function applyA11y(s){
+  document.documentElement.style.setProperty("--zoom",s.zoom||1);
+  document.body.classList.toggle("clear",!!s.clear);
+  document.body.classList.toggle("roomy",!!s.roomy);
+  document.querySelectorAll("[data-zoom]").forEach(b=>b.setAttribute("aria-pressed",String(Number(b.dataset.zoom)===(s.zoom||1))));
+  $("#tglClear").setAttribute("aria-pressed",String(!!s.clear));
+  $("#tglRoomy").setAttribute("aria-pressed",String(!!s.roomy));
+}
+function saveA11y(patch){
+  let s={};try{s=JSON.parse(localStorage.getItem(A11Y_KEY)||"{}");}catch(e){}
+  Object.assign(s,patch);
+  try{localStorage.setItem(A11Y_KEY,JSON.stringify(s));}catch(e){}
+  applyA11y(s);
+}
+$("#a11yFab").addEventListener("click",()=>{
+  const p=$("#a11yPanel");p.classList.toggle("on");
+  $("#a11yFab").setAttribute("aria-expanded",String(p.classList.contains("on")));
+});
+document.querySelectorAll("[data-zoom]").forEach(b=>b.addEventListener("click",()=>saveA11y({zoom:Number(b.dataset.zoom)})));
+$("#tglClear").addEventListener("click",()=>saveA11y({clear:$("#tglClear").getAttribute("aria-pressed")!=="true"}));
+$("#tglRoomy").addEventListener("click",()=>saveA11y({roomy:$("#tglRoomy").getAttribute("aria-pressed")!=="true"}));
+
+/* ---------- 起動 ---------- */
+function renderAll(){renderDatalists();renderCal();renderList();renderRisk();}
+buildRuleInputs();
+load();
+{const n=new Date();ui.ym=[n.getFullYear(),n.getMonth()+1];}
+try{applyA11y(JSON.parse(localStorage.getItem(A11Y_KEY)||"{}"));}catch(e){applyA11y({});}
+renderAll();
+</script>
+</body>
+</html>

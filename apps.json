@@ -871,6 +871,66 @@
       "badge": "",
       "biz": "業務支援",
       "date": "2026-07-16"
+    },
+    {
+      "id": "seisan_board",
+      "title": "🧩 生産管理ボードPro（v96β）",
+      "desc": "生産管理ボードPro（v96β）",
+      "icon": "🧩",
+      "path": "seisan_board/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "shougou_desk",
+      "title": "🧩 照合デスク",
+      "desc": "照合デスク",
+      "icon": "🧩",
+      "path": "shougou_desk/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "skill_matrix",
+      "title": "🧩 スキルマトリクス",
+      "desc": "スキルマトリクス",
+      "icon": "🧩",
+      "path": "skill_matrix/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "oshiete_log",
+      "title": "🧩 教えてログ",
+      "desc": "教えてログ",
+      "icon": "🧩",
+      "path": "oshiete_log/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "gyomu_calendar",
+      "title": "🧩 業務カレンダー",
+      "desc": "業務カレンダー",
+      "icon": "🧩",
+      "path": "gyomu_calendar/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "st_calendar_maker",
+      "title": "🧩 STマスタ・カレンダーメーカー",
+      "desc": "STマスタ・カレンダーメーカー",
+      "icon": "🧩",
+      "path": "st_calendar_maker/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
     }
   ]
 }
