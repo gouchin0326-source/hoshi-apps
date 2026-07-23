@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>段取り替え時間記録ツール</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⏱️</text></svg>'>
+  <style>
+    /* 基本スタイル・インクルーシブ設計（フォントサイズ16px以上、高コントラスト） */
+    :root {
+      --bg-color: #f8f9fa;
+      --text-color: #212529;
+      --primary-color: #0d6efd;
+      --primary-hover: #0b5ed7;
+      --accent-color: #198754;
+      --accent-hover: #157347;
+      --border-color: #adb5bd;
+      --card-bg: #ffffff;
+      --focus-outline: #ffc107;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      padding: 10px;
+    }
+
+    header {
+      background-color: #ffffff;
+      border: 3px solid var(--text-color);
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+
+    .header-title-container {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .header-emoji {
+      font-size: 3rem;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      color: var(--text-color);
+    }
+
+    .header-desc {
+      margin-top: 10px;
+      font-size: 1rem;
+      font-weight: bold;
+      color: #b02a37;
+    }
+
+    /* ボタン共通 */
+    button, .btn {
+      font-size: 16px;
+      font-weight: bold;
+      padding: 12px 20px;
+      border: 3px solid var(--text-color);
+      border-radius: 6px;
+      background-color: #ffffff;
+      color: var(--text-color);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    button:focus, input:focus, select:focus, textarea:focus {
+      outline: 4px solid var(--focus-outline);
+      outline-offset: 2px;
+    }
+
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: #ffffff;
+      border-color: #084298;
+    }
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn-accent {
+      background-color: var(--accent-color);
+      color: #ffffff;
+      border-color: #0f5132;
+    }
+    .btn-accent:hover {
+      background-color: var(--accent-hover);
+    }
+
+    .btn-help {
+      background-color: #ffc107;
+      color: #000000;
+      border-color: #000000;
+    }
+
+    /* グリッドレイアウト */
+    .grid-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    @media (min-width: 1024px) {
+      .grid-container {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    /* 各種カード */
+    .card {
+      background-color: var(--card-bg);
+      border: 3px solid var(--text-color);
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .card-title {
+      font-size: 1.4rem;
+      margin-bottom: 15px;
+      border-bottom: 3px solid var(--text-color);
+      padding-bottom: 5px;
+    }
+
+    /* 入力フォーム */
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="time"],
+    .form-group input[type="number"],
+    .form-group textarea {
+      width: 100%;
+      font-size: 16px;
+      padding: 10px;
+      border: 2px solid var(--text-color);
+      border-radius: 6px;
+    }
+
+    .radio-group {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 10px;
+    }
+
+    .radio-option {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .radio-option input {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* テーブル・一覧 */
+    .table-container {
+      overflow-x: auto;
+      margin-top: 15px;
+      border: 2px solid var(--text-color);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 16px;
+    }
+
+    th, td {
+      border: 1px solid var(--text-color);
+      padding: 12px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #e9ecef;
+      font-weight: bold;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f1f3f5;
+    }
+    tr:nth-child(odd) {
+      background-color: #ffffff;
+    }
+
+    .sort-btn {
+      padding: 4px 8px;
+      font-size: 14px;
+      margin-left: 5px;
+    }
+
+    /* 集計表示・モックグラフ */
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 15px;
+    }
+
+    @media (min-width: 768px) {
+      .chart-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .chart-card {
+      border: 2px solid var(--text-color);
+      border-radius: 6px;
+      padding: 10px;
+      background-color: #fff;
+    }
+
+    .chart-card h4 {
+      font-size: 1.1rem;
+      margin-bottom: 10px;
+      border-bottom: 1px solid var(--text-color);
+    }
+
+    .chart-bar-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .chart-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .chart-label {
+      font-size: 14px;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .chart-track {
+      background-color: #e9ecef;
+      height: 24px;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid #6c757d;
+    }
+
+    .chart-fill {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      padding-left: 5px;
+      color: #ffffff;
+      font-weight: bold;
+      font-size: 12px;
+      text-shadow: 1px 1px 2px #000000;
+      transition: width 0.3s ease;
+    }
+
+    /* コントラストの高い棒グラフカラー */
+    .color-0 { background-color: #dc3545; } /* 赤 */
+    .color-1 { background-color: #0d6efd; } /* 青 */
+    .color-2 { background-color: #198754; } /* 緑 */
+    .color-3 { background-color: #ffc107; color: #000; } /* 黄 */
+
+    /* エクスポート・エリア */
+    .export-area {
+      margin-top: 15px;
+    }
+    .export-textarea {
+      width: 100%;
+      height: 120px;
+      font-family: monospace;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+    .export-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* モーダル */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 10px;
+    }
+
+    .modal-content {
+      background-color: #ffffff;
+      border: 4px solid var(--text-color);
+      border-radius: 8px;
+      max-width: 600px;
+      width: 100%;
+      padding: 20px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 3px solid var(--text-color);
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+    }
+
+    .modal-body ol {
+      padding-left: 20px;
+      margin: 15px 0;
+    }
+
+    .modal-body li {
+      margin-bottom: 10px;
+    }
+
+    .btn-close {
+      background-color: #dc3545;
+      color: white;
+      border-color: #5c161c;
+    }
+
+    /* ユーティリティ */
+    .mt-20 { margin-top: 20px; }
+    .flex-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .text-danger {
+      color: #dc3545;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-title-container">
+      <div class="header-emoji" aria-hidden="true">⏱️</div>
+      <div>
+        <h1>段取り替え時間記録ツール</h1>
+        <p class="header-desc">改善のための道具です。個人の評価ではなく、作業改善にご活用ください。</p>
+      </div>
+    </div>
+    <div style="margin-top: 15px;">
+      <button class="btn btn-help" id="btnHelp" type="button">❓ 使い方を見る</button>
+    </div>
+  </header>
+
+  <div class="grid-container">
+    <section class="card" aria-labelledby="form-title">
+      <h2 id="form-title" class="card-title">📝 データの入力</h2>
+      <form id="recordForm">
+        
+        <div class="form-group">
+          <label for="machineName">設備名 <span class="text-danger">*</span></label>
+          <input type="text" id="machineName" required placeholder="例: Aライン射出機">
+        </div>
+
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <label for="partBefore">品番（切替前） <span class="text-danger">*</span></label>
+            <input type="text" id="partBefore" required placeholder="例: ABC-123">
+          </div>
+          <div>
+            <label for="partAfter">品番（切替後） <span class="text-danger">*</span></label>
+            <input type="text" id="partAfter" required placeholder="例: XYZ-789">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="startTime">開始時刻 <span class="text-danger">*</span></label>
+          <input type="time" id="startTime" required value="08:00">
+        </div>
+
+        <div class="form-group">
+          <label>終了時間・所要時間の入力方法</label>
+          <div class="radio-group">
+            <label class="radio-option">
+              <input type="radio" name="timeInputType" value="endTime" checked id="radioEnd"> 終了時刻を入力する
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="timeInputType" value="duration" id="radioDuration"> 所要分を直接入力する
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group" id="endTimeContainer">
+          <label for="endTime">終了時刻</label>
+          <input type="time" id="endTime" value="08:30">
+        </div>
+
+        <div class="form-group" id="durationContainer" style="display: none;">
+          <label for="durationMinutes">所要分（分単位）</label>
+          <input type="number" id="durationMinutes" min="0" step="0.1" value="30" placeholder="例: 25">
+        </div>
+
+        <div class="form-group">
+          <label for="operator">担当者 <span class="text-danger">*</span></label>
+          <input type="text" id="operator" required placeholder="例: 山田 太郎">
+        </div>
+
+        <div class="form-group">
+          <label for="memo">メモ（オプション）</label>
+          <textarea id="memo" rows="3" placeholder="工夫した点や、遅れた原因など"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%;">💾 登録する</button>
+      </form>
+    </section>
+
+    <section class="card" aria-labelledby="chart-title">
+      <h2 id="chart-title" class="card-title">📊 リアルタイム集計</h2>
+      <div class="chart-grid">
+        
+        <div class="chart-card">
+          <h4>設備別平均所要時間 (分)</h4>
+          <div id="chartMachineAvg" class="chart-bar-container"></div>
+        </div>
+
+        <div class="chart-card">
+          <h4>品番別平均所要時間 (分)</h4>
+          <div id="chartPartAvg" class="chart-bar-container"></div>
+        </div>
+
+        <div class="chart-card">
+          <h4>設備別件数 (件)</h4>
+          <div id="chartMachineCount" class="chart-bar-container"></div>
+        </div>
+
+        <div class="chart-card">
+          <h4>品番別件数 (件)</h4>
+          <div id="chartPartCount" class="chart-bar-container"></div>
+        </div>
+
+      </div>
+    </section>
+  </div>
+
+  <section class="card mt-20" aria-labelledby="list-title">
+    <div class="flex-header">
+      <h2 id="list-title" class="card-title" style="border: none; margin: 0;">📋 記録データ一覧</h2>
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <label for="sortOrder" style="font-weight: bold;">所要時間で並べ替え:</label>
+        <button id="btnSort" class="btn sort-btn">🔽 昇順にする</button>
+        <button id="btnClearData" class="btn" style="background-color: #f8d7da; border-color: #f5c2c7;">🗑️ 全消去</button>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table id="dataTable">
+        <thead>
+          <tr>
+            <th>設備名</th>
+            <th>品番（前 → 後）</th>
+            <th>開始</th>
+            <th>終了</th>
+            <th>所要時間</th>
+            <th>担当者</th>
+            <th>メモ</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card mt-20" aria-labelledby="export-title">
+    <h2 id="export-title" class="card-title">📤 データの出力 (エクスポート)</h2>
+    <p>蓄積したデータをCSV形式で出力します。Excelや表計算ソフトに取り込んで使えます。</p>
+    <div class="export-area">
+      <button id="btnExport" class="btn btn-accent" style="margin-bottom: 10px;">📄 CSVデータを生成する</button>
+      <textarea id="exportTextarea" class="export-textarea" readonly placeholder="「CSVデータを生成する」を押すと、ここにCSVデータが表示されます。"></textarea>
+      <div class="export-buttons">
+        <button id="btnCopy" class="btn">📋 クリップボードにコピー</button>
+        <a id="btnDownload" class="btn btn-primary" href="#" style="text-decoration: none;">💾 CSVファイルをダウンロード</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="modal-overlay" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-title" style="font-size: 1.5rem;">❓ 使い方ガイド</h2>
+        <button class="btn btn-close" id="btnCloseHelp" type="button">✖ 閉じる</button>
+      </div>
+      <div class="modal-body">
+        <h3>1. このアプリで何ができる？</h3>
+        <p>製造現場などでの「段取り替え（機種切り替え）」にかかる時間を正確に記録・蓄積し、設備別・品番別に自動で平均時間や件数を集計するツールです。ボトルネックを見つけ、作業を効率化・改善するために役立ちます。</p>
+
+        <h3>2. 基本的な使い方の4ステップ</h3>
+        <ol>
+          <li><strong>必要事項の入力:</strong> 「設備名」「品番（前・後）」「開始時刻」「担当者」を入力します。</li>
+          <li><strong>時間の指定:</strong> 終了時刻を直接指定して時間を自動計算させるか、所要分（何分かかったか）を直接入力するかを選べます。</li>
+          <li><strong>データの登録:</strong> 「登録する」ボタンを押すと、下部の一覧表に記録が追加され、集計グラフがリアルタイムに更新されます。</li>
+          <li><strong>並べ替え:</strong> 一覧表の「所要時間で並べ替え」ボタンを使うことで、時間のかかっている作業順に整理できます。</li>
+        </ol>
+
+        <h3>3. データについて</h3>
+        <p>入力したすべてのデータは、<strong>この端末のブラウザ内（localStorage）だけに安全に保存</strong>されます。外部のサーバーへ送信されることはないため、オフラインでも安心してご利用いただけます。</p>
+
+        <h3>4. エクスポートの使い方</h3>
+        <p>最下部の「📤 データの出力」セクションにて、「CSVデータを生成する」ボタンを押すと出力用テキストが表示されます。コピーしてメールやチャットに貼り付けたり、ファイルをダウンロードしてExcelなどで読み込んで活用してください。</p>
+
+        <div style="margin-top: 20px; text-align: right;">
+          <button class="btn btn-close" id="btnCloseHelpBottom" type="button">閉じて戻る</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 状態管理
+    let setupData = [];
+    let sortAscending = true; // ソート用 (true: 昇順, false: 降順)
+
+    // DOM要素
+    const recordForm = document.getElementById('recordForm');
+    const radioEnd = document.getElementById('radioEnd');
+    const radioDuration = document.getElementById('radioDuration');
+    const endTimeContainer = document.getElementById('endTimeContainer');
+    const durationContainer = document.getElementById('durationContainer');
+    const startTimeInput = document.getElementById('startTime');
+    const endTimeInput = document.getElementById('endTime');
+    const durationInput = document.getElementById('durationMinutes');
+    const tableBody = document.getElementById('tableBody');
+    const btnSort = document.getElementById('btnSort');
+    const btnClearData = document.getElementById('btnClearData');
+
+    // エクスポート用DOM
+    const btnExport = document.getElementById('btnExport');
+    const exportTextarea = document.getElementById('exportTextarea');
+    const btnCopy = document.getElementById('btnCopy');
+    const btnDownload = document.getElementById('btnDownload');
+
+    // モーダル用DOM
+    const btnHelp = document.getElementById('btnHelp');
+    const helpModal = document.getElementById('helpModal');
+    const btnCloseHelp = document.getElementById('btnCloseHelp');
+    const btnCloseHelpBottom = document.getElementById('btnCloseHelpBottom');
+
+    // 初期起動時の処理
+    window.addEventListener('DOMContentLoaded', () => {
+      loadData();
+      updateView();
+      setupTimeCalculationListeners();
+    });
+
+    // データの読み込み
+    function loadData() {
+      const stored = localStorage.getItem('setupData');
+      if (stored) {
+        try {
+          setupData = JSON.parse(stored);
+        } catch (e) {
+          setupData = [];
+        }
+      }
+    }
+
+    // データの保存
+    function saveData() {
+      localStorage.setItem('setupData', JSON.stringify(setupData));
+    }
+
+    // 入力エリアの切り替え
+    radioEnd.addEventListener('change', toggleTimeInputFields);
+    radioDuration.addEventListener('change', toggleTimeInputFields);
+
+    function toggleTimeInputFields() {
+      if (radioEnd.checked) {
+        endTimeContainer.style.display = 'block';
+        durationContainer.style.display = 'none';
+        calculateDuration();
+      } else {
+        endTimeContainer.style.display = 'none';
+        durationContainer.style.display = 'block';
+        calculateEndTime();
+      }
+    }
+
+    // 時刻と所要時間の相互自動計算
+    function setupTimeCalculationListeners() {
+      startTimeInput.addEventListener('change', () => {
+        if (radioEnd.checked) calculateDuration();
+        else calculateEndTime();
+      });
+      endTimeInput.addEventListener('change', calculateDuration);
+      durationInput.addEventListener('input', calculateEndTime);
+    }
+
+    // 開始・終了時刻から所要分を計算
+    function calculateDuration() {
+      const startVal = startTimeInput.value;
+      const endVal = endTimeInput.value;
+      if (!startVal || !endVal) return;
+
+      const [sH, sM] = startVal.split(':').map(Number);
+      const [eH, eM] = endVal.split(':').map(Number);
+
+      let diffMinutes = (eH * 60 + eM) - (sH * 60 + sM);
+      if (diffMinutes < 0) {
+        // 日を跨いだ場合の補正 (24時間加算)
+        diffMinutes += 24 * 60;
+      }
+      durationInput.value = diffMinutes.toFixed(1);
+    }
+
+    // 開始時刻と所要分から終了時刻を計算
+    function calculateEndTime() {
+      const startVal = startTimeInput.value;
+      const durVal = parseFloat(durationInput.value);
+      if (!startVal || isNaN(durVal)) return;
+
+      const [sH, sM] = startVal.split(':').map(Number);
+      let totalMinutes = sH * 60 + sM + Math.round(durVal);
+
+      // 24時間を超えたらループ
+      totalMinutes = totalMinutes % (24 * 60);
+      if (totalMinutes < 0) totalMinutes += 24 * 60;
+
+      const eH = Math.floor(totalMinutes / 60);
+      const eM = totalMinutes % 60;
+
+      const formatH = String(eH).padStart(2, '0');
+      const formatM = String(eM).padStart(2, '0');
+      endTimeInput.value = `${formatH}:${formatM}`;
+    }
+
+    // フォーム送信（登録処理）
+    recordForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const machine = document.getElementById('machineName').value.trim();
+      const pBefore = document.getElementById('partBefore').value.trim();
+      const pAfter = document.getElementById('partAfter').value.trim();
+      const start = startTimeInput.value;
+      const operator = document.getElementById('operator').value.trim();
+      const memo = document.getElementById('memo').value.trim();
+
+      let duration = 0;
+      let end = '';
+
+      if (radioEnd.checked) {
+        calculateDuration();
+        end = endTimeInput.value;
+        duration = parseFloat(durationInput.value) || 0;
+      } else {
+        calculateEndTime();
+        end = endTimeInput.value;
+        duration = parseFloat(durationInput.value) || 0;
+      }
+
+      if (duration < 0) {
+        alert('エラー：所要時間がマイナスになっています。時刻を確認してください。');
+        return;
+      }
+
+      const newRecord = {
+        id: Date.now().toString(),
+        machine,
+        partBefore: pBefore,
+        partAfter: pAfter,
+        start,
+        end,
+        duration: Math.round(duration * 10) / 10, // 小数点1桁
+        operator,
+        memo
+      };
+
+      setupData.push(newRecord);
+      saveData();
+      updateView();
+
+      // フォーム一部初期化
+      document.getElementById('partBefore').value = pAfter; // 連続作業を考慮して次品番へ
+      document.getElementById('partAfter').value = '';
+      document.getElementById('memo').value = '';
+      startTimeInput.value = end; // 次回の開始は今回の終了時刻をデフォルトにする
+      
+      // 再計算
+      if (radioEnd.checked) {
+        calculateDuration();
+      } else {
+        calculateEndTime();
+      }
+    });
+
+    // 削除処理
+    window.deleteRecord = function(id) {
+      if (confirm('この記録を削除してもよろしいですか？')) {
+        setupData = setupData.filter(item => item.id !== id);
+        saveData();
+        updateView();
+      }
+    };
+
+    // ソートボタン切り替え
+    btnSort.addEventListener('click', () => {
+      sortAscending = !sortAscending;
+      btnSort.textContent = sortAscending ? '🔽 昇順にする' : '🔼 降順にする';
+      renderTable();
+    });
+
+    // 全データ削除
+    btnClearData.addEventListener('click', () => {
+      if (confirm('本当にすべてのデータを消去しますか？この操作は取り消せません。')) {
+        setupData = [];
+        saveData();
+        updateView();
+      }
+    });
+
+    // 画面全体を再描画（一覧＆集計）
+    function updateView() {
+      renderTable();
+      renderCharts();
+    }
+
+    // テーブルの描画
+    function renderTable() {
+      // ソート適用
+      let displayData = [...setupData];
+      displayData.sort((a, b) => {
+        return sortAscending ? a.duration - b.duration : b.duration - a.duration;
+      });
+
+      tableBody.innerHTML = '';
+      if (displayData.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="8" style="text-align: center;">データがありません。上のフォームから登録してください。</td></tr>`;
+        return;
+      }
+
+      displayData.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${escapeHtml(item.machine)}</strong></td>
+          <td>${escapeHtml(item.partBefore)} → ${escapeHtml(item.partAfter)}</td>
+          <td>${escapeHtml(item.start)}</td>
+          <td>${escapeHtml(item.end)}</td>
+          <td><strong>${item.duration.toFixed(1)} 分</strong></td>
+          <td>${escapeHtml(item.operator)}</td>
+          <td style="font-size: 14px; max-width: 200px; word-break: break-all;">${escapeHtml(item.memo || '-')}</td>
+          <td>
+            <button class="btn" style="padding: 5px 10px; font-size: 14px; background-color: #f8f9fa; border-color: #dc3545;" onclick="deleteRecord('${item.id}')">削除</button>
+          </td>
+        `;
+        tableBody.appendChild(tr);
+      });
+    }
+
+    // 集計グラフ・リストの描画
+    function renderCharts() {
+      // 1. 設備別集計用
+      const machineMap = {};
+      // 2. 品番ペア別集計用
+      const partMap = {};
+
+      setupData.forEach(item => {
+        const mKey = item.machine;
+        const pKey = `${item.partBefore}→${item.partAfter}`;
+
+        // 設備
+        if (!machineMap[mKey]) {
+          machineMap[mKey] = { totalTime: 0, count: 0 };
+        }
+        machineMap[mKey].totalTime += item.duration;
+        machineMap[mKey].count += 1;
+
+        // 品番
+        if (!partMap[pKey]) {
+          partMap[pKey] = { totalTime: 0, count: 0 };
+        }
+        partMap[pKey].totalTime += item.duration;
+        partMap[pKey].count += 1;
+      });
+
+      // グラフHTML生成用の汎用関数
+      // colorClassをインデックスに合わせて高コントラストカラー (0〜3) に割り振る
+      function buildChartHtml(dataArray, valueType) {
+        if (dataArray.length === 0) {
+          return '<p style="color:#6c757d; font-size:14px;">データが登録されると表示されます</p>';
+        }
+
+        // 最大値を見つけて割合を算出する
+        const maxVal = Math.max(...dataArray.map(d => d.val));
+        
+        let html = '';
+        dataArray.forEach((item, index) => {
+          const colorClass = `color-${index % 4}`;
+          const percentage = maxVal > 0 ? (item.val / maxVal) * 100 : 0;
+          const displayVal = valueType === 'minutes' ? `${item.val.toFixed(1)}分` : `${item.val}件`;
+
+          html += `
+            <div class="chart-item">
+              <div class="chart-label">
+                <span>${escapeHtml(item.key)}</span>
+                <span>${displayVal}</span>
+              </div>
+              <div class="chart-track">
+                <div class="chart-fill ${colorClass}" style="width: ${Math.max(percentage, 5)}%">
+                  ${displayVal}
+                </div>
+              </div>
+            </div>
+          `;
+        });
+        return html;
+      }
+
+      // データ成形：設備平均
+      const machineAvgArr = Object.keys(machineMap).map(key => ({
+        key,
+        val: machineMap[key].totalTime / machineMap[key].count
+      }));
+      document.getElementById('chartMachineAvg').innerHTML = buildChartHtml(machineAvgArr, 'minutes');
+
+      // データ成形：品番平均
+      const partAvgArr = Object.keys(partMap).map(key => ({
+        key,
+        val: partMap[key].totalTime / partMap[key].count
+      }));
+      document.getElementById('chartPartAvg').innerHTML = buildChartHtml(partAvgArr, 'minutes');
+
+      // データ成形：設備件数
+      const machineCountArr = Object.keys(machineMap).map(key => ({
+        key,
+        val: machineMap[key].count
+      }));
+      document.getElementById('chartMachineCount').innerHTML = buildChartHtml(machineCountArr, 'count');
+
+      // データ成形：品番件数
+      const partCountArr = Object.keys(partMap).map(key => ({
+        key,
+        val: partMap[key].count
+      }));
+      document.getElementById('chartPartCount').innerHTML = buildChartHtml(partCountArr, 'count');
+    }
+
+    // エクスポート処理
+    btnExport.addEventListener('click', () => {
+      if (setupData.length === 0) {
+        exportTextarea.value = 'エクスポートするデータがありません。先にデータを登録してください。';
+        return;
+      }
+
+      // CSV生成 (BOM付き UTF-8 でExcel対策)
+      const headers = ['設備名', '切替前品番', '切替後品番', '開始時刻', '終了時刻', '所要時間(分)', '担当者', 'メモ'];
+      const rows = setupData.map(item => [
+        item.machine,
+        item.partBefore,
+        item.partAfter,
+        item.start,
+        item.end,
+        item.duration,
+        item.operator,
+        item.memo || ''
+      ]);
+
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(val => `"${val.toString().replace(/"/g, '""')}"`).join(','))
+      ].join('\n');
+
+      exportTextarea.value = csvContent;
+
+      // ダウンロードリンクの設定 (BOM追加)
+      const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+      const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      
+      btnDownload.href = url;
+      btnDownload.setAttribute('download', `dandori_record_${getFormattedDate()}.csv`);
+      btnDownload.style.pointerEvents = 'auto';
+      btnDownload.style.opacity = '1';
+    });
+
+    // クリップボードにコピー
+    btnCopy.addEventListener('click', () => {
+      const text = exportTextarea.value;
+      if (!text || text.startsWith('エクスポートするデータ')) {
+        alert('コピーするデータがありません。生成してからコピーしてください。');
+        return;
+      }
+      
+      navigator.clipboard.writeText(text)
+        .then(() => alert('CSVデータをクリップボードにコピーしました！'))
+        .catch(err => alert('コピーに失敗しました: ' + err));
+    });
+
+    // モーダルイベント
+    btnHelp.addEventListener('click', () => {
+      helpModal.style.display = 'flex';
+      btnCloseHelp.focus();
+    });
+
+    const closeModal = () => {
+      helpModal.style.display = 'none';
+      btnHelp.focus();
+    };
+
+    btnCloseHelp.addEventListener('click', closeModal);
+    btnCloseHelpBottom.addEventListener('click', closeModal);
+
+    // モーダル外クリックで閉じる
+    helpModal.addEventListener('click', (e) => {
+      if (e.target === helpModal) {
+        closeModal();
+      }
+    });
+
+    // エスケープ処理
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // 日時生成
+    function getFormattedDate() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      const h = String(now.getHours()).padStart(2, '0');
+      const min = String(now.getMinutes()).padStart(2, '0');
+      return `${y}${m}${d}_${h}${min}`;
+    }
+  </script>
+</body>
+</html>

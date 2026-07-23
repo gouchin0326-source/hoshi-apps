@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>百分率計算ツール</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📊</text></svg>'>
+  <style>
+    /* 基本デザイン・リセット */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    :root {
+      --primary-color: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --text-color: #1e293b;
+      --border-color: #cbd5e1;
+      --increase-color: #1d4ed8; /* 増加：青 */
+      --decrease-color: #dc2626; /* 減少：赤 */
+      --focus-ring: #93c5fd;
+    }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.6;
+      font-size: 1.125rem; /* 大きめの基本文字サイズ */
+      padding: 16px;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto 40px auto;
+    }
+
+    /* ヘッダー */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .title-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .app-icon {
+      font-size: 2.5rem;
+      user-select: none;
+    }
+    h1 {
+      font-size: 1.75rem;
+      margin: 0;
+      font-weight: bold;
+    }
+
+    /* ボタン共通 */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      padding: 12px 20px;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background-color: var(--primary-color);
+      color: #ffffff;
+      text-decoration: none;
+    }
+    .btn:hover {
+      background-color: var(--primary-hover);
+    }
+    .btn:focus-visible {
+      outline: 3px solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+    .btn-help {
+      background-color: #475569;
+    }
+    .btn-help:hover {
+      background-color: #334155;
+    }
+
+    /* メインカード */
+    .card {
+      background: var(--card-bg);
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+
+    /* フォームパーツ */
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    select, input[type="number"] {
+      width: 100%;
+      font-size: 1.25rem; /* 入力欄を大きめに */
+      padding: 12px;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      background-color: #ffffff;
+      color: var(--text-color);
+      transition: border-color 0.2s;
+    }
+    select:focus, input[type="number"]:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px var(--focus-ring);
+    }
+
+    /* 入力グループ（横並び） */
+    .input-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .input-field-wrapper {
+      flex: 1;
+      min-width: 120px;
+    }
+    .unit {
+      font-weight: bold;
+      font-size: 1.2rem;
+    }
+
+    /* 結果エリア */
+    .result-container {
+      background-color: #f1f5f9;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 24px;
+      text-align: center;
+    }
+    .result-label {
+      font-size: 1rem;
+      color: #475569;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+    .result-value {
+      font-size: 2rem;
+      font-weight: bold;
+      word-break: break-all;
+      margin-bottom: 16px;
+    }
+    .text-increase {
+      color: var(--increase-color);
+    }
+    .text-decrease {
+      color: var(--decrease-color);
+    }
+    .text-normal {
+      color: var(--text-color);
+    }
+
+    /* アクションボタン群 */
+    .action-group {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn-action {
+      background-color: #0f172a;
+    }
+    .btn-action:hover {
+      background-color: #1e293b;
+    }
+
+    /* ポップアップメッセージ（コピー通知） */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background-color: #1e293b;
+      color: #ffffff;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-size: 1rem;
+      font-weight: bold;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+      transition: transform 0.3s ease-in-out;
+      z-index: 1000;
+      pointer-events: none;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* モーダル（使い方マニュアル） */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      padding: 16px;
+    }
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      max-width: 500px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      border: 2px solid var(--border-color);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+    }
+    .modal-header {
+      padding: 16px 20px;
+      background-color: #f1f5f9;
+      border-bottom: 2px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: bold;
+      margin: 0;
+    }
+    .modal-close-x {
+      background: none;
+      border: none;
+      font-size: 1.75rem;
+      cursor: pointer;
+      color: #64748b;
+      padding: 4px 12px;
+    }
+    .modal-close-x:focus-visible {
+      outline: 2px solid var(--primary-color);
+    }
+    .modal-body {
+      padding: 20px;
+    }
+    .modal-body h3 {
+      font-size: 1.15rem;
+      margin-top: 0;
+      border-left: 4px solid var(--primary-color);
+      padding-left: 8px;
+    }
+    .modal-body ol {
+      padding-left: 24px;
+      margin-bottom: 20px;
+    }
+    .modal-body li {
+      margin-bottom: 12px;
+    }
+    .modal-footer {
+      padding: 12px 20px;
+      border-top: 2px solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+      background-color: #f8fafc;
+    }
+
+    /* スクリーンリーダー用非表示 */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="title-area">
+        <span class="app-icon" aria-hidden="true">📊</span>
+        <h1>百分率計算ツール</h1>
+      </div>
+      <button class="btn btn-help" id="btnOpenHelp" aria-haspopup="dialog">❓ 使い方</button>
+    </header>
+
+    <main>
+      <div class="card">
+        <div class="form-group">
+          <label id="modeLabel" for="modeSelect">計算モードを選択してください</label>
+          <select id="modeSelect" aria-labelledby="modeLabel">
+            <option value="mode1">1. AはBの何%？</option>
+            <option value="mode2">2. Aの○%は？</option>
+            <option value="mode3">3. A→Bの増減率？</option>
+          </select>
+        </div>
+
+        <div id="inputsMode1" class="mode-inputs">
+          <div class="form-group">
+            <div class="input-row">
+              <div class="input-field-wrapper">
+                <label for="m1A">数値A</label>
+                <input type="number" id="m1A" step="any" placeholder="例: 50">
+              </div>
+              <span class="unit">は</span>
+              <div class="input-field-wrapper">
+                <label for="m1B">数値B</label>
+                <input type="number" id="m1B" step="any" placeholder="例: 200">
+              </div>
+              <span class="unit">の何%？</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="inputsMode2" class="mode-inputs" style="display: none;">
+          <div class="form-group">
+            <div class="input-row">
+              <div class="input-field-wrapper">
+                <label for="m2A">数値A</label>
+                <input type="number" id="m2A" step="any" placeholder="例: 300">
+              </div>
+              <span class="unit">の</span>
+              <div class="input-field-wrapper">
+                <label for="m2P">パーセント（○%）</label>
+                <input type="number" id="m2P" step="any" placeholder="例: 20">
+              </div>
+              <span class="unit">%は？</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="inputsMode3" class="mode-inputs" style="display: none;">
+          <div class="form-group">
+            <div class="input-row">
+              <div class="input-field-wrapper">
+                <label for="m3A">元の数値A</label>
+                <input type="number" id="m3A" step="any" placeholder="例: 200">
+              </div>
+              <span class="unit">から</span>
+              <div class="input-field-wrapper">
+                <label for="m3B">変化後の数値B</label>
+                <input type="number" id="m3B" step="any" placeholder="例: 250">
+              </div>
+              <span class="unit">への増減率は？</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="result-container">
+          <div class="result-label" id="resultLabel">計算結果</div>
+          <div class="result-value text-normal" id="resultValue" aria-live="polite">--</div>
+          
+          <div class="action-group">
+            <button class="btn btn-action" id="btnCopy">📋 結果をコピー</button>
+            <button class="btn btn-action" id="btnDownload">📥 ダウンロード</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="alert" aria-live="assertive">コピーしました！</div>
+
+  <div class="modal-overlay" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modalTitle" class="modal-title">❓ このアプリの使い方</h2>
+        <button class="modal-close-x" id="btnCloseHelpX" aria-label="閉じる">×</button>
+      </div>
+      <div class="modal-body">
+        <h3>1. このアプリでできること</h3>
+        <p>普段の計算でよく使われる3パターンのパーセント計算を、数値を入力するだけで自動的かつスピーディに行うことができます。</p>
+
+        <h3>2. 基本の使い方（簡単3ステップ）</h3>
+        <ol>
+          <li>「<strong>計算モード</strong>」を選びます。</li>
+          <li>表示された空欄に<strong>数値を入力</strong>します（少数の入力も可能です）。</li>
+          <li>数値を入力すると、<strong>自動的</strong>に下に計算結果が表示されます。</li>
+        </ol>
+
+        <h3>3. 安心・安全な仕組み</h3>
+        <p>入力した数値や計算結果は、すべてお使いのスマートフォンやパソコンのブラウザ内（ローカル）に自動で保存されます。外部のサーバーへ送信されることは一切ありませんので、安心してご利用ください。</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="btnCloseHelp">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- DOM要素の取得 ---
+    const modeSelect = document.getElementById('modeSelect');
+    const inputsMode1 = document.getElementById('inputsMode1');
+    const inputsMode2 = document.getElementById('inputsMode2');
+    const inputsMode3 = document.getElementById('inputsMode3');
+
+    // モード1入力
+    const m1A = document.getElementById('m1A');
+    const m1B = document.getElementById('m1B');
+    // モード2入力
+    const m2A = document.getElementById('m2A');
+    const m2P = document.getElementById('m2P');
+    // モード3入力
+    const m3A = document.getElementById('m3A');
+    const m3B = document.getElementById('m3B');
+
+    // 表示 & アクション
+    const resultValue = document.getElementById('resultValue');
+    const btnCopy = document.getElementById('btnCopy');
+    const btnDownload = document.getElementById('btnDownload');
+
+    // ヘルプモーダル
+    const btnOpenHelp = document.getElementById('btnOpenHelp');
+    const btnCloseHelp = document.getElementById('btnCloseHelp');
+    const btnCloseHelpX = document.getElementById('btnCloseHelpX');
+    const helpModal = document.getElementById('helpModal');
+
+    // トースト
+    const toast = document.getElementById('toast');
+
+    // 一時保管用の最新計算テキスト
+    let currentResultText = '';
+
+    // --- ローカルストレージキーの定義 ---
+    const STORAGE_KEY = 'percentage_calc_data';
+
+    // --- 計算・表示ロジック ---
+    function calculate() {
+      const mode = modeSelect.value;
+      let resultStr = '';
+      let textClass = 'text-normal';
+
+      if (mode === 'mode1') {
+        const a = parseFloat(m1A.value);
+        const b = parseFloat(m1B.value);
+        if (!isNaN(a) && !isNaN(b)) {
+          if (b === 0) {
+            resultStr = 'エラー (Bに0は入力できません)';
+          } else {
+            const res = (a / b) * 100;
+            // 割り切れない場合に備え、適度に丸める（最大で小数第4位まで）
+            const formatted = Math.round(res * 10000) / 10000;
+            resultStr = `${formatted}%`;
+          }
+        } else {
+          resultStr = '--';
+        }
+      } else if (mode === 'mode2') {
+        const a = parseFloat(m2A.value);
+        const p = parseFloat(m2P.value);
+        if (!isNaN(a) && !isNaN(p)) {
+          const res = a * (p / 100);
+          const formatted = Math.round(res * 10000) / 10000;
+          resultStr = `${formatted}`;
+        } else {
+          resultStr = '--';
+        }
+      } else if (mode === 'mode3') {
+        const a = parseFloat(m3A.value);
+        const b = parseFloat(m3B.value);
+        if (!isNaN(a) && !isNaN(b)) {
+          if (a === 0) {
+            resultStr = 'エラー (元のAに0は入力できません)';
+          } else {
+            const res = ((b - a) / a) * 100;
+            const formatted = Math.round(res * 10000) / 10000;
+            if (formatted > 0) {
+              resultStr = `${formatted}%増`;
+              textClass = 'text-increase'; // 増加は青
+            } else if (formatted < 0) {
+              // 減少の場合は絶対値にして「減」を付与
+              resultStr = `${Math.abs(formatted)}%減`;
+              textClass = 'text-decrease'; // 減少は赤
+            } else {
+              resultStr = '0%（変化なし）';
+            }
+          }
+        } else {
+          resultStr = '--';
+        }
+      }
+
+      // 結果を画面へ適用
+      resultValue.textContent = resultStr;
+      resultValue.className = `result-value ${textClass}`;
+      currentResultText = resultStr;
+
+      // 状態を保存
+      saveToStorage();
+    }
+
+    // --- 表示切り替えロジック ---
+    function updateModeVisibility() {
+      const mode = modeSelect.value;
+      inputsMode1.style.display = 'none';
+      inputsMode2.style.display = 'none';
+      inputsMode3.style.display = 'none';
+
+      if (mode === 'mode1') {
+        inputsMode1.style.display = 'block';
+      } else if (mode === 'mode2') {
+        inputsMode2.style.display = 'block';
+      } else if (mode === 'mode3') {
+        inputsMode3.style.display = 'block';
+      }
+      calculate();
+    }
+
+    // --- ローカルストレージの保存・読込 ---
+    function saveToStorage() {
+      const data = {
+        mode: modeSelect.value,
+        m1A: m1A.value,
+        m1B: m1B.value,
+        m2A: m2A.value,
+        m2P: m2P.value,
+        m3A: m3A.value,
+        m3B: m3B.value
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function loadFromStorage() {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try {
+          const data = JSON.parse(stored);
+          if (data.mode) modeSelect.value = data.mode;
+          if (data.m1A !== undefined) m1A.value = data.m1A;
+          if (data.m1B !== undefined) m1B.value = data.m1B;
+          if (data.m2A !== undefined) m2A.value = data.m2A;
+          if (data.m2P !== undefined) m2P.value = data.m2P;
+          if (data.m3A !== undefined) m3A.value = data.m3A;
+          if (data.m3B !== undefined) m3B.value = data.m3B;
+        } catch (e) {
+          console.error("データの読み込みに失敗しました", e);
+        }
+      }
+      updateModeVisibility();
+    }
+
+    // --- イベントリスナー設定 ---
+
+    // 入力時の即時計算
+    const inputs = [m1A, m1B, m2A, m2P, m3A, m3B];
+    inputs.forEach(input => {
+      input.addEventListener('input', calculate);
+    });
+
+    modeSelect.addEventListener('change', updateModeVisibility);
+
+    // クリップボードへコピー
+    btnCopy.addEventListener('click', () => {
+      if (!currentResultText || currentResultText === '--') {
+        showToast('コピーする結果がありません');
+        return;
+      }
+      navigator.clipboard.writeText(currentResultText).then(() => {
+        showToast('📋 コピーしました！');
+      }).catch(() => {
+        showToast('コピーに失敗しました');
+      });
+    });
+
+    // テキストファイルダウンロード
+    btnDownload.addEventListener('click', () => {
+      if (!currentResultText || currentResultText === '--') {
+        showToast('ダウンロードする結果がありません');
+        return;
+      }
+      
+      let textContent = '';
+      const mode = modeSelect.value;
+      if (mode === 'mode1') {
+        textContent = `【百分率計算】\n${m1A.value} は ${m1B.value} の何％？\n結果: ${currentResultText}\n`;
+      } else if (mode === 'mode2') {
+        textContent = `【百分率計算】\n${m2A.value} の ${m2P.value}％ は？\n結果: ${currentResultText}\n`;
+      } else if (mode === 'mode3') {
+        textContent = `【百分率計算】\n${m3A.value} から ${m3B.value} への増減率？\n結果: ${currentResultText}\n`;
+      }
+
+      const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `percentage_result_${new Date().toISOString().slice(0,10)}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+
+    // トースト通知表示用
+    let toastTimer;
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2000);
+    }
+
+    // モーダルの開閉操作
+    function openHelp() {
+      helpModal.classList.add('open');
+      btnCloseHelp.focus();
+    }
+    function closeHelp() {
+      helpModal.classList.remove('open');
+      btnOpenHelp.focus();
+    }
+
+    btnOpenHelp.addEventListener('click', openHelp);
+    btnCloseHelp.addEventListener('click', closeHelp);
+    btnCloseHelpX.addEventListener('click', closeHelp);
+
+    // モーダル外クリックで閉じる
+    helpModal.addEventListener('click', (e) => {
+      if (e.target === helpModal) {
+        closeHelp();
+      }
+    });
+
+    // キーボード操作補助：ESCキーでヘルプモーダルを閉じる
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && helpModal.classList.contains('open')) {
+        closeHelp();
+      }
+    });
+
+    // 起動時初期設定
+    window.addEventListener('DOMContentLoaded', () => {
+      loadFromStorage();
+    });
+  </script>
+</body>
+</html>

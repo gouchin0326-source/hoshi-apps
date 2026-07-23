@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>廃棄物管理ツール</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🗑️</text></svg>'>
+  <style>
+    /* ----------------------------------
+       共通変数・リセット
+       ---------------------------------- */
+    :root {
+      --primary-color: #005a9c;
+      --primary-hover: #004477;
+      --bg-color: #f7f9fa;
+      --card-bg: #ffffff;
+      --text-color: #222222;
+      --border-color: #cccccc;
+      --focus-outline: #ffbf47;
+      --font-size-base: 16px;
+      --font-size-large: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: var(--font-size-base);
+      line-height: 1.6;
+      color: var(--text-color);
+      background-color: var(--bg-color);
+      padding: 20px;
+    }
+
+    /* ----------------------------------
+       コントラストとキーボード操作の強化
+       ---------------------------------- */
+    a:focus, button:focus, input:focus, select:focus, textarea:focus {
+      outline: 4px solid var(--focus-outline);
+      outline-offset: 2px;
+    }
+
+    /* ----------------------------------
+       ヘッダー
+       ---------------------------------- */
+    header {
+      background-color: var(--card-bg);
+      border-bottom: 4px solid var(--primary-color);
+      padding: 24px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .header-title-area {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .header-icon {
+      font-size: 3rem;
+      line-height: 1;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      color: var(--primary-color);
+    }
+
+    .subtitle {
+      font-size: var(--font-size-large);
+      font-weight: bold;
+      color: #b33a00; /* 高コントラストの警告・注意喚起カラー */
+      background-color: #fff0f0;
+      padding: 10px 16px;
+      border-radius: 6px;
+      border-left: 5px solid #d9381e;
+    }
+
+    /* ----------------------------------
+       ボタン・コントロール
+       ---------------------------------- */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 24px;
+      font-size: var(--font-size-base);
+      font-weight: bold;
+      border: 2px solid transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background-color 0.2s, transform 0.1s;
+    }
+
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background-color: #f0f0f0;
+      color: #222222;
+      border: 2px solid #555555;
+    }
+
+    .btn-secondary:hover {
+      background-color: #e0e0e0;
+    }
+
+    .btn-help {
+      background-color: #4a5568;
+      color: #ffffff;
+    }
+
+    .btn-help:hover {
+      background-color: #2d3748;
+    }
+
+    /* ----------------------------------
+       レイアウト構成
+       ---------------------------------- */
+    .grid-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+
+    @media (min-width: 1024px) {
+      .grid-container {
+        grid-template-columns: 1fr 2fr;
+      }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 24px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .card h2 {
+      font-size: 1.4rem;
+      color: var(--primary-color);
+      margin-bottom: 20px;
+      border-bottom: 2px solid #eeeeee;
+      padding-bottom: 8px;
+    }
+
+    /* ----------------------------------
+       フォーム要素
+       ---------------------------------- */
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-group.required label::after {
+      content: " (必須)";
+      color: #d9381e;
+      font-weight: bold;
+      font-size: 0.95rem;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 12px;
+      font-size: var(--font-size-base);
+      border: 2px solid var(--border-color);
+      border-radius: 6px;
+      background-color: #ffffff;
+      color: var(--text-color);
+    }
+
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    input[type="date"]:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--primary-color);
+    }
+
+    .form-row-split {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 12px;
+    }
+
+    /* ----------------------------------
+       集計セクション
+       ---------------------------------- */
+    .summary-section {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    @media (min-width: 640px) {
+      .summary-section {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .summary-box {
+      background-color: #edf2f7;
+      border: 2px solid #cbd5e0;
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .summary-box h3 {
+      font-size: 1.1rem;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #cbd5e0;
+      padding-bottom: 4px;
+    }
+
+    .summary-list {
+      list-style: none;
+    }
+
+    .summary-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+
+    /* ----------------------------------
+       一覧の操作・フィルター
+       ---------------------------------- */
+    .list-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .filter-group label {
+      margin-bottom: 0;
+      white-space: nowrap;
+    }
+
+    .filter-group select {
+      padding: 8px 12px;
+      width: auto;
+    }
+
+    /* ----------------------------------
+       テーブル (レスポンシブ対応)
+       ---------------------------------- */
+    .table-container {
+      overflow-x: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      min-width: 800px;
+    }
+
+    th, td {
+      padding: 14px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    th {
+      background-color: #eceff1;
+      font-weight: bold;
+    }
+
+    tr:nth-child(even) {
+      background-color: #fcfdfe;
+    }
+
+    tr:hover {
+      background-color: #f1f5f9;
+    }
+
+    .empty-message {
+      padding: 32px;
+      text-align: center;
+      color: #555555;
+      font-weight: bold;
+    }
+
+    /* ----------------------------------
+       簡易マニュアル モーダル
+       ---------------------------------- */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background-color: var(--card-bg);
+      border-radius: 8px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      border: 3px solid var(--primary-color);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+
+    .modal-header {
+      background-color: var(--primary-color);
+      color: #ffffff;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 1.4rem;
+    }
+
+    .modal-body {
+      padding: 24px;
+    }
+
+    .modal-body h3 {
+      font-size: 1.2rem;
+      margin-top: 16px;
+      margin-bottom: 8px;
+      color: var(--primary-color);
+      border-left: 4px solid var(--primary-color);
+      padding-left: 8px;
+    }
+
+    .modal-body p, .modal-body ol, .modal-body ul {
+      margin-bottom: 14px;
+    }
+
+    .modal-body ol {
+      padding-left: 24px;
+    }
+
+    .modal-body li {
+      margin-bottom: 8px;
+    }
+
+    .modal-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+      background-color: #f7f9fa;
+    }
+  </style>
+</head>
+<body>
+
+  <header role="banner">
+    <div class="header-top">
+      <div class="header-title-area">
+        <span class="header-icon" aria-hidden="true">🗑️</span>
+        <h1>廃棄物管理ツール</h1>
+      </div>
+      <button type="button" class="btn btn-help" id="btnHelp" aria-haspopup="dialog" aria-controls="helpModal">❓使い方</button>
+    </div>
+    <div class="subtitle">
+      廃棄物管理ツール: 人の評価や監視ではなく、廃棄物管理のための道具です
+    </div>
+  </header>
+
+  <main class="grid-container">
+    <section class="card" aria-labelledby="form-title">
+      <h2 id="form-title">データの新規登録</h2>
+      <form id="wasteForm" novalidate>
+        
+        <div class="form-group required">
+          <label for="inputDate">排出日</label>
+          <input type="date" id="inputDate" required>
+        </div>
+
+        <div class="form-group required">
+          <label for="inputType">廃棄物の種類</label>
+          <select id="inputType" required>
+            <option value="">選択してください</option>
+            <option value="金属くず">金属くず</option>
+            <option value="廃プラ">廃プラ</option>
+            <option value="廃油">廃油</option>
+            <option value="木くず">木くず</option>
+            <option value="一般ごみ">一般ごみ</option>
+            <option value="その他">その他</option>
+          </select>
+        </div>
+
+        <div class="form-group required">
+          <label for="inputQuantity">数量と単位</label>
+          <div class="form-row-split">
+            <input type="number" id="inputQuantity" placeholder="例: 10" min="0" step="any" required>
+            <select id="inputUnit" required aria-label="単位">
+              <option value="kg">kg</option>
+              <option value="t">t</option>
+              <option value="ℓ">ℓ</option>
+              <option value="個">個</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="inputLocation">排出場所</label>
+          <input type="text" id="inputLocation" placeholder="例: A倉庫、第2工場">
+        </div>
+
+        <div class="form-group">
+          <label for="inputCollector">回収業者</label>
+          <input type="text" id="inputCollector" placeholder="例: 〇〇環境サービス">
+        </div>
+
+        <div class="form-group">
+          <label for="inputManifest">マニフェスト番号</label>
+          <input type="text" id="inputManifest" placeholder="例: 123456789">
+        </div>
+
+        <div class="form-group">
+          <label for="inputMemo">メモ</label>
+          <textarea id="inputMemo" rows="3" placeholder="補足情報を入力"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%;">登録する</button>
+      </form>
+    </section>
+
+    <section class="card" aria-labelledby="data-title">
+      <h2 id="data-title">集計と履歴一覧</h2>
+
+      <div class="summary-section">
+        <div class="summary-box" aria-live="polite">
+          <h3>📊 種類別合計 (換算値)</h3>
+          <ul class="summary-list" id="typeSummary">
+            </ul>
+        </div>
+        
+        <div class="summary-box" aria-live="polite">
+          <h3>⏳ 期間別合計 (選択中の期間)</h3>
+          <ul class="summary-list" id="periodSummary">
+            </ul>
+        </div>
+      </div>
+
+      <div class="list-header">
+        <div class="filters">
+          <div class="filter-group">
+            <label for="filterPeriod">期間:</label>
+            <select id="filterPeriod">
+              <option value="all">全期間</option>
+              <option value="day">1日 (本日)</option>
+              <option value="week">1週間 (本日含む7日間)</option>
+              <option value="month">1ヶ月 (本日含む30日間)</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="filterType">種類:</label>
+            <select id="filterType">
+              <option value="all">すべての種類</option>
+              <option value="金属くず">金属くず</option>
+              <option value="廃プラ">廃プラ</option>
+              <option value="廃油">廃油</option>
+              <option value="木くず">木くず</option>
+              <option value="一般ごみ">一般ごみ</option>
+              <option value="その他">その他</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-secondary" id="btnExport">📤 CSVエクスポート</button>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">排出日</th>
+              <th scope="col">種類</th>
+              <th scope="col" style="text-align: right;">数量</th>
+              <th scope="col">単位</th>
+              <th scope="col">排出場所</th>
+              <th scope="col">回収業者</th>
+              <th scope="col">マニフェスト番号</th>
+              <th scope="col">メモ</th>
+            </tr>
+          </thead>
+          <tbody id="wasteTableBody">
+            </tbody>
+        </table>
+      </div>
+      <div id="emptyMsg" class="empty-message" style="display: none;">
+        登録されたデータ、または条件に合うデータがありません。
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-overlay" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle">❓ 使い方マニュアル</h2>
+        <button type="button" class="btn btn-secondary" id="btnHelpClose" aria-label="マニュアルを閉じる" style="padding: 6px 12px; margin: 0; background-color: #ffffff; color: #000;">閉じる</button>
+      </div>
+      <div class="modal-body">
+        <h3>1. このアプリでできること</h3>
+        <p>
+          このアプリは、日々の廃棄物排出量を直感的に記録・集計できる簡易管理システムです。
+          入力した内容は安全に動作し、データの自動集計、条件による絞り込み、CSV形式でのダウンロードが可能です。
+        </p>
+
+        <h3>2. 基本的な使い方 (簡単3ステップ)</h3>
+        <ol>
+          <li><strong>入力する：</strong> 左側の「データの新規登録」フォームで、排出日、廃棄物の種類、数量、単位などを入力します。</li>
+          <li><strong>登録する：</strong> 「登録する」ボタンを押すと、即座に右側の履歴一覧に新しいデータが追加され、集計値に反映されます。</li>
+          <li><strong>確認・絞り込み：</strong> 必要に応じて「期間フィルター」や「種類フィルター」を使い、必要なデータだけを画面に表示します。</li>
+        </ol>
+
+        <h3>3. データについて</h3>
+        <p>
+          本ツールに入力されたデータは、<strong>この端末のブラウザ内（localStorage）だけに保存</strong>されます。
+          インターネット上のサーバーにデータが送信されたり、第三者に送信されたりすることは一切ありませんので安心してご利用ください。
+        </p>
+        <p>
+          ※ブラウザの履歴やキャッシュを完全にクリアするとデータも消去されますので、定期的に「<strong>CSVエクスポート</strong>」ボタンからお手元にバックアップを保存することをおすすめします。
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="btnHelpCloseFooter">理解しました</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ----------------------------------
+    // アプリ状態管理
+    // ----------------------------------
+    let wasteData = [];
+
+    // 換算係数の定義 (基準はkg、ℓと個は独立集計またはそのまま加算)
+    // kg / t は 重量(kg)に一元化して合計値を算出するための係数
+    const CONVERSION_RATES = {
+      'kg': 1,
+      't': 1000,
+      'ℓ': 1, // ℓ換算
+      '個': 1  // 個換算
+    };
+
+    // ----------------------------------
+    // DOM要素の取得
+    // ----------------------------------
+    const form = document.getElementById('wasteForm');
+    const inputDate = document.getElementById('inputDate');
+    const inputType = document.getElementById('inputType');
+    const inputQuantity = document.getElementById('inputQuantity');
+    const inputUnit = document.getElementById('inputUnit');
+    const inputLocation = document.getElementById('inputLocation');
+    const inputCollector = document.getElementById('inputCollector');
+    const inputManifest = document.getElementById('inputManifest');
+    const inputMemo = document.getElementById('inputMemo');
+
+    const filterPeriod = document.getElementById('filterPeriod');
+    const filterType = document.getElementById('filterType');
+    
+    const tableBody = document.getElementById('wasteTableBody');
+    const emptyMsg = document.getElementById('emptyMsg');
+    
+    const typeSummaryEl = document.getElementById('typeSummary');
+    const periodSummaryEl = document.getElementById('periodSummary');
+    
+    const btnExport = document.getElementById('btnExport');
+    
+    // マニュアル関連
+    const btnHelp = document.getElementById('btnHelp');
+    const helpModal = document.getElementById('helpModal');
+    const btnHelpClose = document.getElementById('btnHelpClose');
+    const btnHelpCloseFooter = document.getElementById('btnHelpCloseFooter');
+
+    // ----------------------------------
+    // 初期処理
+    // ----------------------------------
+    window.addEventListener('DOMContentLoaded', () => {
+      // 本日の日付をデフォルト入力に設定
+      const today = new Date().toISOString().split('T')[0];
+      inputDate.value = today;
+
+      // localStorageからデータ読み込み
+      loadData();
+      renderApp();
+    });
+
+    // ----------------------------------
+    // データ保存・読み込み
+    // ----------------------------------
+    function loadData() {
+      const stored = localStorage.getItem('waste_management_data');
+      if (stored) {
+        try {
+          wasteData = JSON.parse(stored);
+        } catch (e) {
+          wasteData = [];
+        }
+      } else {
+        wasteData = [];
+      }
+    }
+
+    function saveData() {
+      localStorage.setItem('waste_management_data', JSON.stringify(wasteData));
+    }
+
+    // ----------------------------------
+    // 登録処理
+    // ----------------------------------
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      // バリデーション
+      const dateVal = inputDate.value;
+      const typeVal = inputType.value;
+      const quantityVal = parseFloat(inputQuantity.value);
+      const unitVal = inputUnit.value;
+
+      if (!dateVal || !typeVal || isNaN(quantityVal) || !unitVal) {
+        alert('必須項目をすべて入力してください。');
+        return;
+      }
+
+      if (quantityVal < 0) {
+        alert('数量は0以上の数値で入力してください。');
+        return;
+      }
+
+      // 新規データオブジェクト作成
+      const newItem = {
+        id: Date.now().toString(),
+        date: dateVal,
+        type: typeVal,
+        quantity: quantityVal,
+        unit: unitVal,
+        location: inputLocation.value.trim(),
+        collector: inputCollector.value.trim(),
+        manifest: inputManifest.value.trim(),
+        memo: inputMemo.value.trim()
+      };
+
+      // データの追加と保存
+      wasteData.push(newItem);
+      saveData();
+
+      // 入力フォームの一部をリセット（排出日や種類は連続入力に配慮してリセットしない）
+      inputQuantity.value = '';
+      inputLocation.value = '';
+      inputCollector.value = '';
+      inputManifest.value = '';
+      inputMemo.value = '';
+
+      // 再描画
+      renderApp();
+    });
+
+    // ----------------------------------
+    // フィルター判定ヘルパー
+    // ----------------------------------
+    function getDaysDiff(dateStr) {
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      const target = new Date(dateStr);
+      target.setHours(0,0,0,0);
+      const diffTime = today - target;
+      return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    }
+
+    function isWithinPeriod(dateStr, periodType) {
+      const daysDiff = getDaysDiff(dateStr);
+      if (periodType === 'day') {
+        return daysDiff === 0;
+      } else if (periodType === 'week') {
+        return daysDiff >= 0 && daysDiff < 7;
+      } else if (periodType === 'month') {
+        return daysDiff >= 0 && daysDiff < 30;
+      }
+      return true; // all
+    }
+
+    // ----------------------------------
+    // メイン描画処理
+    // ----------------------------------
+    function renderApp() {
+      const selectedPeriod = filterPeriod.value;
+      const selectedType = filterType.value;
+
+      // 1. 新しい順（日付降順、同一なら登録順ID降順）にデータをソート
+      const sortedData = [...wasteData].sort((a, b) => {
+        if (b.date !== a.date) {
+          return new Date(b.date) - new Date(a.date);
+        }
+        return b.id.localeCompare(a.id);
+      });
+
+      // 2. フィルタ適用（一覧テーブル用）
+      const filteredData = sortedData.filter(item => {
+        const matchesPeriod = isWithinPeriod(item.date, selectedPeriod);
+        const matchesType = (selectedType === 'all' || item.type === selectedType);
+        return matchesPeriod && matchesType;
+      });
+
+      // 3. 一覧テーブル描画
+      tableBody.innerHTML = '';
+      if (filteredData.length === 0) {
+        emptyMsg.style.display = 'block';
+      } else {
+        emptyMsg.style.display = 'none';
+        filteredData.forEach(item => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${escapeHtml(item.date)}</td>
+            <td><strong>${escapeHtml(item.type)}</strong></td>
+            <td style="text-align: right; font-weight: bold;">${escapeHtml(item.quantity.toString())}</td>
+            <td>${escapeHtml(item.unit)}</td>
+            <td>${escapeHtml(item.location || '-')}</td>
+            <td>${escapeHtml(item.collector || '-')}</td>
+            <td>${escapeHtml(item.manifest || '-')}</td>
+            <td><small>${escapeHtml(item.memo || '-')}</small></td>
+          `;
+          tableBody.appendChild(tr);
+        });
+      }
+
+      // 4. 全データ対象の種類別合計計算（「数量 × 単位換算係数」）
+      // kgとtはまとめてkgとして計算、ℓと個はそのままカウント
+      const typeTotals = {
+        '金属くず': { kg: 0, l: 0, pcs: 0 },
+        '廃プラ': { kg: 0, l: 0, pcs: 0 },
+        '廃油': { kg: 0, l: 0, pcs: 0 },
+        '木くず': { kg: 0, l: 0, pcs: 0 },
+        '一般ごみ': { kg: 0, l: 0, pcs: 0 },
+        'その他': { kg: 0, l: 0, pcs: 0 },
+      };
+
+      wasteData.forEach(item => {
+        if (typeTotals[item.type] !== undefined) {
+          const factor = CONVERSION_RATES[item.unit] || 1;
+          const convertedVal = item.quantity * factor;
+          if (item.unit === 'kg' || item.unit === 't') {
+            typeTotals[item.type].kg += convertedVal;
+          } else if (item.unit === 'ℓ') {
+            typeTotals[item.type].l += item.quantity;
+          } else if (item.unit === '個') {
+            typeTotals[item.type].pcs += item.quantity;
+          }
+        }
+      });
+
+      // 種類別合計 表示更新
+      typeSummaryEl.innerHTML = '';
+      Object.keys(typeTotals).forEach(type => {
+        const data = typeTotals[type];
+        const parts = [];
+        if (data.kg > 0) parts.push(`${data.kg.toLocaleString()} kg`);
+        if (data.l > 0) parts.push(`${data.l.toLocaleString()} ℓ`);
+        if (data.pcs > 0) parts.push(`${data.pcs.toLocaleString()} 個`);
+        
+        const displayVal = parts.length > 0 ? parts.join(' / ') : '0';
+        
+        const li = document.createElement('li');
+        li.className = 'summary-item';
+        li.innerHTML = `<span>${type}</span><span>${displayVal}</span>`;
+        typeSummaryEl.appendChild(li);
+      });
+
+      // 5. 期間別合計計算（選択された期間に基づいて集計、全種類含む）
+      // こちらもkg換算と他単位をそれぞれ合計
+      const periodTotals = { kg: 0, l: 0, pcs: 0 };
+      wasteData.forEach(item => {
+        if (isWithinPeriod(item.date, selectedPeriod)) {
+          const factor = CONVERSION_RATES[item.unit] || 1;
+          const convertedVal = item.quantity * factor;
+          if (item.unit === 'kg' || item.unit === 't') {
+            periodTotals.kg += convertedVal;
+          } else if (item.unit === 'ℓ') {
+            periodTotals.l += item.quantity;
+          } else if (item.unit === '個') {
+            periodTotals.pcs += item.quantity;
+          }
+        }
+      });
+
+      periodSummaryEl.innerHTML = `
+        <li class="summary-item"><span>重量合計 (kg換算)</span><span>${periodTotals.kg.toLocaleString()} kg</span></li>
+        <li class="summary-item"><span>容量合計</span><span>${periodTotals.l.toLocaleString()} ℓ</span></li>
+        <li class="summary-item"><span>個数合計</span><span>${periodTotals.pcs.toLocaleString()} 個</span></li>
+      `;
+    }
+
+    // フィルタ変更イベント
+    filterPeriod.addEventListener('change', renderApp);
+    filterType.addEventListener('change', renderApp);
+
+    // ----------------------------------
+    // CSVエクスポート
+    // ----------------------------------
+    btnExport.addEventListener('click', () => {
+      if (wasteData.length === 0) {
+        alert('エクスポートするデータがありません。');
+        return;
+      }
+
+      // ヘッダー行
+      const headers = ['排出日', '種類', '数量', '単位', '排出場所', '回収業者', 'マニフェスト番号', 'メモ'];
+      
+      // データ行のソート (新しい順)
+      const sortedData = [...wasteData].sort((a, b) => {
+        if (b.date !== a.date) {
+          return new Date(b.date) - new Date(a.date);
+        }
+        return b.id.localeCompare(a.id);
+      });
+
+      const csvRows = [headers.join(',')];
+
+      sortedData.forEach(item => {
+        const row = [
+          item.date,
+          item.type,
+          item.quantity,
+          item.unit,
+          item.location || '',
+          item.collector || '',
+          item.manifest || '',
+          item.memo || ''
+        ].map(val => {
+          // カンマ、改行、ダブルクォーテーションのエスケープ対応
+          let text = String(val).replace(/"/g, '""');
+          if (text.includes(',') || text.includes('\n') || text.includes('"')) {
+            text = `"${text}"`;
+          }
+          return text;
+        });
+        csvRows.push(row.join(','));
+      });
+
+      const csvContent = csvRows.join('\r\n');
+      // Shift_JISなどの文字化け回避のためUTF-8 BOMを付与
+      const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+      const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
+      
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `waste_data_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+
+    // ----------------------------------
+    // モーダル制御
+    // ----------------------------------
+    let activeElementBeforeModal = null;
+
+    function openModal() {
+      activeElementBeforeModal = document.activeElement;
+      helpModal.classList.add('active');
+      btnHelpClose.focus();
+      document.addEventListener('keydown', trapFocus);
+    }
+
+    function closeModal() {
+      helpModal.classList.remove('active');
+      document.removeEventListener('keydown', trapFocus);
+      if (activeElementBeforeModal) {
+        activeElementBeforeModal.focus();
+      }
+    }
+
+    function trapFocus(e) {
+      if (e.key === 'Escape') {
+        closeModal();
+        return;
+      }
+      
+      const focusableElements = helpModal.querySelectorAll('button, [tabindex="0"]');
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (e.key === 'Tab') {
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            lastElement.focus();
+            e.preventDefault();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            firstElement.focus();
+            e.preventDefault();
+          }
+        }
+      }
+    }
+
+    btnHelp.addEventListener('click', openModal);
+    btnHelpClose.addEventListener('click', closeModal);
+    btnHelpCloseFooter.addEventListener('click', closeModal);
+    helpModal.addEventListener('click', (e) => {
+      if (e.target === helpModal) {
+        closeModal();
+      }
+    });
+
+    // ----------------------------------
+    // ユーティリティ
+    // ----------------------------------
+    function escapeHtml(str) {
+      if (typeof str !== 'string') return str;
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>

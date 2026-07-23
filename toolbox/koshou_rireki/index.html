@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>設備故障履歴（設備保全用）</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🔧</text></svg>'>
+  <style>
+    /* 全体設計・インクルーシブデザイン（コントラスト比・文字サイズ16px以上確保） */
+    :root {
+      --bg-color: #ffffff;
+      --text-color: #1a1a1a;
+      --primary-color: #005a9c;
+      --primary-hover: #004477;
+      --accent-color: #d9381e; /* 故障件数が多い強調用（高コントラスト） */
+      --border-color: #767676;
+      --bg-alt: #f0f4f8;
+      --focus-outline: #ffbf47;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.5;
+      margin: 0;
+      padding: 0;
+      font-size: 16px;
+    }
+
+    /* 視覚的フォーカス表示の強化 */
+    *:focus-visible {
+      outline: 4px solid var(--focus-outline);
+      outline-offset: 2px;
+    }
+
+    header {
+      background-color: var(--bg-alt);
+      border-bottom: 3px solid var(--primary-color);
+      padding: 1.5rem;
+    }
+
+    .header-title-area {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .header-icon {
+      font-size: 2.5rem;
+      line-height: 1;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      margin: 0;
+      color: var(--primary-color);
+    }
+
+    .header-desc {
+      margin: 0.5rem 0 0 0;
+      font-weight: bold;
+      font-size: 1rem;
+    }
+
+    .header-actions {
+      margin-top: 1rem;
+      display: flex;
+      gap: 1rem;
+    }
+
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+
+    /* ボタン共通スタイル */
+    .btn {
+      background-color: var(--primary-color);
+      color: #ffffff;
+      border: 2px solid var(--primary-color);
+      border-radius: 4px;
+      padding: 0.75rem 1.25rem;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      min-height: 48px; /* アクセシビリティ指針（タップ領域） */
+    }
+
+    .btn:hover {
+      background-color: var(--primary-hover);
+      border-color: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      border: 2px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--bg-alt);
+    }
+
+    /* 二段カラムレイアウト */
+    .grid-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      margin-top: 1.5rem;
+    }
+
+    @media (min-width: 800px) {
+      .grid-layout {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .panel {
+      border: 2px solid var(--border-color);
+      border-radius: 6px;
+      padding: 1.5rem;
+      background-color: var(--bg-color);
+    }
+
+    .panel-title {
+      font-size: 1.4rem;
+      margin-top: 0;
+      margin-bottom: 1.2rem;
+      border-bottom: 2px solid var(--primary-color);
+      padding-bottom: 0.5rem;
+    }
+
+    /* フォーム設定 */
+    .form-group {
+      margin-bottom: 1.2rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+
+    .required-tag {
+      background-color: var(--accent-color);
+      color: #ffffff;
+      font-size: 0.8rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      margin-left: 0.5rem;
+      vertical-align: middle;
+    }
+
+    .form-control {
+      width: 100%;
+      min-height: 44px;
+      padding: 0.5rem;
+      font-size: 1rem;
+      border: 2px solid var(--border-color);
+      border-radius: 4px;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+
+    /* フィルターエリア */
+    .filter-area {
+      background-color: var(--bg-alt);
+      border: 2px solid var(--border-color);
+      border-radius: 6px;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .filter-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    @media (min-width: 600px) {
+      .filter-grid {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+    }
+
+    /* テーブル・一覧表示 */
+    .table-container {
+      overflow-x: auto;
+      margin-top: 1rem;
+      border: 1px solid var(--border-color);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th, td {
+      padding: 0.75rem;
+      border: 1px solid var(--border-color);
+      font-size: 1rem;
+    }
+
+    th {
+      background-color: var(--bg-alt);
+      font-weight: bold;
+    }
+
+    tbody tr:nth-child(even) {
+      background-color: #fafafa;
+    }
+
+    /* スマホ用テーブル縦型表示 */
+    @media (max-width: 600px) {
+      .responsive-table, .responsive-table thead, .responsive-table tbody, .responsive-table th, .responsive-table td, .responsive-table tr {
+        display: block;
+      }
+      .responsive-table thead {
+        display: none; /* ヘッダーを非表示にして各セルにラベルを付与 */
+      }
+      .responsive-table tr {
+        margin-bottom: 1rem;
+        border: 2px solid var(--border-color);
+        padding: 0.5rem;
+        background-color: var(--bg-color);
+      }
+      .responsive-table td {
+        border: none;
+        position: relative;
+        padding-left: 45%;
+        text-align: right;
+        min-height: 38px;
+      }
+      .responsive-table td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0.5rem;
+        width: 40%;
+        text-align: left;
+        font-weight: bold;
+      }
+    }
+
+    /* テキストベースの集計・グラフ表示 */
+    .summary-section {
+      margin-top: 1.5rem;
+    }
+
+    .chart-container {
+      margin-bottom: 1.5rem;
+    }
+
+    .chart-bar-row {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 0.8rem;
+    }
+
+    .chart-label {
+      font-weight: bold;
+      margin-bottom: 0.2rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .chart-bar-outer {
+      background-color: var(--bg-alt);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      height: 28px;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    .chart-bar-inner {
+      background-color: var(--primary-color);
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+
+    /* 件数多（最大件数）の強調表示 */
+    .chart-bar-inner.highlight {
+      background-color: var(--accent-color);
+    }
+
+    /* モーダルダイアログ（使い方マニュアル用） */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
+    }
+
+    .modal-content {
+      background-color: var(--bg-color);
+      border: 3px solid var(--primary-color);
+      border-radius: 8px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 1.5rem;
+      position: relative;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .modal-title {
+      font-size: 1.4rem;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .modal-close-btn {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0.5rem;
+      color: var(--text-color);
+    }
+
+    .instruction-steps {
+      padding-left: 1.2rem;
+    }
+
+    .instruction-steps li {
+      margin-bottom: 0.8rem;
+    }
+
+    /* ユーティリティ */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+
+    .no-data-msg {
+      text-align: center;
+      padding: 2rem;
+      color: var(--border-color);
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-title-area">
+      <span class="header-icon" aria-hidden="true">🔧</span>
+      <div>
+        <h1>設備故障履歴（設備保全用）</h1>
+        <p class="header-desc">このツールは設備保全のための道具です。人の評価や監視ではなく、再発防止にご活用ください。</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary" id="helpBtn" aria-haspopup="dialog">❓ 使い方を見る</button>
+      <button class="btn" id="exportCsvBtn">📤 CSVファイル保存</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="grid-layout">
+      <section class="panel" aria-labelledby="form-panel-title">
+        <h2 class="panel-title" id="form-panel-title">1. 故障状況の入力</h2>
+        <form id="faultForm" novalidate>
+          <div class="form-group">
+            <label id="lbl-eq-name" for="eq-name">設備名<span class="required-tag">必須</span></label>
+            <input type="text" id="eq-name" class="form-control" required placeholder="例：プレス機 A号">
+          </div>
+          <div class="form-group">
+            <label id="lbl-eq-num" for="eq-num">設備番号<span class="required-tag">必須</span></label>
+            <input type="text" id="eq-num" class="form-control" required placeholder="例：EQ-104">
+          </div>
+          <div class="form-group">
+            <label id="lbl-start-time" for="start-time">発生日時（日付と時刻）<span class="required-tag">必須</span></label>
+            <input type="datetime-local" id="start-time" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label id="lbl-symptom" for="symptom">症状<span class="required-tag">必須</span></label>
+            <input type="text" id="symptom" class="form-control" required placeholder="例：異音を伴いモーターが停止">
+          </div>
+          <div class="form-group">
+            <label id="lbl-cause" for="cause">原因<span class="required-tag">必須</span></label>
+            <input type="text" id="cause" class="form-control" required placeholder="例：過負荷によるベルト破断">
+          </div>
+          <div class="form-group">
+            <label id="lbl-action" for="action">対応内容<span class="required-tag">必須</span></label>
+            <input type="text" id="action" class="form-control" required placeholder="例：ベルト交換および負荷設定調整">
+          </div>
+          <div class="form-group">
+            <label id="lbl-operator" for="operator">対応者<span class="required-tag">必須</span></label>
+            <input type="text" id="operator" class="form-control" required placeholder="例：保全 太郎">
+          </div>
+          <div class="form-group">
+            <label id="lbl-end-time" for="end-time">復旧日時（日付と時刻）<span class="required-tag">必須</span></label>
+            <input type="datetime-local" id="end-time" class="form-control" required>
+          </div>
+          <button type="submit" class="btn" style="width: 100%; margin-top: 1rem;">📝 履歴を登録する</button>
+        </form>
+      </section>
+
+      <section class="panel" aria-labelledby="summary-panel-title">
+        <h2 class="panel-title" id="summary-panel-title">2. 設備別の故障分析</h2>
+        
+        <div class="summary-section">
+          <h3>📊 設備別の故障件数</h3>
+          <p style="font-size: 0.9rem; margin-top: -0.5rem; color: #555;">※最も故障件数が多い設備は赤色で強調表示されます。</p>
+          <div id="countChartArea" class="chart-container">
+            <div class="no-data-msg">データが登録されると、自動的にグラフが表示されます。</div>
+          </div>
+        </div>
+
+        <div class="summary-section" style="margin-top: 2rem;">
+          <h3>⏱️ 設備別の総停止時間（分）</h3>
+          <div id="durationChartArea" class="chart-container">
+            <div class="no-data-msg">データが登録されると、自動的にグラフが表示されます。</div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <hr style="margin: 2.5rem 0; border: 1px solid var(--border-color);" />
+
+    <section class="panel" aria-labelledby="list-panel-title">
+      <h2 class="panel-title" id="list-panel-title">3. 登録済みの履歴（最新50件）</h2>
+
+      <fieldset class="filter-area">
+        <legend style="font-weight: bold; padding: 0 0.5rem;">🔎 データの絞り込み</legend>
+        <div class="filter-grid">
+          <div>
+            <label for="filter-eq-name" style="display: block; font-size: 0.9rem; margin-bottom: 0.2rem; font-weight: bold;">設備名で絞り込み</label>
+            <input type="text" id="filter-eq-name" class="form-control" placeholder="すべて表示" style="min-height: 38px;">
+          </div>
+          <div>
+            <label for="filter-start-date" style="display: block; font-size: 0.9rem; margin-bottom: 0.2rem; font-weight: bold;">期間（開始日）</label>
+            <input type="date" id="filter-start-date" class="form-control" style="min-height: 38px;">
+          </div>
+          <div>
+            <label for="filter-end-date" style="display: block; font-size: 0.9rem; margin-bottom: 0.2rem; font-weight: bold;">期間（終了日）</label>
+            <input type="date" id="filter-end-date" class="form-control" style="min-height: 38px;">
+          </div>
+        </div>
+        <div style="margin-top: 0.8rem; display: flex; gap: 0.5rem;">
+          <button id="applyFilterBtn" class="btn btn-secondary" style="min-height: 38px; padding: 0.3rem 1rem;">適用する</button>
+          <button id="clearFilterBtn" class="btn btn-secondary" style="min-height: 38px; padding: 0.3rem 1rem; border-color: transparent;">リセット</button>
+        </div>
+      </fieldset>
+
+      <div class="table-container">
+        <table class="responsive-table" id="faultTable">
+          <thead>
+            <tr>
+              <th scope="col">設備名</th>
+              <th scope="col">発生日時</th>
+              <th scope="col">症状</th>
+              <th scope="col">停止時間（分）</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-overlay" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-title" class="modal-title">❓ このアプリの使い方</h2>
+        <button class="modal-close-btn" id="closeHelpBtn" aria-label="閉じる">×</button>
+      </div>
+      <div>
+        <h3>🛠️ (1) このアプリで何ができるか</h3>
+        <p>
+          設備の故障が発生した日時、症状、対応方法を簡単に記録し、再発を防止するための「設備保全ツール」です。<br>
+          入力した内容から、自動的に<strong>「停止時間」</strong>が計算され、どの機械がどれくらい止まっているかがビジュアルでわかります。
+        </p>
+
+        <h3>📋 (2) 基本の使い方</h3>
+        <ol class="instruction-steps">
+          <li><strong>データを入力する:</strong> 画面左側の「1. 故障状況の入力」フォームに沿って項目をすべて入力してください。</li>
+          <li><strong>登録する:</strong> 「履歴を登録する」ボタンを押すと、右側のグラフと下部の一覧表に即座に反映されます。</li>
+          <li><strong>分析と絞り込み:</strong> 登録したデータは自動的に「故障の多い機械」が赤色で強調表示されます。また、下部フィルターにより特定の設備や期間を検索・絞り込めます。</li>
+          <li><strong>データをエクスポートする:</strong> 画面上部の「📤 CSVファイル保存」ボタンを押すと、すべてのデータをExcel等で開けるCSVファイルとしてパソコンやスマホにダウンロードできます。</li>
+        </ol>
+
+        <h3>🔒 (3) データの保存場所について</h3>
+        <p>
+          入力されたすべてのデータは、インターネットに送信されず、<strong>お使いの端末（ブラウザ）にのみ保存されます。</strong><br>
+          外部に情報が漏洩することはありませんので安心してご活用ください。
+        </p>
+      </div>
+      <div style="margin-top: 1.5rem; text-align: right;">
+        <button class="btn" id="modalCloseActionBtn">理解しました（閉じる）</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ----------------------------------------------------
+    // データ管理・初期データ読み込み
+    // ----------------------------------------------------
+    let faultData = [];
+
+    // ローカルストレージからデータを読み込む
+    function loadData() {
+      const stored = localStorage.getItem('equipment_fault_history');
+      if (stored) {
+        try {
+          faultData = JSON.parse(stored);
+        } catch (e) {
+          console.error("データの読み込みに失敗しました", e);
+          faultData = [];
+        }
+      } else {
+        faultData = [];
+      }
+    }
+
+    // ローカルストレージへデータを保存する
+    function saveData() {
+      localStorage.setItem('equipment_fault_history', JSON.stringify(faultData));
+    }
+
+    // ----------------------------------------------------
+    // 補助的な計算関数
+    // ----------------------------------------------------
+    // 停止時間（分）の計算（小数点以下は切り捨て）
+    function calculateDuration(startStr, endStr) {
+      if (!startStr || !endStr) return 0;
+      const start = new Date(startStr);
+      const end = new Date(endStr);
+      if (isNaN(start.getTime()) || !isNaN(end.getTime())) {
+        const diffMs = end - start;
+        if (diffMs <= 0) return 0;
+        return Math.floor(diffMs / 1000 / 60);
+      }
+      return 0;
+    }
+
+    // 日付と時刻のフォーマット変換
+    function formatDateTime(dateTimeStr) {
+      if (!dateTimeStr) return "";
+      const d = new Date(dateTimeStr);
+      if (isNaN(d.getTime())) return dateTimeStr;
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const date = String(d.getDate()).padStart(2, '0');
+      const h = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      return `${y}/${m}/${date} ${h}:${min}`;
+    }
+
+    // ----------------------------------------------------
+    // UIの描画処理
+    // ----------------------------------------------------
+    // 1. テーブル（一覧）描画
+    function renderTable(filteredData) {
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+
+      // 新しい登録順にソート（発生日時順で最新が上、同時の場合は登録逆順）
+      const sortedData = [...filteredData].sort((a, b) => {
+        return new Date(b.startTime) - new Date(a.startTime);
+      });
+
+      // 最大50件まで表示
+      const displayData = sortedData.slice(0, 50);
+
+      if (displayData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="no-data-msg">条件に合う履歴はありません。</td></tr>`;
+        return;
+      }
+
+      displayData.forEach(item => {
+        const tr = document.createElement('tr');
+        
+        const tdEqName = document.createElement('td');
+        tdEqName.setAttribute('data-label', '設備名');
+        tdEqName.textContent = item.eqName;
+
+        const tdStartTime = document.createElement('td');
+        tdStartTime.setAttribute('data-label', '発生日時');
+        tdStartTime.textContent = formatDateTime(item.startTime);
+
+        const tdSymptom = document.createElement('td');
+        tdSymptom.setAttribute('data-label', '症状');
+        tdSymptom.textContent = item.symptom;
+
+        const tdDuration = document.createElement('td');
+        tdDuration.setAttribute('data-label', '停止時間（分）');
+        tdDuration.textContent = `${item.duration} 分`;
+
+        tr.appendChild(tdEqName);
+        tr.appendChild(tdStartTime);
+        tr.appendChild(tdSymptom);
+        tr.appendChild(tdDuration);
+        tbody.appendChild(tr);
+      });
+    }
+
+    // 2. 集計グラフ描画
+    function renderCharts() {
+      const countArea = document.getElementById('countChartArea');
+      const durationArea = document.getElementById('durationChartArea');
+
+      if (faultData.length === 0) {
+        countArea.innerHTML = `<div class="no-data-msg">データが登録されると、自動的にグラフが表示されます。</div>`;
+        durationArea.innerHTML = `<div class="no-data-msg">データが登録されると、自動的にグラフが表示されます。</div>`;
+        return;
+      }
+
+      // 設備ごとにデータを集計
+      const stats = {};
+      faultData.forEach(item => {
+        if (!stats[item.eqName]) {
+          stats[item.eqName] = { count: 0, duration: 0 };
+        }
+        stats[item.eqName].count += 1;
+        stats[item.eqName].duration += Number(item.duration);
+      });
+
+      const statsArr = Object.keys(stats).map(name => ({
+        name: name,
+        count: stats[name].count,
+        duration: stats[name].duration
+      }));
+
+      // A. 件数ベースのグラフ描画
+      const maxCount = Math.max(...statsArr.map(o => o.count), 1);
+      countArea.innerHTML = '';
+      
+      // 故障件数が最も多い値
+      const highestCount = Math.max(...statsArr.map(o => o.count));
+
+      statsArr.forEach(item => {
+        const pct = (item.count / maxCount) * 100;
+        const row = document.createElement('div');
+        row.className = 'chart-bar-row';
+        
+        // 件数最大は赤くする（ただし全体の最大値が0より大きい場合）
+        const isMax = item.count === highestCount && highestCount > 0;
+        const highlightClass = isMax ? 'highlight' : '';
+
+        row.innerHTML = `
+          <div class="chart-label">
+            <span>${escapeHTML(item.name)}</span>
+            <span><strong>${item.count} 件</strong></span>
+          </div>
+          <div class="chart-bar-outer">
+            <div class="chart-bar-inner ${highlightClass}" style="width: ${pct}%;"></div>
+          </div>
+        `;
+        countArea.appendChild(row);
+      });
+
+      // B. 停止時間ベースのグラフ描画
+      const maxDuration = Math.max(...statsArr.map(o => o.duration), 1);
+      durationArea.innerHTML = '';
+
+      statsArr.forEach(item => {
+        const pct = (item.duration / maxDuration) * 100;
+        const row = document.createElement('div');
+        row.className = 'chart-bar-row';
+        
+        row.innerHTML = `
+          <div class="chart-label">
+            <span>${escapeHTML(item.name)}</span>
+            <span><strong>${item.duration} 分</strong></span>
+          </div>
+          <div class="chart-bar-outer">
+            <div class="chart-bar-inner" style="width: ${pct}%;"></div>
+          </div>
+        `;
+        durationArea.appendChild(row);
+      });
+    }
+
+    // HTMLエスケープ処理
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      );
+    }
+
+    // 一覧とグラフを現在のフィルタ状態に基づいて再構築
+    function updateUI() {
+      const filterEqName = document.getElementById('filter-eq-name').value.trim().toLowerCase();
+      const filterStart = document.getElementById('filter-start-date').value;
+      const filterEnd = document.getElementById('filter-end-date').value;
+
+      const filtered = faultData.filter(item => {
+        // 設備名フィルタ
+        if (filterEqName && !item.eqName.toLowerCase().includes(filterEqName)) {
+          return false;
+        }
+        // 開始日フィルタ（発生日を日付部分で比較）
+        if (filterStart) {
+          const itemDate = new Date(item.startTime);
+          const filterStartDate = new Date(filterStart);
+          filterStartDate.setHours(0,0,0,0);
+          if (itemDate < filterStartDate) return false;
+        }
+        // 終了日フィルタ（発生日を日付部分で比較）
+        if (filterEnd) {
+          const itemDate = new Date(item.startTime);
+          const filterEndDate = new Date(filterEnd);
+          filterEndDate.setHours(23,59,59,999);
+          if (itemDate > filterEndDate) return false;
+        }
+        return true;
+      });
+
+      renderTable(filtered);
+      renderCharts();
+    }
+
+    // ----------------------------------------------------
+    // フォームの送信処理・バリデーション
+    // ----------------------------------------------------
+    document.getElementById('faultForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const eqName = document.getElementById('eq-name').value.trim();
+      const eqNum = document.getElementById('eq-num').value.trim();
+      const startTime = document.getElementById('start-time').value;
+      const symptom = document.getElementById('symptom').value.trim();
+      const cause = document.getElementById('cause').value.trim();
+      const action = document.getElementById('action').value.trim();
+      const operator = document.getElementById('operator').value.trim();
+      const endTime = document.getElementById('end-time').value;
+
+      // 必須チェック（全項目）
+      if (!eqName || !eqNum || !startTime || !symptom || !cause || !action || !operator || !endTime) {
+        alert("すべての項目を入力してください。");
+        return;
+      }
+
+      // 日時整合性チェック
+      const start = new Date(startTime);
+      const end = new Date(endTime);
+      if (end < start) {
+        alert("復旧日時は、発生日時より後の日時を指定してください。");
+        return;
+      }
+
+      // 停止時間の算出
+      const duration = calculateDuration(startTime, endTime);
+
+      const newItem = {
+        id: Date.now().toString(),
+        eqName,
+        eqNum,
+        startTime,
+        symptom,
+        cause,
+        action,
+        operator,
+        endTime,
+        duration
+      };
+
+      faultData.push(newItem);
+      saveData();
+      updateUI();
+
+      // 入力フォームをクリア
+      document.getElementById('faultForm').reset();
+      alert("故障履歴を登録しました。");
+    });
+
+    // ----------------------------------------------------
+    // フィルターの操作
+    // ----------------------------------------------------
+    document.getElementById('applyFilterBtn').addEventListener('click', updateUI);
+    
+    document.getElementById('clearFilterBtn').addEventListener('click', function() {
+      document.getElementById('filter-eq-name').value = '';
+      document.getElementById('filter-start-date').value = '';
+      document.getElementById('filter-end-date').value = '';
+      updateUI();
+    });
+
+    // ----------------------------------------------------
+    // エクスポート処理（CSVダウンロード）
+    // ----------------------------------------------------
+    document.getElementById('exportCsvBtn').addEventListener('click', function() {
+      if (faultData.length === 0) {
+        alert("出力するデータがありません。");
+        return;
+      }
+
+      const headers = ["設備名", "設備番号", "発生日時", "症状", "原因", "対応内容", "対応者", "復旧日時", "停止時間（分）"];
+      const csvRows = [headers.join(",")];
+
+      faultData.forEach(item => {
+        const rowValues = [
+          item.eqName,
+          item.eqNum,
+          formatDateTime(item.startTime),
+          item.symptom,
+          item.cause,
+          item.action,
+          item.operator,
+          formatDateTime(item.endTime),
+          item.duration
+        ];
+
+        // CSV用にエスケープ処理（ダブルクォーテーションで括り、中のクォーテーションを2重に）
+        const escapedRow = rowValues.map(val => {
+          const text = String(val).replace(/"/g, '""');
+          return `"${text}"`;
+        });
+        csvRows.push(escapedRow.join(","));
+      });
+
+      // UTF-8(BOM付き)で保存（Excelで開いた際の文字化け防止）
+      const csvContent = "\uFEFF" + csvRows.join("\r\n");
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      
+      // 保存ファイル名用
+      const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+      link.setAttribute("download", `設備故障履歴_${today}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+
+    // ----------------------------------------------------
+    // モーダルダイアログ（使い方ヘルプ）の制御
+    // ----------------------------------------------------
+    const helpModal = document.getElementById('helpModal');
+    const helpBtn = document.getElementById('helpBtn');
+    const closeHelpBtn = document.getElementById('closeHelpBtn');
+    const modalCloseActionBtn = document.getElementById('modalCloseActionBtn');
+    let lastActiveElement;
+
+    function openModal() {
+      lastActiveElement = document.activeElement;
+      helpModal.style.display = 'flex';
+      closeHelpBtn.focus();
+      document.addEventListener('keydown', trapFocus);
+    }
+
+    function closeModal() {
+      helpModal.style.display = 'none';
+      document.removeEventListener('keydown', trapFocus);
+      if (lastActiveElement) {
+        lastActiveElement.focus();
+      }
+    }
+
+    // キーボード操作対応（フォーカストラップ）
+    function trapFocus(e) {
+      if (e.key === 'Escape') {
+        closeModal();
+        return;
+      }
+      
+      const focusableElements = helpModal.querySelectorAll('button, [tabindex="0"]');
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (e.key === 'Tab') {
+        if (e.shiftKey) { // Shift + Tab
+          if (document.activeElement === firstElement) {
+            lastElement.focus();
+            e.preventDefault();
+          }
+        } else { // Tab
+          if (document.activeElement === lastElement) {
+            firstElement.focus();
+            e.preventDefault();
+          }
+        }
+      }
+    }
+
+    helpBtn.addEventListener('click', openModal);
+    closeHelpBtn.addEventListener('click', closeModal);
+    modalCloseActionBtn.addEventListener('click', closeModal);
+
+    // 外枠クリックで閉じる
+    helpModal.addEventListener('click', function(e) {
+      if (e.target === helpModal) {
+        closeModal();
+      }
+    });
+
+    // ----------------------------------------------------
+    // アプリ起動時の初期化
+    // ----------------------------------------------------
+    window.addEventListener('DOMContentLoaded', () => {
+      loadData();
+      updateUI();
+    });
+  </script>
+</body>
+</html>

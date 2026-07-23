@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>商品粗利管理ツール</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📦</text></svg>'>
+  <style>
+    /* ----------------------------------
+       共通変数・リセット
+       ---------------------------------- */
+    :root {
+      --primary-color: #005a9c;
+      --primary-hover: #004070;
+      --bg-color: #f7f9fa;
+      --card-bg: #ffffff;
+      --text-color: #2b303a;
+      --border-color: #ccc;
+      --error-color: #ba1a1a;
+      --warning-bg: #fff9db; /* 粗利率20%未満 */
+      --danger-bg: #ffe3e3;  /* 粗利率10%未満 */
+      --focus-outline: 3px solid #ffbf47;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+      font-size: 1.125rem; /* 視認性向上のため大きめのフォントサイズ */
+      line-height: 1.6;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      padding: 1rem;
+    }
+
+    /* ----------------------------------
+       アクセシビリティ
+       ---------------------------------- */
+    :focus-visible {
+      outline: var(--focus-outline);
+      outline-offset: 2px;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+
+    /* ----------------------------------
+       ヘッダー・レイアウト
+       ---------------------------------- */
+    header {
+      background-color: var(--card-bg);
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .header-title-area {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .header-icon {
+      font-size: 2.5rem;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      color: var(--primary-color);
+    }
+
+    .header-buttons {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    /* ボタン共通 */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem 1.25rem;
+      font-size: 1.1rem;
+      font-weight: bold;
+      border: 2px solid transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background-color 0.2s, color 0.2s;
+      min-height: 48px; /* タップターゲットの確保 */
+    }
+
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: #ffffff;
+    }
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background-color: #e2e8f0;
+      color: var(--text-color);
+      border-color: #cbd5e1;
+    }
+    .btn-secondary:hover {
+      background-color: #cbd5e1;
+    }
+
+    .btn-danger {
+      background-color: var(--error-color);
+      color: #ffffff;
+    }
+    .btn-danger:hover {
+      background-color: #8c1010;
+    }
+
+    /* ----------------------------------
+       メインコンテンツ配置
+       ---------------------------------- */
+    main {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (min-width: 1024px) {
+      main {
+        grid-template-columns: 380px 1fr;
+      }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border: 1px solid #e2e8f0;
+    }
+
+    .card-title {
+      font-size: 1.4rem;
+      margin-bottom: 1.2rem;
+      border-bottom: 3px solid var(--primary-color);
+      padding-bottom: 0.5rem;
+      color: var(--primary-color);
+    }
+
+    /* ----------------------------------
+       フォーム要素
+       ---------------------------------- */
+    .form-group {
+      margin-bottom: 1.2rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 0.4rem;
+    }
+
+    .required-badge {
+      background-color: var(--error-color);
+      color: white;
+      font-size: 0.8rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      margin-left: 0.5rem;
+      vertical-align: middle;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 0.75rem;
+      font-size: 1.1rem;
+      border: 2px solid var(--border-color);
+      border-radius: 6px;
+      background-color: #ffffff;
+      color: var(--text-color);
+    }
+
+    .form-control:focus {
+      border-color: var(--primary-color);
+    }
+
+    .error-msg {
+      color: var(--error-color);
+      font-size: 0.95rem;
+      font-weight: bold;
+      margin-top: 0.3rem;
+      display: none;
+    }
+
+    /* ----------------------------------
+       フィルター＆ソートエリア
+       ---------------------------------- */
+    .control-panel {
+      background-color: #edf2f7;
+      padding: 1.2rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    @media (min-width: 768px) {
+      .control-panel {
+        flex-direction: row;
+        align-items: flex-end;
+        justify-content: space-between;
+      }
+    }
+
+    .filter-group {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .range-group {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .range-slider {
+      flex: 1;
+      height: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .sort-group {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .btn-sort {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+    }
+
+    .btn-sort.active {
+      background-color: var(--primary-color);
+      color: #ffffff;
+    }
+
+    /* ----------------------------------
+       商品一覧テーブル
+       ---------------------------------- */
+    .table-container {
+      overflow-x: auto;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 1.05rem;
+    }
+
+    th, td {
+      padding: 1rem;
+      border-bottom: 1px solid #cbd5e1;
+    }
+
+    th {
+      background-color: #f1f5f9;
+      color: var(--text-color);
+      font-weight: bold;
+    }
+
+    tr.alert-danger {
+      background-color: var(--danger-bg);
+    }
+
+    tr.alert-warning {
+      background-color: var(--warning-bg);
+    }
+
+    .cell-number {
+      text-align: right;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      font-weight: bold;
+    }
+    .badge-danger {
+      background-color: #f87171;
+      color: #7f1d1d;
+    }
+    .badge-warning {
+      background-color: #fde047;
+      color: #713f12;
+    }
+    .badge-safe {
+      background-color: #86efac;
+      color: #14532d;
+    }
+
+    .history-list {
+      font-size: 0.9rem;
+      list-style: none;
+      max-height: 100px;
+      overflow-y: auto;
+      background-color: rgba(255, 255, 255, 0.6);
+      padding: 0.3rem;
+      border-radius: 4px;
+    }
+
+    .history-item {
+      border-bottom: 1px dashed #cbd5e1;
+      padding: 0.1rem 0;
+    }
+    .history-item:last-child {
+      border-bottom: none;
+    }
+
+    /* ----------------------------------
+       簡易マニュアル＆モーダル
+       ---------------------------------- */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
+    }
+
+    .modal-content {
+      background-color: var(--card-bg);
+      padding: 2rem;
+      border-radius: 8px;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--primary-color);
+      padding-bottom: 0.5rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .modal-title {
+      font-size: 1.5rem;
+      color: var(--primary-color);
+    }
+
+    .modal-body h3 {
+      font-size: 1.2rem;
+      margin-top: 1rem;
+      margin-bottom: 0.4rem;
+      color: var(--primary-color);
+    }
+
+    .modal-body ol {
+      padding-left: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .modal-body li {
+      margin-bottom: 0.5rem;
+    }
+
+    /* モーダル表示制御 */
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    /* トースト通知 */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background-color: #1e293b;
+      color: #ffffff;
+      padding: 1rem 1.5rem;
+      border-radius: 6px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+      z-index: 2000;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-title-area">
+      <span class="header-icon" aria-hidden="true">📦</span>
+      <h1>商品粗利管理ツール</h1>
+    </div>
+    <div class="header-buttons">
+      <button type="button" class="btn btn-secondary" id="btn-manual" aria-haspopup="dialog" aria-controls="manual-modal">❓使い方</button>
+      <button type="button" class="btn btn-secondary" id="btn-export">📤データをエクスポート</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="card" aria-labelledby="form-title">
+      <h2 id="form-title" class="card-title">商品の登録・編集</h2>
+      <form id="product-form" novalidate>
+        <input type="hidden" id="edit-id">
+
+        <div class="form-group">
+          <label id="label-pname" for="p-name">商品名<span class="required-badge">必須</span></label>
+          <input type="text" id="p-name" class="form-control" required placeholder="例：特製オリジナルブレンドコーヒー">
+          <div id="err-name" class="error-msg" role="alert">商品名を入力してください。</div>
+        </div>
+
+        <div class="form-group">
+          <label for="p-code">品番</label>
+          <input type="text" id="p-code" class="form-control" placeholder="例：COF-001">
+        </div>
+
+        <div class="form-group">
+          <label for="p-price">現在の単価 (円)</label>
+          <input type="number" id="p-price" class="form-control" min="0" placeholder="例：1200">
+          <div id="err-price" class="error-msg" role="alert">0以上の半角数値を入力してください。</div>
+        </div>
+
+        <div class="form-group">
+          <label for="p-cost">原価 (円)</label>
+          <input type="number" id="p-cost" class="form-control" min="0" placeholder="例：900">
+          <div id="err-cost" class="error-msg" role="alert">0以上の半角数値を入力してください。</div>
+        </div>
+
+        <div class="form-group">
+          <label for="p-revision">改定予定日</label>
+          <input type="date" id="p-revision" class="form-control">
+          <div id="err-revision" class="error-msg" role="alert">正しい日付（西暦年-月-日）を入力してください。</div>
+        </div>
+
+        <div class="form-group">
+          <label for="p-memo">メモ</label>
+          <textarea id="p-memo" class="form-control" rows="3" placeholder="備考や特記事項を入力してください。"></textarea>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem;">
+          <button type="submit" class="btn btn-primary" style="flex: 1;" id="btn-submit">登録する</button>
+          <button type="button" class="btn btn-secondary" id="btn-clear" style="display: none;">編集キャンセル</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card" aria-labelledby="list-title" style="overflow: hidden;">
+      <h2 id="list-title" class="card-title">登録商品一覧</h2>
+
+      <div class="control-panel">
+        <div class="filter-group">
+          <label for="search-pname" style="font-weight: bold; display: block; margin-bottom: 0.3rem;">🔍 商品名で検索</label>
+          <input type="search" id="search-pname" class="form-control" placeholder="商品名の一部を入力...">
+        </div>
+
+        <div class="filter-group">
+          <label for="filter-margin" style="font-weight: bold; display: block; margin-bottom: 0.3rem;">📈 粗利率で絞り込み</label>
+          <div class="range-group">
+            <input type="range" id="filter-margin" class="range-slider" min="0" max="100" value="0">
+            <span style="font-weight: bold; min-width: 90px; text-align: right;"><span id="margin-val">0</span>%以上</span>
+          </div>
+        </div>
+
+        <div class="sort-group">
+          <span style="font-weight: bold; display: block; width: 100%; margin-bottom: 0.3rem;">↕ 並び替え</span>
+          <button type="button" class="btn btn-secondary btn-sort active" id="sort-name" data-sort="name">商品名順</button>
+          <button type="button" class="btn btn-secondary btn-sort" id="sort-margin" data-sort="margin">粗利率順</button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">操作</th>
+              <th scope="col">商品名</th>
+              <th scope="col">品番</th>
+              <th scope="col" class="cell-number">現在の単価</th>
+              <th scope="col" class="cell-number">原価</th>
+              <th scope="col" class="cell-number">粗利率 (%)</th>
+              <th scope="col">改定予定日</th>
+              <th scope="col" style="min-width: 150px;">単価変更履歴</th>
+              <th scope="col">メモ</th>
+            </tr>
+          </thead>
+          <tbody id="product-table-body">
+            </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-overlay" id="manual-modal" role="dialog" aria-modal="true" aria-labelledby="manual-title">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="manual-title" class="modal-title">❓ このアプリの使い方</h2>
+        <button type="button" class="btn btn-secondary" id="btn-close-manual" style="padding: 0.4rem 0.8rem; min-height: auto;" aria-label="閉じる">✖</button>
+      </div>
+      <div class="modal-body">
+        <h3>(1) このアプリでできること</h3>
+        <p>
+          商品の「単価」「原価」から<strong>自動で粗利率を計算・判定</strong>し、登録情報を一元管理できるツールです。
+          粗利率が10%未満の危険な商品は「赤色」、20%未満の注意が必要な商品は「黄色」で警告表示され、値決めのミスを未然に防ぎます。
+        </p>
+
+        <h3>(2) 基本的な手順（3ステップ）</h3>
+        <ol>
+          <li><strong>商品の登録：</strong> 画面左側のフォームに商品名や単価、原価を入力して「登録する」ボタンを押します。</li>
+          <li><strong>粗利率のチェック：</strong> 右側の一覧テーブルに登録され、背景色で収益安全性がひと目でわかります。</li>
+          <li><strong>単価変更と履歴保存：</strong> 登録済み商品の「編集」を押して単価を変更し再保存すると、古い単価が「変更履歴」に自動で残ります。</li>
+        </ol>
+
+        <h3>(3) データの取り扱いについて</h3>
+        <p>
+          本アプリで入力したデータは、外部サーバーに送信されることはありません。<strong>すべてお客様がお使いのこのブラウザ内（localStorage）だけに安全に保存されます。</strong>
+          他端末への移行やバックアップをしたい場合は、右上の「📤データをエクスポート」をご活用ください。
+        </p>
+
+        <div style="margin-top: 1.5rem; text-align: right;">
+          <button type="button" class="btn btn-primary" id="btn-close-manual-bottom">理解しました（閉じる）</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-notify" class="toast" role="status" aria-live="polite">設定が反映されました</div>
+
+  <script>
+    // ----------------------------------
+    // データ管理・初期化
+    // ----------------------------------
+    let products = [];
+    let currentSort = 'name'; // 'name' or 'margin'
+
+    // DOM要素の参照
+    const form = document.getElementById('product-form');
+    const editIdInput = document.getElementById('edit-id');
+    const pNameInput = document.getElementById('p-name');
+    const pCodeInput = document.getElementById('p-code');
+    const pPriceInput = document.getElementById('p-price');
+    const pCostInput = document.getElementById('p-cost');
+    const pRevisionInput = document.getElementById('p-revision');
+    const pMemoInput = document.getElementById('p-memo');
+
+    const btnSubmit = document.getElementById('btn-submit');
+    const btnClear = document.getElementById('btn-clear');
+    const tableBody = document.getElementById('product-table-body');
+
+    const searchInput = document.getElementById('search-pname');
+    const marginSlider = document.getElementById('filter-margin');
+    const marginValSpan = document.getElementById('margin-val');
+
+    const sortNameBtn = document.getElementById('sort-name');
+    const sortMarginBtn = document.getElementById('sort-margin');
+
+    const manualModal = document.getElementById('manual-modal');
+    const btnManual = document.getElementById('btn-manual');
+    const btnCloseManual = document.getElementById('btn-close-manual');
+    const btnCloseManualBottom = document.getElementById('btn-close-manual-bottom');
+    const btnExport = document.getElementById('btn-export');
+
+    const errName = document.getElementById('err-name');
+    const errPrice = document.getElementById('err-price');
+    const errCost = document.getElementById('err-cost');
+    const errRevision = document.getElementById('err-revision');
+
+    // ----------------------------------
+    // 起動時の処理
+    // ----------------------------------
+    window.addEventListener('DOMContentLoaded', () => {
+      // ローカルストレージから読み込み
+      const stored = localStorage.getItem('product_manager_data');
+      if (stored) {
+        try {
+          products = JSON.parse(stored);
+        } catch (e) {
+          console.error("データの読み込みに失敗しました", e);
+        }
+      }
+      renderProducts();
+    });
+
+    // ----------------------------------
+    // バリデーション & エラー制御
+    // ----------------------------------
+    function validateForm() {
+      let isValid = true;
+
+      // 商品名（必須）
+      if (!pNameInput.value.trim()) {
+        errName.style.display = 'block';
+        pNameInput.setAttribute('aria-invalid', 'true');
+        isValid = false;
+      } else {
+        errName.style.display = 'none';
+        pNameInput.removeAttribute('aria-invalid');
+      }
+
+      // 単価 (0以上、かつ数値)
+      if (pPriceInput.value !== '') {
+        const val = Number(pPriceInput.value);
+        if (isNaN(val) || val < 0) {
+          errPrice.style.display = 'block';
+          pPriceInput.setAttribute('aria-invalid', 'true');
+          isValid = false;
+        } else {
+          errPrice.style.display = 'none';
+          pPriceInput.removeAttribute('aria-invalid');
+        }
+      } else {
+        errPrice.style.display = 'none';
+      }
+
+      // 原価 (0以上、かつ数値)
+      if (pCostInput.value !== '') {
+        const val = Number(pCostInput.value);
+        if (isNaN(val) || val < 0) {
+          errCost.style.display = 'block';
+          pCostInput.setAttribute('aria-invalid', 'true');
+          isValid = false;
+        } else {
+          errCost.style.display = 'none';
+          pCostInput.removeAttribute('aria-invalid');
+        }
+      } else {
+        errCost.style.display = 'none';
+      }
+
+      // 日付チェック
+      if (pRevisionInput.value) {
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(pRevisionInput.value) || isNaN(Date.parse(pRevisionInput.value))) {
+          errRevision.style.display = 'block';
+          pRevisionInput.setAttribute('aria-invalid', 'true');
+          isValid = false;
+        } else {
+          errRevision.style.display = 'none';
+          pRevisionInput.removeAttribute('aria-invalid');
+        }
+      } else {
+        errRevision.style.display = 'none';
+      }
+
+      return isValid;
+    }
+
+    // ----------------------------------
+    // フォーム送信処理（登録 / 更新）
+    // ----------------------------------
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      if (!validateForm()) {
+        return;
+      }
+
+      const id = editIdInput.value;
+      const name = pNameInput.value.trim();
+      const code = pCodeInput.value.trim();
+      const price = pPriceInput.value !== '' ? Number(pPriceInput.value) : 0;
+      const cost = pCostInput.value !== '' ? Number(pCostInput.value) : 0;
+      const revision = pRevisionInput.value;
+      const memo = pMemoInput.value.trim();
+
+      if (id) {
+        // 編集モード
+        const index = products.findIndex(p => p.id === id);
+        if (index !== -1) {
+          const original = products[index];
+
+          // 単価が変更された場合、履歴に追加
+          let updatedHistory = [...(original.history || [])];
+          if (original.price !== price) {
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            updatedHistory.push({
+              oldPrice: original.price,
+              changeDate: dateStr
+            });
+          }
+
+          products[index] = {
+            id,
+            name,
+            code,
+            price,
+            cost,
+            revision,
+            memo,
+            history: updatedHistory
+          };
+          showToast("商品を更新しました。");
+        }
+      } else {
+        // 新規追加
+        const newProduct = {
+          id: 'prod_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+          name,
+          code,
+          price,
+          cost,
+          revision,
+          memo,
+          history: []
+        };
+        products.push(newProduct);
+        showToast("新規商品を登録しました。");
+      }
+
+      saveData();
+      resetForm();
+      renderProducts();
+    });
+
+    // ----------------------------------
+    // 計算ロジック
+    // ----------------------------------
+    function calculateMargin(price, cost) {
+      if (!price || price === 0) return 0;
+      const margin = ((price - cost) / price) * 100;
+      return Math.round(margin * 100) / 100; // 小数点第2位で四捨五入
+    }
+
+    // ----------------------------------
+    // 保存とデータ描画
+    // ----------------------------------
+    function saveData() {
+      localStorage.setItem('product_manager_data', JSON.stringify(products));
+    }
+
+    function renderProducts() {
+      tableBody.innerHTML = '';
+
+      // フィルター適用
+      const searchText = searchInput.value.toLowerCase().trim();
+      const minMargin = Number(marginSlider.value);
+
+      let filtered = products.filter(p => {
+        const matchesName = p.name.toLowerCase().includes(searchText);
+        const margin = calculateMargin(p.price, p.cost);
+        const matchesMargin = margin >= minMargin;
+        return matchesName && matchesMargin;
+      });
+
+      // 並び替え適用
+      filtered.sort((a, b) => {
+        if (currentSort === 'name') {
+          return a.name.localeCompare(b.name, 'ja');
+        } else if (currentSort === 'margin') {
+          const marginA = calculateMargin(a.price, a.cost);
+          const marginB = calculateMargin(b.price, b.cost);
+          return marginB - marginA; // 粗利率の高い順
+        }
+        return 0;
+      });
+
+      if (filtered.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 2rem;">該当する商品が登録されていません。</td></tr>`;
+        return;
+      }
+
+      filtered.forEach(p => {
+        const margin = calculateMargin(p.price, p.cost);
+        
+        // アラートカラー判定
+        let alertClass = '';
+        let badge = '<span class="badge badge-safe">適正</span>';
+        if (margin < 10) {
+          alertClass = 'alert-danger';
+          badge = '<span class="badge badge-danger">10%未満 危険</span>';
+        } else if (margin < 20) {
+          alertClass = 'alert-warning';
+          badge = '<span class="badge badge-warning">20%未満 注意</span>';
+        }
+
+        // 履歴の組み立て
+        let historyHtml = '<ul class="history-list" aria-label="変更履歴">';
+        if (p.history && p.history.length > 0) {
+          p.history.forEach(h => {
+            historyHtml += `<li class="history-item">変更前単価: ${h.oldPrice.toLocaleString()}円 / [${h.changeDate}]</li>`;
+          });
+        } else {
+          historyHtml += `<li class="history-item" style="color: #666; font-style: italic;">履歴なし</li>`;
+        }
+        historyHtml += '</ul>';
+
+        const tr = document.createElement('tr');
+        tr.className = alertClass;
+        tr.innerHTML = `
+          <td>
+            <div style="display: flex; gap: 0.3rem;">
+              <button type="button" class="btn btn-secondary btn-edit" style="padding: 0.3rem 0.6rem; min-height: auto; font-size: 0.95rem;" data-id="${p.id}">編集</button>
+              <button type="button" class="btn btn-danger btn-delete" style="padding: 0.3rem 0.6rem; min-height: auto; font-size: 0.95rem;" data-id="${p.id}">削除</button>
+            </div>
+          </td>
+          <th scope="row" style="font-weight: normal;">${escapeHtml(p.name)}</th>
+          <td>${escapeHtml(p.code || '-')}</td>
+          <td class="cell-number">${p.price.toLocaleString()} 円</td>
+          <td class="cell-number">${p.cost.toLocaleString()} 円</td>
+          <td class="cell-number">
+            <strong>${margin.toFixed(2)} %</strong>
+            <div style="margin-top: 0.2rem;">${badge}</div>
+          </td>
+          <td>${p.revision ? escapeHtml(p.revision) : '-'}</td>
+          <td>${historyHtml}</td>
+          <td style="white-space: pre-wrap; font-size: 0.95rem;">${escapeHtml(p.memo || '-')}</td>
+        `;
+        tableBody.appendChild(tr);
+      });
+
+      // 編集・削除ボタンにイベント付与
+      document.querySelectorAll('.btn-edit').forEach(btn => {
+        btn.addEventListener('click', (e) => loadToForm(e.target.dataset.id));
+      });
+      document.querySelectorAll('.btn-delete').forEach(btn => {
+        btn.addEventListener('click', (e) => deleteProduct(e.target.dataset.id));
+      });
+    }
+
+    // エスケープ
+    function escapeHtml(str) {
+      if (typeof str !== 'string') return '';
+      return str.replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+    }
+
+    // ----------------------------------
+    // 各ボタン・コントロールの相互作用
+    // ----------------------------------
+    function loadToForm(id) {
+      const p = products.find(prod => prod.id === id);
+      if (!p) return;
+
+      editIdInput.value = p.id;
+      pNameInput.value = p.name;
+      pCodeInput.value = p.code || '';
+      pPriceInput.value = p.price;
+      pCostInput.value = p.cost;
+      pRevisionInput.value = p.revision || '';
+      pMemoInput.value = p.memo || '';
+
+      btnSubmit.textContent = "変更を保存する";
+      btnClear.style.display = 'inline-flex';
+      
+      // フォームへフォーカスを戻して支援
+      pNameInput.focus();
+      showToast("編集モードに切り替えました。");
+    }
+
+    function resetForm() {
+      editIdInput.value = '';
+      form.reset();
+      btnSubmit.textContent = "登録する";
+      btnClear.style.display = 'none';
+
+      // エラー表示をリセット
+      errName.style.display = 'none';
+      errPrice.style.display = 'none';
+      errCost.style.display = 'none';
+      errRevision.style.display = 'none';
+      pNameInput.removeAttribute('aria-invalid');
+      pPriceInput.removeAttribute('aria-invalid');
+      pCostInput.removeAttribute('aria-invalid');
+      pRevisionInput.removeAttribute('aria-invalid');
+    }
+
+    btnClear.addEventListener('click', () => {
+      resetForm();
+      showToast("編集をキャンセルしました。");
+    });
+
+    function deleteProduct(id) {
+      if (confirm("本当にこの商品を削除してもよろしいですか？（元には戻せません）")) {
+        products = products.filter(p => p.id !== id);
+        saveData();
+        renderProducts();
+        showToast("商品を削除しました。");
+      }
+    }
+
+    // フィルター関連
+    searchInput.addEventListener('input', renderProducts);
+    marginSlider.addEventListener('input', (e) => {
+      marginValSpan.textContent = e.target.value;
+      renderProducts();
+    });
+
+    // 並び替え関連
+    sortNameBtn.addEventListener('click', () => {
+      currentSort = 'name';
+      sortNameBtn.classList.add('active');
+      sortMarginBtn.classList.remove('active');
+      renderProducts();
+    });
+
+    sortMarginBtn.addEventListener('click', () => {
+      currentSort = 'margin';
+      sortMarginBtn.classList.add('active');
+      sortNameBtn.classList.remove('active');
+      renderProducts();
+    });
+
+    // ----------------------------------
+    // データのエクスポート機能
+    // ----------------------------------
+    btnExport.addEventListener('click', () => {
+      if (products.length === 0) {
+        alert("登録データがありません。");
+        return;
+      }
+      const dataStr = JSON.stringify(products, null, 2);
+      const blob = new Blob([dataStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `商品粗利管理データ_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("データをファイルとして保存しました。");
+    });
+
+    // ----------------------------------
+    // モーダル管理（アクセシビリティ考慮）
+    // ----------------------------------
+    let previousActiveElement;
+
+    function openManual() {
+      previousActiveElement = document.activeElement;
+      manualModal.classList.add('active');
+      btnCloseManual.focus();
+      document.addEventListener('keydown', trapFocus);
+    }
+
+    function closeManual() {
+      manualModal.classList.remove('active');
+      document.removeEventListener('keydown', trapFocus);
+      if (previousActiveElement) {
+        previousActiveElement.focus();
+      }
+    }
+
+    function trapFocus(e) {
+      if (e.key === 'Escape') {
+        closeManual();
+        return;
+      }
+      const focusableElements = manualModal.querySelectorAll('button, [tabindex="0"]');
+      const first = focusableElements[0];
+      const last = focusableElements[focusableElements.length - 1];
+
+      if (e.key === 'Tab') {
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            last.focus();
+            e.preventDefault();
+          }
+        } else {
+          if (document.activeElement === last) {
+            first.focus();
+            e.preventDefault();
+          }
+        }
+      }
+    }
+
+    btnManual.addEventListener('click', openManual);
+    btnCloseManual.addEventListener('click', closeManual);
+    btnCloseManualBottom.addEventListener('click', closeManual);
+
+    // 外側クリックで閉じる
+    manualModal.addEventListener('click', (e) => {
+      if (e.target === manualModal) {
+        closeManual();
+      }
+    });
+
+    // ----------------------------------
+    // トースト通知機能
+    // ----------------------------------
+    function showToast(message) {
+      const toast = document.getElementById('toast-notify');
+      toast.textContent = message;
+      toast.style.display = 'block';
+      setTimeout(() => {
+        toast.style.display = 'none';
+      }, 3000);
+    }
+  </script>
+</body>
+</html>

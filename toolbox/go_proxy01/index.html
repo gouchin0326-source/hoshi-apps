@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <title>有給休暇残日数計算メモ</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🏖️</text></svg>'>
+  <style>
+    :root {
+      --background: #eef3f8;
+      --surface: #ffffff;
+      --text: #111111;
+      --subtext: #333333;
+      --border: #5f6872;
+      --primary: #0057b8;
+      --primary-hover: #003f87;
+      --danger: #b00020;
+      --danger-background: #fff0f2;
+      --success: #146c2e;
+      --success-background: #edf9f0;
+      --focus: #006fe6;
+      --shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      font-size: 18px;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      background: var(--background);
+      color: var(--text);
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        "Yu Gothic UI",
+        "Yu Gothic",
+        Meiryo,
+        sans-serif;
+      line-height: 1.6;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button,
+    input,
+    [tabindex="0"] {
+      scroll-margin: 16px;
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    [tabindex="0"]:focus-visible {
+      outline: 4px solid var(--focus);
+      outline-offset: 3px;
+    }
+
+    input:focus {
+      border-color: var(--focus);
+      box-shadow: 0 0 0 3px rgba(0, 111, 230, 0.22);
+    }
+
+    .app-header {
+      width: 100%;
+      padding: 18px 20px;
+      background: #ffffff;
+      border-bottom: 2px solid #c7ced6;
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: min(920px, 100%);
+      margin: 0 auto;
+      gap: 16px;
+    }
+
+    .title-group {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+      gap: 12px;
+    }
+
+    .app-icon {
+      flex: 0 0 auto;
+      font-size: 42px;
+      line-height: 1;
+    }
+
+    h1 {
+      margin: 0;
+      color: #000000;
+      font-size: clamp(24px, 4vw, 32px);
+      line-height: 1.3;
+    }
+
+    .manual-button {
+      flex: 0 0 auto;
+      min-height: 48px;
+      padding: 10px 16px;
+      border: 2px solid var(--primary);
+      border-radius: 10px;
+      background: #ffffff;
+      color: #003f87;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .manual-button:hover {
+      background: #eaf3ff;
+    }
+
+    main {
+      width: min(760px, calc(100% - 28px));
+      margin: 28px auto;
+    }
+
+    .card {
+      padding: clamp(20px, 5vw, 34px);
+      background: var(--surface);
+      border: 1px solid #c8d0d9;
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .intro {
+      margin: 0 0 24px;
+      color: var(--subtext);
+      font-size: 1rem;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+    }
+
+    .field {
+      min-width: 0;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    .required {
+      color: var(--danger);
+      font-size: 0.88rem;
+    }
+
+    input {
+      width: 100%;
+      min-height: 52px;
+      padding: 10px 12px;
+      border: 2px solid var(--border);
+      border-radius: 9px;
+      background: #ffffff;
+      color: #111111;
+      font-size: 1rem;
+    }
+
+    .hint {
+      margin: 7px 0 0;
+      color: #404850;
+      font-size: 0.9rem;
+    }
+
+    .error-message {
+      min-height: 30px;
+      margin: 18px 0 0;
+      padding: 0;
+      color: var(--danger);
+      font-weight: 700;
+    }
+
+    .error-message:not(:empty) {
+      padding: 10px 12px;
+      border: 2px solid var(--danger);
+      border-radius: 8px;
+      background: var(--danger-background);
+    }
+
+    .result-box {
+      margin-top: 22px;
+      padding: 22px;
+      text-align: center;
+      border: 2px solid #939da8;
+      border-radius: 14px;
+      background: #f8fafc;
+    }
+
+    .result-label {
+      margin: 0;
+      font-size: 1.12rem;
+      font-weight: 700;
+    }
+
+    .result-value {
+      display: block;
+      margin-top: 4px;
+      color: var(--danger);
+      font-size: clamp(32px, 9vw, 54px);
+      font-weight: 800;
+      line-height: 1.25;
+    }
+
+    .grant-summary {
+      margin: 10px 0 0;
+      color: #28313a;
+      font-size: 0.95rem;
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 24px;
+    }
+
+    .action-button {
+      min-width: 44px;
+      min-height: 50px;
+      padding: 11px 16px;
+      border: 2px solid transparent;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .save-button {
+      background: var(--primary);
+      color: #ffffff;
+    }
+
+    .save-button:hover {
+      background: var(--primary-hover);
+    }
+
+    .export-button {
+      border-color: #245829;
+      background: #ffffff;
+      color: #174b20;
+    }
+
+    .export-button:hover {
+      background: #edf8ef;
+    }
+
+    .status-message {
+      min-height: 34px;
+      margin: 16px 0 0;
+      text-align: center;
+      color: var(--success);
+      font-weight: 700;
+    }
+
+    .status-message:not(:empty) {
+      padding: 8px;
+      border-radius: 8px;
+      background: var(--success-background);
+    }
+
+    .privacy-note {
+      margin: 24px 0 0;
+      padding: 14px;
+      border-left: 5px solid #47596b;
+      background: #edf1f5;
+      color: #222b34;
+    }
+
+    dialog {
+      width: min(620px, calc(100% - 28px));
+      max-height: calc(100vh - 40px);
+      padding: 0;
+      overflow: auto;
+      border: 2px solid #3e4852;
+      border-radius: 16px;
+      background: #ffffff;
+      color: #111111;
+      box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+    }
+
+    dialog::backdrop {
+      background: rgba(0, 0, 0, 0.62);
+    }
+
+    .modal-content {
+      padding: 26px;
+    }
+
+    .modal-content h2 {
+      margin: 0 0 16px;
+      font-size: 1.5rem;
+    }
+
+    .modal-content h3 {
+      margin: 20px 0 8px;
+      font-size: 1.1rem;
+    }
+
+    .modal-content ol {
+      padding-left: 1.5em;
+    }
+
+    .modal-content li + li {
+      margin-top: 8px;
+    }
+
+    .export-preview {
+      width: 100%;
+      min-height: 120px;
+      margin-top: 12px;
+      padding: 12px;
+      overflow-wrap: anywhere;
+      border: 2px solid #747f89;
+      border-radius: 8px;
+      background: #f5f7f9;
+      white-space: pre-wrap;
+    }
+
+    .modal-actions {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .modal-actions.three-buttons {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .secondary-button {
+      min-height: 48px;
+      padding: 10px 14px;
+      border: 2px solid #38434e;
+      border-radius: 9px;
+      background: #ffffff;
+      color: #111111;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .secondary-button:hover {
+      background: #e8edf2;
+    }
+
+    .copy-button {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: #ffffff;
+    }
+
+    .copy-button:hover {
+      background: var(--primary-hover);
+    }
+
+    .download-button {
+      border-color: #245829;
+      background: #245829;
+      color: #ffffff;
+    }
+
+    .download-button:hover {
+      background: #173d1b;
+    }
+
+    @media (max-width: 640px) {
+      html {
+        font-size: 18px;
+      }
+
+      .app-header {
+        padding: 14px;
+      }
+
+      .header-inner {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .manual-button {
+        width: 100%;
+      }
+
+      main {
+        width: min(100% - 20px, 760px);
+        margin: 18px auto;
+      }
+
+      .card {
+        padding: 20px 16px;
+        border-radius: 14px;
+      }
+
+      .form-grid,
+      .button-row,
+      .modal-actions,
+      .modal-actions.three-buttons {
+        grid-template-columns: 1fr;
+      }
+
+      input,
+      button {
+        font-size: 18px;
+      }
+
+      .action-button,
+      .secondary-button,
+      .manual-button {
+        min-height: 52px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition: none !important;
+        animation: none !important;
+      }
+    }
+  </style>
+</head>
+<body tabindex="0">
+  <header class="app-header" tabindex="0">
+    <div class="header-inner" tabindex="0">
+      <div class="title-group" tabindex="0">
+        <span class="app-icon" aria-hidden="true" tabindex="0">🏖️</span>
+        <h1 tabindex="0">有給休暇残日数計算メモ</h1>
+      </div>
+      <button
+        id="openManualButton"
+        class="manual-button"
+        type="button"
+        tabindex="0"
+        aria-haspopup="dialog"
+        aria-controls="manualDialog"
+      >
+        ❓使い方
+      </button>
+    </div>
+  </header>
+
+  <main tabindex="0">
+    <section class="card" aria-labelledby="formTitle" tabindex="0">
+      <p id="formTitle" class="intro" tabindex="0">
+        入社日と消化予定日数を入力すると、有給休暇の残日数を自動で計算します。
+      </p>
+
+      <div class="form-grid" tabindex="0">
+        <div class="field" tabindex="0">
+          <label for="startDate" tabindex="0">
+            入社日（YYYY/MM/DD）
+            <span class="required" aria-label="必須項目">必須</span>
+          </label>
+          <input
+            id="startDate"
+            name="startDate"
+            type="date"
+            required
+            tabindex="0"
+            aria-required="true"
+            aria-describedby="startDateHint errorMessage"
+          >
+          <p id="startDateHint" class="hint" tabindex="0">
+            カレンダーまたはキーボードで入力できます。
+          </p>
+        </div>
+
+        <div class="field" tabindex="0">
+          <label for="usedDays" tabindex="0">
+            消化予定日数
+            <span class="required" aria-label="必須項目">必須</span>
+          </label>
+          <input
+            id="usedDays"
+            name="usedDays"
+            type="number"
+            min="0"
+            max="20"
+            step="1"
+            inputmode="numeric"
+            value="0"
+            required
+            tabindex="0"
+            aria-required="true"
+            aria-describedby="usedDaysHint errorMessage"
+          >
+          <p id="usedDaysHint" class="hint" tabindex="0">
+            0日から20日までの整数を入力してください。
+          </p>
+        </div>
+      </div>
+
+      <p
+        id="errorMessage"
+        class="error-message"
+        role="alert"
+        aria-live="assertive"
+        tabindex="0"
+      ></p>
+
+      <section
+        class="result-box"
+        aria-label="有給休暇の計算結果"
+        tabindex="0"
+      >
+        <p class="result-label" tabindex="0">残日数:</p>
+        <output
+          id="remainingDays"
+          class="result-value"
+          for="startDate usedDays"
+          aria-live="polite"
+          tabindex="0"
+        >
+          －日
+        </output>
+        <p id="grantSummary" class="grant-summary" tabindex="0">
+          入社日を入力すると計算されます。
+        </p>
+      </section>
+
+      <div class="button-row" tabindex="0">
+        <button
+          id="saveButton"
+          class="action-button save-button"
+          type="button"
+          tabindex="0"
+        >
+          💾 データを保存
+        </button>
+        <button
+          id="exportButton"
+          class="action-button export-button"
+          type="button"
+          tabindex="0"
+          aria-haspopup="dialog"
+          aria-controls="exportDialog"
+        >
+          📤 データをエクスポート
+        </button>
+      </div>
+
+      <p
+        id="statusMessage"
+        class="status-message"
+        role="status"
+        aria-live="polite"
+        tabindex="0"
+      ></p>
+
+      <p class="privacy-note" tabindex="0">
+        🔒 入力したデータは、この端末のブラウザ内だけに保存されます。外部への通信は行いません。
+      </p>
+    </section>
+  </main>
+
+  <dialog
+    id="manualDialog"
+    aria-labelledby="manualTitle"
+    aria-modal="true"
+    tabindex="0"
+  >
+    <div class="modal-content" tabindex="0">
+      <h2 id="manualTitle" tabindex="0">❓このアプリの使い方</h2>
+
+      <h3 tabindex="0">このアプリでできること</h3>
+      <p tabindex="0">
+        入社日から有給休暇の付与日数を計算し、消化予定日数を引いた残日数を確認できます。
+        入力内容の保存や、計算結果のコピー・テキストファイル保存もできます。
+      </p>
+
+      <h3 tabindex="0">基本の使い方</h3>
+      <ol tabindex="0">
+        <li tabindex="0">「入社日」をカレンダーまたはキーボードで入力します。</li>
+        <li tabindex="0">「消化予定日数」に0～20の数字を入力します。</li>
+        <li tabindex="0">画面中央の「残日数」を確認します。</li>
+        <li tabindex="0">入力内容を残すときは「データを保存」を押します。</li>
+        <li tabindex="0">結果を取り出すときは「データをエクスポート」を押します。</li>
+      </ol>
+
+      <h3 tabindex="0">データについて</h3>
+      <p tabindex="0">
+        データは、この端末のブラウザ内だけで完結します。
+        インターネットへの送信や外部サービスへの保存は行いません。
+        ブラウザの保存データを削除すると、このアプリの保存内容も消える場合があります。
+      </p>
+
+      <div class="modal-actions" tabindex="0">
+        <button
+          id="closeManualButton"
+          class="secondary-button"
+          type="button"
+          tabindex="0"
+        >
+          閉じる
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog
+    id="exportDialog"
+    aria-labelledby="exportTitle"
+    aria-modal="true"
+    tabindex="0"
+  >
+    <div class="modal-content" tabindex="0">
+      <h2 id="exportTitle" tabindex="0">📤 データをエクスポート</h2>
+      <p tabindex="0">
+        下の内容をクリップボードにコピーするか、テキストファイルとして保存できます。
+      </p>
+
+      <div
+        id="exportPreview"
+        class="export-preview"
+        role="textbox"
+        aria-readonly="true"
+        tabindex="0"
+      ></div>
+
+      <p
+        id="exportStatus"
+        class="status-message"
+        role="status"
+        aria-live="polite"
+        tabindex="0"
+      ></p>
+
+      <div class="modal-actions three-buttons" tabindex="0">
+        <button
+          id="copyButton"
+          class="secondary-button copy-button"
+          type="button"
+          tabindex="0"
+        >
+          📋 コピー
+        </button>
+        <button
+          id="downloadButton"
+          class="secondary-button download-button"
+          type="button"
+          tabindex="0"
+        >
+          ⬇️ ダウンロード
+        </button>
+        <button
+          id="closeExportButton"
+          class="secondary-button"
+          type="button"
+          tabindex="0"
+        >
+          閉じる
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <script>
+    "use strict";
+
+    const STORAGE_START_DATE = "start_date";
+    const STORAGE_USED_DAYS = "used_days";
+
+    const startDateInput = document.getElementById("startDate");
+    const usedDaysInput = document.getElementById("usedDays");
+    const remainingDaysOutput = document.getElementById("remainingDays");
+    const grantSummary = document.getElementById("grantSummary");
+    const errorMessage = document.getElementById("errorMessage");
+    const statusMessage = document.getElementById("statusMessage");
+
+    const saveButton = document.getElementById("saveButton");
+    const exportButton = document.getElementById("exportButton");
+
+    const manualDialog = document.getElementById("manualDialog");
+    const openManualButton = document.getElementById("openManualButton");
+    const closeManualButton = document.getElementById("closeManualButton");
+
+    const exportDialog = document.getElementById("exportDialog");
+    const exportPreview = document.getElementById("exportPreview");
+    const exportStatus = document.getElementById("exportStatus");
+    const copyButton = document.getElementById("copyButton");
+    const downloadButton = document.getElementById("downloadButton");
+    const closeExportButton = document.getElementById("closeExportButton");
+
+    let currentResult = null;
+    let statusTimer = null;
+
+    function getTodayAtMidnight() {
+      const now = new Date();
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    }
+
+    function parseDateInput(value) {
+      if (!value) {
+        return null;
+      }
+
+      const parts = value.split("-").map(Number);
+      if (parts.length !== 3 || parts.some(Number.isNaN)) {
+        return null;
+      }
+
+      const [year, month, day] = parts;
+      const date = new Date(year, month - 1, day);
+
+      if (
+        date.getFullYear() !== year ||
+        date.getMonth() !== month - 1 ||
+        date.getDate() !== day
+      ) {
+        return null;
+      }
+
+      return date;
+    }
+
+    function formatDateWithSlashes(value) {
+      if (!value) {
+        return "";
+      }
+
+      const parts = value.split("-");
+      if (parts.length !== 3) {
+        return value;
+      }
+
+      return `${parts[0]}/${parts[1]}/${parts[2]}`;
+    }
+
+    function calculateCompletedYears(startDate, today) {
+      let years = today.getFullYear() - startDate.getFullYear();
+
+      const anniversaryThisYear = new Date(
+        today.getFullYear(),
+        startDate.getMonth(),
+        startDate.getDate()
+      );
+
+      if (today < anniversaryThisYear) {
+        years -= 1;
+      }
+
+      return Math.max(0, years);
+    }
+
+    function getUsedDays() {
+      const rawValue = usedDaysInput.value.trim();
+
+      if (rawValue === "") {
+        return {
+          valid: false,
+          value: null,
+          message: "消化予定日数を入力してください。"
+        };
+      }
+
+      const value = Number(rawValue);
+
+      if (!Number.isInteger(value) || value < 0 || value > 20) {
+        return {
+          valid: false,
+          value: null,
+          message: "消化予定日数は、0日から20日までの整数で入力してください。"
+        };
+      }
+
+      return {
+        valid: true,
+        value,
+        message: ""
+      };
+    }
+
+    function calculate() {
+      errorMessage.textContent = "";
+      currentResult = null;
+
+      const startDate = parseDateInput(startDateInput.value);
+      const usedDaysResult = getUsedDays();
+
+      if (!startDateInput.value) {
+        remainingDaysOutput.textContent = "－日";
+        grantSummary.textContent = "入社日を入力すると計算されます。";
+
+        if (!usedDaysResult.valid) {
+          errorMessage.textContent = usedDaysResult.message;
+        }
+
+        return null;
+      }
+
+      if (!startDate) {
+        remainingDaysOutput.textContent = "－日";
+        grantSummary.textContent = "正しい入社日を入力してください。";
+        errorMessage.textContent = "入社日の形式を確認してください。";
+        return null;
+      }
+
+      if (!usedDaysResult.valid) {
+        remainingDaysOutput.textContent = "－日";
+        grantSummary.textContent = "消化予定日数を確認してください。";
+        errorMessage.textContent = usedDaysResult.message;
+        return null;
+      }
+
+      const today = getTodayAtMidnight();
+
+      if (startDate > today) {
+        remainingDaysOutput.textContent = "－日";
+        grantSummary.textContent = "入社日を確認してください。";
+        errorMessage.textContent = "入社日を過去の日付にしてください。";
+        return null;
+      }
+
+      const completedYears = calculateCompletedYears(startDate, today);
+      const grantedDays = Math.min(20, 10 + Math.max(0, completedYears - 1));
+      const remainingDays = Math.max(0, grantedDays - usedDaysResult.value);
+
+      remainingDaysOutput.textContent = `${remainingDays}日`;
+      grantSummary.textContent =
+        `勤続年数: ${completedYears}年 ／ 計算上の付与日数: ${grantedDays}日`;
+
+      currentResult = {
+        startDate: startDateInput.value,
+        usedDays: usedDaysResult.value,
+        completedYears,
+        grantedDays,
+        remainingDays
+      };
+
+      return currentResult;
+    }
+
+    function showStatus(message) {
+      window.clearTimeout(statusTimer);
+      statusMessage.textContent = message;
+
+      statusTimer = window.setTimeout(() => {
+        statusMessage.textContent = "";
+      }, 3500);
+    }
+
+    function saveData() {
+      const result = calculate();
+
+      if (!result) {
+        errorMessage.focus();
+        return;
+      }
+
+      try {
+        localStorage.setItem(
+          STORAGE_START_DATE,
+          JSON.stringify(result.startDate)
+        );
+        localStorage.setItem(
+          STORAGE_USED_DAYS,
+          JSON.stringify(result.usedDays)
+        );
+
+        showStatus("保存しました。この端末のブラウザ内に記録されています。");
+      } catch (error) {
+        errorMessage.textContent =
+          "保存できませんでした。ブラウザの保存設定を確認してください。";
+        errorMessage.focus();
+      }
+    }
+
+    function loadSavedData() {
+      try {
+        const savedStartDate = localStorage.getItem(STORAGE_START_DATE);
+        const savedUsedDays = localStorage.getItem(STORAGE_USED_DAYS);
+
+        if (savedStartDate !== null) {
+          const parsedStartDate = JSON.parse(savedStartDate);
+          if (typeof parsedStartDate === "string") {
+            startDateInput.value = parsedStartDate;
+          }
+        }
+
+        if (savedUsedDays !== null) {
+          const parsedUsedDays = JSON.parse(savedUsedDays);
+          if (
+            Number.isInteger(parsedUsedDays) &&
+            parsedUsedDays >= 0 &&
+            parsedUsedDays <= 20
+          ) {
+            usedDaysInput.value = String(parsedUsedDays);
+          }
+        }
+      } catch (error) {
+        errorMessage.textContent =
+          "保存データを読み込めませんでした。入力内容を確認して、もう一度保存してください。";
+      }
+
+      calculate();
+    }
+
+    function createExportText() {
+      const result = calculate();
+
+      if (!result) {
+        errorMessage.focus();
+        return null;
+      }
+
+      return (
+        `start_date:${formatDateWithSlashes(result.startDate)}, ` +
+        `used_days:${result.usedDays}日, ` +
+        `残日数:${result.remainingDays}日`
+      );
+    }
+
+    function openExportDialog() {
+      const text = createExportText();
+
+      if (!text) {
+        return;
+      }
+
+      exportPreview.textContent = text;
+      exportStatus.textContent = "";
+
+      if (typeof exportDialog.showModal === "function") {
+        exportDialog.showModal();
+      } else {
+        exportDialog.setAttribute("open", "");
+      }
+
+      copyButton.focus();
+    }
+
+    async function copyExportText() {
+      const text = exportPreview.textContent;
+
+      if (!text) {
+        exportStatus.textContent = "コピーするデータがありません。";
+        return;
+      }
+
+      try {
+        if (
+          navigator.clipboard &&
+          typeof navigator.clipboard.writeText === "function"
+        ) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          fallbackCopy(text);
+        }
+
+        exportStatus.textContent = "クリップボードにコピーしました。";
+      } catch (error) {
+        try {
+          fallbackCopy(text);
+          exportStatus.textContent = "クリップボードにコピーしました。";
+        } catch (fallbackError) {
+          exportStatus.textContent =
+            "コピーできませんでした。表示された文字を選択してコピーしてください。";
+        }
+      }
+    }
+
+    function fallbackCopy(text) {
+      const temporaryTextArea = document.createElement("textarea");
+      temporaryTextArea.value = text;
+      temporaryTextArea.setAttribute("readonly", "");
+      temporaryTextArea.style.position = "fixed";
+      temporaryTextArea.style.left = "-9999px";
+      temporaryTextArea.style.top = "0";
+
+      document.body.appendChild(temporaryTextArea);
+      temporaryTextArea.select();
+      temporaryTextArea.setSelectionRange(0, temporaryTextArea.value.length);
+
+      const copied = document.execCommand("copy");
+      document.body.removeChild(temporaryTextArea);
+
+      if (!copied) {
+        throw new Error("Copy failed");
+      }
+    }
+
+    function downloadExportText() {
+      const text = exportPreview.textContent;
+
+      if (!text) {
+        exportStatus.textContent = "ダウンロードするデータがありません。";
+        return;
+      }
+
+      try {
+        const blob = new Blob([text + "\n"], {
+          type: "text/plain;charset=utf-8"
+        });
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        const today = getTodayAtMidnight();
+        const dateText =
+          `${today.getFullYear()}` +
+          `${String(today.getMonth() + 1).padStart(2, "0")}` +
+          `${String(today.getDate()).padStart(2, "0")}`;
+
+        link.href = url;
+        link.download = `有給休暇残日数_${dateText}.txt`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        window.setTimeout(() => {
+          URL.revokeObjectURL(url);
+        }, 1000);
+
+        exportStatus.textContent = "テキストファイルを作成しました。";
+      } catch (error) {
+        exportStatus.textContent =
+          "ファイルを作成できませんでした。コピー機能をご利用ください。";
+      }
+    }
+
+    function closeDialog(dialog, returnFocusElement) {
+      if (typeof dialog.close === "function") {
+        dialog.close();
+      } else {
+        dialog.removeAttribute("open");
+      }
+
+      if (returnFocusElement) {
+        returnFocusElement.focus();
+      }
+    }
+
+    function handleDialogBackdropClick(event) {
+      const dialog = event.currentTarget;
+      const rect = dialog.getBoundingClientRect();
+
+      const clickedInside =
+        event.clientX >= rect.left &&
+        event.clientX <= rect.right &&
+        event.clientY >= rect.top &&
+        event.clientY <= rect.bottom;
+
+      if (!clickedInside) {
+        if (dialog === manualDialog) {
+          closeDialog(manualDialog, openManualButton);
+        } else if (dialog === exportDialog) {
+          closeDialog(exportDialog, exportButton);
+        }
+      }
+    }
+
+    startDateInput.addEventListener("input", calculate);
+    startDateInput.addEventListener("change", calculate);
+    usedDaysInput.addEventListener("input", calculate);
+    usedDaysInput.addEventListener("change", calculate);
+
+    usedDaysInput.addEventListener("blur", () => {
+      if (usedDaysInput.value === "") {
+        usedDaysInput.value = "0";
+      }
+
+      const value = Number(usedDaysInput.value);
+
+      if (Number.isFinite(value)) {
+        usedDaysInput.value = String(
+          Math.min(20, Math.max(0, Math.trunc(value)))
+        );
+      }
+
+      calculate();
+    });
+
+    saveButton.addEventListener("click", saveData);
+    exportButton.addEventListener("click", openExportDialog);
+
+    openManualButton.addEventListener("click", () => {
+      if (typeof manualDialog.showModal === "function") {
+        manualDialog.showModal();
+      } else {
+        manualDialog.setAttribute("open", "");
+      }
+
+      closeManualButton.focus();
+    });
+
+    closeManualButton.addEventListener("click", () => {
+      closeDialog(manualDialog, openManualButton);
+    });
+
+    closeExportButton.addEventListener("click", () => {
+      closeDialog(exportDialog, exportButton);
+    });
+
+    copyButton.addEventListener("click", copyExportText);
+    downloadButton.addEventListener("click", downloadExportText);
+
+    manualDialog.addEventListener("click", handleDialogBackdropClick);
+    exportDialog.addEventListener("click", handleDialogBackdropClick);
+
+    manualDialog.addEventListener("cancel", (event) => {
+      event.preventDefault();
+      closeDialog(manualDialog, openManualButton);
+    });
+
+    exportDialog.addEventListener("cancel", (event) => {
+      event.preventDefault();
+      closeDialog(exportDialog, exportButton);
+    });
+
+    document.addEventListener("DOMContentLoaded", loadSavedData);
+  </script>
+</body>
+</html>

@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>受注採算管理ツール</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📊</text></svg>'>
+  <style>
+    /* 基本設計 & インクルーシブデザイン */
+    :root {
+      --color-bg: #f8f9fa;
+      --color-surface: #ffffff;
+      --color-text: #212529;
+      --color-text-muted: #495057;
+      --color-primary: #0d6efd;
+      --color-primary-hover: #0b5ed7;
+      --color-danger: #dc3545; /* コントラスト比十分な赤 */
+      --color-danger-light: #f8d7da;
+      --color-border: #dee2e6;
+      --font-size-base: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: var(--font-size-base);
+      line-height: 1.6;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      padding: 1rem;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    /* ヘッダー */
+    header {
+      background-color: var(--color-surface);
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .header-title-area {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .header-icon {
+      font-size: 2.5rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--color-text);
+    }
+
+    .header-sub {
+      font-size: 0.95rem;
+      color: var(--color-text-muted);
+      font-weight: normal;
+    }
+
+    /* ボタン類 */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      min-height: 48px; /* タップ領域確保 */
+    }
+
+    .btn-primary {
+      background-color: var(--color-primary);
+      color: #ffffff;
+    }
+
+    .btn-primary:hover, .btn-primary:focus {
+      background-color: var(--color-primary-hover);
+      outline: 3px solid #9ec5fe;
+    }
+
+    .btn-secondary {
+      background-color: #6c757d;
+      color: #ffffff;
+    }
+
+    .btn-secondary:hover, .btn-secondary:focus {
+      background-color: #5c636a;
+      outline: 3px solid #c0c4c9;
+    }
+
+    .btn-danger {
+      background-color: var(--color-danger);
+      color: #ffffff;
+    }
+
+    .btn-outline {
+      background-color: transparent;
+      border: 2px solid var(--color-primary);
+      color: var(--color-primary);
+    }
+
+    .btn-outline:hover, .btn-outline:focus {
+      background-color: var(--color-primary);
+      color: #ffffff;
+    }
+
+    /* カード・セクション */
+    .card {
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    .card-title {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+      border-left: 5px solid var(--color-primary);
+      padding-left: 0.5rem;
+    }
+
+    /* フォームグリッド */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    label {
+      font-weight: bold;
+      font-size: 0.95rem;
+    }
+
+    .form-control {
+      font-size: 1rem;
+      padding: 0.75rem;
+      border: 1px solid var(--color-border);
+      border-radius: 4px;
+      width: 100%;
+      min-height: 44px;
+    }
+
+    .form-control:focus {
+      outline: 3px solid #9ec5fe;
+      border-color: var(--color-primary);
+    }
+
+    /* 集計エリア */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .summary-box {
+      background-color: #f1f3f5;
+      padding: 1rem;
+      border-radius: 6px;
+      border-left: 4px solid #495057;
+    }
+
+    .summary-box.highlight {
+      border-left-color: var(--color-primary);
+    }
+
+    .summary-label {
+      font-size: 0.9rem;
+      color: var(--color-text-muted);
+    }
+
+    .summary-value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-top: 0.25rem;
+    }
+
+    /* テーブル・スクロールエリア */
+    .table-container {
+      overflow-x: auto;
+      margin-top: 1rem;
+      border: 1px solid var(--color-border);
+      border-radius: 4px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.95rem;
+    }
+
+    th, td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--color-border);
+      white-space: nowrap;
+    }
+
+    th {
+      background-color: #f1f3f5;
+      font-weight: bold;
+    }
+
+    /* アラート表示用の行デザイン */
+    .row-alert {
+      color: var(--color-danger);
+      font-weight: bold;
+      background-color: #fff5f5;
+    }
+
+    /* モーダルダイアログ */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      padding: 1rem;
+    }
+
+    .modal-content {
+      background-color: var(--color-surface);
+      border-radius: 8px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 1.5rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--color-border);
+      padding-bottom: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .modal-body {
+      font-size: 1rem;
+      line-height: 1.7;
+    }
+
+    .modal-body ol {
+      padding-left: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .modal-body li {
+      margin-bottom: 0.5rem;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .action-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    /* スマホ対応の調整 */
+    @media (max-width: 600px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+      .header-title-area {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+      .action-bar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .btn-group {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="header-title-area">
+        <span class="header-icon" aria-hidden="true">📊</span>
+        <div>
+          <h1>受注採算管理ツール</h1>
+          <div class="header-sub">人の評価ではなく、受注の採算を客観的に管理するための道具です</div>
+        </div>
+      </div>
+      <div style="margin-top: 0.5rem;">
+        <button type="button" class="btn btn-secondary" id="btn-open-help">❓使い方を見る</button>
+      </div>
+    </header>
+
+    <section class="card" aria-labelledby="form-title">
+      <h2 id="form-title" class="card-title">新規受注登録</h2>
+      <form id="order-form">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="input-date">日付 <span style="color: var(--color-danger)">*</span></label>
+            <input type="date" id="input-date" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label for="input-customer">顧客名 <span style="color: var(--color-danger)">*</span></label>
+            <input type="text" id="input-customer" class="form-control" placeholder="例：株式会社テスト" required>
+          </div>
+          <div class="form-group">
+            <label for="input-project">案件名 <span style="color: var(--color-danger)">*</span></label>
+            <input type="text" id="input-project" class="form-control" placeholder="例：システム開発案件" required>
+          </div>
+          <div class="form-group">
+            <label for="input-price">受注金額 (円) <span style="color: var(--color-danger)">*</span></label>
+            <input type="number" id="input-price" class="form-control" min="0" step="1" placeholder="例：1000000" required>
+          </div>
+          <div class="form-group">
+            <label for="input-cost">原価 (円) <span style="color: var(--color-danger)">*</span></label>
+            <input type="number" id="input-cost" class="form-control" min="0" step="1" placeholder="材料・外注・労務の合計" required>
+          </div>
+        </div>
+        <div style="text-align: right;">
+          <button type="submit" class="btn btn-primary" style="min-width: 150px;">登録する</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card" aria-labelledby="filter-title">
+      <h2 id="filter-title" class="card-title">絞り込み条件</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="filter-customer">顧客名で探す（部分一致）</label>
+          <input type="text" id="filter-customer" class="form-control" placeholder="顧客名を入力">
+        </div>
+        <div class="form-group">
+          <label for="filter-start-date">期間（開始日）</label>
+          <input type="date" id="filter-start-date" class="form-control">
+        </div>
+        <div class="form-group">
+          <label for="filter-end-date">期間（終了日）</label>
+          <input type="date" id="filter-end-date" class="form-control">
+        </div>
+      </div>
+      <div style="text-align: right; margin-top: 1rem;">
+        <button type="button" class="btn btn-secondary" id="btn-clear-filter">条件をクリア</button>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="summary-title">
+      <h2 id="summary-title" class="card-title">条件内の集計（フィルター後）</h2>
+      <div class="summary-grid">
+        <div class="summary-box highlight">
+          <div class="summary-label">期間内受注金額合計</div>
+          <div class="summary-value" id="summary-total-price">0 円</div>
+        </div>
+        <div class="summary-box highlight">
+          <div class="summary-label">期間内粗利合計</div>
+          <div class="summary-value" id="summary-total-profit">0 円</div>
+        </div>
+        <div class="summary-box highlight">
+          <div class="summary-label">期間内平均粗利率</div>
+          <div class="summary-value" id="summary-avg-rate">0.0 %</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="list-title">
+      <div class="action-bar">
+        <h2 id="list-title" class="card-title" style="margin-bottom: 0;">受注データ一覧</h2>
+        <div class="btn-group">
+          <button type="button" class="btn btn-outline" id="btn-export">📤 CSVエクスポート</button>
+          <button type="button" class="btn btn-danger" id="btn-clear-all" style="font-size: 0.9rem; padding: 0.5rem 1rem; min-height: auto;">データをすべて消去</button>
+        </div>
+      </div>
+      
+      <p style="font-size: 0.9rem; color: var(--color-text-muted); margin-bottom: 0.5rem;">
+        ※ 赤字案件、または粗利率が10%未満の案件は自動的に上部に集められ、<span style="color: var(--color-danger); font-weight: bold;">赤色</span>で強調表示されます。
+      </p>
+
+      <div class="table-container">
+        <table id="order-table">
+          <thead>
+            <tr>
+              <th scope="col">日付</th>
+              <th scope="col">顧客名</th>
+              <th scope="col">案件名</th>
+              <th scope="col">受注金額</th>
+              <th scope="col">原価</th>
+              <th scope="col">粗利額</th>
+              <th scope="col">粗利率</th>
+              <th scope="col">操作</th>
+            </tr>
+          </thead>
+          <tbody id="order-tbody">
+            </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal-overlay hidden" id="help-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-title">❓ このアプリの使い方</h2>
+        <button type="button" class="btn btn-secondary" id="btn-close-help-top" style="min-height: auto; padding: 0.5rem 1rem;">閉じる</button>
+      </div>
+      <div class="modal-body">
+        <h3>1. このアプリでできること</h3>
+        <p>受注金額と原価（外注費・材料費・社内人件費など）を入力することで、受注ごとの「粗利率」を客観的に計算・可視化します。特定の個人の評価ではなく、案件そのものが健全な利益をもたらしているかを判断できます。</p>
+        
+        <h3 style="margin-top: 1rem;">2. 基本的な使い方</h3>
+        <ol>
+          <li><strong>受注の登録:</strong> 「新規受注登録」フォームに日付、顧客、案件名、金額、原価を入力して「登録する」ボタンを押します。</li>
+          <li><strong>アラートの確認:</strong> 粗利率が10%未満、または赤字（粗利が0未満）の案件は自動的に一番上に集まり、赤字フォントで警告表示されます。優先して対策を検討すべき案件が一目でわかります。</li>
+          <li><strong>情報の絞り込み:</strong> 顧客名（一部一致）や特定の期間を指定すると、条件に合うデータだけを抽出し、画面中央の集計値が自動で再計算されます。</li>
+          <li><strong>CSVエクスポート:</strong> 右下の「CSVエクスポート」ボタンを押すと、表示されているデータ一覧をExcel等で開けるCSVファイルとして保存できます。</li>
+        </ol>
+
+        <h3 style="margin-top: 1rem;">3. 安全なデータ管理</h3>
+        <p>入力したすべてのデータは、現在お使いの<strong>この端末のブラウザ内（localStorage）だけに保存</strong>されます。インターネット経由で外部のサーバーにデータが送信されることは一切ありませんので、社外秘の案件情報でも安心してご活用いただけます。</p>
+      </div>
+      <div style="margin-top: 1.5rem; text-align: right;">
+        <button type="button" class="btn btn-primary" id="btn-close-help-bottom">確認しました</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 状態管理
+    let orders = [];
+
+    // 要素の取得
+    const orderForm = document.getElementById('order-form');
+    const inputDate = document.getElementById('input-date');
+    const inputCustomer = document.getElementById('input-customer');
+    const inputProject = document.getElementById('input-project');
+    const inputPrice = document.getElementById('input-price');
+    const inputCost = document.getElementById('input-cost');
+
+    const filterCustomer = document.getElementById('filter-customer');
+    const filterStartDate = document.getElementById('filter-start-date');
+    const filterEndDate = document.getElementById('filter-end-date');
+    const btnClearFilter = document.getElementById('btn-clear-filter');
+
+    const summaryTotalPrice = document.getElementById('summary-total-price');
+    const summaryTotalProfit = document.getElementById('summary-total-profit');
+    const summaryAvgRate = document.getElementById('summary-avg-rate');
+
+    const orderTbody = document.getElementById('order-tbody');
+    const btnExport = document.getElementById('btn-export');
+    const btnClearAll = document.getElementById('btn-clear-all');
+
+    const helpModal = document.getElementById('help-modal');
+    const btnOpenHelp = document.getElementById('btn-open-help');
+    const btnCloseHelpTop = document.getElementById('btn-close-help-top');
+    const btnCloseHelpBottom = document.getElementById('btn-close-help-bottom');
+
+    // 初期化処理
+    window.addEventListener('DOMContentLoaded', () => {
+      // localStorageからデータ復元
+      const savedData = localStorage.getItem('profit_manager_orders');
+      if (savedData) {
+        try {
+          orders = JSON.parse(savedData);
+        } catch (e) {
+          console.error("データの読み込みに失敗しました", e);
+          orders = [];
+        }
+      }
+      
+      // デフォルト日付を今日に設定
+      const today = new Date().toISOString().split('T')[0];
+      inputDate.value = today;
+
+      render();
+    });
+
+    // モーダル制御
+    function openModal() {
+      helpModal.classList.remove('hidden');
+      btnCloseHelpBottom.focus();
+    }
+    function closeModal() {
+      helpModal.classList.add('hidden');
+      btnOpenHelp.focus();
+    }
+    btnOpenHelp.addEventListener('click', openModal);
+    btnCloseHelpTop.addEventListener('click', closeModal);
+    btnCloseHelpBottom.addEventListener('click', closeModal);
+
+    // ESCキーでモーダルを閉じる
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !helpModal.classList.contains('hidden')) {
+        closeModal();
+      }
+    });
+
+    // 登録処理
+    orderForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const price = parseInt(inputPrice.value, 10);
+      const cost = parseInt(inputCost.value, 10);
+      const profit = price - cost;
+      const rate = price > 0 ? (profit / price) * 100 : 0;
+
+      const newOrder = {
+        id: Date.now().toString(),
+        date: inputDate.value,
+        customer: inputCustomer.value.trim(),
+        project: inputProject.value.trim(),
+        price: price,
+        cost: cost,
+        profit: profit,
+        rate: rate
+      };
+
+      orders.push(newOrder);
+      saveData();
+      render();
+
+      // フォーム部分リセット（日付は残す）
+      inputCustomer.value = '';
+      inputProject.value = '';
+      inputPrice.value = '';
+      inputCost.value = '';
+      inputCustomer.focus();
+    });
+
+    // フィルタ・ソート・再集計・一覧描画の統合処理
+    function render() {
+      const fCust = filterCustomer.value.toLowerCase().trim();
+      const fStart = filterStartDate.value;
+      const fEnd = filterEndDate.value;
+
+      // 1. フィルタリング
+      let filtered = orders.filter(item => {
+        const matchCustomer = fCust === '' || item.customer.toLowerCase().includes(fCust);
+        const matchStart = fStart === '' || item.date >= fStart;
+        const matchEnd = fEnd === '' || item.date <= fEnd;
+        return matchCustomer && matchStart && matchEnd;
+      });
+
+      // 2. ソートロジック
+      // 「粗利率10%未満」または「粗利0未満(赤字)」をアラート案件とし、上部に配置する。
+      // アラート対象同士、健全なもの同士の中では日付順（降順：新しい日付が上）とする。
+      filtered.sort((a, b) => {
+        const aIsAlert = a.rate < 10 || a.profit < 0;
+        const bIsAlert = b.rate < 10 || b.profit < 0;
+
+        if (aIsAlert && !bIsAlert) return -1;
+        if (!aIsAlert && bIsAlert) return 1;
+        
+        // 日付降順
+        if (a.date > b.date) return -1;
+        if (a.date < b.date) return 1;
+        return 0;
+      });
+
+      // 3. 集計計算（フィルタ後のデータに基づく）
+      let totalPrice = 0;
+      let totalProfit = 0;
+
+      filtered.forEach(item => {
+        totalPrice += item.price;
+        totalProfit += item.profit;
+      });
+
+      const avgRate = totalPrice > 0 ? (totalProfit / totalPrice) * 100 : 0;
+
+      // 集計値の表示更新
+      summaryTotalPrice.textContent = totalPrice.toLocaleString() + ' 円';
+      summaryTotalProfit.textContent = totalProfit.toLocaleString() + ' 円';
+      summaryAvgRate.textContent = avgRate.toFixed(1) + ' %';
+
+      // 4. 一覧テーブル描画
+      orderTbody.innerHTML = '';
+      if (filtered.length === 0) {
+        orderTbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--color-text-muted);">データがありません。条件を変えるか、新しく登録してください。</td></tr>`;
+        return;
+      }
+
+      filtered.forEach(item => {
+        const tr = document.createElement('tr');
+        const isAlert = item.rate < 10 || item.profit < 0;
+        if (isAlert) {
+          tr.classList.add('row-alert');
+        }
+
+        tr.innerHTML = `
+          <td>${escapeHtml(item.date)}</td>
+          <td>${escapeHtml(item.customer)}</td>
+          <td>${escapeHtml(item.project)}</td>
+          <td>${item.price.toLocaleString()} 円</td>
+          <td>${item.cost.toLocaleString()} 円</td>
+          <td>${item.profit.toLocaleString()} 円</td>
+          <td>${item.rate.toFixed(1)} %</td>
+          <td>
+            <button class="btn btn-danger btn-delete" data-id="${item.id}" style="padding: 0.25rem 0.5rem; min-height: auto; font-size: 0.85rem;" aria-label="${escapeHtml(item.project)}のデータを削除">削除</button>
+          </td>
+        `;
+        orderTbody.appendChild(tr);
+      });
+
+      // 削除ボタンのイベント紐付け
+      const deleteButtons = orderTbody.querySelectorAll('.btn-delete');
+      deleteButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const id = e.target.getAttribute('data-id');
+          if (confirm('この案件データを一覧から削除してよろしいですか？')) {
+            orders = orders.filter(item => item.id !== id);
+            saveData();
+            render();
+          }
+        });
+      });
+    }
+
+    // フィルタ関連の監視
+    filterCustomer.addEventListener('input', render);
+    filterStartDate.addEventListener('change', render);
+    filterEndDate.addEventListener('change', render);
+
+    btnClearFilter.addEventListener('click', () => {
+      filterCustomer.value = '';
+      filterStartDate.value = '';
+      filterEndDate.value = '';
+      render();
+    });
+
+    // 全データ削除
+    btnClearAll.addEventListener('click', () => {
+      if (confirm('すべての登録データを消去します。よろしいですか？（この操作は元に戻せません）')) {
+        orders = [];
+        saveData();
+        render();
+      }
+    });
+
+    // ローカルストレージ保存
+    function saveData() {
+      localStorage.setItem('profit_manager_orders', JSON.stringify(orders));
+    }
+
+    // CSVエクスポート
+    btnExport.addEventListener('click', () => {
+      if (orders.length === 0) {
+        alert('出力するデータが存在しません。');
+        return;
+      }
+
+      // 現在フィルターとソートが適用されている表示用データをエクスポート対象にする
+      const fCust = filterCustomer.value.toLowerCase().trim();
+      const fStart = filterStartDate.value;
+      const fEnd = filterEndDate.value;
+
+      let exportData = orders.filter(item => {
+        const matchCustomer = fCust === '' || item.customer.toLowerCase().includes(fCust);
+        const matchStart = fStart === '' || item.date >= fStart;
+        const matchEnd = fEnd === '' || item.date <= fEnd;
+        return matchCustomer && matchStart && matchEnd;
+      });
+
+      // 並び順は画面表示に合わせる
+      exportData.sort((a, b) => {
+        const aIsAlert = a.rate < 10 || a.profit < 0;
+        const bIsAlert = b.rate < 10 || b.profit < 0;
+        if (aIsAlert && !bIsAlert) return -1;
+        if (!aIsAlert && bIsAlert) return 1;
+        if (a.date > b.date) return -1;
+        if (a.date < b.date) return 1;
+        return 0;
+      });
+
+      // BOM付きUTF-8（Excelでの文字化け防止）
+      const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+      let csvContent = "日付,顧客名,案件名,受注金額,原価,粗利額,粗利率\n";
+
+      exportData.forEach(item => {
+        // カンマや改行のケア（エスケープ）
+        const escapedCust = `"${item.customer.replace(/"/g, '""')}"`;
+        const escapedProj = `"${item.project.replace(/"/g, '""')}"`;
+        csvContent += `${item.date},${escapedCust},${escapedProj},${item.price},${item.cost},${item.profit},${item.rate.toFixed(2)}%\n`;
+      });
+
+      const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      // 日付文字列取得 (YYYYMMDD)
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const dd = String(now.getDate()).padStart(2, '0');
+      
+      link.setAttribute("href", url);
+      link.setAttribute("download", `受注粗利管理_${yyyy}${mm}${dd}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+
+    // 簡易HTMLエスケープ
+    function escapeHtml(str) {
+      if (typeof str !== 'string') return str;
+      return str.replace(/[&<>'"]/g, (tag) => {
+        const chars = {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          "'": '&#39;',
+          '"': '&quot;'
+        };
+        return chars[tag] || tag;
+      });
+    }
+  </script>
+</body>
+</html>

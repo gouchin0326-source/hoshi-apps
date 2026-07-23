@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>チェックリストメーカー</title>
+<style>
+:root{--bg:#f5f7fb;--card:#ffffff;--ink:#1d2733;--sub:#5b6b80;--line:#e3e9f2;--accent:#2f6df0;--accent2:#13b67f;--warn:#e8912a;--soft:#eef3fe;--soft2:#e9f8f1;--soft3:#fff4e3;}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI","Yu Gothic UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:980px;margin:0 auto;padding:30px 18px 70px}
+.hero{background:linear-gradient(135deg,#2f6df0,#13b67f);border-radius:20px;padding:26px 28px;color:#fff;box-shadow:0 12px 30px rgba(47,109,240,.18)}
+.hero .tag{display:inline-block;font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:4px 12px;border-radius:999px;margin-bottom:10px}
+.hero h1{margin:0 0 6px;font-size:25px}.hero p{margin:0;font-size:14px;line-height:1.7;opacity:.96}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px 22px;margin-top:16px;box-shadow:0 8px 22px rgba(29,39,51,.06)}
+.panel h2{margin:0 0 4px;font-size:16px;display:flex;align-items:center;gap:9px}
+.panel h2 .b{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.panel .lead{margin:0 0 12px;color:var(--sub);font-size:12.5px;line-height:1.6}
+textarea{width:100%;min-height:140px;border:1.5px solid var(--line);border-radius:12px;padding:13px 14px;font-size:14px;line-height:1.6;resize:vertical;background:#fcfdff;color:var(--ink);font-family:inherit}
+textarea:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(47,109,240,.12)}
+input[type=text]{border:1.5px solid var(--line);border-radius:11px;padding:11px 13px;font-size:14px;font-family:inherit;background:#fcfdff;color:var(--ink);width:100%}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+button.b{display:inline-flex;align-items:center;gap:7px;border:none;cursor:pointer;font-weight:700;font-size:13.5px;padding:11px 17px;border-radius:11px;font-family:inherit}
+button.p{background:var(--accent);color:#fff}button.s{background:#fff;color:var(--accent);border:1px solid var(--line)}button.g{background:var(--accent2);color:#fff}
+button:disabled{opacity:.45;cursor:not-allowed}
+footer{margin-top:28px;color:var(--sub);font-size:12px;border-top:1px solid var(--line);padding-top:14px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.clock{font-variant-numeric:tabular-nums;color:var(--accent2);font-weight:700}
+a.home{color:var(--sub);text-decoration:none;font-weight:700}a.home:hover{color:var(--accent)}
+
+/* タイトル入力ラベル */
+.field-label{font-size:13px;font-weight:700;color:var(--sub);margin-bottom:6px;display:block}
+
+/* 進捗バー */
+.progress-wrap{margin:14px 0 10px;display:none}
+.progress-bar-bg{background:var(--line);border-radius:999px;height:10px;overflow:hidden}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:999px;transition:width .35s ease}
+.progress-label{font-size:13px;color:var(--sub);margin-top:7px;font-weight:700}
+.complete-msg{display:none;background:var(--soft2);color:var(--accent2);border:1.5px solid #9de8c8;border-radius:12px;padding:12px 16px;font-weight:700;font-size:15px;margin-top:12px;text-align:center}
+
+/* チェックリスト */
+.checklist-title{font-size:18px;font-weight:800;color:var(--ink);margin:0 0 14px}
+.checklist-item{display:flex;align-items:flex-start;gap:13px;padding:12px 14px;border-radius:12px;margin-bottom:8px;cursor:pointer;transition:background .18s;border:1.5px solid var(--line);background:#fff;user-select:none}
+.checklist-item:hover{background:var(--soft)}
+.checklist-item.checked{background:var(--soft2);border-color:#9de8c8}
+.checklist-item.checked .item-text{color:var(--sub);text-decoration:line-through}
+.cb-box{width:22px;height:22px;border-radius:7px;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;transition:all .18s;background:#fff}
+.checklist-item.checked .cb-box{background:var(--accent2);border-color:var(--accent2);color:#fff}
+.cb-check{display:none;font-size:14px}
+.checklist-item.checked .cb-check{display:block}
+.item-text{font-size:14.5px;line-height:1.6;color:var(--ink)}
+
+/* 操作ボタン群(STEP3) */
+.action-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+
+/* ステップヘッダーに色を付ける */
+.panel h2 .b.s2{background:var(--accent2)}
+.panel h2 .b.s3{background:var(--warn)}
+
+/* コピー完了トースト */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);background:#1d2733;color:#fff;padding:11px 22px;border-radius:999px;font-size:13.5px;font-weight:700;opacity:0;transition:all .3s;pointer-events:none;z-index:9999}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* 印刷スタイル */
+@media print{
+  body{background:#fff;font-family:"Yu Gothic","Yu Gothic UI",sans-serif}
+  .wrap{padding:0;max-width:100%}
+  .hero,.no-print,footer{display:none!important}
+  #step1-panel,#step2-panel,#step3-panel .action-row{display:none!important}
+  #step3-panel{border:none;box-shadow:none;padding:0;margin:0}
+  .print-header{display:block!important}
+  .checklist-item{break-inside:avoid;border:1.5px solid #ccc;margin-bottom:6px}
+  .checklist-item.checked .item-text{text-decoration:none;color:#333}
+  .progress-wrap,.complete-msg{display:none!important}
+}
+.print-header{display:none;margin-bottom:20px}
+.print-header h2{font-size:18px;margin:0 0 6px;font-weight:800}
+.print-header .print-meta{font-size:13px;color:#555;display:flex;gap:24px;margin-top:10px;border-top:1px solid #ccc;padding-top:10px}
+.print-header .print-meta span{display:flex;flex-direction:column}
+.print-header .print-meta .ml{font-size:11px;color:#888;margin-bottom:2px}
+.print-header .print-meta .mv{border-bottom:1px solid #999;min-width:100px;height:22px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ヒーロー -->
+  <div class="hero">
+    <div class="tag">道具箱（開発中）· チェックリストメーカー</div>
+    <h1>やることを書いて → チェックリストに変換</h1>
+    <p>1行1項目でテキストを貼るだけ。クリックできるチェックリストがすぐに出ます。印刷・コピーにも対応。</p>
+  </div>
+
+  <!-- STEP1 -->
+  <div class="panel" id="step1-panel">
+    <h2><span class="b">1</span>やることを入れる</h2>
+    <p class="lead">1行＝1項目。箇条書きでも番号付きでもOK。空行は無視されます。</p>
+
+    <label class="field-label" for="inp-title">タイトル（任意）</label>
+    <input type="text" id="inp-title" placeholder="例：日次点検チェックリスト">
+
+    <div style="margin-top:12px">
+      <textarea id="inp-items" placeholder="例:&#10;機械の電源を確認&#10;油量チェック&#10;安全カバーの取り付け確認"></textarea>
+    </div>
+
+    <div class="row no-print">
+      <button class="b s" onclick="insertSample()">✨ サンプルを入れて試す</button>
+      <button class="b s" onclick="clearAll()">クリア</button>
+    </div>
+  </div>
+
+  <!-- STEP2 -->
+  <div class="panel" id="step2-panel">
+    <h2><span class="b s2">2</span>チェックリストを作る</h2>
+    <p class="lead">ボタンを押すと下に一覧が出ます。何度でも押し直せます。</p>
+    <div class="row no-print">
+      <button class="b p" onclick="buildChecklist()">✅ チェックリストを作る</button>
+    </div>
+  </div>
+
+  <!-- STEP3 -->
+  <div class="panel" id="step3-panel" style="display:none">
+    <h2><span class="b s3">3</span>チェックする</h2>
+    <p class="lead">項目をクリックしてチェック。全部終わると完了メッセージが出ます。</p>
+
+    <!-- 印刷時ヘッダー -->
+    <div class="print-header" id="print-header">
+      <h2 id="print-title"></h2>
+      <div class="print-meta">
+        <span><span class="ml">日付</span><span class="mv"></span></span>
+        <span><span class="ml">担当者</span><span class="mv"></span></span>
+        <span><span class="ml">確認者</span><span class="mv"></span></span>
+      </div>
+    </div>
+
+    <!-- 進捗 -->
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill" style="width:0%"></div></div>
+      <div class="progress-label" id="progress-label">0 / 0 完了</div>
+    </div>
+
+    <!-- 完了メッセージ -->
+    <div class="complete-msg" id="complete-msg">✅ ぜんぶ完了！</div>
+
+    <!-- リスト本体 -->
+    <div id="checklist-body" style="margin-top:14px"></div>
+
+    <!-- 操作ボタン -->
+    <div class="action-row no-print">
+      <button class="b s" onclick="doPrint()">🖨 印刷する</button>
+      <button class="b s" onclick="doCopy()">📋 コピー</button>
+    </div>
+  </div>
+
+  <footer>
+    <span>計算は端末の中だけ・データは送信しません</span>
+    <span style="display:flex;gap:16px;align-items:center">
+      <a class="home" href="../ハブ.html">🏠 ハブへ</a>
+      <span class="clock" id="clock">--:--:--</span>
+    </span>
+  </footer>
+</div>
+
+<!-- トースト -->
+<div class="toast" id="toast"></div>
+
+<script>
+// XSSエスケープ
+function esc(s){
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
+// 時計
+function updateClock(){
+  var d=new Date();
+  var h=String(d.getHours()).padStart(2,'0');
+  var m=String(d.getMinutes()).padStart(2,'0');
+  var s=String(d.getSeconds()).padStart(2,'0');
+  var el=document.getElementById('clock');
+  if(el) el.textContent=h+':'+m+':'+s;
+}
+updateClock();
+setInterval(updateClock,1000);
+
+// サンプル投入
+var SAMPLE_TITLE='日次点検チェックリスト';
+var SAMPLE_ITEMS=[
+  '機械の電源を確認',
+  '油量チェック（規定量以上あるか）',
+  '安全カバーの取り付け確認',
+  '作業エリアの清掃・整頓',
+  '消火器の位置と使用期限を確認',
+  '不具合・異音の有無を点検',
+  '点検記録を記入・保管'
+].join('\n');
+
+function insertSample(){
+  document.getElementById('inp-title').value=SAMPLE_TITLE;
+  document.getElementById('inp-items').value=SAMPLE_ITEMS;
+}
+
+function clearAll(){
+  document.getElementById('inp-title').value='';
+  document.getElementById('inp-items').value='';
+  document.getElementById('step3-panel').style.display='none';
+}
+
+// チェックリスト生成
+var items=[];
+
+function buildChecklist(){
+  var raw=document.getElementById('inp-items').value;
+  var title=document.getElementById('inp-title').value.trim();
+  var lines=raw.split('\n');
+  items=[];
+  for(var i=0;i<lines.length;i++){
+    var line=lines[i].trim();
+    if(line==='') continue;
+    // 先頭の番号・記号を除去(任意)
+    line=line.replace(/^[\d]+[\.。\)）\]\]]+\s*/,'');
+    line=line.replace(/^[-・*•◆◇▶▷○●□■※]\s*/,'');
+    if(line!=='') items.push({text:line,checked:false});
+  }
+  if(items.length===0){
+    showToast('項目が見つかりません。テキストを入力してください。');
+    return;
+  }
+  renderChecklist(title);
+  document.getElementById('step3-panel').style.display='block';
+  document.getElementById('step3-panel').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function renderChecklist(title){
+  // 印刷タイトル
+  var pt=document.getElementById('print-title');
+  pt.textContent=title||'チェックリスト';
+
+  var body=document.getElementById('checklist-body');
+  body.innerHTML='';
+
+  // タイトル表示(画面のみ)
+  if(title){
+    var t=document.createElement('div');
+    t.className='checklist-title no-print';
+    t.textContent=title;
+    body.appendChild(t);
+  }
+
+  for(var i=0;i<items.length;i++){
+    (function(idx){
+      var div=document.createElement('div');
+      div.className='checklist-item';
+      div.setAttribute('data-idx',idx);
+
+      var cb=document.createElement('div');
+      cb.className='cb-box';
+      var ck=document.createElement('span');
+      ck.className='cb-check';
+      ck.textContent='✓';
+      cb.appendChild(ck);
+
+      var txt=document.createElement('span');
+      txt.className='item-text';
+      txt.textContent=items[idx].text;
+
+      div.appendChild(cb);
+      div.appendChild(txt);
+
+      div.addEventListener('click',function(){
+        items[idx].checked=!items[idx].checked;
+        if(items[idx].checked){
+          div.classList.add('checked');
+        } else {
+          div.classList.remove('checked');
+        }
+        updateProgress();
+      });
+
+      body.appendChild(div);
+    })(i);
+  }
+
+  updateProgress();
+  document.getElementById('progress-wrap').style.display='block';
+}
+
+function updateProgress(){
+  var total=items.length;
+  var done=0;
+  for(var i=0;i<items.length;i++) if(items[i].checked) done++;
+  var pct=total>0?Math.round(done/total*100):0;
+  document.getElementById('progress-fill').style.width=pct+'%';
+  document.getElementById('progress-label').textContent=done+' / '+total+' 完了';
+  var cm=document.getElementById('complete-msg');
+  if(done===total && total>0){
+    cm.style.display='block';
+  } else {
+    cm.style.display='none';
+  }
+}
+
+// 印刷
+function doPrint(){
+  window.print();
+}
+
+// コピー
+function doCopy(){
+  if(items.length===0){showToast('リストがありません');return;}
+  var title=document.getElementById('inp-title').value.trim();
+  var lines=[];
+  if(title) lines.push(title,'');
+  for(var i=0;i<items.length;i++){
+    var prefix=items[i].checked?'☑ ':'□ ';
+    lines.push(prefix+items[i].text);
+  }
+  var text=lines.join('\n');
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){
+      showToast('クリップボードにコピーしました');
+    }).catch(function(){
+      fallbackCopy(text);
+    });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text){
+  var ta=document.createElement('textarea');
+  ta.value=text;
+  ta.style.position='fixed';
+  ta.style.opacity='0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try{document.execCommand('copy');showToast('コピーしました');}
+  catch(e){showToast('コピーに失敗しました');}
+  document.body.removeChild(ta);
+}
+
+// トースト
+function showToast(msg){
+  var t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},2200);
+}
+</script>
+</body>
+</html>

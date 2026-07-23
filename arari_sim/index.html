@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>利益シミュレーター</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📊</text></svg>'>
+  <style>
+    /* ベーススタイル */
+    :root {
+      --primary-color: #0056b3;
+      --bg-color: #ffffff;
+      --text-color: #111111;
+      --border-color: #cccccc;
+      --error-color: #d32f2f;
+      --accent-color: #e9ecef;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.6;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      padding: 20px;
+    }
+    header {
+      border-bottom: 2px solid var(--primary-color);
+      padding-bottom: 15px;
+      margin-bottom: 20px;
+    }
+    .header-title-area {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    .app-icon {
+      font-size: 3rem;
+    }
+    h1 {
+      font-size: 1.8rem;
+    }
+    .concept-message {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #333333;
+      margin-top: 5px;
+    }
+    
+    /* ユーティリティ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 20px;
+      font-size: 1rem;
+      font-weight: bold;
+      border: 2px solid var(--primary-color);
+      background-color: var(--bg-color);
+      color: var(--primary-color);
+      border-radius: 4px;
+      cursor: pointer;
+      min-height: 48px; /* アクセシビリティ考慮 */
+      text-decoration: none;
+      transition: background-color 0.2s, color 0.2s;
+    }
+    .btn:hover, .btn:focus {
+      background-color: var(--primary-color);
+      color: var(--bg-color);
+      outline: 3px solid #ffbf47;
+    }
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: var(--bg-color);
+    }
+    .btn-primary:hover, .btn-primary:focus {
+      background-color: #004085;
+      border-color: #004085;
+    }
+    .btn-help {
+      background-color: #28a745;
+      color: white;
+      border-color: #28a745;
+    }
+    .btn-help:hover, .btn-help:focus {
+      background-color: #1e7e34;
+      border-color: #1e7e34;
+    }
+    .input-field {
+      width: 100%;
+      padding: 12px;
+      font-size: 1.1rem;
+      border: 2px solid var(--border-color);
+      border-radius: 4px;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      min-height: 48px;
+    }
+    .input-field:focus {
+      outline: 3px solid #ffbf47;
+      border-color: var(--primary-color);
+    }
+    .error-msg {
+      color: var(--error-color);
+      font-size: 0.95rem;
+      font-weight: bold;
+      margin-top: 5px;
+      min-height: 1.5em;
+    }
+
+    /* レイアウト */
+    .grid-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    @media (min-width: 768px) {
+      .grid-container {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    /* 各種カード */
+    .card {
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      background-color: var(--bg-color);
+    }
+    .card-title {
+      font-size: 1.3rem;
+      margin-bottom: 15px;
+      border-left: 5px solid var(--primary-color);
+      padding-left: 10px;
+    }
+
+    /* フォーム項目 */
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+      font-size: 1.1rem;
+    }
+
+    /* 結果表示エリア */
+    .results-display {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    .result-item {
+      border: 2px solid var(--border-color);
+      border-radius: 6px;
+      padding: 15px;
+      background-color: var(--accent-color);
+    }
+    .result-label {
+      font-size: 1rem;
+      font-weight: bold;
+    }
+    .result-value {
+      font-size: 2rem; /* 24px以上 */
+      font-weight: 900;
+      color: var(--text-color);
+      word-break: break-all;
+    }
+
+    /* ターゲット売価算出 */
+    .target-box {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 2px dashed var(--border-color);
+    }
+
+    /* 保存アクション */
+    .action-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 15px;
+    }
+
+    /* テーブルエリア */
+    .table-container {
+      max-height: 350px;
+      overflow-y: auto;
+      border: 2px solid var(--border-color);
+      border-radius: 6px;
+      margin-top: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 1rem;
+    }
+    th {
+      background-color: var(--accent-color);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    tr:hover {
+      background-color: #f1f3f5;
+    }
+
+    /* モーダル */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.6);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 15px;
+    }
+    .modal-content {
+      background-color: var(--bg-color);
+      border-radius: 8px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 25px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      border: 3px solid var(--primary-color);
+    }
+    .modal-content h2 {
+      font-size: 1.5rem;
+      margin-bottom: 15px;
+      border-bottom: 2px solid var(--primary-color);
+      padding-bottom: 10px;
+    }
+    .modal-content h3 {
+      font-size: 1.15rem;
+      margin-top: 15px;
+      margin-bottom: 8px;
+    }
+    .modal-content ol, .modal-content ul {
+      margin-left: 20px;
+      margin-bottom: 15px;
+    }
+    .modal-content li {
+      margin-bottom: 8px;
+    }
+    .close-modal-container {
+      text-align: right;
+      margin-top: 20px;
+    }
+
+    /* トースト通知 */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #333333;
+      color: #ffffff;
+      padding: 12px 24px;
+      border-radius: 4px;
+      font-weight: bold;
+      z-index: 2000;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+    .toast.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-title-area">
+      <span class="app-icon" aria-hidden="true">📊</span>
+      <div>
+        <h1>利益シミュレーター</h1>
+        <p class="concept-message">人の評価や監視ではなく価格と利益を考えるための道具です</p>
+      </div>
+    </div>
+    <div style="margin-top: 15px;">
+      <button class="btn btn-help" id="btn-open-help" aria-haspopup="dialog" aria-controls="help-modal">❓使い方</button>
+    </div>
+  </header>
+
+  <main class="grid-container">
+    <section class="card" aria-labelledby="calc-title">
+      <h2 id="calc-title" class="card-title">数値入力・計算</h2>
+      <form id="simulator-form" onsubmit="return false;">
+        
+        <div class="form-group">
+          <label id="lbl-item-name" for="item-name">商品名</label>
+          <input type="text" id="item-name" class="input-field" placeholder="（例）サンプル商品" tabindex="1">
+          <div class="error-msg" id="err-item-name" aria-live="polite"></div>
+        </div>
+
+        <div class="form-group">
+          <label id="lbl-selling-price" for="selling-price">売価（単価・円）</label>
+          <input type="number" id="selling-price" class="input-field" min="0" step="any" placeholder="0以上の数値を入力" tabindex="2">
+          <div class="error-msg" id="err-selling-price" aria-live="polite"></div>
+        </div>
+
+        <div class="form-group">
+          <label id="lbl-cost-price" for="cost-price">原価（単価・円）</label>
+          <input type="number" id="cost-price" class="input-field" min="0" step="any" placeholder="0以上の数値を入力" tabindex="3">
+          <div class="error-msg" id="err-cost-price" aria-live="polite"></div>
+        </div>
+
+        <div class="form-group">
+          <label id="lbl-quantity" for="quantity">数量</label>
+          <input type="number" id="quantity" class="input-field" min="0" step="any" placeholder="0以上の数値を入力" tabindex="4">
+          <div class="error-msg" id="err-quantity" aria-live="polite"></div>
+        </div>
+
+        <div class="action-group">
+          <button type="button" id="btn-save" class="btn btn-primary" tabindex="5">保存</button>
+          <button type="button" id="btn-clear" class="btn" tabindex="6">クリア</button>
+        </div>
+
+        <div class="target-box">
+          <div class="form-group">
+            <label id="lbl-target-rate" for="target-rate">ターゲット粗利率（％）</label>
+            <input type="number" id="target-rate" class="input-field" min="0" max="99.9" step="any" placeholder="（例）30" tabindex="7">
+            <div class="error-msg" id="err-target-rate" aria-live="polite"></div>
+          </div>
+          <div style="margin-top: 10px;">
+            <button type="button" id="btn-calc-target" class="btn" tabindex="8">必要売価算出</button>
+          </div>
+          <div id="target-result-area" style="margin-top: 15px; font-weight: bold; display: none;" aria-live="polite">
+            <span style="font-size: 1.1rem;">目標達成に必要な売価:</span>
+            <div id="target-selling-price-display" style="font-size: 1.8rem; color: var(--primary-color);">¥0</div>
+          </div>
+        </div>
+
+      </form>
+    </section>
+
+    <section class="card" aria-labelledby="results-title">
+      <h2 id="results-title" class="card-title">計算結果</h2>
+      
+      <div class="results-display" aria-live="polite">
+        <div class="result-item">
+          <div class="result-label">1個あたり粗利額</div>
+          <div id="profit-per-item" class="result-value">¥0</div>
+        </div>
+        <div class="result-item">
+          <div class="result-label">粗利率（％）</div>
+          <div id="profit-rate" class="result-value">0.00%</div>
+        </div>
+        <div class="result-item">
+          <div class="result-label">数量分粗利合計</div>
+          <div id="total-profit" class="result-value">¥0</div>
+        </div>
+      </div>
+
+      <hr style="margin: 25px 0; border: 1px solid var(--border-color);">
+
+      <h3 id="history-title" style="font-size: 1.2rem; margin-bottom: 10px;">保存された計算結果一覧</h3>
+      <div class="action-group" style="margin-bottom: 15px;">
+        <button type="button" id="btn-export-csv" class="btn btn-primary" tabindex="9">CSVエクスポート</button>
+        <button type="button" id="btn-copy-csv" class="btn" tabindex="10">CSVをコピー</button>
+        <button type="button" id="btn-clear-storage" class="btn" style="border-color: var(--error-color); color: var(--error-color);" tabindex="11">一覧を全削除</button>
+      </div>
+
+      <div class="table-container">
+        <table aria-describedby="history-title">
+          <thead>
+            <tr>
+              <th scope="col">商品名</th>
+              <th scope="col">売価</th>
+              <th scope="col">原価</th>
+              <th scope="col">数量</th>
+              <th scope="col">粗利合計</th>
+            </tr>
+          </thead>
+          <tbody id="saved-list-body">
+            </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div id="help-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="help-modal-title">
+    <div class="modal-content">
+      <h2 id="help-modal-title">📊 利益シミュレーターの使い方</h2>
+      
+      <h3>1. このアプリでできること</h3>
+      <p>売価・原価・数量の入力から瞬時に粗利額や粗利率を計算し、目標粗利率に応じた適正な必要売価も算出できます。データはプライバシーに配慮し、すべてご使用のブラウザ内にのみ保存されます。</p>
+
+      <h3>2. 基本的な使い方（4ステップ）</h3>
+      <ol>
+        <li><strong>データを入力する:</strong> 商品名、売価、原価、数量を上から順に入力します。（キーボードの Tab キーで入力をスムーズに進められます）</li>
+        <li><strong>即時に結果を見る:</strong> 入力と同時に「1個あたり粗利額」「粗利率」「数量分の粗利合計」が自動計算されて画面右側に大きく表示されます。</li>
+        <li><strong>必要売価を計算する:</strong> 任意の「ターゲット粗利率（%）」を入力して「必要売価算出」ボタンを押すと、原価をベースに目標をクリアするための売価が分かります。</li>
+        <li><strong>データを保存・出力する:</strong> 「保存」ボタンを押すことで入力履歴を端末に蓄積できます。蓄積した履歴は「CSVエクスポート」や「CSVをコピー」ボタンでエクセルなどに渡すことができます。</li>
+      </ol>
+
+      <h3>3. データの取り扱いについて</h3>
+      <p>入力・保存されたデータは、このパソコン（ブラウザ）の <strong>localStorage</strong> というローカルな保存領域のみに記録されます。インターネットを通じて外部へ送信されることは一切ありません。</p>
+
+      <div class="close-modal-container">
+        <button type="button" id="btn-close-help" class="btn btn-primary" style="min-width: 120px;">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-notification" class="toast" role="alert" aria-live="assertive"></div>
+
+  <script>
+    // 定数・グローバル変数
+    const STORAGE_KEY = 'PROFIT_SIMULATOR_DATA';
+    let savedRecords = [];
+
+    // DOM要素の取得
+    const elements = {
+      itemName: document.getElementById('item-name'),
+      sellingPrice: document.getElementById('selling-price'),
+      costPrice: document.getElementById('cost-price'),
+      quantity: document.getElementById('quantity'),
+      targetRate: document.getElementById('target-rate'),
+
+      errItemName: document.getElementById('err-item-name'),
+      errSellingPrice: document.getElementById('err-selling-price'),
+      errCostPrice: document.getElementById('err-cost-price'),
+      errQuantity: document.getElementById('err-quantity'),
+      errTargetRate: document.getElementById('err-target-rate'),
+
+      profitPerItem: document.getElementById('profit-per-item'),
+      profitRate: document.getElementById('profit-rate'),
+      totalProfit: document.getElementById('total-profit'),
+      targetResultArea: document.getElementById('target-result-area'),
+      targetSellingPriceDisplay: document.getElementById('target-selling-price-display'),
+
+      btnSave: document.getElementById('btn-save'),
+      btnClear: document.getElementById('btn-clear'),
+      btnCalcTarget: document.getElementById('btn-calc-target'),
+      btnExportCsv: document.getElementById('btn-export-csv'),
+      btnCopyCsv: document.getElementById('btn-copy-csv'),
+      btnClearStorage: document.getElementById('btn-clear-storage'),
+
+      savedListBody: document.getElementById('saved-list-body'),
+
+      helpModal: document.getElementById('help-modal'),
+      btnOpenHelp: document.getElementById('btn-open-help'),
+      btnCloseHelp: document.getElementById('btn-close-help'),
+      toast: document.getElementById('toast-notification')
+    };
+
+    // 初期化処理
+    window.addEventListener('DOMContentLoaded', () => {
+      loadRecords();
+      renderTable();
+      setupEventListeners();
+    });
+
+    // イベントリスナー登録
+    function setupEventListeners() {
+      // リアルタイム計算
+      elements.itemName.addEventListener('input', calculateResults);
+      elements.sellingPrice.addEventListener('input', () => { validatePositive(elements.sellingPrice, elements.errSellingPrice); calculateResults(); });
+      elements.costPrice.addEventListener('input', () => { validatePositive(elements.costPrice, elements.errCostPrice); calculateResults(); });
+      elements.quantity.addEventListener('input', () => { validatePositive(elements.quantity, elements.errQuantity); calculateResults(); });
+      elements.targetRate.addEventListener('input', () => { validateTargetRate(); });
+
+      // ボタンアクション
+      elements.btnSave.addEventListener('click', saveCurrentRecord);
+      elements.btnClear.addEventListener('click', clearForm);
+      elements.btnCalcTarget.addEventListener('click', calculateTargetPrice);
+      elements.btnExportCsv.addEventListener('click', exportCSV);
+      elements.btnCopyCsv.addEventListener('click', copyCSV);
+      elements.btnClearStorage.addEventListener('click', clearStorage);
+
+      // モーダルイベント
+      elements.btnOpenHelp.addEventListener('click', openHelpModal);
+      elements.btnCloseHelp.addEventListener('click', closeHelpModal);
+      
+      // キーボードでのモーダル閉じ
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && elements.helpModal.style.display === 'flex') {
+          closeHelpModal();
+        }
+      });
+    }
+
+    // 正の数検証
+    function validatePositive(inputElem, errElem) {
+      const val = parseFloat(inputElem.value);
+      if (inputElem.value !== '' && val < 0) {
+        errElem.textContent = '0以上の数値を入力してください';
+        return false;
+      }
+      errElem.textContent = '';
+      return true;
+    }
+
+    // ターゲット粗利率検証
+    function validateTargetRate() {
+      const val = parseFloat(elements.targetRate.value);
+      if (elements.targetRate.value !== '') {
+        if (val < 0 || val >= 100) {
+          elements.errTargetRate.textContent = '0以上 100未満の数値を入力してください';
+          return false;
+        }
+      }
+      elements.errTargetRate.textContent = '';
+      return true;
+    }
+
+    // リアルタイム計算処理
+    function calculateResults() {
+      const sell = parseFloat(elements.sellingPrice.value) || 0;
+      const cost = parseFloat(elements.costPrice.value) || 0;
+      const qty = parseFloat(elements.quantity.value) || 0;
+
+      if (sell < 0 || cost < 0 || qty < 0) {
+        return; // エラーが出ている場合は計算を更新しない
+      }
+
+      // 1個あたり粗利
+      const profitPer = sell - cost;
+      
+      // 粗利率 (%)
+      let profitRateVal = 0;
+      if (sell !== 0) {
+        profitRateVal = (profitPer / sell) * 100;
+      }
+
+      // 数量分合計
+      const totalProfitVal = profitPer * qty;
+
+      // 画面反映
+      elements.profitPerItem.textContent = `¥${formatNumber(profitPer)}`;
+      elements.profitRate.textContent = `${profitRateVal.toFixed(2)}%`;
+      elements.totalProfit.textContent = `¥${formatNumber(totalProfitVal)}`;
+    }
+
+    // ターゲット売価算出
+    function calculateTargetPrice() {
+      if (!validateTargetRate()) return;
+
+      const cost = parseFloat(elements.costPrice.value);
+      const target = parseFloat(elements.targetRate.value);
+
+      if (isNaN(cost) || isNaN(target)) {
+        showToast('原価とターゲット粗利率を入力してください。');
+        return;
+      }
+
+      if (cost < 0) {
+        showToast('原価を正しく入力してください。');
+        return;
+      }
+
+      // 算出公式: 必要売価 = 原価 / (1 - ターゲット粗利率 / 100)
+      const divider = 1 - (target / 100);
+      if (divider <= 0) {
+        showToast('適切な粗利率を設定してください。');
+        return;
+      }
+
+      const requiredPrice = cost / divider;
+      elements.targetSellingPriceDisplay.textContent = `¥${formatNumber(Math.round(requiredPrice))}`;
+      elements.targetResultArea.style.display = 'block';
+    }
+
+    // 数値の3桁区切りフォーマット
+    function formatNumber(num) {
+      return num.toLocaleString('ja-JP', { maximumFractionDigits: 2 });
+    }
+
+    // フォームクリア
+    function clearForm() {
+      elements.itemName.value = '';
+      elements.sellingPrice.value = '';
+      elements.costPrice.value = '';
+      elements.quantity.value = '';
+      elements.targetRate.value = '';
+      
+      elements.errItemName.textContent = '';
+      elements.errSellingPrice.textContent = '';
+      elements.errCostPrice.textContent = '';
+      elements.errQuantity.textContent = '';
+      elements.errTargetRate.textContent = '';
+
+      elements.targetResultArea.style.display = 'none';
+
+      calculateResults();
+      elements.itemName.focus();
+    }
+
+    // localStorageへデータ保存
+    function saveCurrentRecord() {
+      const name = elements.itemName.value.trim() || '名称未設定の商品';
+      const sell = parseFloat(elements.sellingPrice.value);
+      const cost = parseFloat(elements.costPrice.value);
+      const qty = parseFloat(elements.quantity.value);
+
+      if (isNaN(sell) || isNaN(cost) || isNaN(qty)) {
+        showToast('売価、原価、数量を数値で入力してください。');
+        return;
+      }
+
+      if (sell < 0 || cost < 0 || qty < 0) {
+        showToast('入力された数値に不備があります。修正してください。');
+        return;
+      }
+
+      const profitPer = sell - cost;
+      const totalProfitVal = profitPer * qty;
+
+      const record = {
+        name: name,
+        sell: sell,
+        cost: cost,
+        qty: qty,
+        totalProfit: totalProfitVal
+      };
+
+      savedRecords.push(record);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(savedRecords));
+      
+      renderTable();
+      showToast('データを一時保存しました。');
+      clearForm();
+    }
+
+    // 一時保存データの読み込み
+    function loadRecords() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        try {
+          savedRecords = JSON.parse(raw);
+        } catch (e) {
+          savedRecords = [];
+        }
+      }
+    }
+
+    // テーブルの再描写
+    function renderTable() {
+      elements.savedListBody.innerHTML = '';
+
+      if (savedRecords.length === 0) {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td colspan="5" style="text-align: center; color: #666666;">一時保存されたデータはありません</td>`;
+        elements.savedListBody.appendChild(row);
+        return;
+      }
+
+      savedRecords.forEach((rec) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${escapeHtml(rec.name)}</td>
+          <td>¥${formatNumber(rec.sell)}</td>
+          <td>¥${formatNumber(rec.cost)}</td>
+          <td>${formatNumber(rec.qty)}</td>
+          <td style="font-weight: bold;">¥${formatNumber(rec.totalProfit)}</td>
+        `;
+        elements.savedListBody.appendChild(row);
+      });
+    }
+
+    // 全データ削除
+    function clearStorage() {
+      if (savedRecords.length === 0) {
+        showToast('削除するデータがありません。');
+        return;
+      }
+      if (confirm('保存されているすべての一覧データを削除します。よろしいですか？')) {
+        savedRecords = [];
+        localStorage.removeItem(STORAGE_KEY);
+        renderTable();
+        showToast('データを全削除しました。');
+      }
+    }
+
+    // CSVデータ文字列生成
+    function generateCSVString() {
+      const headers = ['商品名', '売価', '原価', '数量', '粗利合計'];
+      const rows = [headers.join(',')];
+
+      savedRecords.forEach(rec => {
+        const cleanName = rec.name.replace(/"/g, '""');
+        const row = [
+          `"${cleanName}"`,
+          rec.sell,
+          rec.cost,
+          rec.qty,
+          rec.totalProfit
+        ];
+        rows.push(row.join(','));
+      });
+
+      return rows.join('\r\n');
+    }
+
+    // CSVダウンロード
+    function exportCSV() {
+      if (savedRecords.length === 0) {
+        showToast('書き出すデータがありません。先にデータを保存してください。');
+        return;
+      }
+
+      const csvString = generateCSVString();
+      const bom = new Uint8Array([0xEF, 0xBB, 0xBF]); // Excelの文字化け防止BOM
+      const blob = new Blob([bom, csvString], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'profit_simulator_export.csv');
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      showToast('CSVファイルをダウンロードしました。');
+    }
+
+    // CSVをクリップボードにコピー
+    function copyCSV() {
+      if (savedRecords.length === 0) {
+        showToast('コピーするデータがありません。先にデータを保存してください。');
+        return;
+      }
+
+      const csvString = generateCSVString();
+      navigator.clipboard.writeText(csvString)
+        .then(() => {
+          showToast('CSVデータをクリップボードにコピーしました！');
+        })
+        .catch(err => {
+          showToast('コピーに失敗しました。お使いのブラウザが対応していない可能性があります。');
+        });
+    }
+
+    // HTMLエスケープ（XSS対策）
+    function escapeHtml(str) {
+      if (typeof str !== 'string') return str;
+      return str.replace(/[&<>'"]/g, function(tag) {
+        const chars = {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          "'": '&#39;',
+          '"': '&quot;'
+        };
+        return chars[tag] || tag;
+      });
+    }
+
+    // モーダル管理
+    let previousActiveElement;
+
+    function openHelpModal() {
+      previousActiveElement = document.activeElement;
+      elements.helpModal.style.display = 'flex';
+      elements.btnCloseHelp.focus();
+    }
+
+    function closeHelpModal() {
+      elements.helpModal.style.display = 'none';
+      if (previousActiveElement) {
+        previousActiveElement.focus();
+      }
+    }
+
+    // トースト表示
+    let toastTimeout;
+    function showToast(message) {
+      clearTimeout(toastTimeout);
+      elements.toast.textContent = message;
+      elements.toast.classList.add('show');
+      toastTimeout = setTimeout(() => {
+        elements.toast.classList.remove('show');
+      }, 3000);
+    }
+  </script>
+</body>
+</html>

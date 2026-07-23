@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>商品別ABC分析ツール</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📊</text></svg>'>
+  <style>
+    /* 基本デザイン・リセット */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    :root {
+      --primary-color: #2b6cb0;
+      --bg-color: #f7fafc;
+      --card-bg: #ffffff;
+      --text-color: #2d3748;
+      --border-color: #cbd5e0;
+      
+      /* ABCランク用の背景色（高コントラストかつ視認性の良い色調） */
+      --rank-a-bg: #ebf8ff; /* 青系 */
+      --rank-a-text: #2b6cb0;
+      --rank-b-bg: #fffaf0; /* 橙系 */
+      --rank-b-text: #dd6b20;
+      --rank-c-bg: #f0fff4; /* 緑系 */
+      --rank-c-text: #38a169;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.5;
+      padding: 16px;
+      font-size: 16px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    /* ヘッダー */
+    header {
+      background-color: var(--card-bg);
+      padding: 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .header-title-area {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .app-icon {
+      font-size: 3rem;
+      line-height: 1;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      color: #1a202c;
+    }
+
+    .subtitle {
+      font-size: 1.1rem;
+      color: #4a5568;
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+
+    .header-actions {
+      margin-top: 8px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* ボタン共通 */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 20px;
+      font-size: 1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s, transform 0.1s;
+      min-height: 48px; /* アクセシビリティ考慮（押しやすさ） */
+      text-decoration: none;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-info {
+      background-color: #4a5568;
+      color: #ffffff;
+    }
+
+    .btn-info:hover, .btn-info:focus {
+      background-color: #2d3748;
+      outline: 3px solid #cbd5e0;
+    }
+
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: #ffffff;
+    }
+
+    .btn-primary:hover, .btn-primary:focus {
+      background-color: #1a365d;
+      outline: 3px solid #90cdf4;
+    }
+
+    .btn-export {
+      background-color: #319795;
+      color: #ffffff;
+    }
+
+    .btn-export:hover, .btn-export:focus {
+      background-color: #234e52;
+      outline: 3px solid #b2f5ea;
+    }
+
+    .btn-danger {
+      background-color: #e53e3e;
+      color: #ffffff;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      min-height: 36px;
+    }
+
+    .btn-danger:hover, .btn-danger:focus {
+      background-color: #9b2c2c;
+      outline: 3px solid #feb2b2;
+    }
+
+    /* 入力フォーム */
+    .form-card {
+      background-color: var(--card-bg);
+      padding: 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      margin-bottom: 20px;
+    }
+
+    .form-title {
+      font-size: 1.25rem;
+      margin-bottom: 16px;
+      font-weight: bold;
+      border-left: 5px solid var(--primary-color);
+      padding-left: 8px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 16px;
+      align-items: flex-end;
+    }
+
+    @media (max-width: 768px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .form-group label {
+      font-weight: bold;
+      font-size: 1rem;
+    }
+
+    .input-control {
+      width: 100%;
+      padding: 12px;
+      font-size: 1.1rem;
+      border: 2px solid var(--border-color);
+      border-radius: 6px;
+      background-color: #ffffff;
+    }
+
+    .input-control:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+    }
+
+    /* エラーメッセージ */
+    .error-text {
+      color: #e53e3e;
+      font-size: 0.9rem;
+      min-height: 20px;
+      margin-top: 4px;
+    }
+
+    /* サマリーセクション */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .summary-card {
+      background-color: var(--card-bg);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      border-top: 6px solid var(--border-color);
+    }
+
+    .summary-card.rank-a { border-top-color: var(--rank-a-text); }
+    .summary-card.rank-b { border-top-color: var(--rank-b-text); }
+    .summary-card.rank-c { border-top-color: var(--rank-c-text); }
+
+    .summary-title {
+      font-size: 1.1rem;
+      font-weight: bold;
+      margin-bottom: 12px;
+      color: #4a5568;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 1.05rem;
+    }
+
+    .summary-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .summary-value {
+      font-weight: bold;
+      font-size: 1.2rem;
+    }
+
+    /* テーブル・一覧 */
+    .table-card {
+      background-color: var(--card-bg);
+      padding: 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      margin-bottom: 20px;
+      overflow-x: auto; /* スマホ用横スクロール */
+    }
+
+    .table-header-flex {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 16px; /* 必須：テーブルの文字は16px以上 */
+    }
+
+    th, td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
+      line-height: 1.5; /* 必須：行間隔は1.5倍 */
+    }
+
+    th {
+      background-color: #edf2f7;
+      font-weight: bold;
+      color: #2d3748;
+    }
+
+    /* ランク別背景色の適用 */
+    .row-rank-A {
+      background-color: var(--rank-a-bg);
+    }
+    .row-rank-A .badge {
+      background-color: var(--rank-a-text);
+      color: white;
+    }
+
+    .row-rank-B {
+      background-color: var(--rank-b-bg);
+    }
+    .row-rank-B .badge {
+      background-color: var(--rank-b-text);
+      color: white;
+    }
+
+    .row-rank-C {
+      background-color: var(--rank-c-bg);
+    }
+    .row-rank-C .badge {
+      background-color: var(--rank-c-text);
+      color: white;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+
+    .text-right {
+      text-align: right;
+    }
+
+    .empty-message {
+      text-align: center;
+      padding: 40px;
+      color: #718096;
+      font-size: 1.1rem;
+    }
+
+    /* モーダルダイアログ (使い方マニュアル) */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease-out;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-content {
+      background-color: #ffffff;
+      padding: 32px;
+      border-radius: 8px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 12px;
+    }
+
+    .modal-title {
+      font-size: 1.4rem;
+      font-weight: bold;
+    }
+
+    .modal-body {
+      font-size: 1.05rem;
+      line-height: 1.6;
+    }
+
+    .modal-body h4 {
+      margin-top: 16px;
+      margin-bottom: 8px;
+      font-size: 1.15rem;
+      color: var(--primary-color);
+      border-left: 4px solid var(--primary-color);
+      padding-left: 8px;
+    }
+
+    .modal-body ol {
+      margin-left: 20px;
+      margin-bottom: 16px;
+    }
+
+    .modal-body li {
+      margin-bottom: 8px;
+    }
+
+    .modal-body p {
+      margin-bottom: 12px;
+    }
+
+    .modal-footer {
+      margin-top: 24px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    /* スクリーンリーダー用 */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="header-title-area">
+        <span class="app-icon" aria-hidden="true">📊</span>
+        <div>
+          <h1>商品別ABC分析ツール</h1>
+          <p class="subtitle">人の評価や監視ではなく、重点商品を見極めるための道具です</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="btn btn-info" id="btn-help" aria-haspopup="dialog" aria-controls="help-modal">
+          ❓ 使い方を見る
+        </button>
+      </div>
+    </header>
+
+    <section class="form-card" aria-labelledby="form-heading">
+      <h2 id="form-heading" class="form-title">商品の追加</h2>
+      <form id="abc-form" novalidate>
+        <div class="form-grid">
+          <div class="form-group">
+            <label id="label-product-name" for="product-name">商品名 <span style="color: #e53e3e;">(必須)</span></label>
+            <input 
+              type="text" 
+              id="product-name" 
+              class="input-control" 
+              placeholder="例: りんご" 
+              required
+              aria-labelledby="label-product-name"
+            >
+            <div id="error-name" class="error-text" role="alert"></div>
+          </div>
+          <div class="form-group">
+            <label id="label-sales-amount" for="sales-amount">売上金額 (または数量×単価) <span style="color: #e53e3e;">(必須)</span></label>
+            <input 
+              type="text" 
+              id="sales-amount" 
+              class="input-control" 
+              placeholder="例: 150000" 
+              required
+              inputmode="numeric"
+              aria-labelledby="label-sales-amount"
+            >
+            <div id="error-sales" class="error-text" role="alert"></div>
+          </div>
+          <div class="form-group">
+            <div style="height: 24px;" aria-hidden="true"></div>
+            <button type="submit" class="btn btn-primary" id="btn-add">追加する</button>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <section aria-label="分析結果の概要" class="summary-grid">
+      <div class="summary-card rank-a">
+        <h3 class="summary-title">Aランク (累計 70% 未満)</h3>
+        <div class="summary-row">
+          <span>商品数:</span>
+          <span id="summary-count-a" class="summary-value">0 点</span>
+        </div>
+        <div class="summary-row">
+          <span>売上合計:</span>
+          <span id="summary-sum-a" class="summary-value">¥0</span>
+        </div>
+      </div>
+      <div class="summary-card rank-b">
+        <h3 class="summary-title">Bランク (累計 70% 〜 90% 未満)</h3>
+        <div class="summary-row">
+          <span>商品数:</span>
+          <span id="summary-count-b" class="summary-value">0 点</span>
+        </div>
+        <div class="summary-row">
+          <span>売上合計:</span>
+          <span id="summary-sum-b" class="summary-value">¥0</span>
+        </div>
+      </div>
+      <div class="summary-card rank-c">
+        <h3 class="summary-title">Cランク (累計 90% 以上)</h3>
+        <div class="summary-row">
+          <span>商品数:</span>
+          <span id="summary-count-c" class="summary-value">0 点</span>
+        </div>
+        <div class="summary-row">
+          <span>売上合計:</span>
+          <span id="summary-sum-c" class="summary-value">¥0</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="table-card" aria-label="商品別分析一覧">
+      <div class="table-header-flex">
+        <h2 class="form-title" style="margin-bottom: 0;">分析データ一覧</h2>
+        <div>
+          <button type="button" class="btn btn-export" id="btn-export">📤 CSVでエクスポート</button>
+        </div>
+      </div>
+      <div id="table-container">
+        </div>
+    </section>
+  </div>
+
+  <div class="modal-overlay" id="help-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-title" class="modal-title">❓ 使い方マニュアル</h3>
+        <button type="button" class="btn btn-danger" id="btn-close-modal" aria-label="マニュアルを閉じる">閉じる</button>
+      </div>
+      <div class="modal-body">
+        <h4>1. このアプリでできること</h4>
+        <p>
+          入力された商品とその売上金額から自動的に「ABC分析」を行います。
+          売上への貢献度が高い順に並び替え、累計構成比をもとにA（最重点）、B（準重点）、C（一般）の3つのランクに分類し、一目で分かるように可視化します。
+        </p>
+        
+        <h4>2. 基本的な使い方 (簡単4ステップ)</h4>
+        <ol>
+          <li><strong>商品の入力：</strong> 「商品名」と「売上金額」を入力します。金額は半角数字のみ入力可能です。</li>
+          <li><strong>追加：</strong> 「追加する」ボタンを押す（またはEnterキーを押す）と、即座に下の表に追加されます。</li>
+          <li><strong>分析の確認：</strong> 売上金額の多い順に自動で並び替えられ、ランク判定（A/B/C）と各グループの合計額が自動更新されます。</li>
+          <li><strong>CSV出力：</strong> 画面の「CSVでエクスポート」ボタンを押すと、分析結果をExcel等で開けるCSVファイルとして保存できます。</li>
+        </ol>
+
+        <h4>3. データの保存について</h4>
+        <p>
+          入力したデータは、<strong>この端末のブラウザ内（ローカルストレージ）にのみ保存されます。</strong>
+          外部のサーバー等に送信されることはないため、機密情報や社外秘の売上データであっても安心してご利用いただけます。
+          （ブラウザのキャッシュを削除するとデータが消去されるのでご注意ください）
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-info" id="btn-close-modal-bottom">分かりました</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // データ保持用の配列
+    let items = [];
+
+    // DOM要素の取得
+    const form = document.getElementById('abc-form');
+    const productNameInput = document.getElementById('product-name');
+    const salesAmountInput = document.getElementById('sales-amount');
+    const errorName = document.getElementById('error-name');
+    const errorSales = document.getElementById('error-sales');
+
+    const summaryCountA = document.getElementById('summary-count-a');
+    const summarySumA = document.getElementById('summary-sum-a');
+    const summaryCountB = document.getElementById('summary-count-b');
+    const summarySumB = document.getElementById('summary-sum-b');
+    const summaryCountC = document.getElementById('summary-count-c');
+    const summarySumC = document.getElementById('summary-sum-c');
+
+    const tableContainer = document.getElementById('table-container');
+    const btnExport = document.getElementById('btn-export');
+
+    // モーダル関連
+    const helpModal = document.getElementById('help-modal');
+    const btnHelp = document.getElementById('btn-help');
+    const btnCloseModal = document.getElementById('btn-close-modal');
+    const btnCloseModalBottom = document.getElementById('btn-close-modal-bottom');
+
+    // 起動時の初期化
+    window.addEventListener('DOMContentLoaded', () => {
+      loadData();
+      render();
+    });
+
+    // ローカルストレージからデータをロード
+    function loadData() {
+      const stored = localStorage.getItem('abc_analysis_items');
+      if (stored) {
+        try {
+          items = JSON.parse(stored);
+        } catch (e) {
+          items = [];
+        }
+      } else {
+        // サンプル初期データを設定（初めて開いた時に分かりやすくするため）
+        items = [
+          { name: 'プレミアムコーヒー', sales: 450000 },
+          { name: '特製ブレンド豆', sales: 250000 },
+          { name: 'こだわりカフェオレ', sales: 120000 },
+          { name: 'オーガニックティ', sales: 80000 },
+          { name: '自家製クッキー', sales: 40000 },
+          { name: 'オリジナルマグカップ', sales: 15000 },
+          { name: 'ペーパーフィルター', sales: 5000 }
+        ];
+        saveData();
+      }
+    }
+
+    // ローカルストレージにデータを保存
+    function saveData() {
+      localStorage.setItem('abc_analysis_items', JSON.stringify(items));
+    }
+
+    // 入力検証
+    function validateForm() {
+      let isValid = true;
+
+      // 商品名検証
+      const nameVal = productNameInput.value.trim();
+      if (!nameVal) {
+        errorName.textContent = '※商品名を入力してください。';
+        productNameInput.setAttribute('aria-invalid', 'true');
+        isValid = false;
+      } else {
+        errorName.textContent = '';
+        productNameInput.removeAttribute('aria-invalid');
+      }
+
+      // 売上金額検証（数値のみ、カンマ等は除外して判定）
+      const salesVal = salesAmountInput.value.trim();
+      const numPattern = /^[0-9]+$/;
+      if (!salesVal) {
+        errorSales.textContent = '※売上金額を入力してください。';
+        salesAmountInput.setAttribute('aria-invalid', 'true');
+        isValid = false;
+      } else if (!numPattern.test(salesVal)) {
+        errorSales.textContent = '※半角数字のみで入力してください（カンマや記号は不要です）。';
+        salesAmountInput.setAttribute('aria-invalid', 'true');
+        isValid = false;
+      } else {
+        errorSales.textContent = '';
+        salesAmountInput.removeAttribute('aria-invalid');
+      }
+
+      return isValid;
+    }
+
+    // フォーム送信（データ追加）
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      if (!validateForm()) {
+        return;
+      }
+
+      const newItem = {
+        name: productNameInput.value.trim(),
+        sales: parseInt(salesAmountInput.value.trim(), 10)
+      };
+
+      items.push(newItem);
+      saveData();
+      render();
+
+      // フォームをリセットしてフォーカスを最初に戻す
+      form.reset();
+      productNameInput.focus();
+    });
+
+    // アイテム削除機能
+    window.removeItem = function(index) {
+      if (confirm('この商品をリストから削除してもよろしいですか？')) {
+        items.splice(index, 1);
+        saveData();
+        render();
+      }
+    };
+
+    // 計算およびレンダリング
+    function render() {
+      // 1. 売上金額の降順にソート
+      items.sort((a, b) => b.sales - a.sales);
+
+      // 総売上の計算
+      const totalSales = items.reduce((sum, item) => sum + item.sales, 0);
+
+      // 累積構成比の算出とランク割り当て
+      let accumulativeSales = 0;
+      const processedItems = items.map((item, index) => {
+        accumulativeSales += item.sales;
+        const ratio = totalSales > 0 ? (accumulativeSales / totalSales) : 0;
+        
+        let rank = 'C';
+        if (ratio < 0.70) {
+          rank = 'A';
+        } else if (ratio < 0.90) {
+          rank = 'B';
+        }
+
+        return {
+          ...item,
+          ratio: ratio * 100, // %表記用
+          rank: rank,
+          index: index // 元の並びを特定するインデックス
+        };
+      });
+
+      // サマリーの集計用変数
+      let countA = 0, sumA = 0;
+      let countB = 0, sumB = 0;
+      let countC = 0, sumC = 0;
+
+      processedItems.forEach(item => {
+        if (item.rank === 'A') {
+          countA++;
+          sumA += item.sales;
+        } else if (item.rank === 'B') {
+          countB++;
+          sumB += item.sales;
+        } else {
+          countC++;
+          sumC += item.sales;
+        }
+      });
+
+      // サマリー表示の更新（数値は太字）
+      summaryCountA.innerHTML = `<strong>${countA}</strong> 点`;
+      summarySumA.innerHTML = `<strong>¥${sumA.toLocaleString()}</strong>`;
+      summaryCountB.innerHTML = `<strong>${countB}</strong> 点`;
+      summarySumB.innerHTML = `<strong>¥${sumB.toLocaleString()}</strong>`;
+      summaryCountC.innerHTML = `<strong>${countC}</strong> 点`;
+      summarySumC.innerHTML = `<strong>¥${sumC.toLocaleString()}</strong>`;
+
+      // テーブル描画
+      if (processedItems.length === 0) {
+        tableContainer.innerHTML = `<div class="empty-message">データがありません。上のフォームから商品を追加してください。</div>`;
+        return;
+      }
+
+      let tableHtml = `
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">商品名</th>
+              <th scope="col" class="text-right">売上金額</th>
+              <th scope="col" class="text-right">累計構成比</th>
+              <th scope="col" style="text-align: center;">ランク</th>
+              <th scope="col" style="text-align: center;">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      processedItems.forEach((item) => {
+        tableHtml += `
+          <tr class="row-rank-${item.rank}">
+            <td>${escapeHtml(item.name)}</td>
+            <td class="text-right">¥${item.sales.toLocaleString()}</td>
+            <td class="text-right">${item.ratio.toFixed(1)}%</td>
+            <td style="text-align: center;">
+              <span class="badge">${item.rank}</span>
+            </td>
+            <td style="text-align: center;">
+              <button 
+                type="button" 
+                class="btn btn-danger" 
+                onclick="removeItem(${item.index})" 
+                aria-label="${escapeHtml(item.name)}を削除"
+              >
+                削除
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+
+      tableHtml += `
+            <tr style="font-weight: bold; background-color: #edf2f7;">
+              <td>合計</td>
+              <td class="text-right">¥${totalSales.toLocaleString()}</td>
+              <td class="text-right">100.0%</td>
+              <td></td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+      `;
+
+      tableContainer.innerHTML = tableHtml;
+    }
+
+    // HTMLエスケープ（セキュリティ対策）
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // CSVエクスポート
+    btnExport.addEventListener('click', () => {
+      if (items.length === 0) {
+        alert('出力するデータがありません。');
+        return;
+      }
+
+      // ABC分析順（売上降順）に並べ替えて出力
+      const exportItems = [...items].sort((a, b) => b.sales - a.sales);
+      const totalSales = exportItems.reduce((sum, item) => sum + item.sales, 0);
+
+      let csvContent = '\uFEFF'; // Excel文字化け防止用BOM
+      csvContent += '商品名,売上金額,累計構成比,ランク\n';
+
+      let accumulativeSales = 0;
+      exportItems.forEach(item => {
+        accumulativeSales += item.sales;
+        const ratio = totalSales > 0 ? (accumulativeSales / totalSales) : 0;
+        let rank = 'C';
+        if (ratio < 0.70) rank = 'A';
+        else if (ratio < 0.90) rank = 'B';
+
+        const ratioPercent = (ratio * 100).toFixed(1) + '%';
+        
+        // CSVのクォート処理
+        const escapedName = `"${item.name.replace(/"/g, '""')}"`;
+        csvContent += `${escapedName},${item.sales},${ratioPercent},${rank}\n`;
+      });
+
+      // ファイル名の生成 (abc_analysis_YYYYMMDD.csv)
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const date = String(now.getDate()).padStart(2, '0');
+      const fileName = `abc_analysis_${year}${month}${date}.csv`;
+
+      // ダウンロード処理
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', fileName);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+
+    // モーダルの開閉
+    function openModal() {
+      helpModal.classList.add('active');
+      btnCloseModal.focus(); // モーダル内の閉じるボタンにフォーカスを移す
+      document.addEventListener('keydown', handleModalKeyDown);
+    }
+
+    function closeModal() {
+      helpModal.classList.remove('active');
+      btnHelp.focus(); // 呼び出し元ボタンにフォーカスを戻す
+      document.removeEventListener('keydown', handleModalKeyDown);
+    }
+
+    // キーボード操作：Escキーでモーダルを閉じる
+    function handleModalKeyDown(e) {
+      if (e.key === 'Escape') {
+        closeModal();
+      }
+    }
+
+    btnHelp.addEventListener('click', openModal);
+    btnCloseModal.addEventListener('click', closeModal);
+    btnCloseModalBottom.addEventListener('click', closeModal);
+
+    // モーダルの外側をクリックしたときも閉じる
+    helpModal.addEventListener('click', (e) => {
+      if (e.target === helpModal) {
+        closeModal();
+      }
+    });
+  </script>
+</body>
+</html>

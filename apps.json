@@ -71,6 +71,816 @@
       "badge": "動作確認",
       "biz": "E1デモ",
       "date": "2026-07-02"
+    },
+    {
+      "id": "abc_bunseki",
+      "title": "🧩 商品別ABC分析ツール",
+      "desc": "商品別ABC分析ツール",
+      "icon": "🧩",
+      "path": "abc_bunseki/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "anzen_patrol",
+      "title": "🧩 安全パトロール記録ツール",
+      "desc": "安全パトロール記録ツール",
+      "icon": "🧩",
+      "path": "anzen_patrol/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "arari_sim",
+      "title": "🧩 利益シミュレーター",
+      "desc": "利益シミュレーター",
+      "icon": "🧩",
+      "path": "arari_sim/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "area_volume",
+      "title": "🧩 面積・体積計算ツール",
+      "desc": "面積・体積計算ツール",
+      "icon": "🧩",
+      "path": "area_volume/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "bep_keisan",
+      "title": "🧩 採算を考えるための損益分岐点計算ツール",
+      "desc": "採算を考えるための損益分岐点計算ツール",
+      "icon": "🧩",
+      "path": "bep_keisan/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "bihin_kanri",
+      "title": "🧩 備品管理ツール",
+      "desc": "備品管理ツール",
+      "icon": "🧩",
+      "path": "bihin_kanri/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "buhin_zaiko",
+      "title": "🧩 簡易設備部品在庫管理システム",
+      "desc": "簡易設備部品在庫管理システム",
+      "icon": "🧩",
+      "path": "buhin_zaiko/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "campaign_kouka",
+      "title": "🧩 施策の費用対効果 管理表",
+      "desc": "施策の費用対効果 管理表",
+      "icon": "🧩",
+      "path": "campaign_kouka/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "char_count",
+      "title": "🧩 文字数カウンター",
+      "desc": "文字数カウンター",
+      "icon": "🧩",
+      "path": "char_count/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "claim_taiou",
+      "title": "🧩 品質不具合管理ツール",
+      "desc": "品質不具合管理ツール",
+      "icon": "🧩",
+      "path": "claim_taiou/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "cost_down",
+      "title": "🧩 コスト削減アイデア管理ツール",
+      "desc": "コスト削減アイデア管理ツール",
+      "icon": "🧩",
+      "path": "cost_down/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "counter",
+      "title": "🧩 かんたんマルチカウンター",
+      "desc": "かんたんマルチカウンター",
+      "icon": "🧩",
+      "path": "counter/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "dandori_time",
+      "title": "🧩 段取り替え時間記録ツール",
+      "desc": "段取り替え時間記録ツール",
+      "icon": "🧩",
+      "path": "dandori_time/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "date_calc",
+      "title": "🧩 日付・日数計算ツール",
+      "desc": "日付・日数計算ツール",
+      "icon": "🧩",
+      "path": "date_calc/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "energy_cost",
+      "title": "🧩 エネルギーコスト記録: 削減のためのツール",
+      "desc": "エネルギーコスト記録: 削減のためのツール",
+      "icon": "🧩",
+      "path": "energy_cost/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "excel_bundle_split",
+      "title": "🧩 Excelシート 束ね・ばらしツール",
+      "desc": "Excelシート 束ね・ばらしツール",
+      "icon": "🧩",
+      "path": "excel_bundle_split/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "furyo_cost",
+      "title": "🧩 品質損失コスト集計ツール",
+      "desc": "品質損失コスト集計ツール",
+      "icon": "🧩",
+      "path": "furyo_cost/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "genba_pocket",
+      "title": "🧩 現場ポケット",
+      "desc": "現場ポケット",
+      "icon": "🧩",
+      "path": "genba_pocket/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "genka_keisan",
+      "title": "🧩 原価管理・見積シミュレーター",
+      "desc": "原価管理・見積シミュレーター",
+      "icon": "🧩",
+      "path": "genka_keisan/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "genkin_suito",
+      "title": "🧩 現金管理ツール: 小口現金の入出金記録",
+      "desc": "現金管理ツール: 小口現金の入出金記録",
+      "icon": "🧩",
+      "path": "genkin_suito/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "group_maker",
+      "title": "🧩 簡単グループ分けツール",
+      "desc": "簡単グループ分けツール",
+      "icon": "🧩",
+      "path": "group_maker/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "hachu_point",
+      "title": "🧩 かんたん在庫・発注管理ツール",
+      "desc": "かんたん在庫・発注管理ツール",
+      "icon": "🧩",
+      "path": "hachu_point/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "haisou_kakunin",
+      "title": "🧩 配送状況管理ツール",
+      "desc": "配送状況管理ツール",
+      "icon": "🧩",
+      "path": "haisou_kakunin/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "hiyari_memo",
+      "title": "🧩 ヒヤリ・改善メモ",
+      "desc": "ヒヤリ・改善メモ",
+      "icon": "🧩",
+      "path": "hiyari_memo/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "interval_timer",
+      "title": "🧩 インターバルタイマー",
+      "desc": "インターバルタイマー",
+      "icon": "🧩",
+      "path": "interval_timer/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "jinji_togo",
+      "title": "🧩 人財・シフト総合管理システム",
+      "desc": "人財・シフト総合管理システム",
+      "icon": "🧩",
+      "path": "jinji_togo/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "juchu_arari",
+      "title": "🧩 受注採算管理ツール",
+      "desc": "受注採算管理ツール",
+      "icon": "🧩",
+      "path": "juchu_arari/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "kaigi_action",
+      "title": "🧩 会議アクション管理ツール",
+      "desc": "会議アクション管理ツール",
+      "icon": "🧩",
+      "path": "kaigi_action/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "kaigishitsu_yoyaku",
+      "title": "🧩 会議室予約システム",
+      "desc": "会議室予約システム",
+      "icon": "🧩",
+      "path": "kaigishitsu_yoyaku/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "kaizen_teian",
+      "title": "🧩 現場改善提案管理",
+      "desc": "現場改善提案管理",
+      "icon": "🧩",
+      "path": "kaizen_teian/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "kanagata_jigu",
+      "title": "🧩 金型・治具管理",
+      "desc": "金型・治具管理",
+      "icon": "🧩",
+      "path": "kanagata_jigu/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "keihi_seisan",
+      "title": "🧩 経費精算を助ける道具",
+      "desc": "経費精算を助ける道具",
+      "icon": "🧩",
+      "path": "keihi_seisan/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "kenshu_g3_desk",
+      "title": "🧩 G3系統検収デスク v0.1β",
+      "desc": "G3系統検収デスク v0.1β",
+      "icon": "🧩",
+      "path": "kenshu_g3_desk/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "kenshu_kiroku",
+      "title": "🧩 教育研修受講記録システム",
+      "desc": "教育研修受講記録システム",
+      "icon": "🧩",
+      "path": "kenshu_kiroku/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "kogu_kashidashi",
+      "title": "🧩 工具貸出管理ツール",
+      "desc": "工具貸出管理ツール",
+      "icon": "🧩",
+      "path": "kogu_kashidashi/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "kokyaku_rieki",
+      "title": "🧩 顧客採算分析ツール",
+      "desc": "顧客採算分析ツール",
+      "icon": "🧩",
+      "path": "kokyaku_rieki/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "kokyaku_toiawase_togo",
+      "title": "🧩 顧客・問い合わせ管理システム",
+      "desc": "顧客・問い合わせ管理システム",
+      "icon": "🧩",
+      "path": "kokyaku_toiawase_togo/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "komarigoto_desk",
+      "title": "🧩 困りごと台帳",
+      "desc": "困りごと台帳",
+      "icon": "🧩",
+      "path": "komarigoto_desk/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "koshou_rireki",
+      "title": "🧩 設備故障履歴（設備保全用）",
+      "desc": "設備故障履歴（設備保全用）",
+      "icon": "🧩",
+      "path": "koshou_rireki/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "koushin_keikaku",
+      "title": "🧩 設備更新計画: 設備投資計画のためのツール",
+      "desc": "設備更新計画: 設備投資計画のためのツール",
+      "icon": "🧩",
+      "path": "koushin_keikaku/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "lane_keiki_kousei",
+      "title": "🧩 機器校正期限管理ツール",
+      "desc": "機器校正期限管理ツール",
+      "icon": "🧩",
+      "path": "lane_keiki_kousei/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "lane_kotei_meeting",
+      "title": "🧩 工程別日次管理ツール",
+      "desc": "工程別日次管理ツール",
+      "icon": "🧩",
+      "path": "lane_kotei_meeting/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "loss_cost",
+      "title": "🧩 ロス削減かんたん記録ツール",
+      "desc": "ロス削減かんたん記録ツール",
+      "icon": "🧩",
+      "path": "loss_cost/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "nebiki_impact",
+      "title": "🧩 価格変更・粗利シミュレーター",
+      "desc": "価格変更・粗利シミュレーター",
+      "icon": "🧩",
+      "path": "nebiki_impact/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "nikka_tenken",
+      "title": "🧩 設備安全点検アプリ",
+      "desc": "設備安全点検アプリ",
+      "icon": "🧩",
+      "path": "nikka_tenken/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "nippou",
+      "title": "🧩 振り返りのための日報ツール",
+      "desc": "振り返りのための日報ツール",
+      "icon": "🧩",
+      "path": "nippou/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "nyuka_kenpin",
+      "title": "🧩 受入検品記録システム",
+      "desc": "受入検品記録システム",
+      "icon": "🧩",
+      "path": "nyuka_kenpin/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "onshitsu_kiroku",
+      "title": "🧩 温湿度・環境記録",
+      "desc": "温湿度・環境記録",
+      "icon": "🧩",
+      "path": "onshitsu_kiroku/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "percent_calc",
+      "title": "🧩 百分率計算ツール",
+      "desc": "百分率計算ツール",
+      "icon": "🧩",
+      "path": "percent_calc/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "raikyaku_memo",
+      "title": "🧩 受付・応対メモ管理",
+      "desc": "受付・応対メモ管理",
+      "icon": "🧩",
+      "path": "raikyaku_memo/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "random_pick",
+      "title": "🧩 簡単ランダム抽選器",
+      "desc": "簡単ランダム抽選器",
+      "icon": "🧩",
+      "path": "random_pick/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "sanpai_kiroku",
+      "title": "🧩 廃棄物管理ツール",
+      "desc": "廃棄物管理ツール",
+      "icon": "🧩",
+      "path": "sanpai_kiroku/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "seisansei",
+      "title": "🧩 生産性改善ツール",
+      "desc": "生産性改善ツール",
+      "icon": "🧩",
+      "path": "seisansei/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "seisou_touban",
+      "title": "🧩 清掃当番チェック",
+      "desc": "清掃当番チェック",
+      "icon": "🧩",
+      "path": "seisou_touban/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "seizo_hinshitsu_togo",
+      "title": "🧩 生産・品質改善支援システム",
+      "desc": "生産・品質改善支援システム",
+      "icon": "🧩",
+      "path": "seizo_hinshitsu_togo/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "serial_number",
+      "title": "🧩 連番発行アプリ",
+      "desc": "連番発行アプリ",
+      "icon": "🧩",
+      "path": "serial_number/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "setsubi_hozen_togo",
+      "title": "🧩 設備保全・点検・在庫管理システム",
+      "desc": "設備保全・点検・在庫管理システム",
+      "icon": "🧩",
+      "path": "setsubi_hozen_togo/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "shayou_sha",
+      "title": "🧩 社用車運行記録",
+      "desc": "社用車運行記録",
+      "icon": "🧩",
+      "path": "shayou_sha/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "shikaku_kigen",
+      "title": "🧩 資格・免許の更新管理",
+      "desc": "資格・免許の更新管理",
+      "icon": "🧩",
+      "path": "shikaku_kigen/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "shukcho_shinsei",
+      "title": "🧩 出張管理ツール",
+      "desc": "出張管理ツール",
+      "icon": "🧩",
+      "path": "shukcho_shinsei/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "shukka_check",
+      "title": "🧩 出荷チェック・管理システム",
+      "desc": "出荷チェック・管理システム",
+      "icon": "🧩",
+      "path": "shukka_check/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "tanaoroshi_count",
+      "title": "🧩 かんたん在庫メモ",
+      "desc": "かんたん在庫メモ",
+      "icon": "🧩",
+      "path": "tanaoroshi_count/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "tanka_hyo",
+      "title": "🧩 商品粗利管理ツール",
+      "desc": "商品粗利管理ツール",
+      "icon": "🧩",
+      "path": "tanka_hyo/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "tax_calc",
+      "title": "🧩 税込計算ツール",
+      "desc": "税込計算ツール",
+      "icon": "🧩",
+      "path": "tax_calc/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "time_calc",
+      "title": "🧩 時間計算ツール",
+      "desc": "時間計算ツール",
+      "icon": "🧩",
+      "path": "time_calc/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "timer_stopwatch",
+      "title": "🧩 タイマー・ストップウォッチ",
+      "desc": "タイマー・ストップウォッチ",
+      "icon": "🧩",
+      "path": "timer_stopwatch/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "todo_kyoyu",
+      "title": "🧩 チームの仕事の見える化ツール",
+      "desc": "チームの仕事の見える化ツール",
+      "icon": "🧩",
+      "path": "todo_kyoyu/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "unit_convert",
+      "title": "🧩 マルチ単位変換ツール",
+      "desc": "マルチ単位変換ツール",
+      "icon": "🧩",
+      "path": "unit_convert/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "uriage_nippou",
+      "title": "🧩 売上管理ツール",
+      "desc": "売上管理ツール",
+      "icon": "🧩",
+      "path": "uriage_nippou/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "wareki",
+      "title": "🧩 和暦・西暦変換ツール",
+      "desc": "和暦・西暦変換ツール",
+      "icon": "🧩",
+      "path": "wareki/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "warikan",
+      "title": "🧩 割り勘計算",
+      "desc": "割り勘計算",
+      "icon": "🧩",
+      "path": "warikan/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "weight_calc",
+      "title": "🧩 材料重量計算ツール",
+      "desc": "材料重量計算ツール",
+      "icon": "🧩",
+      "path": "weight_calc/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "yield_calc",
+      "title": "🧩 歩留まり・不良率計算ツール",
+      "desc": "歩留まり・不良率計算ツール",
+      "icon": "🧩",
+      "path": "yield_calc/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "yukyu_memo",
+      "title": "🧩 有給休暇シンプル管理ツール",
+      "desc": "有給休暇シンプル管理ツール",
+      "icon": "🧩",
+      "path": "yukyu_memo/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "zaiko_kaiten",
+      "title": "🧩 在庫圧縮支援ツール",
+      "desc": "在庫圧縮支援ツール",
+      "icon": "🧩",
+      "path": "zaiko_kaiten/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "zaiko_togo",
+      "title": "🧩 簡易在庫・発注管理システム",
+      "desc": "簡易在庫・発注管理システム",
+      "icon": "🧩",
+      "path": "zaiko_togo/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "zokujinka_gravity",
+      "title": "🧩 業務重心地図",
+      "desc": "業務重心地図",
+      "icon": "🧩",
+      "path": "zokujinka_gravity/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "checklist_maker",
+      "title": "🧩 チェックリストメーカー",
+      "desc": "チェックリストメーカー",
+      "icon": "🧩",
+      "path": "checklist_maker/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "date_deadline_calc",
+      "title": "🧩 日数と期限の計算",
+      "desc": "日数と期限の計算",
+      "icon": "🧩",
+      "path": "date_deadline_calc/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "paste_tally",
+      "title": "🧩 貼るだけ集計 ― 入れて、ボタン。表ができる。",
+      "desc": "貼るだけ集計 ― 入れて、ボタン。表ができる。",
+      "icon": "🧩",
+      "path": "paste_tally/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
+    },
+    {
+      "id": "toolbox",
+      "title": "🧩 道具箱 ― 仕事の道具を、目的でえらぶ。",
+      "desc": "道具箱 ― 仕事の道具を、目的でえらぶ。",
+      "icon": "🧩",
+      "path": "toolbox/",
+      "badge": "",
+      "biz": "業務支援",
+      "date": "2026-07-16"
     }
   ]
 }

@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>売上管理ツール</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">💰</text></svg>'>
+  <style>
+    /* インクルーシブ設計 & 基本スタイル */
+    :root {
+      --primary-color: #005a9c;
+      --primary-hover: #004070;
+      --bg-color: #f7f9fa;
+      --text-color: #1a1a1a;
+      --border-color: #ccc;
+      --alert-color: #d9381e;
+      --white: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-size: 16px;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* ヘッダー */
+    header {
+      background-color: var(--primary-color);
+      color: var(--white);
+      padding: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .header-title-container {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .header-icon {
+      font-size: 2.5rem;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.8rem;
+    }
+
+    /* ボタン共通 */
+    button {
+      font-size: 16px;
+      padding: 0.6rem 1.2rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      min-height: 44px; /* タッチターゲット配慮 */
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    button:focus-visible {
+      outline: 3px solid #ffbf47;
+      outline-offset: 2px;
+    }
+
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: var(--white);
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background-color: #e0e0e0;
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background-color: #d0d0d0;
+    }
+
+    .btn-danger {
+      background-color: var(--alert-color);
+      color: var(--white);
+    }
+
+    .btn-danger:hover {
+      background-color: #b31a00;
+    }
+
+    /* メインレイアウト */
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (min-width: 768px) {
+      main {
+        grid-template-columns: 1fr 1fr;
+      }
+      .full-width {
+        grid-column: span 2;
+      }
+    }
+
+    /* 各種パネル・カード */
+    .card {
+      background-color: var(--white);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .card-title {
+      margin-top: 0;
+      margin-bottom: 1.2rem;
+      font-size: 1.4rem;
+      border-bottom: 2px solid var(--primary-color);
+      padding-bottom: 0.5rem;
+    }
+
+    /* フォームスタイル */
+    .form-group {
+      margin-bottom: 1.2rem;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 0.4rem;
+    }
+
+    input[type="text"],
+    input[type="date"],
+    input[type="number"],
+    select {
+      width: 100%;
+      font-size: 16px;
+      padding: 0.6rem;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      min-height: 44px;
+    }
+
+    input:focus, select:focus {
+      outline: 2px solid var(--primary-color);
+    }
+
+    /* 編集可能なコンボボックス風UIのためのラッパー */
+    .combo-wrapper {
+      position: relative;
+    }
+
+    /* 今月の累計売上金額 */
+    .kpi-container {
+      background-color: #fff0f0;
+      border: 2px solid var(--alert-color);
+      border-radius: 8px;
+      padding: 1.5rem;
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .kpi-label {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: var(--text-color);
+    }
+
+    .kpi-value {
+      font-size: 2.2rem;
+      font-weight: bold;
+      color: var(--alert-color);
+      margin: 0.5rem 0;
+    }
+
+    /* フィルターセクション */
+    .filter-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    @media (min-width: 600px) {
+      .filter-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    /* テーブルとリスト */
+    .table-container {
+      overflow-x: auto;
+      margin-bottom: 1rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th, td {
+      border: 1px solid var(--border-color);
+      padding: 0.8rem;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    /* 簡易マニュアルモーダル */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      padding: 1rem;
+    }
+
+    .modal.open {
+      display: flex;
+    }
+
+    .modal-content {
+      background-color: var(--white);
+      padding: 1.5rem;
+      border-radius: 8px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--primary-color);
+      padding-bottom: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .modal-title {
+      margin: 0;
+      font-size: 1.4rem;
+    }
+
+    /* フッター */
+    footer {
+      background-color: #e9ecef;
+      padding: 1.5rem;
+      text-align: center;
+      margin-top: 3rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .footer-disclaimer {
+      font-weight: bold;
+      color: #555;
+    }
+
+    /* ユーティリティ */
+    .flex-space-between {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .text-right {
+      text-align: right;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-title-container">
+      <span class="header-icon" aria-hidden="true">💰</span>
+      <h1>簡単売上管理システム</h1>
+    </div>
+    <button class="btn-secondary" id="openManualBtn" aria-haspopup="dialog" aria-controls="manualModal">❓ 使い方</button>
+  </header>
+
+  <main>
+    
+    <div class="full-width">
+      <div class="kpi-container">
+        <div class="kpi-label" id="kpiLabelMonth">今月の累計売上金額 (0000年00月)</div>
+        <div class="kpi-value" id="currentMonthTotal">¥ 0</div>
+      </div>
+    </div>
+
+    <section class="card" aria-labelledby="inputSectionTitle">
+      <h2 id="inputSectionTitle" class="card-title">売上データの登録</h2>
+      <form id="salesForm">
+        <div class="form-group">
+          <label for="inputDate">日付 <span style="color: var(--alert-color);">*</span></label>
+          <input type="date" id="inputDate" required pattern="\d{4}/\d{2}/\d{2}">
+        </div>
+
+        <div class="form-group">
+          <label for="inputItem">商品名 <span style="color: var(--alert-color);">*</span></label>
+          <input type="text" id="inputItem" required placeholder="例: Aセット">
+        </div>
+
+        <div class="form-group">
+          <label for="inputCategory">区分 <span style="color: var(--alert-color);">*</span></label>
+          <div class="combo-wrapper">
+            <input type="text" id="inputCategory" list="categoryOptions" required placeholder="選択または手入力" autocomplete="off">
+            <datalist id="categoryOptions">
+              <option value="小売">
+              <option value="卸売">
+              <option value="サービス">
+              <option value="その他">
+            </datalist>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="inputQty">数量 <span style="color: var(--alert-color);">*</span></label>
+          <input type="number" id="inputQty" min="1" step="1" required placeholder="例: 5">
+        </div>
+
+        <div class="form-group">
+          <label for="inputPrice">単価 (円) <span style="color: var(--alert-color);">*</span></label>
+          <input type="number" id="inputPrice" min="0" step="1" required placeholder="例: 1000">
+        </div>
+
+        <button type="submit" class="btn-primary" style="width: 100%;">登録する</button>
+      </form>
+    </section>
+
+    <section class="card" aria-labelledby="summarySectionTitle">
+      <h2 id="summarySectionTitle" class="card-title">期間・区分別集計</h2>
+      
+      <fieldset style="border: 1px solid var(--border-color); border-radius: 4px; padding: 1rem; margin-bottom: 1.5rem;">
+        <legend style="font-weight: bold; padding: 0 0.5rem;">データの絞り込み</legend>
+        <div class="filter-grid">
+          <div>
+            <label for="filterStartDate">開始日</label>
+            <input type="date" id="filterStartDate">
+          </div>
+          <div>
+            <label for="filterEndDate">終了日</label>
+            <input type="date" id="filterEndDate">
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label for="filterCategory">区分</label>
+          <select id="filterCategory">
+            <option value="">すべて</option>
+          </select>
+        </div>
+      </fieldset>
+
+      <h3 style="font-size: 1.1rem; margin-top: 1rem;">日別合計</h3>
+      <div class="table-container">
+        <table id="daySummaryTable">
+          <thead>
+            <tr>
+              <th scope="col">日付</th>
+              <th scope="col" class="text-right">件数</th>
+              <th scope="col" class="text-right">売上金額</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="3" style="text-align: center; color: #666;">データがありません</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style="font-size: 1.1rem; margin-top: 1.5rem;">区分別合計</h3>
+      <div class="table-container">
+        <table id="categorySummaryTable">
+          <thead>
+            <tr>
+              <th scope="col">区分</th>
+              <th scope="col" class="text-right">件数</th>
+              <th scope="col" class="text-right">売上金額</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="3" style="text-align: center; color: #666;">データがありません</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card full-width" aria-labelledby="listSectionTitle">
+      <div class="flex-space-between">
+        <h2 id="listSectionTitle" class="card-title" style="margin-bottom: 0; border-bottom: none; padding-bottom: 0;">登録データ一覧（新しい順）</h2>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button type="button" class="btn-primary" id="btnExportCsv">📤 CSVエクスポート</button>
+          <button type="button" class="btn-danger" id="btnClearAll">すべて削除</button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table id="salesListTable">
+          <thead>
+            <tr>
+              <th scope="col">日付</th>
+              <th scope="col">商品名</th>
+              <th scope="col">区分</th>
+              <th scope="col" class="text-right">数量</th>
+              <th scope="col" class="text-right">単価</th>
+              <th scope="col" class="text-right">金額</th>
+              <th scope="col" style="text-align: center;">操作</th>
+            </tr>
+          </thead>
+          <tbody id="salesListBody">
+            </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <div class="modal" id="manualModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle" class="modal-title">❓ 使い方マニュアル</h2>
+        <button class="btn-secondary" id="closeManualBtn" aria-label="閉じる" style="min-height: auto; padding: 0.3rem 0.7rem;">×</button>
+      </div>
+      <div>
+        <h3>1. このアプリでできること</h3>
+        <p>日々の売上データをその場で登録・集計・保管し、CSVデータとしてエクスポートできます。</p>
+        
+        <h3>2. 基本の使い方 (4ステップ)</h3>
+        <ol style="padding-left: 1.5rem; margin-bottom: 1.5rem;">
+          <li style="margin-bottom: 0.5rem;"><strong>データの登録:</strong> 左側のフォームに「日付」「商品名」「区分」「数量」「単価」を入力し、「登録する」を押します。(区分は直接入力も、選択も可能です)</li>
+          <li style="margin-bottom: 0.5rem;"><strong>集計の確認:</strong> 右側の表で、日別や区分別の合計金額を即座に確認できます。今月の合計売上は画面上部に赤字で大きく表示されます。</li>
+          <li style="margin-bottom: 0.5rem;"><strong>データの絞り込み:</strong> フィルター項目(期間、区分)を入力・選択すると、合致するデータのみに一覧と集計が即座に切り替わります。</li>
+          <li style="margin-bottom: 0.5rem;"><strong>エクスポートと整理:</strong> 「CSVエクスポート」ボタンでデータを手元に保存できます。不要になったデータは「削除」や「すべて削除」で消去できます。</li>
+        </ol>
+
+        <h3>3. 安全なデータ完結方針</h3>
+        <p>入力されたデータはお使いの<strong>端末のブラウザ内(localStorage)にのみ保存</strong>されます。インターネットを通じて外部のサーバーに送信されることは一切ありませんので、安心して社外秘の売上データをご登録ください。</p>
+      </div>
+      <div style="text-align: right; margin-top: 1.5rem;">
+        <button class="btn-primary" id="closeManualBtnBottom">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p class="footer-disclaimer">このツールは売上把握のための道具です。人の評価や監視のためのものではありません。</p>
+  </footer>
+
+  <script>
+    // データモデル
+    let salesData = [];
+
+    // 要素の取得
+    const salesForm = document.getElementById('salesForm');
+    const inputDate = document.getElementById('inputDate');
+    const inputItem = document.getElementById('inputItem');
+    const inputCategory = document.getElementById('inputCategory');
+    const inputQty = document.getElementById('inputQty');
+    const inputPrice = document.getElementById('inputPrice');
+    const categoryOptions = document.getElementById('categoryOptions');
+
+    const filterStartDate = document.getElementById('filterStartDate');
+    const filterEndDate = document.getElementById('filterEndDate');
+    const filterCategory = document.getElementById('filterCategory');
+
+    const kpiLabelMonth = document.getElementById('kpiLabelMonth');
+    const currentMonthTotal = document.getElementById('currentMonthTotal');
+
+    const salesListBody = document.getElementById('salesListBody');
+    const daySummaryTable = document.getElementById('daySummaryTable').querySelector('tbody');
+    const categorySummaryTable = document.getElementById('categorySummaryTable').querySelector('tbody');
+
+    const btnExportCsv = document.getElementById('btnExportCsv');
+    const btnClearAll = document.getElementById('btnClearAll');
+
+    const openManualBtn = document.getElementById('openManualBtn');
+    const closeManualBtn = document.getElementById('closeManualBtn');
+    const closeManualBtnBottom = document.getElementById('closeManualBtnBottom');
+    const manualModal = document.getElementById('manualModal');
+
+    // 初期化処理
+    window.addEventListener('DOMContentLoaded', () => {
+      // 本日の日付をデフォルト設定
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      inputDate.value = `${yyyy}-${mm}-${dd}`;
+
+      // データ読み込み
+      loadData();
+      render();
+    });
+
+    // モーダル操作
+    function openModal() {
+      manualModal.classList.add('open');
+      closeManualBtn.focus();
+    }
+    function closeModal() {
+      manualModal.classList.remove('open');
+      openManualBtn.focus();
+    }
+    openManualBtn.addEventListener('click', openModal);
+    closeManualBtn.addEventListener('click', closeModal);
+    closeManualBtnBottom.addEventListener('click', closeModal);
+
+    // Escキーでモーダルを閉じる
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && manualModal.classList.contains('open')) {
+        closeModal();
+      }
+    });
+
+    // データ読み込み
+    function loadData() {
+      const stored = localStorage.getItem('salesData');
+      if (stored) {
+        try {
+          salesData = JSON.parse(stored);
+        } catch (e) {
+          salesData = [];
+        }
+      } else {
+        salesData = [];
+      }
+    }
+
+    // データ保存
+    function saveData() {
+      localStorage.setItem('salesData', JSON.stringify(salesData));
+    }
+
+    // データ登録
+    salesForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      // 日付の正規化 (YYYY-MM-DD -> YYYY/MM/DD)
+      const rawDate = inputDate.value;
+      const formattedDate = rawDate.replace(/-/g, '/');
+
+      const newItem = {
+        id: Date.now().toString(),
+        date: formattedDate,
+        item: inputItem.value.trim(),
+        category: inputCategory.value.trim() || 'その他',
+        qty: parseInt(inputQty.value, 10),
+        price: parseInt(inputPrice.value, 10)
+      };
+
+      salesData.push(newItem);
+      saveData();
+      
+      // 入力フォームクリア(日付以外)
+      inputItem.value = '';
+      inputCategory.value = '';
+      inputQty.value = '';
+      inputPrice.value = '';
+
+      render();
+      inputItem.focus();
+    });
+
+    // 個別削除
+    function deleteItem(id) {
+      if (confirm('この売上データを削除しますか？')) {
+        salesData = salesData.filter(item => item.id !== id);
+        saveData();
+        render();
+      }
+    }
+
+    // 全て削除
+    btnClearAll.addEventListener('click', () => {
+      if (confirm('すべての登録データを完全に削除しますか？ (この操作は取り消せません)')) {
+        salesData = [];
+        saveData();
+        render();
+      }
+    });
+
+    // フィルタリング処理
+    function getFilteredData() {
+      const start = filterStartDate.value ? filterStartDate.value.replace(/-/g, '/') : null;
+      const end = filterEndDate.value ? filterEndDate.value.replace(/-/g, '/') : null;
+      const cat = filterCategory.value;
+
+      return salesData.filter(item => {
+        if (start && item.date < start) return false;
+        if (end && item.date > end) return false;
+        if (cat && item.category !== cat) return false;
+        return true;
+      });
+    }
+
+    // フィルター更新時に再描画
+    filterStartDate.addEventListener('input', render);
+    filterEndDate.addEventListener('input', render);
+    filterCategory.addEventListener('change', render);
+
+    // 画面への描画処理
+    function render() {
+      const filtered = getFilteredData();
+
+      // 1. 今月の累計売上計算 (現在月ベース)
+      const now = new Date();
+      const thisYear = now.getFullYear();
+      const thisMonth = String(now.getMonth() + 1).padStart(2, '0');
+      const targetMonthStr = `${thisYear}/${thisMonth}`;
+      kpiLabelMonth.textContent = `今月の累計売上金額 (${thisYear}年${thisMonth}月)`;
+
+      const currentMonthSum = salesData
+        .filter(item => item.date.startsWith(targetMonthStr))
+        .reduce((sum, item) => sum + (item.qty * item.price), 0);
+      currentMonthTotal.textContent = `¥ ${currentMonthSum.toLocaleString()}`;
+
+      // 2. 区分フィルターのセレクトボックスの選択肢更新
+      const activeFilterVal = filterCategory.value;
+      const categories = [...new Set(salesData.map(item => item.category))].filter(Boolean);
+      
+      // ドロップダウン更新
+      filterCategory.innerHTML = '<option value="">すべて</option>';
+      categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        if (cat === activeFilterVal) {
+          opt.selected = true;
+        }
+        filterCategory.appendChild(opt);
+      });
+
+      // 3. データ一覧テーブルの更新 (新しい順 = 日付降順、同日の場合はID降順)
+      const sortedList = [...filtered].sort((a, b) => {
+        if (b.date !== a.date) return b.date.localeCompare(a.date);
+        return b.id.localeCompare(a.id);
+      });
+
+      salesListBody.innerHTML = '';
+      if (sortedList.length === 0) {
+        salesListBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #666;">該当するデータはありません。</td></tr>`;
+      } else {
+        sortedList.forEach(item => {
+          const amount = item.qty * item.price;
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${escapeHtml(item.date)}</td>
+            <td>${escapeHtml(item.item)}</td>
+            <td>${escapeHtml(item.category)}</td>
+            <td class="text-right">${item.qty.toLocaleString()}</td>
+            <td class="text-right">¥ ${item.price.toLocaleString()}</td>
+            <td class="text-right" style="font-weight: bold;">¥ ${amount.toLocaleString()}</td>
+            <td style="text-align: center;">
+              <button class="btn-danger" style="min-height: 36px; padding: 0.2rem 0.6rem; font-size:14px;" onclick="deleteItem('${item.id}')">削除</button>
+            </td>
+          `;
+          salesListBody.appendChild(tr);
+        });
+      }
+
+      // 4. 日別合計テーブル更新
+      const daySummaryMap = {};
+      filtered.forEach(item => {
+        const amount = item.qty * item.price;
+        if (!daySummaryMap[item.date]) {
+          daySummaryMap[item.date] = { count: 0, total: 0 };
+        }
+        daySummaryMap[item.date].count += 1;
+        daySummaryMap[item.date].total += amount;
+      });
+
+      const sortedDays = Object.keys(daySummaryMap).sort((a, b) => b.localeCompare(a));
+      daySummaryTable.innerHTML = '';
+      if (sortedDays.length === 0) {
+        daySummaryTable.innerHTML = `<tr><td colspan="3" style="text-align: center; color: #666;">データがありません</td></tr>`;
+      } else {
+        sortedDays.forEach(day => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${escapeHtml(day)}</td>
+            <td class="text-right">${daySummaryMap[day].count} 件</td>
+            <td class="text-right" style="font-weight: bold;">¥ ${daySummaryMap[day].total.toLocaleString()}</td>
+          `;
+          daySummaryTable.appendChild(tr);
+        });
+      }
+
+      // 5. 区分別合計テーブル更新
+      const catSummaryMap = {};
+      filtered.forEach(item => {
+        const amount = item.qty * item.price;
+        if (!catSummaryMap[item.category]) {
+          catSummaryMap[item.category] = { count: 0, total: 0 };
+        }
+        catSummaryMap[item.category].count += 1;
+        catSummaryMap[item.category].total += amount;
+      });
+
+      const sortedCats = Object.keys(catSummaryMap).sort((a, b) => catSummaryMap[b].total - catSummaryMap[a].total);
+      categorySummaryTable.innerHTML = '';
+      if (sortedCats.length === 0) {
+        categorySummaryTable.innerHTML = `<tr><td colspan="3" style="text-align: center; color: #666;">データがありません</td></tr>`;
+      } else {
+        sortedCats.forEach(cat => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${escapeHtml(cat)}</td>
+            <td class="text-right">${catSummaryMap[cat].count} 件</td>
+            <td class="text-right" style="font-weight: bold;">¥ ${catSummaryMap[cat].total.toLocaleString()}</td>
+          `;
+          categorySummaryTable.appendChild(tr);
+        });
+      }
+    }
+
+    // CSVエクスポート
+    btnExportCsv.addEventListener('click', () => {
+      const filtered = getFilteredData();
+      if (filtered.length === 0) {
+        alert('出力対象のデータがありません。');
+        return;
+      }
+
+      // ヘッダーと行データ構築
+      const csvRows = [];
+      csvRows.push(['日付', '商品名', '区分', '数量', '単価', '金額']);
+
+      // 新しい順で出力
+      const sortedForCsv = [...filtered].sort((a, b) => b.date.localeCompare(a.date));
+      sortedForCsv.forEach(item => {
+        const amount = item.qty * item.price;
+        csvRows.push([
+          item.date,
+          item.item,
+          item.category,
+          item.qty,
+          item.price,
+          amount
+        ]);
+      });
+
+      // Excelでも文字化けしないようにBOM(UTF-8)を付与してBlob化
+      const csvContent = csvRows.map(row => 
+        row.map(val => {
+          const str = String(val).replace(/"/g, '""');
+          return `"${str}"`;
+        }).join(',')
+      ).join('\r\n');
+
+      const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+      const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
+      
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `売上データ_エクスポート.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+
+    // エスケープ関数
+    function escapeHtml(string) {
+      if (typeof string !== 'string') {
+        return string;
+      }
+      return string.replace(/[&<>"']/g, function(match) {
+        const escapeMap = {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#x27;'
+        };
+        return escapeMap[match];
+      });
+    }
+  </script>
+</body>
+</html>

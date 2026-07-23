@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>受付・応対メモ管理</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📞</text></svg>'>
+  <style>
+    :root {
+      --primary-color: #005aa7;
+      --bg-color: #f4f6f9;
+      --card-bg: #ffffff;
+      --text-color: #222222;
+      --error-color: #cc0000;
+      --border-color: #767676;
+      --focus-outline: #ffbf47;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.5;
+      padding-bottom: 40px;
+    }
+
+    /* アクセシビリティ: フォーカス時の視認性向上 */
+    *:focus-visible {
+      outline: 4px solid var(--focus-outline);
+      outline-offset: 2px;
+    }
+
+    /* ヘッダー */
+    .app-header {
+      background-color: #ffffff;
+      border-bottom: 3px solid var(--primary-color);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .header-title-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-icon {
+      font-size: 2.5rem;
+      aria-hidden: "true";
+    }
+
+    .app-title {
+      font-size: 24px;
+      color: var(--text-color);
+    }
+
+    .counter-badge {
+      font-size: 26px;
+      font-weight: bold;
+      color: var(--error-color);
+      background-color: #ffe6e6;
+      padding: 4px 16px;
+      border: 2px solid var(--error-color);
+      border-radius: 8px;
+    }
+
+    /* メインレイアウト */
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .btn-help-trigger {
+      display: block;
+      width: 100%;
+      background-color: #e1f0fa;
+      color: #004085;
+      border: 2px solid #b8daff;
+      padding: 12px;
+      font-size: 18px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 24px;
+    }
+
+    .section-panel {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .section-title {
+      font-size: 20px;
+      margin-bottom: 16px;
+      border-left: 6px solid var(--primary-color);
+      padding-left: 8px;
+    }
+
+    /* フォームスタイル */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .required-label {
+      background-color: var(--error-color);
+      color: white;
+      font-size: 14px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    .form-control {
+      width: 100%;
+      font-size: 18px;
+      padding: 10px;
+      border: 2px solid var(--border-color);
+      border-radius: 6px;
+      background-color: #ffffff;
+      color: var(--text-color);
+    }
+
+    .btn-submit {
+      width: 100%;
+      background-color: var(--primary-color);
+      color: white;
+      font-size: 20px;
+      font-weight: bold;
+      padding: 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .btn-submit:hover {
+      background-color: #004480;
+    }
+
+    /* フィルタエリア */
+    .filter-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    /* アクションエリア */
+    .action-area {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .btn-action {
+      flex: 1;
+      min-width: 180px;
+      font-size: 18px;
+      font-weight: bold;
+      padding: 12px;
+      border: 2px solid var(--border-color);
+      border-radius: 6px;
+      background-color: #ffffff;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-action:hover {
+      background-color: #eeeeee;
+    }
+
+    /* 一覧カード表示 */
+    .memo-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .memo-card {
+      background-color: var(--card-bg);
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+      margin-bottom: 16px; /* 指示通りのマージン */
+      position: relative;
+    }
+
+    .memo-card.status-done {
+      border-left: 8px solid #28a745;
+      background-color: #f8fff9;
+    }
+
+    .memo-card.status-unprocessed {
+      border-left: 8px solid var(--error-color);
+      background-color: #fffafb;
+    }
+
+    .memo-card.status-callback {
+      border-left: 8px solid #ffc107;
+      background-color: #fffdf5;
+    }
+
+    .card-row {
+      margin-bottom: 10px;
+      font-size: 18px; /* 指示通りの文字サイズ */
+    }
+
+    .card-label {
+      font-weight: bold;
+      background-color: #eee;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-right: 8px;
+      font-size: 16px;
+      display: inline-block;
+    }
+
+    .card-time {
+      font-size: 16px;
+      color: #555555;
+      text-align: right;
+      margin-bottom: 8px;
+    }
+
+    .card-checkbox-area {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px dashed #ccc;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-checkbox {
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+    }
+
+    .card-checkbox-label {
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .no-data {
+      text-align: center;
+      padding: 40px;
+      font-size: 18px;
+      color: #666;
+      background: #fff;
+      border: 1px dashed var(--border-color);
+      border-radius: 8px;
+    }
+
+    /* モーダルマニュアル */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 16px;
+    }
+
+    .modal-overlay.hidden {
+      display: none;
+    }
+
+    .modal-content {
+      background-color: #ffffff;
+      padding: 24px;
+      border-radius: 8px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      border: 3px solid var(--primary-color);
+    }
+
+    .modal-title {
+      font-size: 22px;
+      margin-bottom: 16px;
+      color: var(--primary-color);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .manual-section {
+      margin-bottom: 16px;
+    }
+
+    .manual-section h4 {
+      font-size: 18px;
+      margin-bottom: 6px;
+      color: #111;
+    }
+
+    .manual-steps {
+      padding-left: 24px;
+      margin-bottom: 12px;
+    }
+
+    .manual-steps li {
+      margin-bottom: 6px;
+      font-size: 16px;
+    }
+
+    .btn-close-modal {
+      width: 100%;
+      background-color: #6c757d;
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 12px;
+    }
+
+    .btn-close-modal:hover {
+      background-color: #5a6268;
+    }
+
+    /* レスポンシブ設計の調整 */
+    @media (min-width: 600px) {
+      .app-header {
+        flex-direction: row;
+        justify-content: space-between;
+        padding: 16px 32px;
+      }
+      .filter-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="header-title-area">
+      <span class="header-icon">📞</span>
+      <h1 class="app-title">受付・応対メモ管理</h1>
+    </div>
+    <div class="counter-badge" id="unprocessedCounter" aria-live="polite">
+      未対応件数: 0件
+    </div>
+  </header>
+
+  <main class="container">
+    
+    <button type="button" class="btn-help-trigger" id="btnOpenManual" aria-haspopup="dialog">
+      ❓ 使い方マニュアルを見る
+    </button>
+
+    <section class="section-panel" aria-labelledby="form-heading">
+      <h2 id="form-heading" class="section-title">新しい応対メモを登録する</h2>
+      <form id="memoForm" novalidate>
+        
+        <div class="form-group">
+          <label id="label-datetime" for="inputDatetime">日時<span class="required-label">必須</span></label>
+          <input type="datetime-local" id="inputDatetime" class="form-control" required aria-labelledby="label-datetime">
+        </div>
+
+        <div class="form-group">
+          <label id="label-type" for="selectType">種別<span class="required-label">必須</span></label>
+          <select id="selectType" class="form-control" required aria-labelledby="label-type">
+            <option value="来客">来客</option>
+            <option value="電話">電話</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label id="label-company" for="inputCompany">相手会社名<span class="required-label">必須</span></label>
+          <input type="text" id="inputCompany" class="form-control" placeholder="例: 株式会社〇〇" required aria-labelledby="label-company">
+        </div>
+
+        <div class="form-group">
+          <label id="label-name" for="inputName">相手名<span class="required-label">必須</span></label>
+          <input type="text" id="inputName" class="form-control" placeholder="例: 山田 太郎 様" required aria-labelledby="label-name">
+        </div>
+
+        <div class="form-group">
+          <label id="label-target" for="inputTarget">誰あて<span class="required-label">必須</span></label>
+          <input type="text" id="inputTarget" class="form-control" placeholder="例: 佐藤部長、営業部など" required aria-labelledby="label-target">
+        </div>
+
+        <div class="form-group">
+          <label id="label-content" for="inputContent">用件<span class="required-label">必須</span></label>
+          <input type="text" id="inputContent" class="form-control" placeholder="例: 新商品の提案について" required aria-labelledby="label-content">
+        </div>
+
+        <div class="form-group">
+          <label id="label-status" for="selectStatus">対応状況<span class="required-label">必須</span></label>
+          <select id="selectStatus" class="form-control" required aria-labelledby="label-status">
+            <option value="未対応">未対応</option>
+            <option value="対応済">対応済</option>
+            <option value="折り返し要">折り返し要</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn-submit">📝 登録する</button>
+      </form>
+    </section>
+
+    <section class="section-panel" aria-labelledby="filter-heading">
+      <h2 id="filter-heading" class="section-title">一覧の絞り込み検索</h2>
+      <div class="filter-grid">
+        <div class="form-group">
+          <label id="label-filter-target" for="filterTarget">誰あて で検索</label>
+          <input type="text" id="filterTarget" class="form-control" placeholder="名前や部署を入力..." aria-labelledby="label-filter-target">
+        </div>
+        <div class="form-group">
+          <label id="label-filter-status" for="filterStatus">対応状況 で絞り込み</label>
+          <select id="filterStatus" class="form-control" aria-labelledby="label-filter-status">
+            <option value="すべて">すべて</option>
+            <option value="未対応">未対応</option>
+            <option value="対応済">対応済</option>
+            <option value="折り返し要">折り返し要</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <div class="action-area">
+      <button type="button" id="btnExportCsv" class="btn-action">📤 CSVでエクスポート</button>
+      <button type="button" id="btnCopyText" class="btn-action">📋 テキストでコピー</button>
+    </div>
+
+    <section aria-labelledby="list-heading">
+      <h2 id="list-heading" class="section-title">応対メモ一覧 (新しい順)</h2>
+      <div id="memoListContainer" class="memo-list">
+        </div>
+    </section>
+
+  </main>
+
+  <div id="manualModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="manual-title">
+    <div class="modal-content">
+      <h3 id="manual-title" class="modal-title">❓ 使い方マニュアル</h3>
+      
+      <div class="manual-section">
+        <h4>(1) このアプリでできること</h4>
+        <p>社内の「来客」や「電話」の応対履歴をすばやく記録・管理できます。未対応のタスクが何件あるかもひと目でわかります。</p>
+      </div>
+
+      <div class="manual-section">
+        <h4>(2) 基本の使い方（4ステップ）</h4>
+        <ol class="manual-steps">
+          <li><strong>入力:</strong> 「新しい応対メモを登録する」のフォームに内容を入力します（すべて必須項目です）。</li>
+          <li><strong>登録:</strong> 「登録する」ボタンを押すと、下の一覧に新しい順でカードが追加されます。</li>
+          <li><strong>確認・変更:</strong> 未対応の用件が終わったら、カード内にある「対応済にする」チェックボックスにチェックを入れるだけで状態を更新できます。</li>
+          <li><strong>検索:</strong> 絞り込み機能を使って、特定の担当者あてのメモや状態別のメモを即座に探し出せます。</li>
+        </ol>
+      </div>
+
+      <div class="manual-section">
+        <h4>(3) データの保存について</h4>
+        <p>入力されたデータは、<strong>この端末のブラウザ内(localStorage)にのみ安全に保存されます。</strong> 外部への通信や送信は一切行われないため、オフラインでも安心してご利用いただけます。</p>
+      </div>
+
+      <div class="manual-section">
+        <h4>(4) 📤 エクスポートの使い方</h4>
+        <p>一覧の上部にあるボタンから、記録したデータを外へ取り出せます。</p>
+        <ul>
+          <li><strong>CSVでエクスポート:</strong> Excelなどで開けるファイルをダウンロードします。</li>
+          <li><strong>テキストでコピー:</strong> クリップボードに文字データとしてコピーし、メールやチャットにそのまま貼り付けられます。</li>
+        </ul>
+      </div>
+
+      <button type="button" id="btnCloseManual" class="btn-close-modal">マニュアルを閉じる</button>
+    </div>
+  </div>
+
+  <script>
+    // 状態管理
+    let memoData = [];
+
+    // 要素の取得
+    const memoForm = document.getElementById('memoForm');
+    const inputDatetime = document.getElementById('inputDatetime');
+    const inputCompany = document.getElementById('inputCompany');
+    const inputName = document.getElementById('inputName');
+    const inputTarget = document.getElementById('inputTarget');
+    const inputContent = document.getElementById('inputContent');
+    const selectType = document.getElementById('selectType');
+    const selectStatus = document.getElementById('selectStatus');
+
+    const filterTarget = document.getElementById('filterTarget');
+    const filterStatus = document.getElementById('filterStatus');
+    
+    const unprocessedCounter = document.getElementById('unprocessedCounter');
+    const memoListContainer = document.getElementById('memoListContainer');
+
+    const btnExportCsv = document.getElementById('btnExportCsv');
+    const btnCopyText = document.getElementById('btnCopyText');
+    
+    const manualModal = document.getElementById('manualModal');
+    const btnOpenManual = document.getElementById('btnOpenManual');
+    const btnCloseManual = document.getElementById('btnCloseManual');
+
+    // 初期化処理
+    window.addEventListener('DOMContentLoaded', () => {
+      // 日時の初期値を現在時刻に設定 (YYYY-MM-DDTHH:mm 形式)
+      const now = new Date();
+      const offset = now.getTimezoneOffset() * 60000;
+      const localISOTime = (new Date(now - offset)).toISOString().slice(0, 16);
+      inputDatetime.value = localISOTime;
+
+      // localStorageからデータ読み込み
+      const savedData = localStorage.getItem('reception_memos');
+      if (savedData) {
+        try {
+          memoData = JSON.parse(savedData);
+        } catch (e) {
+          memoData = [];
+        }
+      }
+      
+      renderApp();
+    });
+
+    // モーダルの開閉
+    btnOpenManual.addEventListener('click', () => {
+      manualModal.classList.remove('hidden');
+      btnCloseManual.focus();
+    });
+
+    btnCloseManual.addEventListener('click', () => {
+      manualModal.classList.add('hidden');
+      btnOpenManual.focus();
+    });
+
+    // モーダル外クリックで閉じる処理
+    manualModal.addEventListener('click', (e) => {
+      if (e.target === manualModal) {
+        manualModal.classList.add('hidden');
+      }
+    });
+
+    // 新規登録処理
+    memoForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      // バリデーションチェック
+      if (!memoForm.checkValidity()) {
+        alert('すべての必須項目を正しく入力してください。');
+        return;
+      }
+
+      const newMemo = {
+        id: Date.now().toString(),
+        datetime: inputDatetime.value,
+        type: selectType.value,
+        company: inputCompany.value.trim(),
+        name: inputName.value.trim(),
+        target: inputTarget.value.trim(),
+        content: inputContent.value.trim(),
+        status: selectStatus.value
+      };
+
+      memoData.push(newMemo);
+      saveData();
+      renderApp();
+
+      // フォームの部分クリア (日時と種別以外をリセットして次の入力をスムーズに)
+      inputCompany.value = '';
+      inputName.value = '';
+      inputTarget.value = '';
+      inputContent.value = '';
+      selectStatus.value = '未対応';
+      
+      // 次の入力へ配慮して会社名入力欄にフォーカス
+      inputCompany.focus();
+    });
+
+    // データのローカル保存
+    function saveData() {
+      localStorage.setItem('reception_memos', JSON.stringify(memoData));
+    }
+
+    // 未対応件数のリアルタイム計算とヘッダー表示
+    function updateCounter() {
+      const count = memoData.filter(item => item.status === '未対応' || item.status === '折り返し要').length;
+      unprocessedCounter.textContent = `未対応件数: ${count}件`;
+    }
+
+    // フィルタ・一覧の描画処理
+    function renderApp() {
+      updateCounter();
+
+      // フィルタ条件の取得
+      const queryTarget = filterTarget.value.toLowerCase().trim();
+      const queryStatus = filterStatus.value;
+
+      // フィルタリング処理
+      let filteredMemos = memoData.filter(item => {
+        const matchesTarget = item.target.toLowerCase().includes(queryTarget);
+        const matchesStatus = (queryStatus === 'すべて') || (item.status === queryStatus);
+        return matchesTarget && matchesStatus;
+      });
+
+      // 新しい順(日時またはID降順)にソート
+      filteredMemos.sort((a, b) => {
+        return new Date(b.datetime) - new Date(a.datetime) || b.id - a.id;
+      });
+
+      // コンテナのクリア
+      memoListContainer.innerHTML = '';
+
+      if (filteredMemos.length === 0) {
+        memoListContainer.innerHTML = '<div class="no-data">該当する応対メモが見つかりません。</div>';
+        return;
+      }
+
+      // カードの生成
+      filteredMemos.forEach(item => {
+        const card = document.createElement('article');
+        card.className = 'memo-card';
+        
+        // 状態に応じたスタイルクラス付与
+        if (item.status === '対応済') card.classList.add('status-done');
+        else if (item.status === '未対応') card.classList.add('status-unprocessed');
+        else if (item.status === '折り返し要') card.classList.add('status-callback');
+
+        // 日時のフォーマット整形
+        const displayDate = item.datetime.replace('T', ' ');
+
+        // カードの内部構造構築
+        card.innerHTML = `
+          <div class="card-time">${displayDate}</div>
+          <div class="card-row"><span class="card-label">種別</span><strong>${escapeHtml(item.type)}</strong></div>
+          <div class="card-row"><span class="card-label">相手</span><strong>${escapeHtml(item.company)} / ${escapeHtml(item.name)}</strong></div>
+          <div class="card-row"><span class="card-label">誰あて</span>${escapeHtml(item.target)}</div>
+          <div class="card-row"><span class="card-label">用件</span>${escapeHtml(item.content)}</div>
+          <div class="card-row"><span class="card-label">状況</span><strong>${escapeHtml(item.status)}</strong></div>
+          <div class="card-checkbox-area">
+            <input type="checkbox" id="chk-${item.id}" class="card-checkbox" ${item.status === '対応済' ? 'checked disabled' : ''}>
+            <label for="chk-${item.id}" class="card-checkbox-label">${item.status === '対応済' ? '対応が完了しています' : '対応済にする'}</label>
+          </div>
+        `;
+
+        // チェックボックスイベント付与 (チェックで対応済みに変更)
+        const checkbox = card.querySelector(`#chk-${item.id}`);
+        checkbox.addEventListener('change', () => {
+          if (checkbox.checked) {
+            const index = memoData.findIndex(m => m.id === item.id);
+            if (index !== -1) {
+              memoData[index].status = '対応済';
+              saveData();
+              renderApp();
+            }
+          }
+        });
+
+        memoListContainer.appendChild(card);
+      });
+    }
+
+    // フィルタ入力時のリアルタイム連動
+    filterTarget.addEventListener('input', renderApp);
+    filterStatus.addEventListener('change', renderApp);
+
+    // CSVエクスポート処理
+    btnExportCsv.addEventListener('click', () => {
+      if (memoData.length === 0) {
+        alert('出力するデータがありません。');
+        return;
+      }
+
+      // BOM付きで文字化けを防止
+      const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+      const headers = ['日時', '種別', '相手会社名', '相手名', '誰あて', '用件', '対応状況'];
+      
+      const rows = memoData.map(item => [
+        item.datetime.replace('T', ' '),
+        item.type,
+        item.company,
+        item.name,
+        item.target,
+        item.content,
+        item.status
+      ]);
+
+      const csvContent = [headers, ...rows]
+        .map(row => row.map(text => `"${text.replace(/"/g, '""')}"`).join(','))
+        .join('\n');
+
+      const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const downloadLink = document.createElement('a');
+      
+      // ファイル名の生成 (現在日付を付与)
+      const todayStr = new Date().toISOString().slice(0, 10);
+      downloadLink.href = url;
+      downloadLink.setAttribute('download', `応対メモ一覧_${todayStr}.csv`);
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+    });
+
+    // クリップボード テキストコピー処理
+    btnCopyText.addEventListener('click', () => {
+      if (memoData.length === 0) {
+        alert('コピーするデータがありません。');
+        return;
+      }
+
+      let textResult = '【応対メモ一覧】\n\n';
+      
+      // 新しい順のデータをコピー用テキストにする
+      const sortedForCopy = [...memoData].sort((a, b) => new Date(b.datetime) - new Date(a.datetime));
+
+      sortedForCopy.forEach((item, index) => {
+        textResult += `■ 件数: ${index + 1}\n`;
+        textResult += `日時: ${item.datetime.replace('T', ' ')}\n`;
+        textResult += `種別: ${item.type}\n`;
+        textResult += `相手: ${item.company} ${item.name}\n`;
+        textResult += `誰あて: ${item.target}\n`;
+        textResult += `用件: ${item.content}\n`;
+        textResult += `状況: ${item.status}\n`;
+        textResult += `------------------------------------\n`;
+      });
+
+      navigator.clipboard.writeText(textResult)
+        .then(() => {
+          alert('クリップボードに一覧テキストをコピーしました。メール等に貼り付けて利用できます。');
+        })
+        .catch(err => {
+          alert('コピーに失敗しました。ブラウザの権限を確認してください。');
+        });
+    });
+
+    // エスケープ処理用関数 (XSS対策)
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+  </script>
+</body>
+</html>

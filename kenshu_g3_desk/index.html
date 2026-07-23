@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="genre" content="tool">
+<meta name="app-slug" content="kenshu_g3_desk">
+<title>✅ G3系統検収デスク v0.1β</title>
+<!--
+  ✎編集ポイント（段階3・中身をなおす場所）
+   1) CHECKS_MINI / CHECKS_FULL … 見るところの文言（このすぐ下のscriptの中）
+   2) CHECKER_NAME       … かくにんした人の名前（いまは「干場」で固定）
+   3) :root の色（--navy / --accent など）
+   4) MIN_PER_FULL / MIN_PER_MINI … 1件にかかる分（大チェック5分・小チェック1.5分）
+-->
+<style>
+:root{
+  --bg:#f6f7fa; --panel:#fff; --line:#d9dde6; --ink:#1f2430; --sub:#5a6172;
+  --navy:#2b4a7a; --accent:#c9862a; --ok:#2e7d32; --warn:#b3261e; --chip:#eef1f7;
+  --zoom:1; --radius:10px;
+}
+html{font-size:calc(16px*var(--zoom));}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--ink);line-height:1.7;
+  font-family:"Yu Gothic UI","BIZ UDPGothic","Hiragino Kaku Gothic ProN",Meiryo,sans-serif;}
+button{font:inherit;cursor:pointer;}
+input,textarea,select{font:inherit;color:var(--ink);}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:4px;}
+header{background:var(--navy);color:#fff;padding:.6rem 1rem;display:flex;gap:.6rem;
+  align-items:center;flex-wrap:wrap;position:sticky;top:0;z-index:20;}
+header h1{font-size:1.1rem;font-weight:700;margin-right:auto;}
+.navbtn{min-height:44px;min-width:44px;padding:.4rem .9rem;border:2px solid #fff;
+  background:transparent;color:#fff;border-radius:var(--radius);}
+.navbtn[aria-current="page"]{background:#fff;color:var(--navy);font-weight:700;}
+main{max-width:840px;margin:0 auto;padding:1rem;}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  padding:1rem;margin-bottom:1rem;}
+h2{font-size:1.15rem;margin-bottom:.6rem;}
+h3{font-size:1rem;margin-bottom:.4rem;}
+.big{display:block;width:100%;min-height:64px;padding:.9rem 1rem;font-size:1.1rem;
+  font-weight:700;border:0;border-radius:var(--radius);background:var(--accent);color:#fff;}
+.big:disabled{background:#b9bec9;color:#3a3f4a;cursor:not-allowed;}
+.sub{min-height:44px;padding:.5rem .9rem;border:2px solid var(--navy);background:#fff;
+  color:var(--navy);border-radius:var(--radius);margin:.2rem .3rem .2rem 0;}
+.sub[aria-pressed="true"]{background:var(--navy);color:#fff;}
+.meter{background:var(--chip);border:1px solid var(--line);border-radius:var(--radius);
+  padding:.5rem .7rem;margin-bottom:.5rem;}
+.bar{height:14px;background:#fff;border:1px solid var(--line);border-radius:7px;overflow:hidden;}
+.bar>span{display:block;height:100%;background:var(--ok);}
+.note{color:var(--sub);font-size:.9rem;}
+.warnbox{border:2px solid var(--warn);color:var(--warn);background:#fff5f4;
+  padding:.6rem;border-radius:var(--radius);margin-bottom:.8rem;}
+.okbox{border:2px solid var(--ok);color:#1b5e20;background:#f2faf3;
+  padding:.6rem;border-radius:var(--radius);margin-bottom:.8rem;}
+.chk{display:flex;gap:.6rem;align-items:flex-start;min-height:44px;padding:.35rem 0;}
+.chk input{width:28px;height:28px;margin-top:.35rem;flex:0 0 auto;}
+.chk label{flex:1 1 auto;}
+input[type="text"],textarea{width:100%;min-height:44px;padding:.5rem;
+  border:2px solid var(--line);border-radius:var(--radius);background:#fff;}
+footer.verdict{position:sticky;bottom:0;background:var(--panel);border-top:2px solid var(--line);
+  padding:.6rem;display:flex;gap:.5rem;flex-wrap:wrap;}
+footer.verdict button{flex:1 1 30%;min-height:56px;font-size:1.05rem;font-weight:700;
+  border-radius:var(--radius);border:2px solid;}
+#btnPass{background:var(--ok);color:#fff;border-color:var(--ok);}
+#btnReject{background:#fff;color:var(--warn);border-color:var(--warn);}
+#btnDefer{background:#fff;color:var(--navy);border-color:var(--navy);}
+.badge{display:inline-block;padding:.1rem .5rem;border-radius:999px;background:var(--chip);
+  border:1px solid var(--line);font-size:.85rem;margin-left:.3rem;}
+table{width:100%;border-collapse:collapse;font-size:.95rem;}
+th,td{border:1px solid var(--line);padding:.35rem .4rem;text-align:left;vertical-align:top;}
+th{background:var(--chip);}
+details{border:1px solid var(--line);border-radius:var(--radius);margin-bottom:.5rem;background:#fff;}
+summary{padding:.6rem;min-height:44px;cursor:pointer;font-weight:700;}
+.hidden{display:none;}
+.live{position:sticky;top:56px;z-index:10;}
+</style>
+</head>
+<body>
+<header>
+  <h1>✅ G3系統検収デスク</h1>
+  <button class="navbtn" id="navHome" aria-current="page">🏠 ホーム</button>
+  <button class="navbtn" id="navList">📋 一覧</button>
+  <button class="navbtn" id="navCfg">⚙ 設定</button>
+  <button class="navbtn" id="navHelp">❓ 使い方</button>
+</header>
+
+<div class="live" id="live" role="status" aria-live="polite"></div>
+
+<main>
+<!-- ===================== 画面A ホーム ===================== -->
+<section id="viewHome">
+  <div class="card">
+    <h2>きょうの検収</h2>
+    <div class="meter">
+      <div id="mAllText">ぜんぶ: 0本中 0本 すみ</div>
+      <div class="bar"><span id="mAllBar" style="width:0%"></span></div>
+    </div>
+    <div class="meter">
+      <div id="mFamText">いまの族: まだ ありません</div>
+      <div class="bar"><span id="mFamBar" style="width:0%"></span></div>
+    </div>
+    <button class="big" id="btnStart" disabled>▶ つづきから はじめる</button>
+    <p class="note" id="startDetail">さいしょに けんしゅうリストを 読みこんでください。</p>
+  </div>
+
+  <div class="card">
+    <h3>族をえらんで やる</h3>
+    <div id="famButtons"><p class="note">まだ ありません。</p></div>
+  </div>
+
+  <div class="card">
+    <h3>ファイル</h3>
+    <p><label class="sub" for="fileIn" style="display:inline-block">📥 けんしゅうリストを 読みこむ</label>
+      <input type="file" id="fileIn" accept=".json,application/json" style="display:block;margin:.4rem 0"></p>
+    <button class="sub" id="btnExport">📤 けっかを 書き出す</button>
+    <p class="note" id="importInfo">読みこんだ リストは ありません。</p>
+  </div>
+</section>
+
+<!-- ===================== 画面B 1件カード ===================== -->
+<section id="viewCard" class="hidden">
+  <div class="card">
+    <h2 id="cardApp">-</h2>
+    <p><span class="badge" id="cardFam">-</span><span class="badge" id="cardMode">-</span>
+       <span class="badge" id="cardRest">-</span><span class="badge" id="cardTime">0分0秒</span></p>
+    <p class="note" id="cardRank">-</p>
+  </div>
+  <div class="card">
+    <a class="big" id="cardOpen" href="#" target="_blank" rel="noopener"
+       style="text-align:center;text-decoration:none;line-height:2.2">🔗 アプリを ひらく</a>
+    <p class="note">あたらしい ページで ひらきます。この画面は そのまま のこります。</p>
+  </div>
+  <div class="card">
+    <h3>見るところ</h3>
+    <div id="checkList"></div>
+    <h3 style="margin-top:.8rem"><label for="noteIn">気づいたこと（1行）</label></h3>
+    <input type="text" id="noteIn" placeholder="気づいたことが あれば かいてください">
+    <p class="note" id="noteHint">さしもどす ときは りゆうを かいてください。</p>
+  </div>
+</section>
+<footer class="verdict hidden" id="verdictBar">
+  <button id="btnPass">✅ ごうかく</button>
+  <button id="btnReject">↩ さしもどす</button>
+  <button id="btnDefer">⏸ あとで</button>
+</footer>
+
+<!-- ===================== パック完了 ===================== -->
+<section id="viewDone" class="hidden">
+  <div class="card">
+    <h2>🎉 1パック おわりました</h2>
+    <div class="warnbox hidden" id="staleMark">⚠ このけんしゅうリストは 古いです。<span id="staleDetail"></span></div>
+    <p class="note" id="importedOn"></p>
+    <p id="doneText">おつかれさまです。</p>
+    <button class="big" id="btnNextPack" style="margin-top:.6rem">▶ つぎの パックを する</button>
+    <button class="sub" id="btnFinish" style="margin-top:.6rem">きょうは おわる</button>
+  </div>
+</section>
+
+<!-- ===================== 画面C 一覧 ===================== -->
+<section id="viewList" class="hidden">
+  <div class="card">
+    <h2>ぜんぶの 一覧</h2>
+    <button class="sub" id="fltAll" aria-pressed="true">ぜんぶ</button>
+    <button class="sub" id="fltReject" aria-pressed="false">さしもどしだけ</button>
+    <button class="sub" id="fltTodo" aria-pressed="false">まだの ものだけ</button>
+  </div>
+  <div id="listBody"></div>
+</section>
+
+<!-- ===================== 設定 ===================== -->
+<section id="viewCfg" class="hidden">
+  <div class="card">
+    <h2>⚙ 設定</h2>
+    <p><label for="cfgSlots">1パックの 大きさ（枠の数）</label>
+      <input type="text" id="cfgSlots" inputmode="numeric" value="2"></p>
+    <p class="note">1枠 = 大チェック1つ、または 小チェック3つ です。</p>
+    <p style="margin-top:.6rem"><label for="cfgZoom">文字の 大きさ（1.0で ふつう）</label>
+      <input type="text" id="cfgZoom" inputmode="decimal" value="1"></p>
+    <p style="margin-top:.6rem"><label for="cfgChecker">かくにんする人の 名前</label>
+      <input type="text" id="cfgChecker" value="干場" maxlength="20"></p>
+    <p class="note">はじめは「干場」です。ほかの人が かくにんする ときは 名前を かえてください。</p>
+    <p style="margin-top:.6rem"><label for="cfgKeys">数字キーで すぐ きめる</label>
+      <select id="cfgKeys" style="min-height:44px">
+        <option value="off">つかわない</option>
+        <option value="on">つかう（1=ごうかく、2=さしもどす、3=あとで）</option>
+      </select></p>
+    <p style="margin-top:.6rem"><label for="cfgStale">けんしゅうリストを「古い」と 出す 日数</label>
+      <input type="text" id="cfgStale" inputmode="numeric" value="7"></p>
+    <button class="sub" id="cfgSave" style="margin-top:.6rem">この設定を つかう</button>
+    <button class="sub" id="cfgReset">さいしょに もどす</button>
+    <p class="note" id="cfgInfo"></p>
+  </div>
+</section>
+
+<!-- ===================== 使い方 ===================== -->
+<section id="viewHelp" class="hidden">
+  <div class="card">
+    <h2>❓ 使い方</h2>
+    <ol style="padding-left:1.2rem">
+      <li>「📥 けんしゅうリストを 読みこむ」で リストの ファイルを えらびます。</li>
+      <li>「▶ つづきから はじめる」を おします。1つの 画面に 1件だけ 出ます。</li>
+      <li>「🔗 アプリを ひらく」で じっさいに さわります。</li>
+      <li>見るところを 見て、下の 3つの ボタンから 1つ おします。
+        <ul style="padding-left:1.2rem">
+          <li>✅ ごうかく … つぎの 1件に すすみます。</li>
+          <li>↩ さしもどす … りゆうを 1行 かくと おせます。</li>
+          <li>⏸ あとで … その族の さいごに もう一度 出ます。</li>
+        </ul>
+      </li>
+      <li>おした ことは すぐ この パソコンの 中に 保存します。保存ボタンは ありません。</li>
+      <li>おわったら「📤 けっかを 書き出す」で ファイルを つくります。</li>
+    </ol>
+    <p class="note" style="margin-top:.6rem">⚙設定で つぎの ことが できます。</p>
+    <ul style="padding-left:1.2rem">
+      <li>数字キーで すぐ きめる（1=ごうかく、2=さしもどす、3=あとで）。はじめは つかいません。</li>
+      <li>かくにんする人の 名前を かえる。はじめは「干場」です。</li>
+      <li>けんしゅうリストを「古い」と 出す 日数を かえる。</li>
+    </ul>
+    <p class="note" style="margin-top:.6rem">とちゅうで やめても だいじょうぶです。つぎに ひらくと つづきから はじまります。</p>
+    <p class="note">この道具は インターネットに つなぎません。データは この パソコンの 中だけに のこります。</p>
+  </div>
+</section>
+</main>
+
+<script>
+/* ===== CORE:BEGIN =====  ここから下は 画面に さわらない 部分（テストが そのまま つかう） ===== */
+var KG3 = (function(){
+  "use strict";
+
+  /* --- ✎編集ポイント1: 見るところの文言 --- */
+  var CHECKS_MINI = [
+    "がめんの 名前が しごとの 名前と 合っている",
+    "1件 保存して 画面を もう一度 ひらくと のこっている",
+    "📤（書き出し）を おすと ファイルが できる"
+  ];
+  var CHECKS_FULL = [
+    "しごとの 手順 1つめが 説明なしで できた",
+    "しごとの 手順 2つめが 説明なしで できた",
+    "しごとの 手順 3つめが 説明なしで できた",
+    "あしたから 使えそうだ",
+    "わかりにくい ことばは なかった",
+    "じぶんの しごとの やりかたに 合っている"
+  ];
+  /* --- ✎編集ポイント2: かくにんする人の名前（はじめの ねうち。設定でも かえられます＝DB-373） --- */
+  var CHECKER_NAME = "干場";
+  /* --- ✎編集ポイント4 --- */
+  var MIN_PER_FULL = 5, MIN_PER_MINI = 1.5;
+  /* --- ✎編集ポイント5: 何日 たったら「古い」と 出すか（DB-374・日数は 設定でも かえられます） --- */
+  var STALE_DAYS_DEFAULT = 7;
+  /* --- ✎編集ポイント6: 数字キーの わりあて（DB-372・はじめは つかわない。設定で つかう） --- */
+  var KEY_VERDICT = { "1":"pass", "2":"reject", "3":"deferred" };
+
+  var SCHEMA = "kenshu_g3_v1";
+  var COST_FULL = 3, COST_MINI = 1;   /* 1枠=3。大チェック=1枠、小チェック=1/3枠 */
+
+  /* ---------- sha256（外から 何も 読みこまない 自前の 計算） ---------- */
+  var K256 = [
+    0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+    0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+    0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+    0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+    0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+    0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+    0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+    0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+  function rotr(x,n){ return (x>>>n)|(x<<(32-n)); }
+  function utf8bytes(str){
+    var out=[],i,c,c2,cp;
+    for(i=0;i<str.length;i++){
+      c=str.charCodeAt(i);
+      if(c<0x80){ out.push(c); }
+      else if(c<0x800){ out.push(0xc0|(c>>6),0x80|(c&63)); }
+      else if(c>=0xd800&&c<0xdc00){
+        c2=str.charCodeAt(i+1); i++;
+        cp=0x10000+((c-0xd800)<<10)+(c2-0xdc00);
+        out.push(0xf0|(cp>>18),0x80|((cp>>12)&63),0x80|((cp>>6)&63),0x80|(cp&63));
+      } else { out.push(0xe0|(c>>12),0x80|((c>>6)&63),0x80|(c&63)); }
+    }
+    return out;
+  }
+  function sha256hex(msg){
+    var H=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+    var b=utf8bytes(msg), len=b.length, bits=len*8, i,t;
+    b.push(0x80);
+    while(b.length%64!==56){ b.push(0); }
+    var hi=Math.floor(bits/4294967296), lo=bits>>>0;
+    b.push((hi>>>24)&255,(hi>>>16)&255,(hi>>>8)&255,hi&255,(lo>>>24)&255,(lo>>>16)&255,(lo>>>8)&255,lo&255);
+    var w=new Array(64);
+    for(i=0;i<b.length;i+=64){
+      for(t=0;t<16;t++){ w[t]=(b[i+t*4]<<24)|(b[i+t*4+1]<<16)|(b[i+t*4+2]<<8)|b[i+t*4+3]; }
+      for(t=16;t<64;t++){
+        var s0=rotr(w[t-15],7)^rotr(w[t-15],18)^(w[t-15]>>>3);
+        var s1=rotr(w[t-2],17)^rotr(w[t-2],19)^(w[t-2]>>>10);
+        w[t]=(((w[t-16]+s0)|0)+((w[t-7]+s1)|0))|0;
+      }
+      var a=H[0],bb=H[1],c=H[2],d=H[3],e=H[4],f=H[5],g=H[6],h=H[7];
+      for(t=0;t<64;t++){
+        var S1=rotr(e,6)^rotr(e,11)^rotr(e,25);
+        var ch=(e&f)^((~e)&g);
+        var t1=(((h+S1)|0)+((ch+K256[t])|0)+w[t])|0;
+        var S0=rotr(a,2)^rotr(a,13)^rotr(a,22);
+        var maj=(a&bb)^(a&c)^(bb&c);
+        var t2=(S0+maj)|0;
+        h=g; g=f; f=e; e=(d+t1)|0; d=c; c=bb; bb=a; a=(t1+t2)|0;
+      }
+      H[0]=(H[0]+a)|0; H[1]=(H[1]+bb)|0; H[2]=(H[2]+c)|0; H[3]=(H[3]+d)|0;
+      H[4]=(H[4]+e)|0; H[5]=(H[5]+f)|0; H[6]=(H[6]+g)|0; H[7]=(H[7]+h)|0;
+    }
+    var out="";
+    for(i=0;i<8;i++){ var s=(H[i]>>>0).toString(16); while(s.length<8){ s="0"+s; } out+=s; }
+    return out;
+  }
+
+  function esc(s){
+    return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+  }
+  function pad3(n){ var s=String(n); while(s.length<3){ s="0"+s; } return s; }
+
+  /* ---------- 📥 とりこみ（fail-closed: 足りない項目は だまって おぎなわない） ---------- */
+  function parseLineage(text){
+    if(typeof text!=="string" || text.length===0){
+      throw new Error("ファイルが からです。もう一度 えらんでください。");
+    }
+    var obj;
+    try{ obj=JSON.parse(text); }
+    catch(e){ throw new Error("読みこめませんでした。けんしゅうリストの ファイルか たしかめて、もう一度 えらんでください。"); }
+    if(!obj || obj.app!=="lineage_v1"){
+      throw new Error("これは けんしゅうリストでは ありません（lineage_v1 では ない）。ちがう ファイルを えらんでください。");
+    }
+    if(!Array.isArray(obj.families)){
+      throw new Error("けんしゅうリストの 中に families が ありません。");
+    }
+    var warnings=[], seen={}, fi, mi, fam, m;
+    for(fi=0; fi<obj.families.length; fi++){
+      fam=obj.families[fi];
+      if(!fam || typeof fam.family_key!=="string" || fam.family_key===""){
+        throw new Error("family_key が ない 族が あります（"+fi+"番目）。");
+      }
+      if(typeof fam.representative!=="string" || fam.representative===""){
+        throw new Error("代表が ない 族が あります（"+fam.family_key+"）。");
+      }
+      if(!Array.isArray(fam.members)){
+        throw new Error("members が ない 族が あります（"+fam.family_key+"）。");
+      }
+      if(fam.members.length===0){ warnings.push("族「"+fam.family_key+"」は 0件です。"); }
+      var hasRep=false;
+      for(mi=0; mi<fam.members.length; mi++){
+        m=fam.members[mi];
+        if(!m || typeof m.slug!=="string" || m.slug===""){ throw new Error("slug が ない 行が あります（"+fam.family_key+"）。"); }
+        if(typeof m.file!=="string" || m.file===""){ throw new Error("file が ない 行が あります（"+m.slug+"）。"); }
+        if(m.mode!=="full" && m.mode!=="mini"){ throw new Error("mode が full でも mini でも ない 行が あります（"+m.slug+"）。"); }
+        if(m.rank!=="A" && m.rank!=="B" && m.rank!=="C"){ throw new Error("rank が A B C の どれでも ない 行が あります（"+m.slug+"）。"); }
+        if(typeof m.score!=="number" || !isFinite(m.score) || m.score<0 || m.score>100){ throw new Error("score が 0から100までの 数では ない 行が あります（"+m.slug+"）。"); }
+        if(typeof m.spot_check!=="boolean"){ throw new Error("spot_check が true でも false でも ない 行が あります（"+m.slug+"）。"); }
+        if(m.slug===fam.representative){ hasRep=true; }
+        if(seen[m.slug]){ warnings.push("slug「"+m.slug+"」が 2回 出てきます。さいしょの 1つだけ つかいます。"); }
+        else { seen[m.slug]=true; }
+      }
+      if(!hasRep){ throw new Error("代表「"+fam.representative+"」が members の 中に ありません（"+fam.family_key+"）。"); }
+    }
+    if(obj.families.length===0){ warnings.push("けんしゅうリストは からです（族が 0）。"); }
+    return { lineage: obj, hash: sha256hex(text).slice(0,8), warnings: warnings };
+  }
+
+  /* ---------- キューの 組み立て（§1.3・決定論） ---------- */
+  function familyAvg(fam){
+    if(fam.members.length===0){ return 0; }
+    var s=0,i; for(i=0;i<fam.members.length;i++){ s+=fam.members[i].score; }
+    return s/fam.members.length;
+  }
+  function groupOf(fam, m){
+    if(m.slug===fam.representative){ return 0; }   /* 代表（フル） */
+    if(m.spot_check===true){ return 3; }           /* 抜き打ちフル */
+    if(m.mode==="full"){ return 1; }               /* B級フル強制 */
+    return 2;                                      /* 兄弟ミニ */
+  }
+  function buildQueue(lineage){
+    var fams=lineage.families.slice();
+    fams.sort(function(a,b){
+      var d=familyAvg(b)-familyAvg(a);
+      if(d!==0){ return d; }
+      return a.family_key<b.family_key ? -1 : (a.family_key>b.family_key ? 1 : 0);
+    });
+    var out=[], excluded=[], seen={}, fi, mi;
+    for(fi=0; fi<fams.length; fi++){
+      var fam=fams[fi], rows=[];
+      for(mi=0; mi<fam.members.length; mi++){
+        var m=fam.members[mi];
+        if(seen[m.slug]){ continue; }              /* 重複slugは さいしょの1つだけ */
+        seen[m.slug]=true;
+        var g=groupOf(fam,m);
+        if(m.rank==="C" && g!==0){                 /* C は 検収に まわさない（親書§2.2部品3） */
+          excluded.push({slug:m.slug, family_key:fam.family_key, reason:"rankC"});
+          continue;
+        }
+        rows.push({ slug:m.slug, file:m.file, family_key:fam.family_key, representative:fam.representative,
+                    mode:m.mode, rank:m.rank, score:m.score, spot_check:m.spot_check, group:g });
+      }
+      rows.sort(function(a,b){
+        if(a.group!==b.group){ return a.group-b.group; }
+        if(a.score!==b.score){ return b.score-a.score; }
+        return a.slug<b.slug ? -1 : (a.slug>b.slug ? 1 : 0);
+      });
+      out=out.concat(rows);
+    }
+    return { items: out, excluded: excluded };
+  }
+  function costOf(it){ return it.mode==="full" ? COST_FULL : COST_MINI; }
+  function minutesOf(items){
+    var m=0,i;
+    for(i=0;i<items.length;i++){ m += (items[i].mode==="full" ? MIN_PER_FULL : MIN_PER_MINI); }
+    return Math.round(m*10)/10;
+  }
+  function buildPacks(items, hash, slotsPerPack){
+    var cap=(slotsPerPack||2)*3, packs=[], i=0, n=1;
+    while(i<items.length){
+      var fam=items[i].family_key, left=cap, pick=[];
+      while(i<items.length && items[i].family_key===fam && costOf(items[i])<=left){
+        left-=costOf(items[i]); pick.push(items[i]); i++;
+      }
+      if(pick.length===0){ /* 1件で 1パックの 大きさを こえる場合も 必ず 1件は 入れる */
+        pick.push(items[i]); i++;
+      }
+      packs.push({ pack_id:"P"+pad3(n)+"-"+hash, family_key:fam, items:pick,
+                   thirds:cap-left, minutes:minutesOf(pick) });
+      n++;
+    }
+    return packs;
+  }
+  function packType(pack){
+    var f=0,m=0,i;
+    for(i=0;i<pack.items.length;i++){ if(pack.items[i].mode==="full"){ f++; } else { m++; } }
+    if(f===2 && m===0){ return "フル2"; }
+    if(f===1 && m===3){ return "フル1+ミニ3"; }
+    if(f===0 && m===6){ return "ミニ6"; }
+    return "はんぱ";
+  }
+
+  /* ---------- 作業の状態（§3.1） ---------- */
+  function checksFor(mode){
+    var n=(mode==="full") ? CHECKS_FULL.length : CHECKS_MINI.length, a=[], i;
+    for(i=0;i<n;i++){ a.push(false); }
+    return a;
+  }
+  function newState(hash, nowIso){
+    return { schema:SCHEMA, lineage_hash:hash, imported_at:nowIso,
+             items:{}, archived:{}, pack_cursor:null };
+  }
+  function ensureItems(state, queueItems){
+    var i, it;
+    for(i=0;i<queueItems.length;i++){
+      it=queueItems[i];
+      if(!state.items[it.slug]){
+        state.items[it.slug]={ mode:it.mode, status:"pending", checks:checksFor(it.mode),
+          note:"", checked_at:null, checker:CHECKER_NAME, pack_id:null };
+      } else if(state.items[it.slug].mode!==it.mode){
+        /* リストで 大小が かわったら 見るところの 数を 合わせる（判定は のこす） */
+        state.items[it.slug].mode=it.mode;
+        state.items[it.slug].checks=checksFor(it.mode);
+      }
+    }
+    return state;
+  }
+  function mergeImport(prevState, lineage, hash, nowIso){
+    var q=buildQueue(lineage), alive={}, i, slug;
+    for(i=0;i<q.items.length;i++){ alive[q.items[i].slug]=true; }
+    for(i=0;i<q.excluded.length;i++){ alive[q.excluded[i].slug]=true; }
+    var st;
+    if(!prevState){ st=newState(hash,nowIso); }
+    else{
+      st={ schema:SCHEMA, lineage_hash:hash, imported_at:nowIso,
+           items:{}, archived:{}, pack_cursor:null };
+      for(slug in prevState.archived||{}){ st.archived[slug]=prevState.archived[slug]; }
+      for(slug in prevState.items||{}){
+        if(alive[slug]){ st.items[slug]=prevState.items[slug]; }
+        else { st.archived[slug]=prevState.items[slug]; }
+      }
+      if(prevState.pack_cursor && prevState.pack_cursor.next_slug && st.items[prevState.pack_cursor.next_slug]){
+        st.pack_cursor=prevState.pack_cursor;
+      }
+    }
+    ensureItems(st, q.items);
+    applyBlocking(st, lineage);
+    return { state: st, queue: q, changed: (!prevState || prevState.lineage_hash!==hash) };
+  }
+  function mustItem(state, slug){
+    var it=state.items[slug];
+    if(!it){ throw new Error("この slug は リストに ありません: "+slug); }
+    return it;
+  }
+  function setCheck(state, slug, idx, val){
+    var it=mustItem(state,slug);
+    if(typeof idx!=="number" || idx<0 || idx>=it.checks.length){ throw new Error("見るところの 番号が ちがいます: "+idx); }
+    if(typeof val!=="boolean"){ throw new Error("チェックの 値が ちがいます。"); }
+    it.checks[idx]=val;
+    return state;
+  }
+  function setNote(state, slug, text){
+    var it=mustItem(state,slug);
+    it.note=String(text==null?"":text);
+    return state;
+  }
+  function applyVerdict(state, slug, verdict, nowIso, packId, checker){
+    var it=mustItem(state,slug);
+    if(verdict!=="pass" && verdict!=="reject" && verdict!=="deferred"){
+      throw new Error("判定の 種類が ちがいます: "+verdict);
+    }
+    if(verdict==="reject" && String(it.note).trim()===""){
+      throw new Error("さしもどす ときは りゆうを 1行 かいてください。");
+    }
+    if(!nowIso || typeof nowIso!=="string"){ throw new Error("日時が ありません。"); }
+    it.status=verdict;
+    it.checked_at=(verdict==="deferred") ? null : nowIso;
+    it.checker=(checker==null) ? (it.checker||CHECKER_NAME) : normalizeChecker(checker);
+    it.pack_id=packId||null;
+    return state;
+  }
+  /* --- DB-373: かくにんした人の名前（からっぽは みとめない＝fail-closed） --- */
+  function normalizeChecker(name){
+    var s=String(name==null?"":name).trim();
+    if(s===""){ throw new Error("かくにんする人の 名前を 入れてください。"); }
+    if(s.length>20){ throw new Error("かくにんする人の 名前は 20文字までに してください。"); }
+    return s;
+  }
+  /* --- DB-372: 数字キーの わりあて。つかわない ときは 何も かえさない --- */
+  function verdictForKey(key, enabled){
+    if(enabled!==true){ return null; }
+    return Object.prototype.hasOwnProperty.call(KEY_VERDICT, String(key)) ? KEY_VERDICT[String(key)] : null;
+  }
+  /* --- DB-374:「古い」印。よみこんだ日から 何日 たったか --- */
+  function ageDays(importedAt, nowIso){
+    if(!importedAt || typeof importedAt!=="string"){ throw new Error("よみこんだ 日時が ありません。"); }
+    if(!nowIso || typeof nowIso!=="string"){ throw new Error("いまの 日時が ありません。"); }
+    var a=Date.parse(importedAt), b=Date.parse(nowIso);
+    if(isNaN(a) || isNaN(b)){ throw new Error("日時の かたちが ちがいます。"); }
+    return Math.floor((b-a)/86400000);
+  }
+  function isStale(importedAt, nowIso, thresholdDays){
+    if(typeof thresholdDays!=="number" || !isFinite(thresholdDays) || thresholdDays<1){
+      throw new Error("「古い」と 出す 日数が ちがいます。");
+    }
+    return ageDays(importedAt, nowIso) >= thresholdDays;
+  }
+  /* 代表が さしもどしなら 同じ族の まだの 兄弟を まちB にする（§2.1） */
+  function applyBlocking(state, lineage){
+    var fi, mi, fam, m, it, rep;
+    for(fi=0; fi<lineage.families.length; fi++){
+      fam=lineage.families[fi];
+      rep=state.items[fam.representative];
+      var repRejected = !!(rep && rep.status==="reject");
+      for(mi=0; mi<fam.members.length; mi++){
+        m=fam.members[mi];
+        if(m.slug===fam.representative){ continue; }
+        it=state.items[m.slug];
+        if(!it){ continue; }
+        if(repRejected){
+          if(it.status==="pending" || it.status==="deferred"){
+            it.pre_block_status=it.status;
+            it.status="blocked";
+          }
+        } else if(it.status==="blocked"){
+          it.status=it.pre_block_status || "pending";
+          delete it.pre_block_status;
+        }
+      }
+    }
+    return state;
+  }
+  /* のこりの キュー: まだ の ものを 族の 順に、⏸あとで は 族の さいごへ */
+  function remainingQueue(state, queueItems){
+    var byFam={}, order=[], i, it, st;
+    for(i=0;i<queueItems.length;i++){
+      it=queueItems[i];
+      if(!byFam[it.family_key]){ byFam[it.family_key]={pend:[],defer:[]}; order.push(it.family_key); }
+      st=state.items[it.slug] ? state.items[it.slug].status : "pending";
+      if(st==="pending"){ byFam[it.family_key].pend.push(it); }
+      else if(st==="deferred"){ byFam[it.family_key].defer.push(it); }
+    }
+    var out=[], k;
+    for(i=0;i<order.length;i++){
+      k=order[i];
+      out=out.concat(byFam[k].pend, byFam[k].defer);
+    }
+    return out;
+  }
+  function progress(state, queueItems){
+    var total=queueItems.length, done=0, rest=[], i, st;
+    for(i=0;i<queueItems.length;i++){
+      st=state.items[queueItems[i].slug] ? state.items[queueItems[i].slug].status : "pending";
+      if(st==="pass" || st==="reject"){ done++; }
+      else { rest.push(queueItems[i]); }
+    }
+    return { total:total, done:done, remain:rest.length, minutes:minutesOf(rest) };
+  }
+  function familyProgress(state, queueItems, familyKey){
+    var sub=[], i;
+    for(i=0;i<queueItems.length;i++){ if(queueItems[i].family_key===familyKey){ sub.push(queueItems[i]); } }
+    return progress(state, sub);
+  }
+
+  /* ---------- 📤 書き出し（§3.2・親書§C） ---------- */
+  function exportResults(state){
+    var slugs=Object.keys(state.items).sort(), out=[], i, it, slug;
+    for(i=0;i<slugs.length;i++){
+      slug=slugs[i]; it=state.items[slug];
+      if(it.status!=="pass" && it.status!=="reject"){ continue; }   /* 未確定は ながさない */
+      if(it.status==="reject" && String(it.note).trim()===""){
+        throw new Error("さしもどしの りゆうが ありません: "+slug);
+      }
+      if(!it.checked_at){ throw new Error("かくにんした 日時が ありません: "+slug); }
+      out.push({ slug:slug, mode:it.mode, g3_pass:(it.status==="pass"),
+                 checked_at:it.checked_at, note:it.note, checker:it.checker||CHECKER_NAME });
+    }
+    return { app:"kenshu_g3_desk", results: out };
+  }
+
+  return { SCHEMA:SCHEMA, CHECKS_MINI:CHECKS_MINI, CHECKS_FULL:CHECKS_FULL, CHECKER_NAME:CHECKER_NAME,
+    MIN_PER_FULL:MIN_PER_FULL, MIN_PER_MINI:MIN_PER_MINI,
+    STALE_DAYS_DEFAULT:STALE_DAYS_DEFAULT, KEY_VERDICT:KEY_VERDICT,
+    normalizeChecker:normalizeChecker, verdictForKey:verdictForKey, ageDays:ageDays, isStale:isStale,
+    sha256hex:sha256hex, esc:esc, pad3:pad3, parseLineage:parseLineage,
+    familyAvg:familyAvg, groupOf:groupOf, buildQueue:buildQueue, costOf:costOf, minutesOf:minutesOf,
+    buildPacks:buildPacks, packType:packType, checksFor:checksFor, newState:newState,
+    ensureItems:ensureItems, mergeImport:mergeImport, setCheck:setCheck, setNote:setNote,
+    applyVerdict:applyVerdict, applyBlocking:applyBlocking, remainingQueue:remainingQueue,
+    progress:progress, familyProgress:familyProgress, exportResults:exportResults };
+})();
+if(typeof module!=="undefined" && module.exports){ module.exports=KG3; }
+/* ===== CORE:END ===== */
+</script>
+
+<script>
+/* ===== 画面の 部分（DOM）===== */
+(function(){
+  "use strict";
+  var LS_STATE="kenshu_g3_v1", LS_CFG="kenshu_g3_desk_cfg_v1", LS_LINEAGE="kenshu_g3_lineage_v1";
+  var lineage=null, queue={items:[],excluded:[]}, state=null;
+  function defaultCfg(){
+    return { slots_per_pack:2, zoom:1, checker:KG3.CHECKER_NAME,
+             num_keys:false, stale_days:KG3.STALE_DAYS_DEFAULT };
+  }
+  var cfg=defaultCfg();
+  var curPack=null, curIdx=0, tStart=0, tTimer=null, filter="all";
+
+  function $(id){ return document.getElementById(id); }
+  function say(msg){ $("live").textContent=msg; }
+  function saveState(){ if(state){ localStorage.setItem(LS_STATE, JSON.stringify(state)); } }
+  function saveLineage(text){ localStorage.setItem(LS_LINEAGE, text); }
+  function loadCfg(){
+    try{
+      var raw=localStorage.getItem(LS_CFG);
+      if(raw){ var o=JSON.parse(raw);
+        if(typeof o.slots_per_pack==="number" && o.slots_per_pack>=1 && o.slots_per_pack<=6){ cfg.slots_per_pack=o.slots_per_pack; }
+        if(typeof o.zoom==="number" && o.zoom>=0.8 && o.zoom<=2){ cfg.zoom=o.zoom; }
+        if(typeof o.checker==="string" && o.checker.trim()!==""){ cfg.checker=KG3.normalizeChecker(o.checker); }
+        if(typeof o.num_keys==="boolean"){ cfg.num_keys=o.num_keys; }
+        if(typeof o.stale_days==="number" && o.stale_days>=1 && o.stale_days<=365){ cfg.stale_days=o.stale_days; }
+      }
+    }catch(e){ say("設定を 読めませんでした。さいしょの 設定で うごきます。"); }
+    document.documentElement.style.setProperty("--zoom", cfg.zoom);
+    $("cfgSlots").value=cfg.slots_per_pack; $("cfgZoom").value=cfg.zoom;
+    $("cfgChecker").value=cfg.checker; $("cfgKeys").value=cfg.num_keys ? "on" : "off";
+    $("cfgStale").value=cfg.stale_days;
+  }
+  function boot(){
+    loadCfg();
+    var lt=localStorage.getItem(LS_LINEAGE);
+    if(!lt){ render(); return; }
+    try{
+      var p=KG3.parseLineage(lt);
+      lineage=p.lineage;
+      var prev=null, raw=localStorage.getItem(LS_STATE);
+      if(raw){ prev=JSON.parse(raw); }
+      var r=KG3.mergeImport(prev, lineage, p.hash, prev&&prev.imported_at ? prev.imported_at : nowIso());
+      state=r.state; queue=r.queue; saveState();
+      if(p.warnings.length){ say(p.warnings.join(" ")); }
+    }catch(e){
+      lineage=null; state=null;
+      say("まえの けんしゅうリストを 読めませんでした。もう一度 読みこんでください。（"+e.message+"）");
+    }
+    render();
+  }
+  function nowIso(){ return new Date().toISOString(); }
+
+  /* ---------- 画面きりかえ ---------- */
+  function show(which){
+    ["viewHome","viewCard","viewList","viewCfg","viewHelp","viewDone"].forEach(function(id){
+      $(id).classList.add("hidden");
+    });
+    $(which).classList.remove("hidden");
+    $("verdictBar").classList.toggle("hidden", which!=="viewCard");
+    $("navHome").setAttribute("aria-current", which==="viewHome"?"page":"false");
+    $("navList").setAttribute("aria-current", which==="viewList"?"page":"false");
+    if(which!=="viewCard"){ stopTimer(); }
+  }
+
+  /* ---------- ホーム ---------- */
+  function render(){
+    var p = state ? KG3.progress(state, queue.items) : {total:0,done:0,remain:0,minutes:0};
+    $("mAllText").textContent="ぜんぶ: "+p.total+"本中 "+p.done+"本 すみ";
+    $("mAllBar").style.width=(p.total? Math.round(p.done*100/p.total):0)+"%";
+    var rest = state ? KG3.remainingQueue(state, queue.items) : [];
+    if(rest.length){
+      var fk=rest[0].family_key, fp=KG3.familyProgress(state, queue.items, fk);
+      $("mFamText").textContent="いまの族「"+fk+"」: "+fp.total+"本中 "+fp.done+"本 すみ";
+      $("mFamBar").style.width=(fp.total? Math.round(fp.done*100/fp.total):0)+"%";
+    } else {
+      $("mFamText").textContent = state ? "のこりは ありません。" : "いまの族: まだ ありません";
+      $("mFamBar").style.width="0%";
+    }
+    var packs = rest.length ? KG3.buildPacks(rest, state.lineage_hash, cfg.slots_per_pack) : [];
+    if(packs.length){
+      var pk=packs[0], nf=0, nm=0;
+      pk.items.forEach(function(it){ if(it.mode==="full"){ nf++; } else { nm++; } });
+      $("btnStart").disabled=false;
+      $("btnStart").textContent="▶ つづきから はじめる（あと "+pk.items.length+"件・約 "+Math.round(pk.minutes)+"分）";
+      $("startDetail").textContent="つぎの まとまり: 族「"+pk.family_key+"」／大チェック "+nf+"件、小チェック "+nm+"件";
+    } else {
+      $("btnStart").disabled=true;
+      $("btnStart").textContent="▶ つづきから はじめる";
+      $("startDetail").textContent = state ? "ぜんぶ おわりました。「📤 けっかを 書き出す」を おしてください。"
+                                           : "さいしょに けんしゅうリストを 読みこんでください。";
+    }
+    renderFamButtons(rest);
+    if(state){
+      $("importInfo").textContent="読みこみずみ: "+queue.items.length+"本・"+
+        (lineage?lineage.families.length:0)+"族（リストの ばんごう "+state.lineage_hash+"）"+
+        (queue.excluded.length? "／検収に まわさない: "+queue.excluded.length+"本（Cランク）":"");
+    }
+    renderList();
+  }
+  function renderFamButtons(rest){
+    var box=$("famButtons"), keys=[], i;
+    for(i=0;i<rest.length;i++){ if(keys.indexOf(rest[i].family_key)<0){ keys.push(rest[i].family_key); } }
+    if(!keys.length){ box.innerHTML='<p class="note">まだ ありません。</p>'; return; }
+    box.innerHTML="";
+    keys.forEach(function(k){
+      var b=document.createElement("button");
+      b.className="sub"; b.textContent="この族だけ やる: "+k;
+      b.addEventListener("click", function(){ startPack(k); });
+      box.appendChild(b);
+    });
+  }
+
+  /* ---------- パックを はじめる ---------- */
+  function startPack(familyKey){
+    var rest=KG3.remainingQueue(state, queue.items);
+    if(familyKey){ rest=rest.filter(function(it){ return it.family_key===familyKey; }); }
+    if(!rest.length){ say("やる ものが ありません。"); return; }
+    var packs=KG3.buildPacks(rest, state.lineage_hash, cfg.slots_per_pack);
+    curPack=packs[0]; curIdx=0;
+    state.pack_cursor={ pack_id:curPack.pack_id, next_slug:curPack.items[0].slug };
+    saveState();
+    showCard();
+  }
+  function startTimer(){
+    tStart=Date.now();
+    stopTimer();
+    tTimer=setInterval(function(){
+      var s=Math.floor((Date.now()-tStart)/1000);
+      $("cardTime").textContent=Math.floor(s/60)+"分"+(s%60)+"秒";
+    }, 1000);
+  }
+  function stopTimer(){ if(tTimer){ clearInterval(tTimer); tTimer=null; } }
+
+  function curItem(){ return curPack ? curPack.items[curIdx] : null; }
+
+  function showCard(){
+    var it=curItem();
+    if(!it){ showDone(); return; }
+    var st=state.items[it.slug];
+    $("cardApp").textContent=it.slug;
+    $("cardFam").textContent="族: "+it.family_key;
+    $("cardMode").textContent=(it.mode==="full" ? "大チェック（5分）" : "小チェック（90びょう）");
+    $("cardRest").textContent="この まとまり あと "+(curPack.items.length-curIdx)+"件";
+    $("cardRank").textContent="ランク "+it.rank+"・てんすう "+it.score+
+      (it.spot_check ? "・ぬきうち" : "")+(it.slug===it.representative ? "・この族の 代表" : "");
+    $("cardOpen").href=toFileUrl(it.file);
+    var labels=(it.mode==="full") ? KG3.CHECKS_FULL : KG3.CHECKS_MINI;
+    var box=$("checkList"); box.innerHTML="";
+    labels.forEach(function(lab, i){
+      var row=document.createElement("div"); row.className="chk";
+      var cb=document.createElement("input"); cb.type="checkbox"; cb.id="chk"+i;
+      cb.checked=!!st.checks[i];
+      cb.addEventListener("change", function(){
+        KG3.setCheck(state, it.slug, i, cb.checked); saveState();
+      });
+      var lb=document.createElement("label"); lb.setAttribute("for","chk"+i); lb.textContent=lab;
+      row.appendChild(cb); row.appendChild(lb); box.appendChild(row);
+    });
+    $("noteIn").value=st.note||"";
+    $("noteHint").textContent="さしもどす ときは りゆうを かいてください。";
+    show("viewCard");
+    startTimer();
+    $("cardApp").focus();
+  }
+  function toFileUrl(f){
+    var s=String(f).replace(/\\/g,"/");
+    if(s.indexOf("file:")===0){ return s; }
+    if(/^[A-Za-z]:\//.test(s)){ return "file:///"+s; }
+    return s;
+  }
+  function verdict(kind){
+    var it=curItem(); if(!it){ return; }
+    KG3.setNote(state, it.slug, $("noteIn").value);
+    try{
+      KG3.applyVerdict(state, it.slug, kind, nowIso(), curPack.pack_id, cfg.checker);
+    }catch(e){
+      say(e.message);
+      $("noteHint").textContent=e.message;
+      $("noteIn").focus();
+      return;
+    }
+    KG3.applyBlocking(state, lineage);
+    saveState();
+    say(kind==="pass" ? "ごうかくに しました。" : (kind==="reject" ? "さしもどしに しました。" : "あとでに しました。"));
+    curIdx++;
+    if(curIdx>=curPack.items.length){ showDone(); }
+    else{
+      state.pack_cursor={ pack_id:curPack.pack_id, next_slug:curPack.items[curIdx].slug };
+      saveState();
+      showCard();
+    }
+  }
+  function showDone(){
+    stopTimer();
+    renderStale();
+    var p=KG3.progress(state, queue.items);
+    $("doneText").textContent="のこりは "+p.remain+"件（約 "+Math.round(p.minutes)+"分）です。";
+    var rest=KG3.remainingQueue(state, queue.items);
+    $("btnNextPack").disabled=(rest.length===0);
+    state.pack_cursor=rest.length ? { pack_id:null, next_slug:rest[0].slug } : null;
+    saveState();
+    show("viewDone");
+    render();
+  }
+
+  /* ---------- DB-374「古い」印（パック完了画面） ---------- */
+  function ymd(iso){
+    var d=new Date(iso);
+    return d.getFullYear()+"年"+(d.getMonth()+1)+"月"+d.getDate()+"日";
+  }
+  function renderStale(){
+    var box=$("staleMark");
+    if(!state || !state.imported_at){ box.classList.add("hidden"); $("importedOn").textContent=""; return; }
+    var days;
+    try{ days=KG3.ageDays(state.imported_at, nowIso()); }
+    catch(e){ box.classList.add("hidden"); $("importedOn").textContent=""; say(e.message); return; }
+    $("importedOn").textContent="けんしゅうリストを 読みこんだ日: "+ymd(state.imported_at)+"（"+days+"日 まえ）";
+    var stale=false;
+    try{ stale=KG3.isStale(state.imported_at, nowIso(), cfg.stale_days); }catch(e){ stale=false; }
+    box.classList.toggle("hidden", !stale);
+    if(stale){
+      $("staleDetail").textContent="読みこんでから "+days+"日 たちました。あたらしい リストを 読みこんでから つづけてください。";
+      say("このけんしゅうリストは 古いです。");
+    }
+  }
+
+  /* ---------- 一覧 ---------- */
+  function statusLabel(s){
+    if(s==="pass"){ return "✅ ごうかく"; }
+    if(s==="reject"){ return "↩ さしもどし"; }
+    if(s==="deferred"){ return "⏸ あとで"; }
+    if(s==="blocked"){ return "⛔ まちB（代表なおし待ち）"; }
+    return "・まだ";
+  }
+  function renderList(){
+    var box=$("listBody"); if(!state){ box.innerHTML='<p class="note">まだ ありません。</p>'; return; }
+    var fams=[], i;
+    for(i=0;i<queue.items.length;i++){ if(fams.indexOf(queue.items[i].family_key)<0){ fams.push(queue.items[i].family_key); } }
+    var html="";
+    fams.forEach(function(fk){
+      var rows=queue.items.filter(function(it){ return it.family_key===fk; });
+      var fp=KG3.familyProgress(state, queue.items, fk);
+      var defer=rows.filter(function(it){ return state.items[it.slug].status==="deferred"; }).length;
+      var body="";
+      rows.forEach(function(it){
+        var st=state.items[it.slug];
+        if(filter==="reject" && st.status!=="reject"){ return; }
+        if(filter==="todo" && (st.status==="pass"||st.status==="reject")){ return; }
+        body+="<tr><td><button class='sub reopen' data-slug='"+KG3.esc(it.slug)+"' style='margin:0'>"+
+          KG3.esc(it.slug)+"</button></td><td>"+(it.mode==="full"?"大":"小")+"</td><td>"+
+          KG3.esc(statusLabel(st.status))+"</td><td>"+KG3.esc(st.note||"")+"</td></tr>";
+      });
+      if(body===""){ return; }
+      html+="<details open><summary>"+KG3.esc(fk)+"（"+fp.done+"／"+fp.total+" すみ"+
+        (defer? "・⏸が "+defer+"件 のこっています":"")+"）</summary>"+
+        "<table><tr><th>なまえ</th><th>大小</th><th>じょうたい</th><th>メモ</th></tr>"+body+"</table></details>";
+    });
+    box.innerHTML = html || '<p class="note">見せる ものが ありません。</p>';
+    Array.prototype.forEach.call(box.querySelectorAll(".reopen"), function(b){
+      b.addEventListener("click", function(){ reopen(b.getAttribute("data-slug")); });
+    });
+  }
+  function reopen(slug){
+    var it=null, i;
+    for(i=0;i<queue.items.length;i++){ if(queue.items[i].slug===slug){ it=queue.items[i]; } }
+    if(!it){ say("その ものは ありません。"); return; }
+    curPack={ pack_id:"single-"+state.lineage_hash, family_key:it.family_key, items:[it], thirds:0, minutes:0 };
+    curIdx=0;
+    showCard();
+  }
+
+  /* ---------- 📥📤 ---------- */
+  function importFile(file){
+    var fr=new FileReader();
+    fr.onerror=function(){ say("読みこめませんでした。もう一度 えらんでください。"); };
+    fr.onload=function(){
+      var text=String(fr.result);
+      try{
+        var p=KG3.parseLineage(text);
+        var prev=null, raw=localStorage.getItem(LS_STATE);
+        if(raw){ prev=JSON.parse(raw); }
+        var r=KG3.mergeImport(prev, p.lineage, p.hash, nowIso());
+        lineage=p.lineage; state=r.state; queue=r.queue;
+        saveLineage(text); saveState();
+        var msg=(prev && r.changed) ? "あたらしい リストです。いままでの けっかは のこします。" : "けんしゅうリストを 読みこみました。";
+        if(p.warnings.length){ msg+=" "+p.warnings.join(" "); }
+        say(msg);
+        render(); show("viewHome");
+      }catch(e){ say(e.message); }
+    };
+    fr.readAsText(file, "UTF-8");
+  }
+  function exportJson(){
+    if(!state){ say("さきに けんしゅうリストを 読みこんでください。"); return; }
+    var data;
+    try{ data=KG3.exportResults(state); }
+    catch(e){ say(e.message); return; }
+    if(data.results.length===0){ say("書き出す けっかが まだ ありません。"); return; }
+    var blob=new Blob([JSON.stringify(data,null,2)], {type:"application/json"});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement("a");
+    var d=new Date(), pad=function(n){ return (n<10?"0":"")+n; };
+    a.href=url; a.download="kenshu_g3_results_"+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+
+      "_"+pad(d.getHours())+pad(d.getMinutes())+".json";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+    say(data.results.length+"件を 書き出しました。");
+  }
+
+  /* ---------- できごと ---------- */
+  $("navHome").addEventListener("click", function(){ render(); show("viewHome"); });
+  $("navList").addEventListener("click", function(){ renderList(); show("viewList"); });
+  $("navCfg").addEventListener("click", function(){ show("viewCfg"); });
+  $("navHelp").addEventListener("click", function(){ show("viewHelp"); });
+  $("btnStart").addEventListener("click", function(){ startPack(null); });
+  $("btnPass").addEventListener("click", function(){ verdict("pass"); });
+  $("btnReject").addEventListener("click", function(){ verdict("reject"); });
+  $("btnDefer").addEventListener("click", function(){ verdict("deferred"); });
+  $("btnNextPack").addEventListener("click", function(){ startPack(null); });
+  $("btnFinish").addEventListener("click", function(){ render(); show("viewHome"); });
+  /* --- DB-372: 数字キーで すぐ きめる（設定で つかう ときだけ） --- */
+  document.addEventListener("keydown", function(e){
+    if(e.ctrlKey || e.altKey || e.metaKey){ return; }
+    if($("viewCard").classList.contains("hidden")){ return; }       /* 1件カードのときだけ */
+    var t=e.target, tag=t && t.tagName ? t.tagName.toUpperCase() : "";
+    if(tag==="INPUT" || tag==="TEXTAREA" || tag==="SELECT" || (t && t.isContentEditable)){ return; }
+    var kind=KG3.verdictForKey(e.key, cfg.num_keys);
+    if(!kind){ return; }
+    e.preventDefault();
+    verdict(kind);
+  });
+  $("noteIn").addEventListener("input", function(){
+    var it=curItem(); if(!it){ return; }
+    KG3.setNote(state, it.slug, $("noteIn").value); saveState();
+  });
+  $("fileIn").addEventListener("change", function(e){
+    if(e.target.files && e.target.files[0]){ importFile(e.target.files[0]); }
+  });
+  $("btnExport").addEventListener("click", exportJson);
+  $("fltAll").addEventListener("click", function(){ setFilter("all"); });
+  $("fltReject").addEventListener("click", function(){ setFilter("reject"); });
+  $("fltTodo").addEventListener("click", function(){ setFilter("todo"); });
+  function setFilter(f){
+    filter=f;
+    $("fltAll").setAttribute("aria-pressed", String(f==="all"));
+    $("fltReject").setAttribute("aria-pressed", String(f==="reject"));
+    $("fltTodo").setAttribute("aria-pressed", String(f==="todo"));
+    renderList();
+  }
+  $("cfgSave").addEventListener("click", function(){
+    var s=parseInt($("cfgSlots").value,10), z=parseFloat($("cfgZoom").value), d=parseInt($("cfgStale").value,10);
+    if(!(s>=1 && s<=6)){ $("cfgInfo").textContent="枠の数は 1から6までの 数を 入れてください。"; return; }
+    if(!(z>=0.8 && z<=2)){ $("cfgInfo").textContent="文字の 大きさは 0.8から2までの 数を 入れてください。"; return; }
+    if(!(d>=1 && d<=365)){ $("cfgInfo").textContent="「古い」と 出す 日数は 1から365までの 数を 入れてください。"; return; }
+    var name;
+    try{ name=KG3.normalizeChecker($("cfgChecker").value); }
+    catch(err){ $("cfgInfo").textContent=err.message; $("cfgChecker").focus(); return; }
+    cfg.slots_per_pack=s; cfg.zoom=z; cfg.stale_days=d; cfg.checker=name;
+    cfg.num_keys=($("cfgKeys").value==="on");
+    localStorage.setItem(LS_CFG, JSON.stringify(cfg));
+    document.documentElement.style.setProperty("--zoom", z);
+    $("cfgInfo").textContent="この設定に しました。"+
+      (cfg.num_keys ? "1件カードで 1 2 3 の キーが つかえます。" : "");
+    say("設定を かえました。");
+    render();
+  });
+  $("cfgReset").addEventListener("click", function(){
+    cfg=defaultCfg();
+    localStorage.removeItem(LS_CFG);
+    document.documentElement.style.setProperty("--zoom",1);
+    $("cfgSlots").value=cfg.slots_per_pack; $("cfgZoom").value=cfg.zoom;
+    $("cfgChecker").value=cfg.checker; $("cfgKeys").value="off"; $("cfgStale").value=cfg.stale_days;
+    $("cfgInfo").textContent="さいしょの 設定に もどしました。";
+    render();
+  });
+
+  boot();
+})();
+</script>
+</body>
+</html>

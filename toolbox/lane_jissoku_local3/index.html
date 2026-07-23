@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>作業時間管理</title>
+    <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📋</text></svg>'>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f4f4f9;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .icon {
+            font-size: 3em;
+            margin-right: 10px;
+        }
+        .title {
+            font-size: 2em;
+            margin: 0;
+        }
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 15px 30px;
+            margin: 5px 0;
+            font-size: 1em;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .total-time {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+        .history {
+            width: 100%;
+            max-width: 400px;
+            height: 200px;
+            overflow-y: scroll;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        .history-item {
+            margin-bottom: 5px;
+        }
+        .manual-button {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #28a745;
+            color: white;
+        }
+        .manual-button:hover {
+            background-color: #218838;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            max-width: 400px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <span class="icon">📋</span>
+        <h1 class="title">作業時間管理</h1>
+    </div>
+    <div class="buttons">
+        <button id="start">開始</button>
+        <button id="pause" disabled>中断</button>
+        <button id="resume" disabled>再開</button>
+        <button id="stop" disabled>終了</button>
+    </div>
+    <div class="total-time" id="totalTime">当日の実作業時間合計: 00:00:00</div>
+    <div class="history" id="history"></div>
+    <button class="manual-button" id="openManual">❓使い方</button>
+    <a id="exportCsv" style="display:none;">CSVエクスポート</a>
+
+    <div class="modal" id="manual">
+        <div class="modal-content">
+            <h2>使い方</h2>
+            <p>このアプリで何ができるか:</p>
+            <ul>
+                <li>作業開始から終了までの時間を計測できます。</li>
+                <li>中断と再開をサポートしています。</li>
+                <li>履歴をCSV形式でエクスポートできます。</li>
+            </ul>
+            <p>基本の使い方:</p>
+            <ol>
+                <li>「開始」ボタンをクリックして作業を開始します。</li>
+                <li>必要に応じて「中断」ボタンをクリックし、その後「再開」で再開できます。</li>
+                <li>作業が完了したら「終了」ボタンをクリックします。</li>
+                <li>履歴は自動的に保存され、ブラウザ再起動後もデータが保持されます。</li>
+            </ol>
+            <p>データはこの端末のブラウザ内だけで完結する旨:</p>
+            <p>作業履歴はブラウザのローカルストレージに保存され、他のデバイスやブラウザではアクセスできません。</p>
+            <button id="closeManual">閉じる</button>
+        </div>
+    </div>
+
+    <script>
+        const buttons = {
+            start: document.getElementById('start'),
+            pause: document.getElementById('pause'),
+            resume: document.getElementById('resume'),
+            stop: document.getElementById('stop')
+        };
+        const totalTimeDisplay = document.getElementById('totalTime');
+        const historyDisplay = document.getElementById('history');
+        const exportCsvLink = document.getElementById('exportCsv');
+        const openManualButton = document.getElementById('openManual');
+        const closeManualButton = document.getElementById('closeManual');
+        const manualModal = document.getElementById('manual');
+
+        let startTime, pauseTime, resumeTime, endTime;
+        let totalTime = 0;
+        let history = JSON.parse(localStorage.getItem('作業履歴')) || [];
+
+        function updateTotalTime() {
+            if (endTime) {
+                const totalSeconds = Math.floor((endTime - startTime) / 1000);
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+                totalTimeDisplay.textContent = `当日の実作業時間合計: ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+        }
+
+        function updateHistory() {
+            historyDisplay.innerHTML = '';
+            history.forEach(entry => {
+                const item = document.createElement('div');
+                item.className = 'history-item';
+                item.textContent = `時刻: ${entry.date} (${entry.duration})`;
+                historyDisplay.appendChild(item);
+            });
+        }
+
+        function saveHistory() {
+            localStorage.setItem('作業履歴', JSON.stringify(history));
+        }
+
+        buttons.start.addEventListener('click', () => {
+            startTime = new Date();
+            endTime = null;
+            pauseTime = null;
+            resumeTime = null;
+            totalTime = 0;
+            updateTotalTime();
+            history.push({ date: new Date().toLocaleString(), duration: '開始' });
+            saveHistory();
+            buttons.start.disabled = true;
+            buttons.pause.disabled = false;
+        });
+
+        buttons.pause.addEventListener('click', () => {
+            pauseTime = new Date();
+            const elapsedTime = (pauseTime - startTime) / 1000;
+            totalTime += elapsedTime;
+            updateTotalTime();
+            history.push({ date: new Date().toLocaleString(), duration: '中断' });
+            saveHistory();
+            buttons.pause.disabled = true;
+            buttons.resume.disabled = false;
+        });
+
+        buttons.resume.addEventListener('click', () => {
+            resumeTime = new Date();
+            startTime = resumeTime;
+            buttons.resume.disabled = true;
+            buttons.stop.disabled = false;
+        });
+
+        buttons.stop.addEventListener('click', () => {
+            endTime = new Date();
+            const elapsedTime = (endTime - startTime) / 1000;
+            totalTime += elapsedTime;
+            updateTotalTime();
+            history.push({ date: new Date().toLocaleString(), duration: `終了 (${Math.floor(elapsedTime / 3600)}時間 ${Math.floor((elapsedTime % 3600) / 60)}分 ${Math.floor(elapsedTime % 60)}秒)` });
+            saveHistory();
+            buttons.stop.disabled = true;
+            buttons.start.disabled = false;
+        });
+
+        exportCsvLink.addEventListener('click', () => {
+            const csvContent = 'data:text/csv;charset=utf-8,';
+            history.forEach(entry => {
+                csvContent += `${entry.date},${entry.duration}\n`;
+            });
+            exportCsvLink.href = encodeURI(csvContent);
+            exportCsvLink.download = '作業履歴.csv';
+        });
+
+        openManualButton.addEventListener('click', () => {
+            manualModal.style.display = 'flex';
+        });
+
+        closeManualButton.addEventListener('click', () => {
+            manualModal.style.display = 'none';
+        });
+
+        updateTotalTime();
+        updateHistory();
+    </script>
+</body>
+</html>

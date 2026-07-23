@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>時間計算ツール</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⏱️</text></svg>'>
+  <style>
+    /* 基本デザイン（アクセシビリティ・コントラスト比 4.5:1 以上、文字サイズ18px以上） */
+    :root {
+      --bg-color: #ffffff;
+      --text-color: #000000;
+      --border-color: #444444;
+      --accent-color: #0056b3;
+      --error-color: #d32f2f;
+      --active-tab-bg: #e0e0e0;
+      --hover-bg: #f0f0f0;
+      --shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 16px;
+      line-height: 2.0; /* スマホ・アクセシビリティ配慮（行間2倍） */
+      font-size: 18px; /* スマホ向け文字サイズ18px以上 */
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    /* ヘッダー */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+    }
+
+    .header-title-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-emoji {
+      font-size: 2.5rem;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin: 0;
+    }
+
+    /* タブ切り替え（キーボード操作対応） */
+    .tab-list {
+      display: flex;
+      gap: 4px;
+      border-bottom: 2px solid var(--border-color);
+      margin-bottom: 20px;
+      padding: 0;
+      list-style: none;
+    }
+
+    .tab-button {
+      flex: 1;
+      padding: 14px;
+      font-size: 18px;
+      font-weight: bold;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      border: 2px solid var(--border-color);
+      border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .tab-button:focus {
+      outline: 4px solid var(--accent-color);
+      outline-offset: -4px;
+    }
+
+    .tab-button[aria-selected="true"] {
+      background-color: var(--active-tab-bg);
+      text-decoration: underline;
+      text-decoration-thickness: 2px;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* 入力フォーム（スマホ向け：サイズ拡大・ゆとりあるタップ領域） */
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      padding: 12px;
+      font-size: 18px;
+      border: 2px solid var(--border-color);
+      border-radius: 6px;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+
+    input:focus {
+      outline: 3px solid var(--accent-color);
+    }
+
+    /* ボタン */
+    button.btn {
+      width: 100%;
+      padding: 16px; /* スマホ向けサイズ拡大 */
+      font-size: 18px;
+      font-weight: bold;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    button.btn:hover, button.btn:focus {
+      background-color: var(--hover-bg);
+      outline: 3px solid var(--accent-color);
+    }
+
+    /* エラー表示 */
+    .error-msg {
+      color: var(--error-color);
+      font-weight: bold;
+      margin-top: 10px;
+      min-height: 28px;
+    }
+
+    /* 計算結果表示領域 */
+    .result-box {
+      margin-top: 20px;
+      padding: 16px;
+      border: 2px dashed var(--border-color);
+      border-radius: 8px;
+      background-color: var(--hover-bg);
+    }
+
+    .result-value {
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    /* 簡易マニュアル モーダル */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 1000;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      border: 3px solid var(--border-color);
+      border-radius: 12px;
+      max-width: 500px;
+      width: 100%;
+      padding: 24px;
+      box-shadow: var(--shadow);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 8px;
+      margin-bottom: 16px;
+    }
+
+    .modal-title {
+      font-size: 22px;
+      margin: 0;
+    }
+
+    .close-btn {
+      background: none;
+      border: 2px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 18px;
+      padding: 4px 12px;
+      cursor: pointer;
+    }
+
+    .close-btn:focus, .close-btn:hover {
+      background-color: var(--hover-bg);
+      outline: 3px solid var(--accent-color);
+    }
+
+    .manual-steps {
+      padding-left: 24px;
+      margin: 12px 0;
+    }
+
+    .manual-steps li {
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="header-title-container">
+        <span class="header-emoji" aria-hidden="true">⏱️</span>
+        <h1>時間計算ツール</h1>
+      </div>
+      <button class="btn" id="helpBtn" style="width: auto; padding: 8px 16px; margin: 0;" aria-label="使い方説明を開く">❓使い方</button>
+    </header>
+
+    <div role="tablist" class="tab-list">
+      <button role="tab" id="tab-elapsed" class="tab-button" aria-selected="true" aria-controls="panel-elapsed" tabindex="0">
+        経過時間計算
+      </button>
+      <button role="tab" id="tab-wage" class="tab-button" aria-selected="false" aria-controls="panel-wage" tabindex="-1">
+        賃金計算
+      </button>
+    </div>
+
+    <div class="form-group">
+      <label id="lbl-start" for="input-start">開始時刻（時:分）</label>
+      <input type="text" id="input-start" placeholder="例: 09:30" aria-labelledby="lbl-start">
+    </div>
+
+    <div class="form-group">
+      <label id="lbl-end" for="input-end">終了時刻（時:分）</label>
+      <input type="text" id="input-end" placeholder="例: 18:00" aria-labelledby="lbl-end">
+    </div>
+
+    <div class="form-group">
+      <label id="lbl-break" for="input-break">休憩時間（分）</label>
+      <input type="number" id="input-break" min="0" placeholder="例: 60" aria-labelledby="lbl-break">
+    </div>
+
+    <div id="error-message" class="error-msg" role="alert" aria-live="assertive"></div>
+
+    <div role="tabpanel" id="panel-elapsed" class="tab-content active" aria-labelledby="tab-elapsed">
+      <div class="result-box">
+        <div><strong>実労働時間:</strong></div>
+        <div class="result-value" id="result-elapsed">--時間--分</div>
+      </div>
+    </div>
+
+    <div role="tabpanel" id="panel-wage" class="tab-content" aria-labelledby="tab-wage">
+      <div class="form-group">
+        <label id="lbl-wage" for="input-wage">時給（円/時間）</label>
+        <input type="number" id="input-wage" min="0" placeholder="例: 1200" aria-labelledby="lbl-wage">
+      </div>
+      <div class="result-box">
+        <div><strong>予想賃金総額:</strong></div>
+        <div class="result-value" id="result-wage">-- 円</div>
+      </div>
+    </div>
+
+    <button class="btn" id="copyBtn">📋 結果をコピーする</button>
+  </div>
+
+  <div class="modal-overlay" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-title" class="modal-title">❓ 使い方ガイド</h2>
+        <button class="close-btn" id="closeHelpBtn" aria-label="閉じる">閉じる</button>
+      </div>
+      <div>
+        <h3>(1) このアプリでできること</h3>
+        <p>勤務開始・終了の時刻と休憩時間を入力し、実働時間（経過時間）を算出します。「賃金計算」タブでは、設定した時給を基に概算の賃金も同時に求められます。</p>
+        
+        <h3>(2) 基本的な使い方</h3>
+        <ol class="manual-steps">
+          <li>「開始時刻」と「終了時刻」を入力します（例: 09:30 または 18:00）。</li>
+          <li>「休憩時間」があれば、何分間かを数値で入力します（ない場合は 0）。</li>
+          <li>画面の上部にあるタブを選択して、「経過時間」か「賃金（時給を要入力）」のどちらの結果を表示するか選びます。入力内容を変更すると自動的に再計算されます。</li>
+          <li>「コピー」ボタンを押すことで、計算結果をクリップボードに保存できます。</li>
+        </ol>
+
+        <h3>(3) データの取り扱いについて</h3>
+        <p>入力した時刻や時給などの情報は、すべて<strong>この端末のブラウザ内（localStorage）だけに安全に保存</strong>されます。インターネットにデータが送信されることはありません。</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 定数・要素の取得
+    const inputStart = document.getElementById('input-start');
+    const inputEnd = document.getElementById('input-end');
+    const inputBreak = document.getElementById('input-break');
+    const inputWage = document.getElementById('input-wage');
+    const errorDiv = document.getElementById('error-message');
+    
+    const resultElapsed = document.getElementById('result-elapsed');
+    const resultWage = document.getElementById('result-wage');
+
+    const tabs = document.querySelectorAll('[role="tab"]');
+    const panels = document.querySelectorAll('[role="tabpanel"]');
+
+    const helpBtn = document.getElementById('helpBtn');
+    const helpModal = document.getElementById('helpModal');
+    const closeHelpBtn = document.getElementById('closeHelpBtn');
+    const copyBtn = document.getElementById('copyBtn');
+
+    // タブ状態管理
+    let currentTab = 'elapsed';
+
+    // 初期値
+    const DEFAULT_START = "09:00";
+    const DEFAULT_END = "18:00";
+    const DEFAULT_BREAK = "0";
+    const DEFAULT_WAGE = "1000";
+
+    // ローカルストレージからの読み込み、なければ初期設定
+    window.addEventListener('DOMContentLoaded', () => {
+      inputStart.value = localStorage.getItem('calc_start') || DEFAULT_START;
+      inputEnd.value = localStorage.getItem('calc_end') || DEFAULT_END;
+      inputBreak.value = localStorage.getItem('calc_break') || DEFAULT_BREAK;
+      inputWage.value = localStorage.getItem('calc_wage') || DEFAULT_WAGE;
+
+      // 保存されていたアクティブなタブを復元
+      const savedTab = localStorage.getItem('calc_active_tab');
+      if (savedTab === 'wage') {
+        switchTab(document.getElementById('tab-wage'));
+      } else {
+        switchTab(document.getElementById('tab-elapsed'));
+      }
+
+      calculate();
+    });
+
+    // イベントリスナーの登録（値が変わると即時計算 & 保存）
+    [inputStart, inputEnd, inputBreak, inputWage].forEach(input => {
+      input.addEventListener('input', () => {
+        saveInputs();
+        calculate();
+      });
+    });
+
+    // 時刻形式の検証および変換 (HH:MM)
+    function parseTimeString(timeStr) {
+      const match = timeStr.trim().match(/^([0-9]{1,2}):([0-9]{2})$/);
+      if (!match) return null;
+      const hours = parseInt(match[1], 10);
+      const minutes = parseInt(match[2], 10);
+      if (hours < 0 || hours >= 24 || minutes < 0 || minutes >= 60) {
+        return null;
+      }
+      return { hours, minutes, totalMinutes: hours * 60 + minutes };
+    }
+
+    // 計算メインロジック
+    function calculate() {
+      // エラーのクリア
+      errorDiv.textContent = '';
+      let hasError = false;
+
+      const startParsed = parseTimeString(inputStart.value);
+      const endParsed = parseTimeString(inputEnd.value);
+
+      if (!startParsed || !endParsed) {
+        errorDiv.textContent = '時刻を確認してください（例 09:30）';
+        hasError = true;
+      }
+
+      const breakMinutes = parseInt(inputBreak.value, 10);
+      if (isNaN(breakMinutes) || breakMinutes < 0) {
+        errorDiv.textContent = '休憩時間を正しく入力してください';
+        hasError = true;
+      }
+
+      if (hasError) {
+        resultElapsed.textContent = '--時間--分';
+        resultWage.textContent = '-- 円';
+        return;
+      }
+
+      // 差分計算
+      let diffMinutes = endParsed.totalMinutes - startParsed.totalMinutes;
+      // 翌日またぎ（終了が開始より前の場合、24時間加算）
+      if (diffMinutes < 0) {
+        diffMinutes += 24 * 60;
+      }
+
+      // 休憩時間の減算
+      let workMinutes = diffMinutes - breakMinutes;
+      if (workMinutes < 0) {
+        workMinutes = 0;
+      }
+
+      const rHours = Math.floor(workMinutes / 60);
+      const rMinutes = workMinutes % 60;
+
+      // 経過時間の表示
+      resultElapsed.textContent = `${rHours}時間${rMinutes}分`;
+
+      // 賃金計算
+      const wagePerHour = parseFloat(inputWage.value);
+      if (!isNaN(wagePerHour) && wagePerHour >= 0) {
+        const totalWage = Math.floor((workMinutes / 60) * wagePerHour);
+        resultWage.textContent = `${totalWage.toLocaleString()} 円`;
+      } else {
+        resultWage.textContent = '0 円';
+      }
+    }
+
+    // ローカルストレージへ保存
+    function saveInputs() {
+      localStorage.setItem('calc_start', inputStart.value);
+      localStorage.setItem('calc_end', inputEnd.value);
+      localStorage.setItem('calc_break', inputBreak.value);
+      localStorage.setItem('calc_wage', inputWage.value);
+    }
+
+    // タブの切り替え処理
+    function switchTab(targetTab) {
+      tabs.forEach(tab => {
+        if (tab === targetTab) {
+          tab.setAttribute('aria-selected', 'true');
+          tab.setAttribute('tabindex', '0');
+          currentTab = tab.id === 'tab-wage' ? 'wage' : 'elapsed';
+          localStorage.setItem('calc_active_tab', currentTab);
+        } else {
+          tab.setAttribute('aria-selected', 'false');
+          tab.setAttribute('tabindex', '-1');
+        }
+      });
+
+      panels.forEach(panel => {
+        if (panel.getAttribute('aria-labelledby') === targetTab.id) {
+          panel.classList.add('active');
+        } else {
+          panel.classList.remove('active');
+        }
+      });
+    }
+
+    // キーボード＆クリック タブ切り替え制御
+    tabs.forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        switchTab(e.target);
+      });
+
+      tab.addEventListener('keydown', (e) => {
+        const tabList = Array.from(tabs);
+        const index = tabList.indexOf(tab);
+        let nextTab;
+
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+          nextTab = tabList[(index + 1) % tabList.length];
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+          nextTab = tabList[(index - 1 + tabList.length) % tabList.length];
+        }
+
+        if (nextTab) {
+          nextTab.focus();
+          switchTab(nextTab);
+          e.preventDefault();
+        }
+      });
+    });
+
+    // クリップボードにコピー機能
+    copyBtn.addEventListener('click', async () => {
+      let copyText = '';
+      if (currentTab === 'elapsed') {
+        copyText = `実労働時間: ${resultElapsed.textContent}`;
+      } else {
+        copyText = `実労働時間: ${resultElapsed.textContent} / 予想賃金総額: ${resultWage.textContent}`;
+      }
+
+      try {
+        await navigator.clipboard.writeText(copyText);
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = '✅ コピーしました！';
+        setTimeout(() => {
+          copyBtn.textContent = originalText;
+        }, 2000);
+      } catch (err) {
+        alert('コピーに失敗しました。お手数ですが、画面上の結果を手動でコピーしてください。');
+      }
+    });
+
+    // 使い方モーダルの操作
+    helpBtn.addEventListener('click', () => {
+      helpModal.classList.add('active');
+      closeHelpBtn.focus();
+    });
+
+    closeHelpBtn.addEventListener('click', () => {
+      helpModal.classList.remove('active');
+      helpBtn.focus();
+    });
+
+    // モーダルの外側をクリックしたら閉じる
+    helpModal.addEventListener('click', (e) => {
+      if (e.target === helpModal) {
+        helpModal.classList.remove('active');
+        helpBtn.focus();
+      }
+    });
+
+    // Escキーでモーダルを閉じる
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && helpModal.classList.contains('active')) {
+        helpModal.classList.remove('active');
+        helpBtn.focus();
+      }
+    });
+  </script>
+</body>
+</html>

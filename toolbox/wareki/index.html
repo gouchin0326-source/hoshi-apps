@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>和暦・西暦変換ツール</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📅</text></svg>'>
+  <style>
+    /* リセットと基本設定 */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #f9f9f9;
+      color: #333333;
+      line-height: 1.6;
+      padding: 20px;
+    }
+    main {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      padding: 20px;
+    }
+
+    /* ヘッダー設定 */
+    header {
+      display: flex;
+      align-items: center;
+      background-color: #ffffff;
+      border-bottom: 2px solid #eaeaea;
+      padding-bottom: 15px;
+      margin-bottom: 20px;
+    }
+    .header-icon {
+      font-size: 2.5rem;
+      margin-right: 15px;
+    }
+    h1 {
+      font-size: 24px;
+      color: #000000;
+      font-weight: bold;
+    }
+
+    /* セクション共通 */
+    section {
+      margin-bottom: 25px;
+    }
+    label {
+      display: block;
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    input[type="text"] {
+      width: 100%;
+      height: 40px;
+      font-size: 16px;
+      padding: 8px 12px;
+      border: 2px solid #ccc;
+      border-radius: 4px;
+      background-color: #ffffff;
+    }
+    input[type="text"]:focus {
+      border-color: #005bac;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(0, 91, 172, 0.25);
+    }
+
+    /* 結果表示エリア */
+    .result-area {
+      margin-top: 10px;
+      padding: 12px;
+      background-color: #f0f0f0;
+      border-radius: 4px;
+      font-size: 20px;
+      min-height: 45px;
+      font-weight: bold;
+      word-break: break-all;
+    }
+    .age-text {
+      font-size: 16px;
+      color: #d9383a;
+      margin-left: 8px;
+    }
+    .error-message {
+      color: #d9383a;
+      font-size: 16px;
+      font-weight: bold;
+      margin-top: 5px;
+    }
+
+    /* アクションボタンエリア */
+    .action-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .btn {
+      padding: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background-color 0.2s;
+    }
+    .btn-primary {
+      background-color: #005bac;
+      color: #ffffff;
+    }
+    .btn-primary:hover, .btn-primary:focus {
+      background-color: #004481;
+    }
+    .btn-secondary {
+      background-color: #2e8b57;
+      color: #ffffff;
+    }
+    .btn-secondary:hover, .btn-secondary:focus {
+      background-color: #1e5a38;
+    }
+    .btn-info {
+      background-color: #4a5568;
+      color: #ffffff;
+      width: 100%;
+      margin-top: 10px;
+    }
+    .btn-info:hover, .btn-info:focus {
+      background-color: #2d3748;
+    }
+
+    /* モーダルダイアログ */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease-out;
+    }
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal-content {
+      background: #ffffff;
+      padding: 24px;
+      border-radius: 8px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+    .modal-content h2 {
+      font-size: 22px;
+      margin-bottom: 15px;
+      border-bottom: 2px solid #eaeaea;
+      padding-bottom: 10px;
+    }
+    .modal-content ol {
+      margin-left: 20px;
+      margin-bottom: 15px;
+    }
+    .modal-content li {
+      margin-bottom: 8px;
+    }
+    .modal-content p {
+      margin-bottom: 15px;
+    }
+    .close-btn {
+      background-color: #e2e8f0;
+      color: #1a202c;
+      padding: 10px;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+      width: 100%;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .close-btn:hover {
+      background-color: #cbd5e1;
+    }
+
+    /* レスポンシブ設計 (スマートフォン対応) */
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+      h1 {
+        font-size: 20px;
+      }
+      .header-icon {
+        font-size: 2rem;
+      }
+      label {
+        font-size: 16px;
+      }
+      .result-area {
+        font-size: 18px;
+      }
+      .action-buttons {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<main>
+  <header>
+    <div class="header-icon" aria-hidden="true">📅</div>
+    <h1>和暦・西暦変換ツール</h1>
+  </header>
+
+  <button id="help-btn" class="btn btn-info" aria-label="使い方の説明を表示">❓使い方</button>
+
+  <section aria-label="西暦から和暦への変換セクション">
+    <label id="label-seireki" for="seireki-input">西暦年を入力</label>
+    <input type="text" id="seireki-input" placeholder="例: 2026" aria-labelledby="label-seireki">
+    <div class="result-area" id="seireki-result" aria-live="polite">和暦が表示されます</div>
+    <div id="seireki-error" class="error-message" role="alert"></div>
+  </section>
+
+  <section aria-label="和暦から西暦への変換セクション">
+    <label id="label-wareki" for="wareki-input">和暦（例:令和5年）を入力</label>
+    <input type="text" id="wareki-input" placeholder="例: 令和5年、r5、h30、昭和64" aria-labelledby="label-wareki">
+    <div class="result-area" id="wareki-result" aria-live="polite">西暦が表示されます</div>
+    <div id="wareki-error" class="error-message" role="alert"></div>
+  </section>
+
+  <div class="action-buttons">
+    <button id="copy-btn" class="btn btn-primary" aria-label="変換結果をクリップボードにコピー">📋コピー</button>
+    <button id="download-btn" class="btn btn-secondary" aria-label="変換結果をテキストファイルとしてダウンロード">📥ダウンロード</button>
+  </div>
+</main>
+
+<div class="modal-overlay" id="help-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal-content">
+    <h2 id="modal-title">❓使い方ガイド</h2>
+    <p><strong>【このアプリでできること】</strong><br>西暦と和暦（明治・大正・昭和・平成・令和）を相互に変換できます。西暦入力時は、現在の年を基準とした年齢も自動計算されます。</p>
+    <p><strong>【基本の使い方】</strong></p>
+    <ol>
+      <li>西暦から変換したい場合は、上の「西暦年を入力」欄に半角数字（例：2026）を入力します。</li>
+      <li>和暦から変換したい場合は、下の「和暦を入力」欄に元号と年（例：令和5年、r5、平成30、昭和64）を入力します。元号はアルファベットの頭文字（r, h, s, t, m）にも対応しています。</li>
+      <li>入力すると、自動的に結果のエリアが更新されます。</li>
+      <li>最後に変換した履歴は、自動的にお使いのブラウザに記憶されます。</li>
+    </ol>
+    <p><strong>【データについて】</strong><br>入力したデータや計算処理は、すべてお使いの端末（ブラウザ）の内部だけで完結しており、外部のサーバーへ送信されることはありません。安心してお使いいただけます。</p>
+    <button id="close-modal-btn" class="close-btn" aria-label="使い方ガイドを閉じる">閉じる</button>
+  </div>
+</div>
+
+<script>
+  // 元号データ定義
+  const ERAS = [
+    { name: "令和", short: "r", startYear: 2019, endYear: Infinity },
+    { name: "平成", short: "h", startYear: 1989, endYear: 2019 },
+    { name: "昭和", short: "s", startYear: 1926, endYear: 1989 },
+    { name: "大正", short: "t", startYear: 1912, endYear: 1926 },
+    { name: "明治", short: "m", startYear: 1868, endYear: 1912 }
+  ];
+
+  const currentYear = new Date().getFullYear();
+
+  // DOM要素取得
+  const seirekiInput = document.getElementById('seireki-input');
+  const seirekiResult = document.getElementById('seireki-result');
+  const seirekiError = document.getElementById('seireki-error');
+
+  const warekiInput = document.getElementById('wareki-input');
+  const warekiResult = document.getElementById('wareki-result');
+  const warekiError = document.getElementById('wareki-error');
+
+  const copyBtn = document.getElementById('copy-btn');
+  const downloadBtn = document.getElementById('download-btn');
+
+  const helpBtn = document.getElementById('help-btn');
+  const helpModal = document.getElementById('help-modal');
+  const closeModalBtn = document.getElementById('close-modal-btn');
+
+  // グローバル保持データ (最新の有効変換結果を格納)
+  let latestData = {
+    type: "",
+    seireki: "",
+    wareki: "",
+    age: ""
+  };
+
+  // アプリ起動時の初期読み込み
+  window.addEventListener('DOMContentLoaded', () => {
+    loadLastInput();
+  });
+
+  // 西暦入力時のイベント
+  seirekiInput.addEventListener('input', handleSeirekiInput);
+  seirekiInput.addEventListener('focus', handleSeirekiInput);
+
+  // 和暦入力時のイベント
+  warekiInput.addEventListener('input', handleWarekiInput);
+  warekiInput.addEventListener('focus', handleWarekiInput);
+
+  // 西暦から和暦への変換処理
+  function handleSeirekiInput() {
+    const val = seirekiInput.value.trim();
+    seirekiError.textContent = "";
+    if (!val) {
+      seirekiResult.innerHTML = "和暦が表示されます";
+      return;
+    }
+
+    // 数字のみ許容
+    if (!/^\d+$/.test(val)) {
+      showError(seirekiError, seirekiResult, "無効な入力です");
+      return;
+    }
+
+    const year = parseInt(val, 10);
+
+    if (year < 1868) {
+      showError(seirekiError, seirekiResult, "明治元（1868）年以降を入力してください");
+      return;
+    }
+
+    // 和暦変換ロジック
+    let convertedText = "";
+    for (let era of ERAS) {
+      if (year >= era.startYear && year <= era.endYear) {
+        const eraYear = year - era.startYear + 1;
+        const eraYearStr = eraYear === 1 ? "元" : eraYear;
+        convertedText += `${era.name}${eraYearStr}年 `;
+      }
+    }
+
+    if (!convertedText) {
+      showError(seirekiError, seirekiResult, "無効な入力です");
+      return;
+    }
+
+    // 年齢算出
+    let ageText = "";
+    if (year <= currentYear) {
+      const age = currentYear - year;
+      ageText = ` <span class="age-text" aria-label="年齢: ${age}歳">（年齢: ${age}歳）</span>`;
+      latestData.age = `${age}歳`;
+    } else {
+      latestData.age = "未来年";
+    }
+
+    seirekiResult.innerHTML = convertedText.trim() + ageText;
+
+    // データの保存
+    latestData.type = "seireki";
+    latestData.seireki = `${year}年`;
+    latestData.wareki = convertedText.trim();
+    saveToStorage();
+  }
+
+  // 和暦から西暦への変換処理
+  function handleWarekiInput() {
+    const val = warekiInput.value.trim();
+    warekiError.textContent = "";
+    if (!val) {
+      warekiResult.textContent = "西暦が表示されます";
+      return;
+    }
+
+    // 入力解析の正規表現
+    // 例: 令和5年, r5, h30, 昭和64, 元年にも対応
+    const pattern = /^([a-zA-Z\u3040-\u309f\u30a0-\u30f3\u4e00-\u9faf]+)?(\d+|元)年?$/;
+    const match = val.match(pattern);
+
+    if (!match) {
+      showError(warekiError, warekiResult, "無効な入力です");
+      return;
+    }
+
+    let eraStr = match[1] || "";
+    let yearStr = match[2];
+
+    if (!eraStr) {
+      showError(warekiError, warekiResult, "無効な入力です");
+      return;
+    }
+
+    // 元号の特定
+    let foundEra = null;
+    eraStr = eraStr.toLowerCase();
+    for (let era of ERAS) {
+      if (era.name === eraStr || era.short === eraStr) {
+        foundEra = era;
+        break;
+      }
+    }
+
+    if (!foundEra) {
+      showError(warekiError, warekiResult, "無効な入力です");
+      return;
+    }
+
+    // 元年は1年に変換
+    let numYear = yearStr === "元" ? 1 : parseInt(yearStr, 10);
+
+    if (isNaN(numYear) || numYear <= 0) {
+      showError(warekiError, warekiResult, "無効な入力です");
+      return;
+    }
+
+    const calculatedSeireki = foundEra.startYear + numYear - 1;
+
+    // 境界値検証
+    if (calculatedSeireki > foundEra.endYear) {
+      showError(warekiError, warekiResult, "無効な入力です");
+      return;
+    }
+
+    const resultString = `西暦 ${calculatedSeireki}年`;
+    warekiResult.textContent = resultString;
+
+    // データの保存
+    latestData.type = "wareki";
+    latestData.seireki = `${calculatedSeireki}年`;
+    latestData.wareki = `${foundEra.name}${yearStr === "元" ? "元" : numYear}年`;
+    latestData.age = calculatedSeireki <= currentYear ? `${currentYear - calculatedSeireki}歳` : "未来年";
+    saveToStorage();
+  }
+
+  // エラー出力制御共通
+  function showError(errorEl, resultEl, message) {
+    errorEl.textContent = message;
+    resultEl.textContent = "無効な入力です";
+  }
+
+  // localStorageのセーブ＆ロード
+  function saveToStorage() {
+    localStorage.setItem("lastInput", JSON.stringify(latestData));
+  }
+
+  function loadLastInput() {
+    try {
+      const stored = localStorage.getItem("lastInput");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        latestData = parsed;
+        if (parsed.type === "seireki") {
+          seirekiInput.value = parsed.seireki.replace("年", "");
+          handleSeirekiInput();
+        } else if (parsed.type === "wareki") {
+          warekiInput.value = parsed.wareki;
+          handleWarekiInput();
+        }
+      }
+    } catch (e) {
+      console.error("ローカルストレージの読み込みに失敗しました", e);
+    }
+  }
+
+  // コピー＆ダウンロード処理テキスト作成
+  function getResultText() {
+    return `【和暦・西暦変換結果】\n西暦: ${latestData.seireki || "なし"}\n和暦: ${latestData.wareki || "なし"}\n年齢: ${latestData.age || "なし"}`;
+  }
+
+  // クリップボードへコピー
+  copyBtn.addEventListener('click', () => {
+    const text = getResultText();
+    navigator.clipboard.writeText(text).then(() => {
+      alert("クリップボードに結果をコピーしました！");
+    }).catch(err => {
+      alert("コピーに失敗しました。お手数ですが手動でコピーしてください。");
+    });
+  });
+
+  // テキストファイルダウンロード
+  downloadBtn.addEventListener('click', () => {
+    const text = getResultText();
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'result.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  // モーダルイベント
+  helpBtn.addEventListener('click', () => {
+    helpModal.classList.add('active');
+    closeModalBtn.focus();
+  });
+
+  closeModalBtn.addEventListener('click', () => {
+    helpModal.classList.remove('active');
+    helpBtn.focus();
+  });
+
+  // モーダルの背景クリックで閉じる
+  helpModal.addEventListener('click', (e) => {
+    if (e.target === helpModal) {
+      helpModal.classList.remove('active');
+      helpBtn.focus();
+    }
+  });
+
+  // キーボード操作：ESCキーでモーダルを閉じる
+  window.addEventListener('keydown', (e) => {
+    if (e.key === "Escape" && helpModal.classList.contains('active')) {
+      helpModal.classList.remove('active');
+      helpBtn.focus();
+    }
+  });
+</script>
+
+</body>
+</html>

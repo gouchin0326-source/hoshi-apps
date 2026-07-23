@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>簡単グループ分けツール</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">👥</text></svg>'>
+  <style>
+    /* 基本デザイン・リセット */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    :root {
+      --color-primary: #1a56db;
+      --color-primary-hover: #1e429f;
+      --color-bg: #f9fafb;
+      --color-card: #ffffff;
+      --color-text: #111827;
+      --color-text-muted: #4b5563;
+      --color-border: #d1d5db;
+      --color-error: #e02424;
+      --color-error-bg: #fde8e8;
+      --color-success: #057a55;
+      --color-success-bg: #def7ec;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      line-height: 1.5;
+      font-size: 1.1rem;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    /* ヘッダー */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+      border-bottom: 3px solid var(--color-primary);
+      padding-bottom: 15px;
+    }
+    .logo-title {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .logo-title span.emoji {
+      font-size: 3rem;
+    }
+    .logo-title h1 {
+      margin: 0;
+      font-size: 1.8rem;
+      color: var(--color-text);
+    }
+
+    /* ボタン共通 */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 20px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s, box-shadow 0.2s;
+    }
+    .btn:focus-visible {
+      outline: 4px solid #3b82f6;
+    }
+    .btn-primary {
+      background-color: var(--color-primary);
+      color: #ffffff;
+    }
+    .btn-primary:hover {
+      background-color: var(--color-primary-hover);
+    }
+    .btn-help {
+      background-color: #e5e7eb;
+      color: #1f2937;
+      border-color: #cbd5e1;
+    }
+    .btn-help:hover {
+      background-color: #d1d5db;
+    }
+    .btn-copy {
+      background-color: #0e9f6e;
+      color: #ffffff;
+      margin-top: 15px;
+    }
+    .btn-copy:hover {
+      background-color: #057a55;
+    }
+
+    /* メインレイアウト */
+    .card {
+      background-color: var(--color-card);
+      border: 1px solid var(--color-border);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      margin-bottom: 24px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    textarea {
+      width: 100%;
+      height: 300px;
+      padding: 12px;
+      font-size: 1.1rem;
+      border: 2px solid var(--color-border);
+      border-radius: 8px;
+      resize: vertical;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.2);
+    }
+
+    /* ラジオボタン・数値入力 */
+    .radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .radio-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: normal;
+      cursor: pointer;
+    }
+    .radio-label input[type="radio"] {
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+    }
+    .number-input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .number-input-group label {
+      font-weight: bold;
+    }
+    input[type="number"] {
+      width: 100%;
+      max-width: 200px;
+      padding: 10px;
+      font-size: 1.2rem;
+      border: 2px solid var(--color-border);
+      border-radius: 8px;
+    }
+    input[type="number"]:focus {
+      outline: none;
+      border-color: var(--color-primary);
+    }
+
+    /* エラーメッセージ */
+    .error-msg {
+      display: none;
+      background-color: var(--color-error-bg);
+      color: var(--color-error);
+      border: 2px solid var(--color-error);
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+
+    /* 結果エリア */
+    .result-section {
+      background-color: var(--color-card);
+      border: 2px solid var(--color-primary);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .result-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      border-bottom: 2px solid var(--color-border);
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+    }
+    .result-header h2 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+    .groups-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px;
+    }
+    .group-box {
+      border: 2px solid var(--color-border);
+      border-radius: 8px;
+      padding: 15px;
+      background-color: var(--color-bg);
+    }
+    .group-title {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: var(--color-primary);
+      margin-top: 0;
+      margin-bottom: 10px;
+      border-bottom: 1px solid var(--color-border);
+      padding-bottom: 5px;
+    }
+    .group-list {
+      list-style-type: none;
+      padding-left: 0;
+      margin: 0;
+    }
+    .group-list li {
+      padding: 4px 0;
+      border-bottom: 1px dashed var(--color-border);
+    }
+    .group-list li:last-child {
+      border-bottom: none;
+    }
+
+    /* トースト通知 */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background-color: var(--color-text);
+      color: #ffffff;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: bold;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      transition: transform 0.3s ease;
+      z-index: 1000;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* モーダル (使い方マニュアル) */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .modal-content {
+      background-color: var(--color-card);
+      border-radius: 12px;
+      max-width: 600px;
+      width: 100%;
+      padding: 24px;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+    .modal-content h2 {
+      margin-top: 0;
+      color: var(--color-primary);
+      border-bottom: 2px solid var(--color-border);
+      padding-bottom: 10px;
+    }
+    .modal-content ol {
+      padding-left: 20px;
+    }
+    .modal-content li {
+      margin-bottom: 10px;
+    }
+    .modal-close-wrapper {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    /* レスポンシブ調整 */
+    @media (max-width: 600px) {
+      .logo-title span.emoji {
+        font-size: 2.2rem;
+      }
+      .logo-title h1 {
+        font-size: 1.4rem;
+      }
+      .card {
+        padding: 16px;
+      }
+      .btn {
+        width: 100%;
+      }
+      .groups-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="logo-title">
+      <span class="emoji" aria-hidden="true">👥</span>
+      <h1>簡単グループ分けツール</h1>
+    </div>
+    <button class="btn btn-help" id="btnHelp" aria-label="使い方マニュアルを開く">❓使い方</button>
+  </header>
+
+  <main>
+    <div class="card">
+      <div id="errorArea" class="error-msg" role="alert"></div>
+
+      <div class="form-group">
+        <label id="textareaLabel" for="namesInput">名前を1行ずつ入力してください</label>
+        <textarea id="namesInput" placeholder="例：&#13;佐藤&#13;鈴木&#13;高橋&#13;田中" aria-labelledby="textareaLabel"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>分け方の条件</label>
+        <div class="radio-group">
+          <label class="radio-label">
+            <input type="radio" name="groupType" value="numGroups" checked id="radioNumGroups">
+            <span>班の数を指定する</span>
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="groupType" value="numPeople" id="radioNumPeople">
+            <span>1班あたりの人数を指定する</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group number-input-group">
+        <label id="numberLabel" for="numberValue">班の数：</label>
+        <input type="number" id="numberValue" min="1" step="1" value="3" aria-labelledby="numberLabel">
+      </div>
+
+      <button class="btn btn-primary" id="btnExecute" style="width: 100%; margin-top: 15px;">
+        🎲 シャッフルして実行する
+      </button>
+    </div>
+
+    <div class="result-section" id="resultSection">
+      <div class="result-header">
+        <h2>🎉 グループ分け結果</h2>
+        <button class="btn btn-copy" id="btnCopy" aria-label="結果をクリップボードにコピー">📋結果をコピーする</button>
+      </div>
+      <div class="groups-grid" id="groupsGrid">
+        </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-content">
+    <h2 id="modalTitle">❓ このアプリの使い方</h2>
+    <p><strong>(1) このアプリでできること</strong></p>
+    <p>入力されたメンバーをシャッフルし、「指定した班の数」または「1班あたりの人数」に合わせて、自動でバランスよくグループ分けを行います。</p>
+    
+    <p><strong>(2) 基本の使い方（4ステップ）</strong></p>
+    <ol>
+      <li><strong>名前を入力する：</strong> テキストエリアにグループ分けしたいメンバーの名前を1行ずつ改行して入力します。</li>
+      <li><strong>条件を選ぶ：</strong> 「班の数を指定」または「1班あたりの人数を指定」のどちらかを選びます。</li>
+      <li><strong>数値を指定する：</strong> 作りたいグループ数、または人数を数字で入力します。</li>
+      <li><strong>実行する：</strong> 「シャッフルして実行する」ボタンを押すと、瞬時にランダムなグループ分け結果が表示されます。何度でも再実行可能です。</li>
+    </ol>
+
+    <p><strong>(3) 安心のデータ管理</strong></p>
+    <p>入力したデータや設定内容は、お客様のこの端末（ブラウザのlocalStorage）にのみ保存されます。外部のサーバーへ送信されることは一切ないため、安心してご利用いただけます。</p>
+
+    <div class="modal-close-wrapper">
+      <button class="btn btn-primary" id="btnCloseHelp">マニュアルを閉じる</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+  // DOM要素の取得
+  const namesInput = document.getElementById('namesInput');
+  const radioNumGroups = document.getElementById('radioNumGroups');
+  const radioNumPeople = document.getElementById('radioNumPeople');
+  const numberLabel = document.getElementById('numberLabel');
+  const numberValue = document.getElementById('numberValue');
+  const btnExecute = document.getElementById('btnExecute');
+  const errorArea = document.getElementById('errorArea');
+  const groupsGrid = document.getElementById('groupsGrid');
+  const btnCopy = document.getElementById('btnCopy');
+  const btnHelp = document.getElementById('btnHelp');
+  const helpModal = document.getElementById('helpModal');
+  const btnCloseHelp = document.getElementById('btnCloseHelp');
+  const toast = document.getElementById('toast');
+
+  // localStorage保存用キー
+  const STORAGE_KEY = 'grouping_data';
+
+  // 初期化ロード
+  window.addEventListener('DOMContentLoaded', () => {
+    loadSavedData();
+    updateLabel();
+    executeGrouping(); // 起動時に前回のデータ等から自動で1回実行
+  });
+
+  // ラジオボタンの切り替えでラベルを更新
+  radioNumGroups.addEventListener('change', updateLabel);
+  radioNumPeople.addEventListener('change', updateLabel);
+
+  function updateLabel() {
+    if (radioNumGroups.checked) {
+      numberLabel.textContent = '班の数：';
+    } else {
+      numberLabel.textContent = '1班あたりの人数：';
+    }
+  }
+
+  // 入力値が変わるたび、およびラジオ切り替え時に自動保存
+  namesInput.addEventListener('input', saveData);
+  numberValue.addEventListener('input', saveData);
+  radioNumGroups.addEventListener('change', saveData);
+  radioNumPeople.addEventListener('change', saveData);
+
+  // 実行ボタン
+  btnExecute.addEventListener('click', () => {
+    executeGrouping();
+  });
+
+  // 使い方モーダルの制御
+  btnHelp.addEventListener('click', () => {
+    helpModal.style.display = 'flex';
+    btnCloseHelp.focus();
+  });
+
+  btnCloseHelp.addEventListener('click', () => {
+    helpModal.style.display = 'none';
+    btnHelp.focus();
+  });
+
+  // モーダルの外側クリックで閉じる
+  helpModal.addEventListener('click', (e) => {
+    if (e.target === helpModal) {
+      helpModal.style.display = 'none';
+    }
+  });
+
+  // データ保存
+  function saveData() {
+    const data = {
+      names: namesInput.value,
+      groupType: radioNumGroups.checked ? 'numGroups' : 'numPeople',
+      number: numberValue.value
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+
+  // データ読み込み
+  function loadSavedData() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        namesInput.value = data.names || '';
+        if (data.groupType === 'numPeople') {
+          radioNumPeople.checked = true;
+        } else {
+          radioNumGroups.checked = true;
+        }
+        numberValue.value = data.number || '3';
+      } catch (e) {
+        console.error("データの読み込みに失敗しました", e);
+      }
+    }
+  }
+
+  // グループ分けの主要計算ロジック
+  function executeGrouping() {
+    // エラー初期化
+    errorArea.style.display = 'none';
+    errorArea.textContent = '';
+
+    // 入力データのパース
+    const rawNames = namesInput.value.split('\n');
+    const names = rawNames.map(name => name.trim()).filter(name => name !== '');
+
+    if (names.length === 0) {
+      // 名前が入力されていないときは結果エリアをクリアして何もしない
+      groupsGrid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--color-text-muted);">名前を入力して実行してください。</p>';
+      return;
+    }
+
+    // 数値バリデーション
+    const val = parseInt(numberValue.value, 10);
+    if (isNaN(val) || val <= 0) {
+      showError('有効な数字を入力してください（1以上の整数）。');
+      return;
+    }
+
+    // シャッフル
+    const shuffled = [...names];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    // グループ分割計算
+    let groupCount = 1;
+    if (radioNumGroups.checked) {
+      // 「班の数」を指定
+      groupCount = val;
+    } else {
+      // 「1班あたりの人数」を指定
+      // 例: 全体10人、1班3人指定の場合 10 / 3 = 3.333... -> 3班。
+      // ただし、指定人数が全体の人数以上の場合は1班にする。
+      if (val >= shuffled.length) {
+        groupCount = 1;
+      } else {
+        groupCount = Math.floor(shuffled.length / val);
+        if (groupCount < 1) groupCount = 1;
+      }
+    }
+
+    // 各班の初期化
+    const groups = Array.from({ length: groupCount }, () => []);
+
+    // 均等分配：まず順に1人ずつ配る（割り切れない余りも順番に自然と1人ずつ配られる）
+    shuffled.forEach((person, index) => {
+      const targetGroup = index % groupCount;
+      groups[targetGroup].push(person);
+    });
+
+    // 描画
+    renderResults(groups);
+  }
+
+  // 結果描画
+  function renderResults(groups) {
+    groupsGrid.innerHTML = '';
+    groups.forEach((group, index) => {
+      const groupDiv = document.createElement('div');
+      groupDiv.className = 'group-box';
+
+      const h3 = document.createElement('h3');
+      h3.className = 'group-title';
+      h3.textContent = `班${index + 1}: (${group.length}人)`;
+
+      const ul = document.createElement('ul');
+      ul.className = 'group-list';
+
+      if (group.length === 0) {
+        const li = document.createElement('li');
+        li.textContent = '（空き）';
+        li.style.color = 'var(--color-text-muted)';
+        ul.appendChild(li);
+      } else {
+        group.forEach(member => {
+          const li = document.createElement('li');
+          li.textContent = member;
+          ul.appendChild(li);
+        });
+      }
+
+      groupDiv.appendChild(h3);
+      groupDiv.appendChild(ul);
+      groupsGrid.appendChild(groupDiv);
+    });
+  }
+
+  // エラー表示
+  function showError(msg) {
+    errorArea.textContent = msg;
+    errorArea.style.display = 'block';
+    errorArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // クリップボードへコピー
+  btnCopy.addEventListener('click', () => {
+    const boxes = groupsGrid.querySelectorAll('.group-box');
+    if (boxes.length === 0 || (boxes.length === 1 && boxes[0].querySelector('li').textContent.includes('名前を入力'))) {
+      showToast('コピーする結果がありません。');
+      return;
+    }
+
+    let textToCopy = '';
+    boxes.forEach(box => {
+      const title = box.querySelector('.group-title').textContent;
+      textToCopy += `【${title}】\n`;
+      const members = box.querySelectorAll('.group-list li');
+      members.forEach(m => {
+        textToCopy += `・ ${m.textContent}\n`;
+      });
+      textToCopy += '\n';
+    });
+
+    navigator.clipboard.writeText(textToCopy.trim()).then(() => {
+      showToast('📋 結果をクリップボードにコピーしました！');
+    }).catch(err => {
+      console.error('コピーに失敗しました', err);
+      showToast('コピーに失敗しました。お手数ですが手動で選択してコピーしてください。');
+    });
+  });
+
+  // トースト表示用関数
+  let toastTimer;
+  function showToast(msg) {
+    clearTimeout(toastTimer);
+    toast.textContent = msg;
+    toast.classList.add('show');
+    toastTimer = setTimeout(() => {
+      toast.classList.remove('show');
+    }, 3000);
+  }
+</script>
+
+</body>
+</html>

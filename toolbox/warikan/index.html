@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>割り勘計算</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">💴</text></svg>'>
+  <style>
+    /* ベースリセットと変数 */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    :root {
+      --primary-color: #0056b3;
+      --primary-hover: #004085;
+      --bg-color: #f8f9fa;
+      --card-bg: #ffffff;
+      --text-color: #212529;
+      --border-color: #ced4da;
+      --focus-outline: #80bdff;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans JP", sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 0;
+      line-height: 1.6;
+    }
+
+    /* ヘッダー */
+    header {
+      background-color: #ffffff;
+      border-bottom: 1px solid var(--border-color);
+      padding: 20px;
+      text-align: center;
+    }
+
+    .header-container {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .app-icon {
+      font-size: 32px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: bold;
+      color: #000000;
+    }
+
+    /* メインコンテンツ */
+    main {
+      max-width: 500px;
+      margin: 30px auto;
+      padding: 0 15px;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 24px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+
+    /* フォームパーツ */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 12px;
+      font-size: 18px;
+      border: 2px solid var(--border-color);
+      border-radius: 6px;
+      background-color: #ffffff;
+      color: var(--text-color);
+    }
+
+    input[type="number"]:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px var(--focus-outline);
+    }
+
+    /* チェックボックス */
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 15px;
+      margin-bottom: 25px;
+      padding: 8px 0;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+    }
+
+    .checkbox-group label {
+      margin-bottom: 0;
+      cursor: pointer;
+      user-select: none;
+      font-size: 15px;
+    }
+
+    /* 結果表示エリア */
+    .result-section {
+      background-color: #f1f8ff;
+      border: 2px solid #b3d7ff;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    .result-title {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: #495057;
+    }
+
+    .result-value {
+      font-size: 28px;
+      font-weight: bold;
+      color: var(--primary-color);
+      word-break: break-all;
+    }
+
+    .result-placeholder {
+      font-size: 18px;
+      color: #6c757d;
+      font-weight: normal;
+    }
+
+    /* ボタンエリア */
+    .button-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: #ffffff;
+    }
+
+    .btn-primary:hover, .btn-primary:focus {
+      background-color: var(--primary-hover);
+      outline: 3px solid var(--focus-outline);
+    }
+
+    .btn-secondary {
+      background-color: #6c757d;
+      color: #ffffff;
+    }
+
+    .btn-secondary:hover, .btn-secondary:focus {
+      background-color: #5a6268;
+      outline: 3px solid rgba(108, 117, 125, 0.5);
+    }
+
+    .btn-info {
+      background-color: #17a2b8;
+      color: #ffffff;
+    }
+
+    .btn-info:hover, .btn-info:focus {
+      background-color: #138496;
+      outline: 3px solid rgba(23, 162, 184, 0.5);
+    }
+
+    /* トースト通知 */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background-color: #333333;
+      color: #ffffff;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-size: 14px;
+      opacity: 0;
+      transition: transform 0.3s, opacity 0.3s;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* モーダル */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 15px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      z-index: 2000;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal {
+      background-color: #ffffff;
+      border-radius: 8px;
+      width: 100%;
+      max-width: 450px;
+      padding: 24px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      transform: translateY(-20px);
+      transition: transform 0.3s ease;
+    }
+
+    .modal-overlay.open .modal {
+      transform: translateY(0);
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: bold;
+      margin-top: 0;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 8px;
+    }
+
+    .modal-body {
+      font-size: 15px;
+      margin-bottom: 20px;
+    }
+
+    .modal-body ol {
+      padding-left: 20px;
+      margin: 10px 0;
+    }
+
+    .modal-body li {
+      margin-bottom: 8px;
+    }
+
+    .modal-body p {
+      margin: 10px 0;
+    }
+
+    /* スクリーンリーダー用非表示 */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <a href="#main-content" class="sr-only">メインコンテンツへスキップ</a>
+
+  <header>
+    <div class="header-container">
+      <span class="app-icon" aria-hidden="true">💴</span>
+      <h1>割り勘計算</h1>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <div class="card">
+      
+      <div style="margin-bottom: 20px; text-align: right;">
+        <button type="button" id="help-btn" class="btn btn-info" style="width: auto; padding: 6px 12px; font-size: 14px;">
+          ❓ 使い方を見る
+        </button>
+      </div>
+
+      <form id="calc-form" onsubmit="return false;">
+        <div class="form-group">
+          <label id="label-amount" for="amount">合計金額（円）</label>
+          <input 
+            type="number" 
+            id="amount" 
+            placeholder="例: 12345" 
+            min="0" 
+            step="1"
+            aria-labelledby="label-amount"
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label id="label-people" for="people">人数（人）</label>
+          <input 
+            type="number" 
+            id="people" 
+            placeholder="例: 3" 
+            min="1" 
+            step="1"
+            aria-labelledby="label-people"
+            required
+          >
+        </div>
+
+        <div class="checkbox-group">
+          <input type="checkbox" id="round-option">
+          <label for="round-option">端数を幹事で調整（100円単位で丸め）</label>
+        </div>
+      </form>
+
+      <div class="result-section" aria-live="polite">
+        <div class="result-title">1人あたり:</div>
+        <div id="result-display" class="result-value">
+          <span class="result-placeholder">入力してください</span>
+        </div>
+      </div>
+
+      <div class="button-group">
+        <button type="button" id="copy-btn" class="btn btn-primary" aria-label="計算結果をクリップボードにコピーする">
+          📋 結果をコピー
+        </button>
+        <button type="button" id="download-btn" class="btn btn-secondary" aria-label="計算結果をテキストファイルとしてダウンロードする">
+          📥 結果をダウンロード
+        </button>
+      </div>
+
+    </div>
+  </main>
+
+  <div id="modal-overlay" class="modal-overlay" aria-hidden="true" role="dialog" aria-labelledby="modal-title">
+    <div class="modal">
+      <h2 id="modal-title" class="modal-title">❓ 使い方ガイド</h2>
+      <div class="modal-body">
+        <p><strong>このアプリでできること：</strong><br>
+        入力された合計金額と人数をもとに、簡単に割り勘（1人あたりの支払額）を計算します。</p>
+        
+        <p><strong>基本の使い方：</strong></p>
+        <ol>
+          <li>「合計金額（円）」に支払う予定の総額を入力します。</li>
+          <li>「人数（人）」にグループの総人数を入力します。</li>
+          <li>端数をすっきりさせたい場合は、「端数を幹事で調整（100円単位で丸め）」にチェックを入れます（合計額から100円未満を切り捨てて計算します）。</li>
+          <li>入力すると自動で「1人あたり」の金額が青色で表示されます。</li>
+          <li>「結果をコピー」または「結果をダウンロード」を使って、計算結果を手軽に共有・保存できます。</li>
+        </ol>
+
+        <p style="background-color: #e9ecef; padding: 10px; border-radius: 4px; font-size: 13px;">
+          🔒 <strong>プライバシーについて：</strong><br>
+          入力されたすべてのデータは、お使いの端末のブラウザ内（localStorage）にのみ保存され、外部のサーバー等に送信されることはありません。
+        </p>
+      </div>
+      <button type="button" id="modal-close-btn" class="btn btn-secondary">閉じる</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    // 要素の取得
+    const amountInput = document.getElementById('amount');
+    const peopleInput = document.getElementById('people');
+    const roundOption = document.getElementById('round-option');
+    const resultDisplay = document.getElementById('result-display');
+    const copyBtn = document.getElementById('copy-btn');
+    const downloadBtn = document.getElementById('download-btn');
+    const helpBtn = document.getElementById('help-btn');
+    const modalOverlay = document.getElementById('modal-overlay');
+    const modalCloseBtn = document.getElementById('modal-close-btn');
+    const toast = document.getElementById('toast');
+
+    // ローカルストレージキー
+    const STORAGE_KEYS = {
+      amount: 'warikan_amount',
+      people: 'warikan_people',
+      round: 'warikan_round'
+    };
+
+    // 起動時の初期化
+    window.addEventListener('DOMContentLoaded', () => {
+      // 保存されたデータの復元
+      if (localStorage.getItem(STORAGE_KEYS.amount) !== null) {
+        amountInput.value = localStorage.getItem(STORAGE_KEYS.amount);
+      }
+      if (localStorage.getItem(STORAGE_KEYS.people) !== null) {
+        peopleInput.value = localStorage.getItem(STORAGE_KEYS.people);
+      }
+      if (localStorage.getItem(STORAGE_KEYS.round) !== null) {
+        roundOption.checked = localStorage.getItem(STORAGE_KEYS.round) === 'true';
+      }
+      
+      calculate();
+    });
+
+    // 入力イベントの監視
+    amountInput.addEventListener('input', handleInput);
+    peopleInput.addEventListener('input', handleInput);
+    roundOption.addEventListener('change', handleInput);
+
+    function handleInput() {
+      // 値の保存
+      localStorage.setItem(STORAGE_KEYS.amount, amountInput.value);
+      localStorage.setItem(STORAGE_KEYS.people, peopleInput.value);
+      localStorage.setItem(STORAGE_KEYS.round, roundOption.checked);
+
+      calculate();
+    }
+
+    // 計算ロジック
+    function calculate() {
+      const amountVal = parseFloat(amountInput.value);
+      const peopleVal = parseInt(peopleInput.value, 10);
+
+      // 無効な入力値のチェック
+      if (isNaN(amountVal) || amountVal < 0 || isNaN(peopleVal) || peopleVal < 1) {
+        showPlaceholder();
+        return;
+      }
+
+      let targetAmount = amountVal;
+      if (roundOption.checked) {
+        // 100円単位で丸め (例: 12345円を100円単位で切り捨てる)
+        targetAmount = Math.floor(amountVal / 100) * 100;
+      }
+
+      // 1人あたりの計算（小数点以下切り捨て）
+      const perPerson = Math.floor(targetAmount / peopleVal);
+
+      // 結果の表示
+      resultDisplay.innerHTML = `${perPerson.toLocaleString()}<span style="font-size: 16px; color: #495057; margin-left: 4px;">円</span>`;
+    }
+
+    function showPlaceholder() {
+      resultDisplay.innerHTML = '<span class="result-placeholder">入力してください</span>';
+    }
+
+    // トースト通知表示
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2000);
+    }
+
+    // 計算結果テキストの生成
+    function getResultText() {
+      const amountVal = amountInput.value;
+      const peopleVal = peopleInput.value;
+      
+      if (!amountVal || !peopleVal || parseInt(peopleVal, 10) < 1) {
+        return null;
+      }
+
+      const resultTextElement = resultDisplay.innerText;
+      const modeText = roundOption.checked ? '端数を幹事で調整（100円単位で丸め）: 有効' : '端数調整: なし';
+
+      return `【割り勘計算結果】\n` +
+             `合計金額: ${parseInt(amountVal, 10).toLocaleString()} 円\n` +
+             `人数: ${peopleVal} 人\n` +
+             `計算モード: ${modeText}\n` +
+             `-------------------------\n` +
+             `1人あたり: ${resultTextElement}\n`;
+    }
+
+    // コピー機能
+    copyBtn.addEventListener('click', () => {
+      const text = getResultText();
+      if (!text) {
+        showToast('金額と人数を正しく入力してください。');
+        return;
+      }
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast('クリップボードにコピーしました！');
+        }).catch(() => {
+          fallbackCopy(text);
+        });
+      } else {
+        fallbackCopy(text);
+      }
+    });
+
+    function fallbackCopy(text) {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed'; // 画面外に配置
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        showToast('クリップボードにコピーしました！');
+      } catch (err) {
+        showToast('コピーに失敗しました。お手数ですが手動で選択してコピーしてください。');
+      }
+      document.body.removeChild(textArea);
+    }
+
+    // ダウンロード機能
+    downloadBtn.addEventListener('click', () => {
+      const text = getResultText();
+      if (!text) {
+        showToast('金額と人数を正しく入力してください。');
+        return;
+      }
+
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = '割り勘結果.txt';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('ファイルをダウンロードしました！');
+    });
+
+    // モーダルの制御
+    function openModal() {
+      modalOverlay.classList.add('open');
+      modalOverlay.setAttribute('aria-hidden', 'false');
+      modalCloseBtn.focus();
+    }
+
+    function closeModal() {
+      modalOverlay.classList.remove('open');
+      modalOverlay.setAttribute('aria-hidden', 'true');
+      helpBtn.focus();
+    }
+
+    helpBtn.addEventListener('click', openModal);
+    modalCloseBtn.addEventListener('click', closeModal);
+
+    // 背景クリックで閉じる
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) {
+        closeModal();
+      }
+    });
+
+    // キーボード操作：Escキーでモーダルを閉じる
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modalOverlay.classList.contains('open')) {
+        closeModal();
+      }
+    });
+  </script>
+</body>
+</html>

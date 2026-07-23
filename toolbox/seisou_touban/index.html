@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>清掃当番チェック</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🧹</text></svg>'>
+  <style>
+    /* --------------------------------------------------
+       リセット・共通変数・基本スタイル
+    -------------------------------------------------- */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --color-primary: #1e3a8a; /* コントラスト比確保のための濃い青 */
+      --color-primary-light: #eff6ff;
+      --color-bg: #f8fafc;
+      --color-card: #ffffff;
+      --color-text: #1e293b;
+      --color-border: #cbd5e1;
+      --color-accent-warning: #b45309; /* 警告用・未実施用の濃いオレンジ/茶 */
+      --color-accent-warning-bg: #fef3c7;
+      --color-success: #15803d; /* 実施済用の濃い緑 */
+      --color-success-bg: #f0fdf4;
+      --font-size-base: 16px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: var(--font-size-base);
+      line-height: 1.6;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      padding: 16px;
+    }
+
+    /* --------------------------------------------------
+       アクセシビリティ・キーボード操作
+    -------------------------------------------------- */
+    a:focus, button:focus, input:focus, select:focus, textarea:focus {
+      outline: 3px solid #2563eb;
+      outline-offset: 2px;
+    }
+
+    /* 読者補助用非表示クラス */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* --------------------------------------------------
+       共通コンポーネント (ボタンなど)
+    -------------------------------------------------- */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 20px;
+      font-size: 1rem;
+      font-weight: bold;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s, color 0.2s;
+      text-decoration: none;
+      min-height: 48px; /* タッチターゲットの確保 */
+    }
+
+    .btn-primary {
+      background-color: var(--color-primary);
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background-color: #1d4ed8;
+    }
+
+    .btn-secondary {
+      background-color: #f1f5f9;
+      color: var(--color-text);
+      border-color: var(--color-border);
+    }
+
+    .btn-secondary:hover {
+      background-color: #e2e8f0;
+    }
+
+    .btn-warning {
+      background-color: var(--color-accent-warning-bg);
+      color: var(--color-accent-warning);
+      border-color: var(--color-accent-warning);
+    }
+
+    .btn-warning:hover {
+      background-color: #fde68a;
+    }
+
+    .btn-delete {
+      background-color: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #f87171;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      border-radius: 4px;
+      min-height: 36px;
+    }
+
+    .btn-delete:hover {
+      background-color: #fca5a5;
+    }
+
+    /* --------------------------------------------------
+       レイアウト
+    -------------------------------------------------- */
+    header {
+      background-color: var(--color-primary-light);
+      border: 2px solid var(--color-primary);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .header-title-container {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .header-emoji {
+      font-size: 3rem;
+      flex-shrink: 0;
+    }
+
+    .header-text h1 {
+      font-size: 1.5rem;
+      color: var(--color-primary);
+      margin-bottom: 4px;
+    }
+
+    .header-text p {
+      font-size: 1rem;
+      color: #334155;
+    }
+
+    .main-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .card {
+      background-color: var(--color-card);
+      border: 1px solid var(--color-border);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .card h2 {
+      font-size: 1.25rem;
+      color: var(--color-primary);
+      border-bottom: 2px solid var(--color-primary-light);
+      padding-bottom: 8px;
+      margin-bottom: 16px;
+    }
+
+    /* --------------------------------------------------
+       入力フォーム・コントロール
+    -------------------------------------------------- */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 6px;
+      color: var(--color-text);
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 1rem;
+      border: 2px solid var(--color-border);
+      border-radius: 6px;
+      background-color: #ffffff;
+      color: var(--color-text);
+      min-height: 48px;
+    }
+
+    .form-control-inline-select {
+      display: flex;
+      gap: 8px;
+    }
+
+    .form-control-inline-select select {
+      flex: 1;
+    }
+
+    /* 集計表示エリア */
+    .summary-box {
+      background-color: var(--color-primary-light);
+      border-left: 6px solid var(--color-primary);
+      padding: 16px;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 20px;
+    }
+
+    .summary-rate {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--color-primary);
+    }
+
+    /* --------------------------------------------------
+       フィルタエリア
+    -------------------------------------------------- */
+    .filter-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .filter-date-range {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .filter-date-range input {
+      flex: 1;
+    }
+
+    /* --------------------------------------------------
+       リスト・レコード表示
+    -------------------------------------------------- */
+    .list-container {
+      margin-top: 16px;
+    }
+
+    .list-item {
+      border: 2px solid var(--color-border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+      background-color: #ffffff;
+      position: relative;
+    }
+
+    /* 未実施項目の強調表示 */
+    .list-item.status-undone {
+      border-color: var(--color-accent-warning);
+      background-color: var(--color-accent-warning-bg);
+    }
+
+    /* 実施済項目の表示 */
+    .list-item.status-done {
+      border-color: var(--color-success);
+      background-color: var(--color-success-bg);
+    }
+
+    .list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      font-size: 0.875rem;
+      font-weight: bold;
+      border-radius: 4px;
+    }
+
+    .badge-undone {
+      background-color: var(--color-accent-warning);
+      color: #ffffff;
+    }
+
+    .badge-done {
+      background-color: var(--color-success);
+      color: #ffffff;
+    }
+
+    .list-body {
+      margin-bottom: 12px;
+    }
+
+    .list-info-grid {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 4px 12px;
+      font-size: 1rem;
+    }
+
+    .info-label {
+      font-weight: bold;
+      color: #475569;
+    }
+
+    .info-val {
+      color: var(--color-text);
+      word-break: break-all;
+    }
+
+    .list-actions {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    /* --------------------------------------------------
+       簡易マニュアル モーダル
+    -------------------------------------------------- */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+
+    .modal-overlay.hidden {
+      display: none;
+    }
+
+    .modal {
+      background-color: #ffffff;
+      border-radius: 12px;
+      max-width: 500px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      border: 3px solid var(--color-primary);
+    }
+
+    .modal-header {
+      background-color: var(--color-primary-light);
+      padding: 16px;
+      border-bottom: 2px solid var(--color-primary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: bold;
+      color: var(--color-primary);
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .modal-body h3 {
+      font-size: 1.1rem;
+      margin-top: 16px;
+      margin-bottom: 8px;
+      color: var(--color-primary);
+    }
+
+    .modal-body ol {
+      padding-left: 20px;
+      margin-bottom: 16px;
+    }
+
+    .modal-body li {
+      margin-bottom: 8px;
+    }
+
+    .modal-footer {
+      padding: 16px;
+      border-top: 1px solid var(--color-border);
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    /* --------------------------------------------------
+       レスポンシブ (PC・タブレット向け)
+    -------------------------------------------------- */
+    @media (min-width: 768px) {
+      body {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+      
+      .main-grid {
+        display: grid;
+        grid-template-columns: 1fr 1.2fr;
+        align-items: start;
+      }
+
+      .filter-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .filter-date-range {
+        grid-column: span 2;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-title-container">
+      <div class="header-emoji" aria-hidden="true">🧹</div>
+      <div class="header-text">
+        <h1>清掃当番チェック</h1>
+        <p>清掃の分担と記録のためのツールです</p>
+      </div>
+    </div>
+    <div>
+      <button type="button" class="btn btn-warning" id="btn-open-help">❓使い方を見る</button>
+    </div>
+  </header>
+
+  <main class="main-grid">
+    
+    <section class="card" aria-labelledby="form-heading">
+      <h2 id="form-heading">📋 当番の記録・登録</h2>
+      <form id="cleaning-form">
+        
+        <div class="form-group">
+          <label id="lbl-date" for="input-date">実施日 <span style="color:#b91c1c;">(必須)</span></label>
+          <input type="date" id="input-date" class="form-control" required aria-labelledby="lbl-date">
+        </div>
+
+        <div class="form-group">
+          <label id="lbl-staff" for="input-staff">担当者 <span style="color:#b91c1c;">(必須)</span></label>
+          <input type="text" id="input-staff" class="form-control" placeholder="例: 山田太郎" required aria-labelledby="lbl-staff">
+        </div>
+
+        <div class="form-group">
+          <label id="lbl-place" for="select-place">清掃場所 <span style="color:#b91c1c;">(必須)</span></label>
+          <div class="form-control-inline-select">
+            <select id="select-place" class="form-control" required aria-labelledby="lbl-place">
+              <option value="トイレ">トイレ</option>
+              <option value="休憩室">休憩室</option>
+              <option value="現場通路">現場通路</option>
+              <option value="事務所">事務所</option>
+            </select>
+            <button type="button" id="btn-add-place" class="btn btn-secondary" style="min-height: 48px; padding: 0 12px;" title="新しい場所を追加">➕追加</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label id="lbl-status" for="select-status">実施状況 <span style="color:#b91c1c;">(必須)</span></label>
+          <select id="select-status" class="form-control" required aria-labelledby="lbl-status">
+            <option value="未実施">未実施</option>
+            <option value="実施済">実施済</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label id="lbl-memo" for="textarea-memo">メモ</label>
+          <textarea id="textarea-memo" class="form-control" style="min-height: 80px;" placeholder="気になったことなどがあれば入力してください" aria-labelledby="lbl-memo"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%;">登録する</button>
+      </form>
+    </section>
+
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+      
+      <section class="card" aria-labelledby="summary-heading">
+        <h2 id="summary-heading">📊 現在の実施状況</h2>
+        <div class="summary-box">
+          <div style="font-size: 1rem; font-weight: bold; color: #475569;">全体の実施率</div>
+          <div class="summary-rate" id="summary-rate-display">--</div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn btn-secondary" id="btn-export-csv" style="flex: 1;">📤 CSVエクスポート</button>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="list-heading">
+        <h2 id="list-heading">🔍 登録履歴・検索</h2>
+        
+        <fieldset style="border: 2px solid var(--color-border); border-radius: 8px; padding: 12px; margin-bottom: 20px;">
+          <legend style="padding: 0 8px; font-weight: bold;">絞り込み条件</legend>
+          <div class="filter-grid">
+            <div>
+              <label for="filter-place" style="font-size: 0.9rem; font-weight: bold;">場所</label>
+              <select id="filter-place" class="form-control" style="min-height: 40px; padding: 6px 12px;">
+                <option value="">すべて</option>
+              </select>
+            </div>
+            <div>
+              <label for="filter-staff" style="font-size: 0.9rem; font-weight: bold;">担当者</label>
+              <input type="text" id="filter-staff" class="form-control" style="min-height: 40px; padding: 6px 12px;" placeholder="名前で部分一致検索">
+            </div>
+            <div class="filter-date-range">
+              <div style="flex: 1;">
+                <label for="filter-date-start" style="font-size: 0.9rem; font-weight: bold;">開始日</label>
+                <input type="date" id="filter-date-start" class="form-control" style="min-height: 40px; padding: 6px 12px;">
+              </div>
+              <div style="align-self: flex-end; padding-bottom: 8px; font-weight: bold;">〜</div>
+              <div style="flex: 1;">
+                <label for="filter-date-end" style="font-size: 0.9rem; font-weight: bold;">終了日</label>
+                <input type="date" id="filter-date-end" class="form-control" style="min-height: 40px; padding: 6px 12px;">
+              </div>
+            </div>
+          </div>
+        </fieldset>
+
+        <div class="list-container" id="list-container" aria-live="polite">
+          </div>
+      </section>
+    </div>
+
+  </main>
+
+  <div class="modal-overlay hidden" id="help-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-title">❓ 使い方ガイド</h2>
+        <button type="button" class="btn btn-secondary" style="min-height:36px; padding:4px 12px;" id="btn-close-help-header" aria-label="閉じる">✖</button>
+      </div>
+      <div class="modal-body">
+        <h3>1. このアプリでできること</h3>
+        <p>日々の清掃記録や分担をサクサク入力・一元管理できます。誰が・いつ・どこを清掃したか（またはこれからするのか）をすぐに把握・検索できます。</p>
+
+        <h3>2. 基本的な使い方 (3ステップ)</h3>
+        <ol>
+          <li><strong>記録を追加する:</strong> 左側のフォームに「実施日」「担当者」「場所」「実施状況（未実施 or 実施済）」を入力し、「登録する」ボタンを押します。（※リストにない場所は、右横の「➕追加」ボタンから自由に追加できます）</li>
+          <li><strong>未実施項目を確認する:</strong> 未実施のタスクは上部に強調表示されるため、やり残しが一目で分かります。</li>
+          <li><strong>絞り込みとデータ出力:</strong> 右下の絞り込み機能で、日付や担当者ごとの過去履歴をすぐに見つけ出せます。「CSVエクスポート」を押せば、Excel等に読み込めるファイルをいつでも手元にダウンロード可能です。</li>
+        </ol>
+
+        <h3>3. データの保存について</h3>
+        <p>本アプリに入力されたデータは、すべて<strong>お使いの端末（ブラウザ）の内側（localStorage）に安全に保存</strong>されます。インターネット経由で外部のサーバーに送信されることは一切ありませんので、安心してご利用ください。</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="btn-close-help-footer" style="width: 100%;">理解しました（閉じる）</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- 初期データ & 設定 ---
+    const LOCAL_STORAGE_DATA_KEY = 'cleaning_check_records';
+    const LOCAL_STORAGE_PLACES_KEY = 'cleaning_check_places';
+
+    // デフォルトの清掃場所リスト
+    const DEFAULT_PLACES = ["トイレ", "休憩室", "現場通路", "事務所"];
+
+    // 状態管理
+    let records = [];
+    let places = [];
+
+    // --- DOM要素の参照 ---
+    const form = document.getElementById('cleaning-form');
+    const inputDate = document.getElementById('input-date');
+    const inputStaff = document.getElementById('input-staff');
+    const selectPlace = document.getElementById('select-place');
+    const selectStatus = document.getElementById('select-status');
+    const textareaMemo = document.getElementById('textarea-memo');
+    const btnAddPlace = document.getElementById('btn-add-place');
+
+    const filterPlace = document.getElementById('filter-place');
+    const filterStaff = document.getElementById('filter-staff');
+    const filterDateStart = document.getElementById('filter-date-start');
+    const filterDateEnd = document.getElementById('filter-date-end');
+
+    const summaryRateDisplay = document.getElementById('summary-rate-display');
+    const listContainer = document.getElementById('list-container');
+    const btnExportCsv = document.getElementById('btn-export-csv');
+
+    // モーダル操作用
+    const btnOpenHelp = document.getElementById('btn-open-help');
+    const btnCloseHelpHeader = document.getElementById('btn-close-help-header');
+    const btnCloseHelpFooter = document.getElementById('btn-close-help-footer');
+    const helpModal = document.getElementById('help-modal');
+
+    // --- 起動処理 ---
+    window.addEventListener('DOMContentLoaded', () => {
+      // 本日日付を初期値としてセット
+      const today = new Date().toISOString().split('T')[0];
+      inputDate.value = today;
+
+      // データのロード
+      loadPlaces();
+      loadRecords();
+      
+      // UIの描画
+      renderPlaceDropdowns();
+      renderListAndSummary();
+
+      // 各種フィルターの入力に連動してリアルタイム更新
+      [filterPlace, filterStaff, filterDateStart, filterDateEnd].forEach(element => {
+        element.addEventListener('input', renderListAndSummary);
+      });
+    });
+
+    // --- データ保存・読み込み ---
+    function loadPlaces() {
+      const stored = localStorage.getItem(LOCAL_STORAGE_PLACES_KEY);
+      if (stored) {
+        try {
+          places = JSON.parse(stored);
+        } catch (e) {
+          places = [...DEFAULT_PLACES];
+        }
+      } else {
+        places = [...DEFAULT_PLACES];
+        savePlaces();
+      }
+    }
+
+    function savePlaces() {
+      localStorage.setItem(LOCAL_STORAGE_PLACES_KEY, JSON.stringify(places));
+    }
+
+    function loadRecords() {
+      const stored = localStorage.getItem(LOCAL_STORAGE_DATA_KEY);
+      if (stored) {
+        try {
+          records = JSON.parse(stored);
+        } catch (e) {
+          records = [];
+        }
+      } else {
+        records = [];
+      }
+    }
+
+    function saveRecords() {
+      localStorage.setItem(LOCAL_STORAGE_DATA_KEY, JSON.stringify(records));
+    }
+
+    // --- ドロップダウン描画 ---
+    function renderPlaceDropdowns() {
+      // 登録フォーム側の場所セレクトボックス
+      const currentSelected = selectPlace.value;
+      selectPlace.innerHTML = '';
+      places.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p;
+        opt.textContent = p;
+        selectPlace.appendChild(opt);
+      });
+      if (places.includes(currentSelected)) {
+        selectPlace.value = currentSelected;
+      }
+
+      // フィルター用のセレクトボックス
+      const currentFilterSelected = filterPlace.value;
+      filterPlace.innerHTML = '<option value="">すべて</option>';
+      places.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p;
+        opt.textContent = p;
+        filterPlace.appendChild(opt);
+      });
+      if (places.includes(currentFilterSelected)) {
+        filterPlace.value = currentFilterSelected;
+      } else {
+        filterPlace.value = '';
+      }
+    }
+
+    // --- 新しい場所の追加 ---
+    btnAddPlace.addEventListener('click', () => {
+      const newPlace = prompt("新しい清掃場所を入力してください（例: 屋外喫煙所）:");
+      if (newPlace) {
+        const trimmed = newPlace.trim();
+        if (trimmed === "") return;
+        if (places.includes(trimmed)) {
+          alert("その場所は既に登録されています。");
+          return;
+        }
+        places.push(trimmed);
+        savePlaces();
+        renderPlaceDropdowns();
+        selectPlace.value = trimmed;
+      }
+    });
+
+    // --- フォーム登録処理 ---
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const dateVal = inputDate.value;
+      const staffVal = inputStaff.value.trim();
+      const placeVal = selectPlace.value;
+      const statusVal = selectStatus.value;
+      const memoVal = textareaMemo.value.trim();
+
+      if (!dateVal || !staffVal || !placeVal || !statusVal) {
+        alert("必須項目を入力してください。");
+        return;
+      }
+
+      const newRecord = {
+        id: 'rec_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        date: dateVal,
+        staff: staffVal,
+        place: placeVal,
+        status: statusVal,
+        memo: memoVal
+      };
+
+      records.push(newRecord);
+      saveRecords();
+      renderListAndSummary();
+
+      // 入力後はスタッフとメモのみリセットし連続入力を支援（日付と場所、状況は維持または初期化）
+      inputStaff.value = '';
+      textareaMemo.value = '';
+      inputStaff.focus();
+    });
+
+    // --- レコード削除 ---
+    function deleteRecord(id) {
+      if (confirm("この記録を削除してもよろしいですか？")) {
+        records = records.filter(r => r.id !== id);
+        saveRecords();
+        renderListAndSummary();
+      }
+    }
+
+    // --- 描画と集計 ---
+    function renderListAndSummary() {
+      // 1. 集計
+      const totalCount = records.length;
+      const doneCount = records.filter(r => r.status === '実施済').length;
+
+      if (totalCount === 0) {
+        summaryRateDisplay.textContent = '--';
+      } else {
+        const rate = Math.round((doneCount / totalCount) * 100);
+        summaryRateDisplay.textContent = `${rate}% (${doneCount} / ${totalCount}件完了)`;
+      }
+
+      // 2. フィルタリングの適用
+      const fPlace = filterPlace.value;
+      const fStaff = filterStaff.value.trim().toLowerCase();
+      const fStart = filterDateStart.value;
+      const fEnd = filterDateEnd.value;
+
+      let filteredRecords = records.filter(item => {
+        // 場所
+        if (fPlace && item.place !== fPlace) return false;
+        // 担当者 (部分一致)
+        if (fStaff && !item.staff.toLowerCase().includes(fStaff)) return false;
+        // 開始日
+        if (fStart && item.date < fStart) return false;
+        // 終了日
+        if (fEnd && item.date > fEnd) return false;
+        return true;
+      });
+
+      // 3. 並び替え規則: 「未実施」を一番上に、残りは日付の新しい順にする
+      filteredRecords.sort((a, b) => {
+        // 未実施を優先
+        if (a.status === '未実施' && b.status !== '未実施') return -1;
+        if (a.status !== '未実施' && b.status === '未実施') return 1;
+        // 同じ状態同士なら、日付の新しい順
+        return b.date.localeCompare(a.date);
+      });
+
+      // 4. 表示生成
+      listContainer.innerHTML = '';
+
+      if (filteredRecords.length === 0) {
+        const emptyMsg = document.createElement('p');
+        emptyMsg.style.textAlign = 'center';
+        emptyMsg.style.color = '#64748b';
+        emptyMsg.style.padding = '24px 0';
+        emptyMsg.textContent = '登録された記録、または検索条件に合う記録が見つかりません。';
+        listContainer.appendChild(emptyMsg);
+        return;
+      }
+
+      filteredRecords.forEach(item => {
+        const isUndone = item.status === '未実施';
+        const itemDiv = document.createElement('div');
+        itemDiv.className = `list-item ${isUndone ? 'status-undone' : 'status-done'}`;
+
+        // 状態に応じたバッジとアイコン
+        const badgeClass = isUndone ? 'badge-undone' : 'badge-done';
+        const badgeIcon = isUndone ? '⚠️ ' : '✅ ';
+
+        // エスケープ処理
+        const esc = (str) => {
+          if (!str) return '';
+          return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        };
+
+        itemDiv.innerHTML = `
+          <div class="list-header">
+            <div>
+              <span class="badge ${badgeClass}" aria-label="実施状況: ${item.status}">
+                ${badgeIcon}${item.status}
+              </span>
+              <span style="font-weight: bold; margin-left: 8px; font-size: 1.1rem;">${esc(item.date)}</span>
+            </div>
+          </div>
+          <div class="list-body">
+            <div class="list-info-grid">
+              <span class="info-label">場所:</span>
+              <span class="info-val" style="font-weight: bold;">${esc(item.place)}</span>
+              <span class="info-label">担当者:</span>
+              <span class="info-val">${esc(item.staff)}</span>
+              <span class="info-label">メモ:</span>
+              <span class="info-val" style="white-space: pre-wrap; color: #475569;">${item.memo ? esc(item.memo) : '（なし）'}</span>
+            </div>
+          </div>
+          <div class="list-actions">
+            <button type="button" class="btn-delete" onclick="deleteRecord('${item.id}')">この記録を削除</button>
+          </div>
+        `;
+        listContainer.appendChild(itemDiv);
+      });
+    }
+
+    // --- CSVエクスポート処理 ---
+    btnExportCsv.addEventListener('click', () => {
+      if (records.length === 0) {
+        alert("書き出すデータが存在しません。記録を登録してから再度お試しください。");
+        return;
+      }
+
+      // ヘッダ
+      const csvRows = [["実施日", "担当者", "場所", "実施状況", "メモ"]];
+
+      // 各行データ
+      records.forEach(item => {
+        csvRows.push([
+          item.date,
+          item.staff,
+          item.place,
+          item.status,
+          item.memo || ''
+        ]);
+      });
+
+      // CSV文字列作成（Excel用のBOM付きUTF-8 & カンマ区切り、ダブルクォーテーション囲み）
+      const csvContent = "\uFEFF" + csvRows.map(row => 
+        row.map(value => {
+          // ダブルクォーテーションをエスケープして囲む
+          const flatValue = value.replace(/"/g, '""');
+          return `"${flatValue}"`;
+        }).join(",")
+      ).join("\r\n");
+
+      // ダウンロードリンクを生成
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", "cleaning_check.csv");
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+
+    // --- モーダルの開閉制御 ---
+    function toggleHelpModal(show) {
+      if (show) {
+        helpModal.classList.remove('hidden');
+        btnCloseHelpFooter.focus(); // キーボードフォーカスをモーダルに合わせる
+      } else {
+        helpModal.classList.add('hidden');
+        btnOpenHelp.focus();
+      }
+    }
+
+    btnOpenHelp.addEventListener('click', () => toggleHelpModal(true));
+    btnCloseHelpHeader.addEventListener('click', () => toggleHelpModal(false));
+    btnCloseHelpFooter.addEventListener('click', () => toggleHelpModal(false));
+
+    // 背景クリックでも閉じるようにする
+    helpModal.addEventListener('click', (e) => {
+      if (e.target === helpModal) {
+        toggleHelpModal(false);
+      }
+    });
+
+    // Escキー押下でモーダルを閉じる
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !helpModal.classList.contains('hidden')) {
+        toggleHelpModal(false);
+      }
+    });
+  </script>
+</body>
+</html>

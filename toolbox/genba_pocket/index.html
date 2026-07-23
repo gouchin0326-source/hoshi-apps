@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b5cab">
+<title>現場ポケット</title>
+<link rel="manifest" href="manifest.json">
+<!--
+  現場ポケット（仮称・正式名称は未決 Q-W2-1） — 実装弾 W2-1
+  正本: C:/Claude/HOSHI/knowledge/fable5_legacy/SPEC_W2-1_GENBA_POCKET_UI_2026-07-19.md
+  親書: work/LEGACY_MOBILE_WORK_SUMMIT_2026-07-17.md（§B不変条件 W1-W7・§C契約・§D API表・§G T1-T9）
+
+  単一HTML・ビルド無し・外部CDN禁止・実行時の外部fetch 0（W3）。file:// でも中核機能が動く（W4）。
+  保存先 = localStorage 2本のみ
+    genba_pocket_queue_v1 … キュー本体（親書C1形）
+    genba_pocket_cfg_v1   … 設定（端末名・文字サイズ・安全柵）
+  副作用 = 上記への書込みと、📤押下時の Blob ダウンロードだけ。通信は無い。
+
+  スキーマ検証は W2-2 の verify_bus.js（globalThis.BusVerify）を同梱読込して使う（検証コード一元化・§E）。
+  無い場合は内蔵の控えめな検証にフォールバックし、その旨を画面に出す（黙って通さない=fail-closed）。
+
+  自己テスト: index.html?selftest=1 （T10-T20 と親書T1/T4/T7の一部）
+-->
+<script src="verify_bus.js" onerror="window.__GP_BUSVERIFY_MISSING=true"></script>
+<style>
+  :root{
+    --fs:17px;
+    --bg:#ffffff; --fg:#16202b; --line:#c3ccd6; --acc:#0b5cab; --acc-fg:#ffffff;
+    --warn-bg:#fff4e5; --warn-fg:#6b3d00; --warn-line:#b06f00;
+    --err-bg:#fdecec; --err-fg:#8a1414; --err-line:#a11a1a;
+    --ok-bg:#e8f5ec;  --ok-fg:#14532d;  --ok-line:#1a7a3f;
+    --muted:#48545f;
+    --tabh:64px;
+  }
+  *{box-sizing:border-box}
+  /* アプリの外枠＝画面いっぱいの たて1列。ページ全体は スクロールしない。
+     中身が あふれる ところ（#pScroll・画面D・画面S）だけが 中で スクロールする。
+     こうすると 主役ボタンと 3タブが いつも 親指の とどく ところに 居る（T20）。 */
+  html,body{margin:0;padding:0;height:100%;max-width:100%}
+  body{background:var(--bg);color:var(--fg);overflow:hidden;
+       font-family:"Meiryo","Yu Gothic UI","Hiragino Kaku Gothic ProN",sans-serif;
+       font-size:var(--fs);line-height:1.7;-webkit-text-size-adjust:100%}
+  .wrap{max-width:560px;margin:0 auto;padding:8px 10px var(--tabh);
+        height:100dvh;display:flex;flex-direction:column}
+  h1{font-size:1.15em;margin:.2em 0 .1em}
+  h2{font-size:1.05em;margin:.9em 0 .3em;border-left:6px solid var(--acc);padding-left:.4em}
+  p.lead{color:var(--muted);margin:.1em 0 .5em;font-size:.92em}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+  /* ---- お知らせ帯（自動で消えない・タップで閉じる） ---- */
+  .note{margin:8px 0;padding:10px 12px;border-radius:8px;border:2px solid;white-space:pre-wrap;word-break:break-word}
+  .note.ok{background:var(--ok-bg);color:var(--ok-fg);border-color:var(--ok-line)}
+  .note.warn{background:var(--warn-bg);color:var(--warn-fg);border-color:var(--warn-line)}
+  .note.err{background:var(--err-bg);color:var(--err-fg);border-color:var(--err-line)}
+  #band{display:none}
+  #band.on{display:block}
+  #band .bl{display:flex;gap:10px;align-items:flex-start}
+  #band .bt{flex:1 1 auto}
+
+  /* ---- ボタン ---- */
+  button{font-family:inherit;font-size:1em}
+  .btn{min-height:48px;min-width:48px;padding:10px 16px;cursor:pointer;border-radius:8px;font-weight:700;
+       background:var(--acc);color:var(--acc-fg);border:2px solid var(--acc)}
+  .btn.sub{background:#fff;color:var(--acc)}
+  .btn.small{min-height:44px;min-width:44px;padding:6px 12px;font-size:.95em;font-weight:400}
+  .btn[disabled],.btn[aria-disabled="true"]{background:#e8ecef;color:#5b6670;border-color:#9aa5b0;cursor:not-allowed;font-weight:400}
+  :focus-visible{outline:4px solid #b8560f;outline-offset:2px}
+
+  /* ---- 画面P ---- */
+  .pane{display:none}
+  .pane.on{display:block;flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden}
+  #paneP.on{display:flex;flex-direction:column;overflow-y:hidden}
+  #pBand{order:1;flex:0 0 auto}
+  #pScroll{order:2;flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden}
+  /* order:3＝見た目は いちばん下（親指の圏）。DOMでは いちばん先＝フォーカス順は 最上位 */
+  #pMain{order:3;flex:0 0 auto;background:var(--bg);padding-top:8px;border-top:2px solid var(--line)}
+  #btnKeep{display:block;width:100%;min-height:96px;font-size:1.5em;font-weight:700;line-height:1.3;
+           border-radius:12px;background:var(--acc);color:var(--acc-fg);border:3px solid #073d73;cursor:pointer}
+  #btnKeep.done{background:var(--ok-line);border-color:#0f5a2e}
+  #appendBox{margin-top:8px;border:2px solid var(--line);border-radius:8px;padding:8px}
+  #appendBox[hidden]{display:none}
+  #appendInput{width:100%;min-height:48px;font-size:1em;padding:8px 10px;border:2px solid var(--line);
+               border-radius:6px;background:#fff;color:var(--fg);font-family:inherit}
+  #appendInput[disabled]{background:#eef1f4;color:#5b6670}
+  .arow{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+  ul.plain{list-style:none;margin:.2em 0;padding:0}
+  ul.plain li{border:2px solid var(--line);border-radius:8px;padding:6px 10px;margin:6px 0;word-break:break-word}
+  .tm{color:var(--muted);font-size:.88em}
+  .satlist{display:flex;flex-direction:column;gap:8px}
+  .satlist a{display:block;min-height:48px;padding:12px 14px;border:2px solid var(--acc);border-radius:8px;
+             color:var(--acc);background:#fff;text-decoration:none;font-weight:700;word-break:break-word}
+
+  /* ---- 画面D ---- */
+  .row{border:2px solid var(--line);border-radius:8px;padding:8px 10px;margin:8px 0}
+  .row .head{display:flex;gap:8px;align-items:flex-start}
+  .row .head .sel{width:28px;height:28px;flex:0 0 auto;margin-top:10px}
+  .row .txt{font-weight:700;word-break:break-word;flex:1 1 auto}
+  .row .meta{color:var(--muted);font-size:.88em;word-break:break-all}
+  .row .ctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px}
+  .badge{display:inline-block;border:2px solid var(--line);border-radius:999px;padding:0 10px;font-size:.85em;font-weight:700}
+  .badge.st-raw{background:#eef2f7;color:#28323c;border-color:#6b7682}
+  .badge.st-structured{background:var(--warn-bg);color:var(--warn-fg);border-color:var(--warn-line)}
+  .badge.st-exported{background:var(--ok-bg);color:var(--ok-fg);border-color:var(--ok-line)}
+  .det{margin-top:8px;border-top:2px dashed var(--line);padding-top:8px}
+  .det label{display:block;font-weight:700;margin:.5em 0 .2em}
+  .det textarea{width:100%;min-height:64px;font-size:1em;padding:8px;border:2px solid var(--line);
+                border-radius:6px;font-family:inherit;background:#fff;color:var(--fg)}
+  .tidyOn header.hd{background:var(--warn-bg);border-bottom:3px solid var(--warn-line)}
+  #tidyBadge{display:none}
+  .tidyOn #tidyBadge{display:inline-block;background:var(--warn-line);color:#fff;border-radius:6px;
+                     padding:0 10px;font-size:.85em;font-weight:700;margin-left:8px}
+  #tidyPanel{border:3px solid var(--warn-line);background:var(--warn-bg);color:var(--warn-fg);
+             border-radius:8px;padding:10px 12px;margin:8px 0}
+  #tidyPanel[hidden]{display:none}
+
+  /* ---- 画面S ---- */
+  .fld{margin:.8em 0}
+  .fld label.t{display:block;font-weight:700;margin-bottom:.2em}
+  .fld input[type=text]{width:100%;min-height:48px;font-size:1em;padding:8px 10px;border:2px solid var(--line);
+                        border-radius:6px;background:#fff;color:var(--fg);font-family:inherit}
+  .radios{display:flex;gap:8px;flex-wrap:wrap}
+  .radios label{display:flex;align-items:center;gap:6px;min-height:48px;border:2px solid var(--line);
+                border-radius:8px;padding:0 12px;cursor:pointer;font-weight:700}
+  .radios input{width:24px;height:24px}
+  .chk{display:flex;align-items:flex-start;gap:10px;min-height:48px;padding:4px 0}
+  .chk input{width:26px;height:26px;margin-top:6px;flex:0 0 auto}
+  details{border:2px solid var(--line);border-radius:8px;margin:.8em 0;padding:0 10px}
+  details>summary{cursor:pointer;min-height:52px;display:flex;align-items:center;font-weight:700}
+  .kv{color:var(--muted);font-size:.9em;word-break:break-all}
+
+  /* ---- 下部タブ ---- */
+  nav.tabs{position:fixed;left:0;right:0;bottom:0;display:flex;background:#eef2f7;border-top:3px solid var(--line);z-index:20}
+  nav.tabs button{flex:1 1 0;min-height:var(--tabh);min-width:44px;border:0;border-right:2px solid var(--line);
+                  background:#eef2f7;color:var(--fg);cursor:pointer;font-size:.95em;padding:4px 2px;line-height:1.25}
+  nav.tabs button:last-child{border-right:0}
+  nav.tabs button[aria-selected="true"]{background:var(--acc);color:var(--acc-fg);font-weight:700}
+  nav.tabs button[aria-selected="true"]::before{content:"▶ "}
+  header.hd{flex:0 0 auto;background:var(--bg);padding-top:4px}
+  #band{flex:0 0 auto}
+  #stTests{flex:0 0 auto;max-height:45vh;overflow:auto;margin-top:10px}
+  #stTests:empty{display:none}
+  #stTests table{border-collapse:collapse;width:100%;font-size:.85em}
+  #stTests td,#stTests th{border:1px solid var(--line);padding:2px 5px;text-align:left;vertical-align:top}
+  @media (prefers-contrast:more){:root{--line:#000;--muted:#000}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hd">
+  <h1>現場ポケット<span id="tidyBadge">整理中</span></h1>
+</header>
+
+<div id="band" class="note" role="status" aria-live="polite">
+  <div class="bl"><div class="bt" id="bandText"></div>
+  <button type="button" class="btn small sub" id="bandClose">とじる</button></div>
+</div>
+<div id="live" class="sr" role="status" aria-live="polite"></div>
+
+<!-- ============ 画面P「ポケット」（現場相） ============ -->
+<section id="paneP" class="pane on" role="tabpanel" aria-labelledby="tabP">
+  <!-- DOM順=フォーカス順（主役ボタンが最上位）。見た目の位置はCSS order で親指の届く下側へ -->
+  <div id="pMain">
+    <button type="button" id="btnKeep">＋のこす</button>
+    <div id="appendBox" hidden>
+      <label for="appendInput">なにか かきますか？（かかなくても だいじょうぶ）</label>
+      <input type="text" id="appendInput" autocomplete="off" placeholder="れい：3ばん たなの ふだが やぶれている">
+      <div class="arow">
+        <button type="button" class="btn sub small" id="appendClose">とじる</button>
+        <span class="tm" id="appendHint"></span>
+      </div>
+    </div>
+  </div>
+  <div id="pBand"></div>
+  <div id="pScroll">
+  <div id="pRecent">
+    <h2>さいきんの 3けん</h2>
+    <p class="lead">みるだけの ばしょです。なおすのは「🗂つくえ」で できます。</p>
+    <ul class="plain" id="recentList"></ul>
+  </div>
+  <div id="pSat">
+    <h2>ほかの どうぐ</h2>
+    <div class="satlist" id="satList"></div>
+  </div>
+  </div>
+</section>
+
+<!-- ============ 画面D「つくえ」（机上相） ============ -->
+<section id="paneD" class="pane" role="tabpanel" aria-labelledby="tabD">
+  <h2>のこしたもの ぜんぶ</h2>
+  <p class="lead" id="deskCount"></p>
+  <div class="arow">
+    <button type="button" class="btn" id="btnExport">📤 ひかえを 書き出す</button>
+    <button type="button" class="btn sub" id="btnFire">🚀 購買サーチへ おくる</button>
+    <button type="button" class="btn sub" id="btnTidy" aria-pressed="false">🔓 整理モード</button>
+  </div>
+  <div id="tidyPanel" hidden role="group" aria-label="整理モードの かくにん">
+    <p>けすと もとに もどせません。さきに 📤ひかえを 書き出しましたか？</p>
+    <div class="arow">
+      <button type="button" class="btn" id="tidyExportFirst">📤 さきに書き出す</button>
+      <button type="button" class="btn sub" id="tidyStart">整理を はじめる</button>
+      <button type="button" class="btn sub small" id="tidyCancel">やめる</button>
+    </div>
+  </div>
+  <div id="deskList"></div>
+</section>
+
+<!-- ============ 画面S「せってい・❓」 ============ -->
+<section id="paneS" class="pane" role="tabpanel" aria-labelledby="tabS">
+  <h2>せってい</h2>
+  <div class="fld">
+    <label class="t" for="cfgDevice">この たんまつの なまえ</label>
+    <input type="text" id="cfgDevice" autocomplete="off">
+    <div class="arow">
+      <button type="button" class="btn small" id="cfgDeviceSave">なまえを ほぞん</button>
+      <span class="kv" id="devPrev"></span>
+    </div>
+  </div>
+  <div class="fld">
+    <span class="t">もじの おおきさ</span>
+    <div class="radios" role="radiogroup" aria-label="もじの おおきさ">
+      <label><input type="radio" name="fs" value="1" id="fs1">ふつう</label>
+      <label><input type="radio" name="fs" value="1.25" id="fs2">大</label>
+      <label><input type="radio" name="fs" value="1.5" id="fs3">特大</label>
+    </div>
+  </div>
+  <div class="fld">
+    <span class="t">あんぜんの さく</span>
+    <div class="chk">
+      <input type="checkbox" id="fenceOff">
+      <label for="fenceOff">まだ 書き出していない ものも けせるようにする（おすすめしません）</label>
+    </div>
+  </div>
+  <div class="fld">
+    <span class="t">アプリの ばん</span>
+    <p class="kv" id="verText"></p>
+    <button type="button" class="btn sub" id="btnUpdate">🔄 あたらしくする</button>
+  </div>
+  <details>
+    <summary>❓ つかいかた</summary>
+    <p>①「📥ポケット」の 大きな <b>＋のこす</b> を おすだけで、その ときの ことが のこります。<br>
+       なにも かかなくても だいじょうぶです。あとから なおせます。</p>
+    <p>② つくえに もどったら「🗂つくえ」を ひらいて、ぶんを たしたり ならべたり します。</p>
+    <p>③ さいごに <b>📤 ひかえを 書き出す</b> を おすと、ファイルが 1つ できます。<br>
+       その ファイルを かいしゃの パソコンで ひらけば、つづきが できます。</p>
+    <p>④ けすのは「🔓整理モード」を あけた ときだけです。<br>
+       まだ 書き出していない ものは、まちがって けさないように けせません。</p>
+    <p>⑤ ネットが なくても つかえます。データは この たんまつの なかだけに あります。</p>
+  </details>
+</section>
+
+<div id="stTests"></div>
+</div>
+
+<nav class="tabs" role="tablist" aria-label="がめんの きりかえ">
+  <button id="tabP" role="tab" aria-selected="true"  aria-controls="paneP">📥ポケット</button>
+  <button id="tabD" role="tab" aria-selected="false" aria-controls="paneD">🗂つくえ</button>
+  <button id="tabS" role="tab" aria-selected="false" aria-controls="paneS">⚙せってい</button>
+</nav>
+
+<script>
+"use strict";
+/* =========================================================================
+   §0 定数
+   ========================================================================= */
+/* GP_VERSION は「このHTML内の1箇所」だけで定義する。SWのキャッシュ名は
+   register('sw.js?v='+GP_VERSION) で渡した値から作る（二重定義しない=T18）。 */
+var GP_VERSION = "0.1.0";
+
+var K_QUEUE = "genba_pocket_queue_v1";
+var K_CFG   = "genba_pocket_cfg_v1";
+var K_SEQ   = "genba_pocket_expseq_v1";
+var APPEND_WINDOW_MS = 60000;   /* 追記できる窓＝起票から60秒（§2） */
+var FIRE_MAX = 3;               /* 🚀の上限（親書C3・E09） */
+var RECENT_N = 3;
+var RECENT_CHARS = 20;
+
+/* ✎編集ポイント: 衛星アプリ（ほかの どうぐ）の行き先。
+   ここに1行足すだけで ボタンが増えます。配布先の決定=Q-W2-6が未決のため、
+   第1版は「購買サーチ」1件のみ（設計書§9 残した穴(a)に従う）。 */
+var SATELLITES = [
+  { label: "🔎 購買サーチを ひらく", url: "https://gouchin0326-source.github.io/hoshi-apps/kobai/" }
+];
+/* ✎編集ポイント: 🚀の行き先（バス①＝#paste= の受け口） */
+var KOBAI_URL = "https://gouchin0326-source.github.io/hoshi-apps/kobai/";
+
+var GP = {
+  clock: { now: function(){ return Date.now(); } },   /* 時計の差し込み口（T11の時計偽装はここ） */
+  isOnline: function(){ return navigator.onLine !== false; },
+  openUrl: function(u){ location.assign(u); },
+  download: null,   /* 下で定義。選テストで差し替える */
+  storageOk: true,
+  busMode: "none"
+};
+
+/* =========================================================================
+   §1 状態
+   ========================================================================= */
+var queue = null;          /* {app,kind,version,device,items:[]} */
+var cfg = null;            /* {device,fontScale,fenceOff} */
+var tidyMode = false;      /* 整理モード＝メモリのみ（保存しない＝再読込で自動OFF） */
+var openAppendId = null;   /* 追記欄が開いている項目id */
+var appendDeadline = 0;
+var openDetailId = null;   /* 画面Dで展開中の項目id */
+var selected = {};         /* 画面Dの選択 */
+
+function newQueue(device){
+  return { app:"genba_pocket", kind:"capture_queue", version:1, device:device||"名無し端末", items:[] };
+}
+function defaultCfg(){ return { device:"名無し端末", fontScale:1, fenceOff:false }; }
+
+/* =========================================================================
+   §2 保存（fail-closed: 読めない・書けないときに成功したふりをしない）
+   ========================================================================= */
+function lsGet(k){
+  try { return window.localStorage.getItem(k); }
+  catch(e){ return { __err: String(e && e.message || e) }; }
+}
+function lsSet(k,v){
+  try { window.localStorage.setItem(k,v); return true; }
+  catch(e){ return String(e && e.message || e); }
+}
+function loadAll(){
+  var raw = lsGet(K_QUEUE);
+  if (raw && raw.__err){
+    GP.storageOk = false;
+    queue = newQueue(); cfg = defaultCfg();
+    band("err","この たんまつでは きろくが つかえません（"+raw.__err+"）。\nあんぜんの ために「＋のこす」を とめています。");
+    return;
+  }
+  var c = lsGet(K_CFG);
+  cfg = defaultCfg();
+  if (c && typeof c === "string"){
+    try {
+      var o = JSON.parse(c);
+      if (o && typeof o === "object"){
+        if (typeof o.device === "string" && o.device) cfg.device = o.device;
+        if (o.fontScale === 1 || o.fontScale === 1.25 || o.fontScale === 1.5) cfg.fontScale = o.fontScale;
+        cfg.fenceOff = (o.fenceOff === true);
+      }
+    } catch(e){ band("warn","せっていが よめませんでした。はじめの せっていで うごかします。"); }
+  }
+  if (raw == null || raw === ""){ queue = newQueue(cfg.device); return; }
+  var q = null;
+  try { q = JSON.parse(raw); } catch(e){ q = null; }
+  if (!q || typeof q !== "object" || !Array.isArray(q.items)){
+    /* こわれた記録を上書きしない＝書き込みを止めて、人に知らせる */
+    GP.storageOk = false;
+    queue = newQueue(cfg.device);
+    band("err","のこしたものの きろくが よめませんでした。\nうわがきしないように、書き込みを とめています。せんもんの ひとに みてもらってください。");
+    return;
+  }
+  queue = q;
+  queue.app = "genba_pocket"; queue.kind = "capture_queue"; queue.version = 1;
+  queue.device = cfg.device;
+}
+function saveQueue(){
+  if (!GP.storageOk) return "書き込みを とめています";
+  var r = lsSet(K_QUEUE, JSON.stringify(queue));
+  return (r === true) ? true : r;
+}
+function saveCfg(){
+  var r = lsSet(K_CFG, JSON.stringify(cfg));
+  return (r === true) ? true : r;
+}
+
+/* =========================================================================
+   §3 お知らせ帯（自動で消えない・タップで閉じる・aria-live）
+   ========================================================================= */
+function band(kind, text){
+  var b = document.getElementById("band");
+  b.className = "note on " + (kind === "err" ? "err" : kind === "ok" ? "ok" : "warn");
+  document.getElementById("bandText").textContent = text;
+}
+function bandClear(){
+  var b = document.getElementById("band");
+  b.className = "note"; document.getElementById("bandText").textContent = "";
+}
+function say(t){ document.getElementById("live").textContent = t; }
+
+/* =========================================================================
+   §4 スキーマ検証（W2-2の BusVerify を使う。無ければ控えめな内蔵版）
+   ========================================================================= */
+var STATUSES = ["raw","structured","exported"];
+var SOURCES  = ["manual","share","paste","photo_ocr"];
+var TYPES    = ["text","url","price_item"];
+
+function fallbackVerify(obj, kind){
+  var errs = [];
+  function e(code,path,msg){ errs.push({code:code,path:path,message:msg}); }
+  if (!obj || typeof obj !== "object"){ e("E02","(root)","かたちが ちがいます"); return {ok:false,errors:errs}; }
+  if (kind === "c1"){
+    if (obj._batch !== true) e("E01","_batch","_batch が ありません");
+    if (!Array.isArray(obj.items)) e("E01","items","items が ありません");
+    else if (obj.items.length > 3) e("E09","items","おくれるのは 3けんまでです");
+  } else {
+    if (obj.app !== "genba_pocket") e("E01","app","app が ちがいます");
+    if (typeof obj.kind !== "string" || !obj.kind) e("E01","kind","kind が ありません");
+    if (typeof obj.version !== "number") e("E01","version","version が ありません");
+    if (!Array.isArray(obj.items)) e("E01","items","items が ありません");
+  }
+  var items = Array.isArray(obj.items) ? obj.items : [];
+  var seen = {};
+  for (var i=0;i<items.length;i++){
+    var it = items[i], p = "items["+i+"]";
+    if (!it || typeof it !== "object"){ e("E02",p,"かたちが ちがいます"); continue; }
+    if (kind === "c1") continue;                       /* C1形の要素キーは型検査どまり（兄弟書の穴(a)） */
+    ["id","capturedAt","source","type","raw","status"].forEach(function(k){
+      if (!(k in it)) e("E01", p+"."+k, k+" が ありません");
+    });
+    if (typeof it.raw !== "string") e("E02", p+".raw","raw は もじ です");
+    if (SOURCES.indexOf(it.source) < 0) e("E10", p+".source","source が しりません: "+it.source);
+    if (TYPES.indexOf(it.type) < 0)     e("E06", p+".type","type が しりません: "+it.type);
+    if (STATUSES.indexOf(it.status) < 0) e("E07", p+".status","status が つかえません: "+it.status);
+    if (isNaN(Date.parse(it.capturedAt))) e("E08", p+".capturedAt","ひづけが よめません");
+    if (seen[it.id]) e("E04", p+".id","おなじ id が 2かい あります"); seen[it.id] = 1;
+    if (typeof it.raw === "string" && it.raw.length > 64*1024) e("E03", p+".raw","ながすぎます");
+  }
+  return { ok: errs.length === 0, errors: errs };
+}
+function verifyPayload(obj, kind){
+  var bv = (typeof globalThis !== "undefined") ? globalThis.BusVerify : null;
+  if (bv && typeof bv.verify === "function"){
+    GP.busMode = "busverify";
+    try { var r = bv.verify(obj, kind); if (r && typeof r.ok === "boolean") return r; }
+    catch(err){ return { ok:false, errors:[{code:"E00",path:"(verify)",message:"検証が とちゅうで とまりました: "+err.message}] }; }
+  }
+  GP.busMode = "fallback";
+  return fallbackVerify(obj, kind);
+}
+
+/* =========================================================================
+   §5 端末名のサニタイズ と 📤ファイル名（設計書§5）
+   ========================================================================= */
+function sanitizeDevice(name){
+  var s = String(name == null ? "" : name);
+  s = s.replace(/[\/\\:\*\?"<>\|\.]/g, "");                       /* 記号は のぞく */
+  s = s.replace(/\s+/g, "_");                                     /* 空白は _ に */
+  s = s.replace(/[^0-9A-Za-zぁ-ゟ゠-ヿ一-鿿ー_-]/g, "");
+  s = s.slice(0,20);
+  if (!s) s = "nanashi";
+  return s;
+}
+function pad(n){ return (n<10?"0":"")+n; }
+function stampYmdHm(d){
+  return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+"_"+pad(d.getHours())+pad(d.getMinutes());
+}
+function exportFileName(){
+  var d = new Date(GP.clock.now());
+  var base = "genba_" + sanitizeDevice(cfg.device) + "_" + stampYmdHm(d);
+  var raw = lsGet(K_SEQ), prev = null;
+  if (raw && typeof raw === "string"){ try { prev = JSON.parse(raw); } catch(e){ prev = null; } }
+  var n = (prev && prev.base === base) ? (prev.n + 1) : 1;
+  lsSet(K_SEQ, JSON.stringify({ base: base, n: n }));
+  return base + (n > 1 ? ("_" + n) : "") + ".json";
+}
+/* 書き出す ファイルの なかみ。
+   ひかえ（控え）は「書き出した ものの ひかえ」なので、中の status も exported に そろえる。
+   ＝ファイルと キューが くいちがわない（W2-2の diff検査 E21 とも 合う）。
+   ファイルが できなかった ときは キューを 進めない＝両方 そのまま（fail-closed）。 */
+function buildExport(){
+  return {
+    app: "genba_pocket", kind: "capture_queue", version: 1,
+    device: cfg.device,
+    exportedAt: new Date(GP.clock.now()).toISOString(),
+    items: queue.items.map(function(x){
+      var c = JSON.parse(JSON.stringify(x));
+      c.status = "exported";
+      return c;
+    })
+  };
+}
+GP.download = function(name, text){
+  var blob = new Blob([text], { type:"application/json" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url; a.download = name; a.rel = "noopener";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+  return true;
+};
+
+/* =========================================================================
+   §6 起票（法則3＝確定後送り）
+   ========================================================================= */
+function newId(now){
+  return "gp-" + now + "-" + String(Math.floor(Math.random()*9000)+1000);
+}
+function addItem(o){
+  var now = GP.clock.now();
+  var it = {
+    id: newId(now),
+    capturedAt: new Date(now).toISOString(),
+    source: o.source || "manual",
+    type: o.type || "text",
+    raw: typeof o.raw === "string" ? o.raw : "",
+    extracted: (o.extracted !== undefined) ? o.extracted : null,
+    status: "raw",
+    note: ""
+  };
+  var before = queue.items.slice();
+  queue.items.push(it);
+  var r = saveQueue();
+  if (r !== true){
+    queue.items = before;                       /* 成功したふりをしない */
+    band("err","のこせませんでした（"+r+"）。\nもういちど おしてください。だめなら「🗂つくえ」で 📤書き出して ください。");
+    return null;
+  }
+  return it;
+}
+function onKeep(){
+  bandClear();
+  if (!GP.storageOk){
+    band("err","いま きろくが つかえないので のこせません。せんもんの ひとに みてもらってください。");
+    return;
+  }
+  var it = addItem({ source:"manual", type:"text", raw:"" });
+  if (!it) { renderAll(); return; }
+  try { if (navigator.vibrate) navigator.vibrate(30); } catch(e){}
+  var b = document.getElementById("btnKeep");
+  b.classList.add("done"); b.textContent = "のこした ✓";
+  say("のこしました");
+  setTimeout(function(){ b.classList.remove("done"); b.textContent = "＋のこす"; }, 1500);
+  openAppendId = it.id;
+  appendDeadline = GP.clock.now() + APPEND_WINDOW_MS;
+  var box = document.getElementById("appendBox");
+  box.hidden = false;
+  var inp = document.getElementById("appendInput");
+  inp.value = ""; inp.disabled = false;
+  document.getElementById("appendHint").textContent = "60びょうの あいだ、この 1けんだけ なおせます";
+  renderAll();
+}
+function commitAppend(){
+  if (!openAppendId) return;
+  var inp = document.getElementById("appendInput");
+  var v = inp.value;
+  if (GP.clock.now() > appendDeadline){
+    inp.disabled = true;
+    document.getElementById("appendHint").textContent = "60びょうが すぎました";
+    band("warn","60びょうが すぎたので、ここでは なおせません。\n「🗂つくえ」で メモを たせます（もとの ぶんは そのままです）。");
+    return false;
+  }
+  var it = findItem(openAppendId);
+  if (!it) return false;
+  var old = it.raw;
+  it.raw = v;
+  var r = saveQueue();
+  if (r !== true){ it.raw = old; band("err","かきくわえを ほぞんできませんでした（"+r+"）。"); return false; }
+  return true;
+}
+function closeAppend(){
+  openAppendId = null; appendDeadline = 0;
+  var box = document.getElementById("appendBox");
+  box.hidden = true;
+  document.getElementById("appendInput").value = "";
+}
+function findItem(id){
+  for (var i=0;i<queue.items.length;i++) if (queue.items[i].id === id) return queue.items[i];
+  return null;
+}
+
+/* =========================================================================
+   §7 受け口（C4）: Web Share Target（?title=&text=&url=） と #paste=
+   ========================================================================= */
+function intakeShare(){
+  var p = new URLSearchParams(location.search);
+  var t = p.get("title"), x = p.get("text"), u = p.get("url");
+  if (!t && !x && !u) return;
+  var raw = [t,x,u].filter(function(s){ return !!s; }).join("\n");
+  var it = addItem({ source:"share", type: (u && !x && !t) ? "url" : "text", raw: raw });
+  if (it){ band("ok","のこした ✓（ほかの アプリから うけとりました）"); }
+  cleanUrl();
+}
+function intakePaste(){
+  var h = location.hash || "";
+  if (h.indexOf("#paste=") !== 0) return;
+  var body = h.slice("#paste=".length);
+  var obj = null;
+  try { obj = JSON.parse(decodeURIComponent(body)); }
+  catch(e){
+    band("err","うけとった データが よめませんでした。\nりゆう: かたちが こわれています。のこしていません。");
+    cleanUrl(); return;
+  }
+  var v = verifyPayload(obj, "c1");
+  if (!v.ok){
+    var lines = (v.errors||[]).slice(0,3).map(function(er){ return "・"+er.code+" "+er.path+" "+er.message; }).join("\n");
+    band("err","うけとった データを のこしていません。\nりゆう:\n"+lines);
+    cleanUrl(); return;
+  }
+  var n = 0;
+  (obj.items||[]).forEach(function(x){
+    var txt = [x.title, (x.price!=null? String(x.price)+"円" : null), x.site, x.partNo].filter(function(s){return !!s;}).join(" / ");
+    if (addItem({ source:"paste", type:"price_item", raw: txt || "(なまえ なし)", extracted: x })) n++;
+  });
+  band(n ? "ok" : "err", n ? ("のこした ✓ "+n+"けん うけとりました") : "1けんも のこせませんでした。");
+  cleanUrl();
+}
+function cleanUrl(){
+  try {
+    var base = location.pathname + (location.search.indexOf("selftest") >= 0 ? "?selftest=1" : "");
+    history.replaceState(null, "", base);
+  } catch(e){}
+}
+
+/* =========================================================================
+   §8 えがく
+   ========================================================================= */
+function esc(s){ return String(s == null ? "" : s); }   /* textContent専用＝innerHTML直挿しはしない（T4） */
+function hhmm(iso){
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return "??:??";
+  return pad(d.getMonth()+1)+"/"+pad(d.getDate())+" "+pad(d.getHours())+":"+pad(d.getMinutes());
+}
+var SRC_EMOJI = { manual:"✏", share:"📤", paste:"📎", photo_ocr:"📷" };
+var ST_LABEL  = { raw:"そのまま", structured:"せいり済", exported:"書き出し済" };
+
+function renderRecent(){
+  var ul = document.getElementById("recentList");
+  ul.textContent = "";
+  var items = queue.items.slice(-RECENT_N).reverse();
+  if (!items.length){
+    var li0 = document.createElement("li");
+    li0.className = "tm"; li0.textContent = "まだ ありません。したの ＋のこす を おしてください。";
+    ul.appendChild(li0); return;
+  }
+  items.forEach(function(it){
+    var li = document.createElement("li");
+    var t = document.createElement("div"); t.className = "tm";
+    t.textContent = hhmm(it.capturedAt) + "　" + (SRC_EMOJI[it.source]||"・");
+    var b = document.createElement("div");
+    var head = esc(it.raw).slice(0, RECENT_CHARS);
+    b.textContent = head ? head + (it.raw.length > RECENT_CHARS ? "…" : "") : "（もじは ありません）";
+    li.appendChild(t); li.appendChild(b);
+    ul.appendChild(li);
+  });
+}
+function renderSat(){
+  var box = document.getElementById("satList");
+  box.textContent = "";
+  SATELLITES.forEach(function(s){
+    var a = document.createElement("a");
+    a.href = s.url; a.textContent = s.label; a.rel = "noopener"; a.target = "_blank";
+    box.appendChild(a);
+  });
+}
+function renderDesk(){
+  var host = document.getElementById("deskList");
+  host.textContent = "";
+  var n = queue.items.length;
+  document.getElementById("deskCount").textContent =
+    n ? (n + "けん あります。えらんで おくったり、ぜんぶを 書き出したり できます。") : "まだ ありません。";
+  var items = queue.items.slice().reverse();
+  items.forEach(function(it){
+    var row = document.createElement("div"); row.className = "row"; row.setAttribute("data-id", it.id);
+    var head = document.createElement("div"); head.className = "head";
+
+    var cb = document.createElement("input");
+    cb.type = "checkbox"; cb.className = "sel"; cb.checked = !!selected[it.id];
+    cb.setAttribute("aria-label", "この きろくを えらぶ");
+    cb.addEventListener("change", function(){ selected[it.id] = cb.checked; });
+    head.appendChild(cb);
+
+    var txt = document.createElement("button");
+    txt.type = "button"; txt.className = "txt"; txt.style.background = "transparent";
+    txt.style.border = "0"; txt.style.textAlign = "left"; txt.style.minHeight = "44px";
+    txt.style.font = "inherit"; txt.style.color = "inherit"; txt.style.cursor = "pointer";
+    txt.setAttribute("aria-expanded", openDetailId === it.id ? "true" : "false");
+    txt.textContent = (esc(it.raw).slice(0,40) || "（もじは ありません）");
+    txt.addEventListener("click", function(){
+      openDetailId = (openDetailId === it.id) ? null : it.id;
+      renderDesk();
+    });
+    head.appendChild(txt);
+    row.appendChild(head);
+
+    var meta = document.createElement("div"); meta.className = "meta";
+    meta.textContent = hhmm(it.capturedAt) + "　" + (SRC_EMOJI[it.source]||"・") + "　";
+    var bg = document.createElement("span");
+    bg.className = "badge st-" + it.status;
+    bg.textContent = ST_LABEL[it.status] || it.status;     /* 色だけに載せない＝文字も出す（AA） */
+    meta.appendChild(bg);
+    row.appendChild(meta);
+
+    if (tidyMode){
+      var ctl = document.createElement("div"); ctl.className = "ctl";
+      var del = document.createElement("button");
+      del.type = "button"; del.className = "btn small"; del.textContent = "🗑 けす";
+      del.setAttribute("data-del", it.id);
+      var locked = (it.status !== "exported") && !cfg.fenceOff;
+      if (locked){
+        del.disabled = true;
+        del.setAttribute("aria-disabled","true");
+        del.title = "まだ ひかえに 残っていません";
+        var why = document.createElement("span"); why.className = "tm";
+        why.textContent = "まだ ひかえに 残っていません";
+        ctl.appendChild(del); ctl.appendChild(why);
+      } else {
+        del.addEventListener("click", function(){ doDelete(it.id); });
+        ctl.appendChild(del);
+      }
+      row.appendChild(ctl);
+    }
+
+    if (openDetailId === it.id){
+      var det = document.createElement("div"); det.className = "det";
+      var l1 = document.createElement("label"); l1.textContent = "ぜんぶの ぶん（もとの ぶんは かえられません）";
+      var pre = document.createElement("div"); pre.className = "meta";
+      pre.style.whiteSpace = "pre-wrap"; pre.textContent = esc(it.raw) || "（もじは ありません）";
+      var l2 = document.createElement("label"); l2.textContent = "メモ（あとから いくらでも なおせます）";
+      var ta = document.createElement("textarea");
+      ta.value = esc(it.note);
+      ta.addEventListener("change", function(){
+        var old = it.note; it.note = ta.value;
+        var r = saveQueue();
+        if (r !== true){ it.note = old; ta.value = old; band("err","メモを ほぞんできませんでした（"+r+"）。"); }
+      });
+      det.appendChild(l1); det.appendChild(pre); det.appendChild(l2); det.appendChild(ta);
+
+      var l3 = document.createElement("label"); l3.textContent = "せいりした なかみ（かかなくても よい）";
+      var ta2 = document.createElement("textarea");
+      ta2.value = it.extracted ? JSON.stringify(it.extracted) : "";
+      ta2.setAttribute("placeholder", '{"title":"…","price":1200}');
+      ta2.addEventListener("change", function(){
+        var s = ta2.value.trim();
+        var old = it.extracted, oldSt = it.status;
+        if (!s){ it.extracted = null; }
+        else {
+          var o = null;
+          try { o = JSON.parse(s); } catch(e){
+            band("err","せいりした なかみの かたちが ちがいます（JSON）。ほぞんしていません。"); ta2.value = old?JSON.stringify(old):""; return;
+          }
+          it.extracted = o;
+          if (it.status === "raw") it.status = "structured";
+          if (it.type === "text") it.type = "price_item";
+        }
+        var r = saveQueue();
+        if (r !== true){ it.extracted = old; it.status = oldSt; band("err","ほぞんできませんでした（"+r+"）。"); }
+        renderDesk();
+      });
+      det.appendChild(l3); det.appendChild(ta2);
+      row.appendChild(det);
+    }
+    host.appendChild(row);
+  });
+}
+function renderSettings(){
+  document.getElementById("cfgDevice").value = cfg.device;
+  document.getElementById("devPrev").textContent = "ファイル名では: " + sanitizeDevice(cfg.device);
+  document.getElementById("fenceOff").checked = !!cfg.fenceOff;
+  var id = cfg.fontScale === 1.5 ? "fs3" : cfg.fontScale === 1.25 ? "fs2" : "fs1";
+  document.getElementById(id).checked = true;
+  document.getElementById("verText").textContent =
+    "ばん " + GP_VERSION + "　/　しらべかた: " + (GP.busMode === "busverify" ? "verify_bus.js あり" : "うちがわの かんたん検査");
+}
+function applyFontScale(){
+  document.documentElement.style.setProperty("--fs", (17 * (cfg.fontScale||1)) + "px");
+}
+function renderAll(){
+  renderRecent(); renderSat(); renderDesk(); renderSettings();
+  document.body.classList.toggle("tidyOn", tidyMode);
+  document.getElementById("btnTidy").setAttribute("aria-pressed", tidyMode ? "true" : "false");
+  document.getElementById("btnKeep").disabled = !GP.storageOk;
+}
+
+/* =========================================================================
+   §9 画面の きりかえ（タブ移動で 整理モードは 自動OFF）
+   ========================================================================= */
+function showPane(which){
+  if (tidyMode){ tidyMode = false; document.getElementById("tidyPanel").hidden = true; }
+  ["P","D","S"].forEach(function(k){
+    document.getElementById("pane"+k).classList.toggle("on", k === which);
+    document.getElementById("tab"+k).setAttribute("aria-selected", k === which ? "true" : "false");
+  });
+  renderAll();
+}
+
+/* =========================================================================
+   §10 📤 と 🚀 と 整理モード
+   ========================================================================= */
+function doExport(){
+  bandClear();
+  if (!queue.items.length){ band("warn","まだ なにも ありません。書き出す ものが ありません。"); return false; }
+  var obj = buildExport();
+  var v = verifyPayload(obj, "export");
+  if (!v.ok){
+    var lines = (v.errors||[]).slice(0,3).map(function(er){ return "・"+er.code+" "+er.path+" "+er.message; }).join("\n");
+    band("err","書き出せませんでした（なかみの かたちが ちがいます）。\n"+lines);
+    return false;
+  }
+  var name = exportFileName();
+  var okDl = false;
+  try { okDl = GP.download(name, JSON.stringify(obj, null, 1)); }
+  catch(e){ okDl = false; band("err","書き出せませんでした（"+e.message+"）。ファイルは できていません。"); }
+  if (!okDl) return false;
+  /* 成功した ときだけ status を すすめる */
+  var changed = 0;
+  queue.items.forEach(function(it){ if (it.status !== "exported"){ it.status = "exported"; changed++; } });
+  var r = saveQueue();
+  if (r !== true){
+    band("warn","ファイルは できましたが、「書き出し済」の しるしを ほぞんできませんでした（"+r+"）。");
+  } else {
+    band("ok","📤 書き出しました: " + name + "\n（" + queue.items.length + "けん）");
+  }
+  renderAll();
+  return true;
+}
+function doFire(){
+  bandClear();
+  var ids = Object.keys(selected).filter(function(k){ return selected[k]; });
+  if (!ids.length){ band("warn","まだ 1つも えらんでいません。ひだりの しかくを おして えらんでください。"); return false; }
+  if (ids.length > FIRE_MAX){
+    band("warn","おくれるのは "+FIRE_MAX+"けん までです。いま "+ids.length+"けん えらんでいます。\nへらしてから もういちど おしてください。");
+    return false;   /* 発射しない＝E09を 発射前に ふせぐ */
+  }
+  var picked = [], ng = [];
+  ids.forEach(function(id){
+    var it = findItem(id);
+    if (!it) return;
+    if (it.type === "price_item" && it.extracted) picked.push(it.extracted);
+    else ng.push(it);
+  });
+  if (!picked.length){
+    band("warn","おくれる ものが ありません。\n「せいりした なかみ」を かいた ものだけ おくれます。");
+    return false;
+  }
+  var payload = { _batch:true, items:picked };
+  var v = verifyPayload(payload, "c1");
+  if (!v.ok){
+    var lines = (v.errors||[]).slice(0,3).map(function(er){ return "・"+er.code+" "+er.path+" "+er.message; }).join("\n");
+    band("err","おくれませんでした。\nりゆう:\n"+lines);
+    return false;
+  }
+  var url = KOBAI_URL + "#paste=" + encodeURIComponent(JSON.stringify(payload));
+  if (ng.length) band("warn", ng.length + "けんは「せいりした なかみ」が ないので おくりません。");
+  GP.openUrl(url);
+  return true;
+}
+function doDelete(id){
+  var it = findItem(id);
+  if (!it) return;
+  if (it.status !== "exported" && !cfg.fenceOff){
+    band("warn","まだ ひかえに 残っていません。さきに 📤書き出して ください。"); return;
+  }
+  var before = queue.items.slice();
+  queue.items = queue.items.filter(function(x){ return x.id !== id; });
+  var r = saveQueue();
+  if (r !== true){ queue.items = before; band("err","けせませんでした（"+r+"）。"); return; }
+  delete selected[id];
+  if (openDetailId === id) openDetailId = null;
+  band("ok","1けん けしました。");
+  renderDesk();
+}
+
+/* =========================================================================
+   §11 SW更新（自動更新は しない）
+   ========================================================================= */
+function registerSW(){
+  if (location.protocol === "file:") return;              /* file:// はSW非対応＝だまって諦める */
+  if (!("serviceWorker" in navigator)) return;
+  try { navigator.serviceWorker.register("sw.js?v=" + GP_VERSION); } catch(e){}
+}
+function doUpdate(){
+  bandClear();
+  if (!GP.isOnline()){
+    band("warn","ネットに つながって いません（アプリは このまま つかえます）。");
+    return "offline";
+  }
+  if (location.protocol === "file:" || !("serviceWorker" in navigator)){
+    band("warn","この ひらきかたでは あたらしく できません（アプリは このまま つかえます）。");
+    return "nosw";
+  }
+  navigator.serviceWorker.getRegistration().then(function(reg){
+    if (!reg){ band("warn","いまが さいしん です。"); return; }
+    return reg.update().then(function(){
+      if (reg.waiting){
+        reg.waiting.postMessage({ type:"SKIP_WAITING" });
+        band("ok","あたらしく します。がめんを よみなおします…");
+        setTimeout(function(){ location.reload(); }, 800);
+      } else {
+        band("ok","いまが さいしん です。");
+      }
+    });
+  }).catch(function(e){
+    band("warn","たしかめられませんでした（アプリは このまま つかえます）。");
+  });
+  return "checking";
+}
+
+/* =========================================================================
+   §12 くみたて
+   ========================================================================= */
+function boot(){
+  loadAll();
+  applyFontScale();
+  if (window.__GP_BUSVERIFY_MISSING && !(globalThis.BusVerify)){
+    GP.busMode = "fallback";
+  }
+  document.getElementById("btnKeep").addEventListener("click", onKeep);
+  document.getElementById("appendInput").addEventListener("change", function(){ commitAppend(); renderAll(); });
+  document.getElementById("appendInput").addEventListener("blur", function(){ commitAppend(); renderAll(); });
+  document.getElementById("appendClose").addEventListener("click", function(){ commitAppend(); closeAppend(); renderAll(); });
+  document.getElementById("bandClose").addEventListener("click", bandClear);
+  document.getElementById("tabP").addEventListener("click", function(){ showPane("P"); });
+  document.getElementById("tabD").addEventListener("click", function(){ showPane("D"); });
+  document.getElementById("tabS").addEventListener("click", function(){ showPane("S"); });
+  document.getElementById("btnExport").addEventListener("click", doExport);
+  document.getElementById("btnFire").addEventListener("click", doFire);
+  document.getElementById("btnTidy").addEventListener("click", function(){
+    if (tidyMode){ tidyMode = false; renderAll(); return; }
+    document.getElementById("tidyPanel").hidden = false;
+  });
+  document.getElementById("tidyExportFirst").addEventListener("click", function(){
+    document.getElementById("tidyPanel").hidden = true; doExport();
+  });
+  document.getElementById("tidyStart").addEventListener("click", function(){
+    document.getElementById("tidyPanel").hidden = true; tidyMode = true; renderAll();
+  });
+  document.getElementById("tidyCancel").addEventListener("click", function(){
+    document.getElementById("tidyPanel").hidden = true;
+  });
+  document.getElementById("cfgDeviceSave").addEventListener("click", function(){
+    var v = document.getElementById("cfgDevice").value.trim() || "名無し端末";
+    cfg.device = v; queue.device = v;
+    var r1 = saveCfg(), r2 = saveQueue();
+    if (r1 !== true || r2 !== true){ band("err","なまえを ほぞんできませんでした。"); }
+    else band("ok","なまえを ほぞんしました: " + v + "（ファイル名では " + sanitizeDevice(v) + "）");
+    renderAll();
+  });
+  ["fs1","fs2","fs3"].forEach(function(id){
+    document.getElementById(id).addEventListener("change", function(){
+      cfg.fontScale = parseFloat(document.getElementById(id).value);
+      applyFontScale(); saveCfg();
+    });
+  });
+  document.getElementById("fenceOff").addEventListener("change", function(){
+    cfg.fenceOff = document.getElementById("fenceOff").checked;
+    saveCfg(); renderAll();
+    if (cfg.fenceOff) band("warn","あんぜんの さくを はずしました。まだ 書き出していない ものも けせます。");
+  });
+  document.getElementById("btnUpdate").addEventListener("click", doUpdate);
+
+  intakeShare();
+  intakePaste();
+  renderAll();
+  registerSW();
+
+  if (location.search.indexOf("selftest=1") >= 0 || location.hash.indexOf("selftest") >= 0){
+    if (window.runSelfTest) window.runSelfTest();
+  }
+}
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+else boot();
+
+/* 外から さわれる口（自己テスト用・ふだんは つかいません） */
+window.GP = GP;
+window.__gp = {
+  get queue(){ return queue; }, get cfg(){ return cfg; },
+  get tidyMode(){ return tidyMode; }, set tidyMode(v){ tidyMode = v; },
+  onKeep:onKeep, doExport:doExport, doFire:doFire, doUpdate:doUpdate, doDelete:doDelete,
+  showPane:showPane, renderAll:renderAll, buildExport:buildExport, exportFileName:exportFileName,
+  sanitizeDevice:sanitizeDevice, verifyPayload:verifyPayload, loadAll:loadAll,
+  intakePaste:intakePaste, intakeShare:intakeShare,
+  get selected(){ return selected; }, set selected(v){ selected = v; },
+  K_QUEUE:K_QUEUE, K_CFG:K_CFG, K_SEQ:K_SEQ, GP_VERSION:GP_VERSION
+};
+</script>
+
+<script>
+/* =========================================================================
+   埋込受入テスト T10-T20（設計書§6）＋親書T1/T4/T7の機械判定できる分
+   ?selftest=1 のときだけ走る。実データは いったん しまって、おわったら もどす。
+   ========================================================================= */
+window.runSelfTest = function(){
+  var R = [];
+  function t(id, name, fn){
+    var ok=false, msg="";
+    try { var r = fn(); ok = (r === true); if (r !== true) msg = String(r); }
+    catch(e){ ok=false; msg = "例外: " + (e && e.message); }
+    R.push({id:id, name:name, ok:ok, msg:msg});
+  }
+  var g = window.__gp;
+  var saved = {};
+  [g.K_QUEUE, g.K_CFG, g.K_SEQ].forEach(function(k){ saved[k] = localStorage.getItem(k); });
+  function reset(){
+    localStorage.removeItem(g.K_QUEUE); localStorage.removeItem(g.K_CFG); localStorage.removeItem(g.K_SEQ);
+    GP.clock.now = function(){ return Date.now(); };
+    g.loadAll(); g.selected = {}; g.tidyMode = false; g.showPane("P");
+    document.getElementById("appendBox").hidden = true;
+  }
+  function click(id){ document.getElementById(id).click(); }
+
+  /* ---- T10: 起動→＋のこす 1タップ→空起票が即時に残る ---- */
+  t("T10","＋のこす 1タップで 空起票が のこる", function(){
+    reset();
+    click("btnKeep");
+    var q = JSON.parse(localStorage.getItem(g.K_QUEUE));
+    if (!q || q.items.length !== 1) return "件数=" + (q?q.items.length:"null");
+    var it = q.items[0];
+    if (it.raw !== "") return "raw=" + JSON.stringify(it.raw);
+    if (it.status !== "raw") return "status=" + it.status;
+    if (it.source !== "manual" || it.type !== "text") return "source/type=" + it.source + "/" + it.type;
+    if (isNaN(Date.parse(it.capturedAt))) return "capturedAt異形";
+    return true;
+  });
+
+  /* ---- T11: 61秒後の追記では raw が変わらない ---- */
+  t("T11","61びょう後の 追記は 原文を かえない", function(){
+    reset();
+    var base = Date.now();
+    GP.clock.now = function(){ return base; };
+    click("btnKeep");
+    var id = g.queue.items[0].id;
+    GP.clock.now = function(){ return base + 61000; };
+    var inp = document.getElementById("appendInput");
+    inp.value = "あとから かいた";
+    inp.dispatchEvent(new Event("change"));
+    var q = JSON.parse(localStorage.getItem(g.K_QUEUE));
+    var it = q.items.filter(function(x){ return x.id === id; })[0];
+    if (!it) return "項目が ない";
+    if (it.raw !== "") return "rawが かわった: " + JSON.stringify(it.raw);
+    /* 60秒内なら 変わることも 確かめる（窓が死んでいないこと） */
+    GP.clock.now = function(){ return base + 5000; };
+    click("btnKeep");
+    var id2 = g.queue.items[1].id;
+    var inp2 = document.getElementById("appendInput");
+    inp2.value = "すぐ かいた";
+    inp2.dispatchEvent(new Event("change"));
+    var q2 = JSON.parse(localStorage.getItem(g.K_QUEUE));
+    var it2 = q2.items.filter(function(x){ return x.id === id2; })[0];
+    if (it2.raw !== "すぐ かいた") return "60秒内の 追記が きかない: " + JSON.stringify(it2.raw);
+    GP.clock.now = function(){ return Date.now(); };
+    return true;
+  });
+
+  /* ---- T12: 現場相に 削除/編集UIが 無い・整理OFFの画面Dにも 🗑が 無い ---- */
+  t("T12","画面Pに 削除/編集UIが 無い／整理OFFの画面Dに 🗑が 無い", function(){
+    reset();
+    click("btnKeep"); click("btnKeep");
+    g.showPane("P");
+    var p = document.getElementById("paneP");
+    if (p.querySelectorAll("[data-del]").length) return "画面Pに 🗑 がある";
+    /* 画面Pの入力は「いま作った1件の追記欄」だけ＝既存項目の編集UIは無い */
+    var ins = p.querySelectorAll("input,textarea");
+    for (var i=0;i<ins.length;i++){ if (ins[i].id !== "appendInput") return "画面Pに 想定外の入力欄: " + ins[i].id; }
+    if (p.querySelectorAll("textarea").length) return "画面Pに textarea がある";
+    g.showPane("D");
+    var d = document.getElementById("paneD");
+    if (d.querySelectorAll("[data-del]").length) return "整理OFFの 画面Dに 🗑 がある";
+    return true;
+  });
+
+  /* ---- T13: 整理ON→未exportedの🗑は無効・exportedのみ 消せる ---- */
+  t("T13","未書き出しは けせない／書き出し済だけ けせる", function(){
+    reset();
+    click("btnKeep");                          /* 1件目 */
+    var idA = g.queue.items[0].id;
+    var dl = GP.download; GP.download = function(){ return true; };
+    g.doExport();                              /* 1件目が exported になる */
+    GP.download = dl;
+    click("btnKeep");                          /* 2件目＝raw のまま */
+    var idB = g.queue.items[1].id;
+    g.showPane("D"); g.tidyMode = true; g.renderAll();
+    var dels = document.querySelectorAll("#paneD [data-del]");
+    if (dels.length !== 2) return "🗑の数=" + dels.length;
+    var byId = {}; Array.prototype.forEach.call(dels, function(b){ byId[b.getAttribute("data-del")] = b; });
+    if (!byId[idA] || byId[idA].disabled) return "書き出し済が けせない";
+    if (!byId[idB] || !byId[idB].disabled) return "未書き出しが けせてしまう";
+    byId[idA].click();
+    var q = JSON.parse(localStorage.getItem(g.K_QUEUE));
+    if (q.items.length !== 1 || q.items[0].id !== idB) return "削除の 結果が ちがう";
+    return true;
+  });
+
+  /* ---- T14: 整理ON→タブ移動→自動OFF ---- */
+  t("T14","タブを うつると 整理モードは 自動で OFF", function(){
+    reset();
+    click("btnKeep");
+    g.showPane("D"); g.tidyMode = true; g.renderAll();
+    if (!g.tidyMode) return "ONに ならない";
+    click("tabP");
+    if (g.tidyMode) return "タブ移動で OFFに ならない";
+    click("tabD");
+    if (document.querySelectorAll("#paneD [data-del]").length) return "もどったら 🗑が 残っている";
+    return true;
+  });
+
+  /* ---- T15: 📤の出力が 検証PASS＋対象が exported へ 前進 ---- */
+  t("T15","📤の出力が 検証PASS／status が exported へ 前進", function(){
+    reset();
+    click("btnKeep"); click("btnKeep");
+    var cap = null, dl = GP.download;
+    GP.download = function(name, text){ cap = { name:name, text:text }; return true; };
+    var ok = g.doExport();
+    GP.download = dl;
+    if (!ok || !cap) return "書き出しが 走らなかった";
+    var obj = JSON.parse(cap.text);
+    var v = g.verifyPayload(obj, "export");
+    if (!v.ok) return "検証FAIL: " + JSON.stringify(v.errors.slice(0,2));
+    if (!obj.app || !obj.kind || !obj.version || !obj.exportedAt) return "外枠の キーが たりない";
+    if (obj.items.length !== 2) return "件数=" + obj.items.length;
+    var q = JSON.parse(localStorage.getItem(g.K_QUEUE));
+    if (q.items.filter(function(x){ return x.status === "exported"; }).length !== 2) return "statusが 前進していない";
+    window.__GP_LAST_EXPORT = cap;           /* node側ハーネス検査に 渡すため 置いておく */
+    return true;
+  });
+
+  /* ---- T16: 端末名の記号が ファイル名から 消える ---- */
+  t("T16","端末名 a/b:c*d → ファイル名から 記号が 消える", function(){
+    reset();
+    g.cfg.device = "a/b:c*d";
+    var s = g.sanitizeDevice(g.cfg.device);
+    if (s !== "abcd") return "sanitize=" + s;
+    var fn = g.exportFileName();
+    if (/[\/\\:\*\?"<>\|]/.test(fn.replace(/\.json$/,""))) return "記号が のこる: " + fn;
+    if (fn.indexOf("genba_abcd_") !== 0) return "ファイル名=" + fn;
+    if (!/^genba_abcd_\d{8}_\d{4}\.json$/.test(fn)) return "形が ちがう: " + fn;
+    var fn2 = g.exportFileName();            /* 同じ分の 2回目＝_2 */
+    if (fn2.indexOf("_2.json") < 0) return "同分の 2回目に _2 が つかない: " + fn2;
+    if (g.sanitizeDevice("///") !== "nanashi") return "全滅時の nanashi が でない";
+    if (g.sanitizeDevice("あ い") !== "あ_い") return "空白→_ に ならない";
+    return true;
+  });
+
+  /* ---- T17: 4件選択→発射されず 理由表示 ---- */
+  t("T17","4けん えらぶと おくらず 理由が でる", function(){
+    reset();
+    var fired = null, ou = GP.openUrl;
+    GP.openUrl = function(u){ fired = u; };
+    var sel = {};
+    for (var i=0;i<4;i++){
+      click("btnKeep");
+      var it = g.queue.items[i];
+      it.type = "price_item"; it.extracted = { title:"しな"+i, price:100+i };
+      sel[it.id] = true;
+    }
+    g.selected = sel;
+    var r = g.doFire();
+    GP.openUrl = ou;
+    if (fired) return "おくられてしまった: " + fired.slice(0,40);
+    if (r !== false) return "戻り値=" + r;
+    var bt = document.getElementById("bandText").textContent;
+    if (bt.indexOf("3けん") < 0) return "理由が でていない: " + bt;
+    if (!document.getElementById("band").classList.contains("on")) return "帯が 出ていない";
+    return true;
+  });
+
+  /* ---- T18: GP_VERSION が 1定義（HTML内）で SWへ 引き渡される ---- */
+  t("T18","GP_VERSION は 1定義・SW登録URLへ 引き渡す形", function(){
+    if (typeof g.GP_VERSION !== "string" || !g.GP_VERSION) return "GP_VERSIONが ない";
+    var src = document.documentElement.outerHTML;
+    var lit = src.split('"' + g.GP_VERSION + '"').length - 1;
+    if (lit !== 1) return "HTML内の 版リテラルが " + lit + "個（1個で なければ 二重定義）";
+    if (src.indexOf('register("sw.js?v=" + GP_VERSION)') < 0) return "SW登録に GP_VERSION を 渡していない";
+    return true;   /* sw.js側が ?v= を 使っているかは bash の grep で 確かめる */
+  });
+
+  /* ---- T19: オフラインで 🔄→ エラーダイアログでなく 1行案内・続行できる ---- */
+  t("T19","オフラインの 🔄 は 1行案内・アプリは つづく", function(){
+    reset();
+    var io = GP.isOnline;
+    GP.isOnline = function(){ return false; };
+    var r = g.doUpdate();
+    GP.isOnline = io;
+    if (r !== "offline") return "戻り値=" + r;
+    var bt = document.getElementById("bandText").textContent;
+    if (bt.indexOf("ネットに つながって いません") < 0) return "案内が ちがう: " + bt;
+    if (!document.getElementById("band").classList.contains("on")) return "帯が 出ていない";
+    click("btnKeep");                                  /* そのまま つかえる */
+    if (g.queue.items.length !== 1) return "更新のあと 起票できない";
+    return true;
+  });
+
+  /* ---- T20: 特大でも 主役ボタンと 3タブが 画面内・44px以上 ---- */
+  t("T20","特大でも 主役ボタン・3タブが 画面内で 44px以上", function(){
+    reset();
+    g.cfg.fontScale = 1.5;
+    document.documentElement.style.setProperty("--fs", "25.5px");
+    g.showPane("P"); g.renderAll();
+    var w = document.documentElement.clientWidth, h = window.innerHeight;
+    var kb = document.getElementById("btnKeep").getBoundingClientRect();
+    var tabs = ["tabP","tabD","tabS"].map(function(id){ return document.getElementById(id).getBoundingClientRect(); });
+    var res = "";
+    if (kb.height < 44) res += "主役ボタン高=" + Math.round(kb.height) + " ";
+    if (kb.bottom > h + 1 || kb.top < 0) res += "主役ボタンが 画面外(top=" + Math.round(kb.top) + ",bottom=" + Math.round(kb.bottom) + ",h=" + h + ") ";
+    tabs.forEach(function(r,i){
+      if (r.height < 44) res += "タブ" + i + "高=" + Math.round(r.height) + " ";
+      if (r.width  < 44) res += "タブ" + i + "幅=" + Math.round(r.width) + " ";
+      if (r.bottom > h + 1) res += "タブ" + i + "が 画面外 ";
+    });
+    if (document.documentElement.scrollWidth > w + 1)
+      res += "横スクロール(scrollW=" + document.documentElement.scrollWidth + ">clientW=" + w + ") ";
+    /* 中で スクロールする 箱も それぞれ 横あふれを みる（overflow:hidden で 隠れないように） */
+    ["pScroll","paneD","paneS","stTests"].forEach(function(id){
+      var el = document.getElementById(id);
+      if (!el) return;
+      var was = el.classList.contains("on") || id === "pScroll" || id === "stTests";
+      if (!was) el.classList.add("on");
+      if (el.scrollWidth > el.clientWidth + 1) res += id + "が 横あふれ(" + el.scrollWidth + ">" + el.clientWidth + ") ";
+      if (!was) el.classList.remove("on");
+    });
+    document.documentElement.style.setProperty("--fs", "17px");
+    g.cfg.fontScale = 1;
+    return res ? res.trim() : true;
+  });
+
+  /* ---- 親書T1（再読込後も残る）・T4（XSS）・T7（現場相 append-only）の機械判定分 ---- */
+  t("P-T1","再読込しても のこる（localStorageから 読み直し）", function(){
+    reset();
+    click("btnKeep");
+    var id = g.queue.items[0].id;
+    g.loadAll();
+    if (!g.queue.items.length || g.queue.items[0].id !== id) return "読み直しで きえた";
+    return true;
+  });
+  t("P-T4","<script>を 入れても 発火せず 文字として でる", function(){
+    reset();
+    window.__xss = 0;
+    var payload = "<img src=x onerror=\"window.__xss=1\"><scr"+"ipt>window.__xss=1</scr"+"ipt>";
+    click("btnKeep");
+    var inp = document.getElementById("appendInput");
+    inp.value = payload; inp.dispatchEvent(new Event("change"));
+    g.showPane("D"); g.renderAll();
+    if (window.__xss === 1) return "発火した";
+    if (document.querySelectorAll("#paneD img").length) return "imgタグが 生えた";
+    var txt = document.getElementById("paneD").textContent;
+    if (txt.indexOf("onerror") < 0) return "文字として 出ていない";
+    return true;
+  });
+  /* 親書T3: #paste= 正形は のる／異形は 弾いて 理由を 出す（黙殺しない） */
+  t("P-T3","#paste= 正形は のる／異形は 弾いて 理由が でる", function(){
+    reset();
+    var good = { _batch:true, items:[{ title:"ボルト M8", price:120, site:"みせA" }] };
+    history.replaceState(null, "", location.pathname + "#paste=" + encodeURIComponent(JSON.stringify(good)));
+    g.intakePaste();
+    if (g.queue.items.length !== 1) return "正形が のらない: " + g.queue.items.length;
+    var it = g.queue.items[0];
+    if (it.source !== "paste") return "source=" + it.source;
+    if (!it.extracted || it.extracted.price !== 120) return "extractedが 入っていない";
+    if (it.raw.indexOf("ボルト M8") < 0) return "rawが つくられていない: " + it.raw;
+    if (location.hash !== "") return "hashが のこっている（再読込で 二重に のる）";
+
+    /* 変異注入1: _batch 欠落 */
+    var bad1 = { items:[{ title:"こわれた" }] };
+    history.replaceState(null, "", location.pathname + "#paste=" + encodeURIComponent(JSON.stringify(bad1)));
+    g.intakePaste();
+    if (g.queue.items.length !== 1) return "異形1が のってしまった";
+    var bt = document.getElementById("bandText").textContent;
+    if (!bt || bt.indexOf("りゆう") < 0) return "異形1の 理由が でない: " + bt;
+
+    /* 変異注入2: 4件＝E09（URL長の 上限） */
+    var bad2 = { _batch:true, items:[1,2,3,4].map(function(n){ return { title:"しな"+n, price:n }; }) };
+    history.replaceState(null, "", location.pathname + "#paste=" + encodeURIComponent(JSON.stringify(bad2)));
+    g.intakePaste();
+    if (g.queue.items.length !== 1) return "異形2(4件)が のってしまった: " + g.queue.items.length;
+
+    /* 変異注入3: JSONとして こわれている */
+    history.replaceState(null, "", location.pathname + "#paste=%7B%22_batch%22");
+    g.intakePaste();
+    if (g.queue.items.length !== 1) return "こわれたJSONが のってしまった";
+    if (document.getElementById("bandText").textContent.indexOf("よめませんでした") < 0) return "こわれたJSONの 理由が でない";
+    return true;
+  });
+  t("P-T7","現場相のUIからは 既存項目を 消せない（関数呼びでも 柵が 効く）", function(){
+    reset();
+    click("btnKeep");
+    var id = g.queue.items[0].id;
+    g.doDelete(id);                       /* status=raw なので 柵で 止まるはず */
+    if (g.queue.items.length !== 1) return "柵を すりぬけて 消えた";
+    return true;
+  });
+
+  /* ---- 後片づけ＝もとの データに もどす ---- */
+  reset();
+  Object.keys(saved).forEach(function(k){
+    if (saved[k] === null) localStorage.removeItem(k); else localStorage.setItem(k, saved[k]);
+  });
+  g.loadAll(); g.renderAll();
+
+  /* ---- 結果表示 ---- */
+  var pass = R.filter(function(x){ return x.ok; }).length;
+  var host = document.getElementById("stTests");
+  host.textContent = "";
+  var h = document.createElement("h2"); h.textContent = "自己テスト " + pass + "/" + R.length;
+  host.appendChild(h);
+  var tb = document.createElement("table");
+  var tr0 = document.createElement("tr");
+  ["#","内容","結果","メモ"].forEach(function(s){ var th=document.createElement("th"); th.textContent=s; tr0.appendChild(th); });
+  tb.appendChild(tr0);
+  R.forEach(function(x){
+    var tr = document.createElement("tr");
+    [x.id, x.name, x.ok?"PASS":"FAIL", x.msg||""].forEach(function(s){
+      var td = document.createElement("td"); td.textContent = s; tr.appendChild(td);
+    });
+    tb.appendChild(tr);
+  });
+  host.appendChild(tb);
+  window.__GP_TEST_RESULT = { pass:pass, total:R.length, rows:R, busMode:GP.busMode };
+  return window.__GP_TEST_RESULT;
+};
+</script>
+</body>
+</html>

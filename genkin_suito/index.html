@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>現金管理ツール: 小口現金の入出金記録</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🪙</text></svg>'>
+  <style>
+    /* 全体設計（インクルーシブ & レスポンシブ） */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans JP", sans-serif;
+      font-size: 20px; /* 文字は20px以上 */
+      line-height: 1.6;
+      background-color: #f4f6f9;
+      color: #1a1a1a; /* コントラスト確保 */
+      padding: 20px;
+    }
+    :focus-visible {
+      outline: 4px solid #0056b3; /* キーボード操作用のフォーカス強調 */
+      outline-offset: 2px;
+    }
+
+    /* ヘッダー */
+    header {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      font-size: 24px;
+      font-weight: bold;
+    }
+    .header-emoji {
+      font-size: 40px;
+    }
+
+    /* ボタン類 */
+    .btn {
+      font-size: 20px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px; /* タップターゲット確保 */
+      text-decoration: none;
+    }
+    .btn-primary {
+      background-color: #0056b3;
+      color: #ffffff;
+    }
+    .btn-primary:hover, .btn-primary:focus {
+      background-color: #003d80;
+    }
+    .btn-secondary {
+      background-color: #495057;
+      color: #ffffff;
+    }
+    .btn-secondary:hover, .btn-secondary:focus {
+      background-color: #343a40;
+    }
+    .btn-accent {
+      background-color: #d9381e;
+      color: #ffffff;
+    }
+    .btn-accent:hover, .btn-accent:focus {
+      background-color: #a71d05;
+    }
+    .btn-help {
+      background-color: #17a2b8;
+      color: #ffffff;
+    }
+    .btn-help:hover, .btn-help:focus {
+      background-color: #117a8b;
+    }
+
+    /* メインレイアウト */
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* フォーム・カードコンポーネント */
+    .card {
+      background: #ffffff;
+      padding: 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .card-title {
+      font-size: 22px;
+      margin-bottom: 15px;
+      border-left: 6px solid #0056b3;
+      padding-left: 10px;
+    }
+
+    .grid-form {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    label {
+      font-weight: bold;
+    }
+    input, select {
+      font-size: 20px;
+      padding: 10px;
+      border: 2px solid #6c757d;
+      border-radius: 6px;
+      width: 100%;
+      background-color: #ffffff;
+      color: #1a1a1a;
+    }
+    input:focus, select:focus {
+      border-color: #0056b3;
+    }
+
+    /* エラー表示 */
+    .error-msg {
+      display: block;
+      min-height: 28px;
+      font-size: 18px;
+      font-weight: bold;
+      margin-top: 5px;
+    }
+
+    /* 集計表示エリア */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 10px;
+    }
+    .summary-card {
+      background-color: #e9ecef;
+      padding: 15px;
+      border-radius: 6px;
+      text-align: center;
+      border: 2px solid #dee2e6;
+    }
+    .summary-val {
+      font-size: 28px;
+      font-weight: bold;
+    }
+    .val-plus { color: #0056b3; }
+    .val-minus { color: #d9381e; }
+
+    /* テーブル・一覧エリア */
+    .table-container {
+      overflow-x: auto;
+      margin-top: 15px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    th, td {
+      padding: 12px 15px;
+      border-bottom: 2px solid #dee2e6;
+    }
+    th {
+      background-color: #343a40;
+      color: #ffffff;
+    }
+    tr:nth-child(even) {
+      background-color: #f8f9fa;
+    }
+    .text-right {
+      text-align: right;
+    }
+    .badge-in {
+      background-color: #cce5ff;
+      color: #004085;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    .badge-out {
+      background-color: #f8d7da;
+      color: #721c24;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+
+    /* フィルターエリア用 */
+    .filter-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    /* エクスポート・アクションエリア */
+    .actions {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-top: 15px;
+    }
+
+    /* モーダル表示 (簡易マニュアル) */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 15px;
+    }
+    .modal-content {
+      background: #ffffff;
+      padding: 30px;
+      border-radius: 8px;
+      max-width: 650px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .modal-content h2 {
+      margin-bottom: 15px;
+      border-bottom: 3px solid #17a2b8;
+      padding-bottom: 5px;
+    }
+    .modal-content ol {
+      margin-left: 25px;
+      margin-bottom: 20px;
+    }
+    .modal-content li {
+      margin-bottom: 10px;
+    }
+
+    /* フッター */
+    footer {
+      margin-top: 40px;
+      background-color: #e9ecef;
+      padding: 20px;
+      border-radius: 8px;
+      font-size: 18px;
+      color: #495057;
+      text-align: center;
+    }
+
+    /* スマホ対応のレイアウト微調整 */
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      .grid-form {
+        grid-template-columns: 1fr;
+      }
+      .filter-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      th, td {
+        padding: 8px;
+        font-size: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-title" aria-label="アプリタイトル">
+      <span class="header-emoji" aria-hidden="true">🪙</span>
+      <h1>現金管理ツール: 小口現金の入出金記録</h1>
+    </div>
+    <button class="btn btn-help" id="btn-open-help" aria-haspopup="dialog" aria-controls="help-modal">❓ 使い方</button>
+  </header>
+
+  <main>
+    <section class="card" aria-labelledby="form-section-title">
+      <h2 id="form-section-title" class="card-title">取引の登録</h2>
+      <form id="record-form" novalidate>
+        <div class="grid-form">
+          <div class="form-group">
+            <label for="input-date">日付 <span style="color:red;">*</span></label>
+            <input type="date" id="input-date" required>
+          </div>
+          <div class="form-group">
+            <label for="input-desc">摘要（10文字以内）</label>
+            <input type="text" id="input-desc" maxlength="10" placeholder="例: お茶代">
+          </div>
+          <div class="form-group">
+            <label for="input-type">区分</label>
+            <select id="input-type">
+              <option value="入金">入金</option>
+              <option value="出金">出金</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="input-amount">金額</label>
+            <input type="number" id="input-amount" min="0" value="0" step="1">
+          </div>
+        </div>
+        <div>
+          <span id="form-error" class="error-msg" style="color:red;" aria-live="polite"></span>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">登録</button>
+      </form>
+    </section>
+
+    <section class="card" aria-labelledby="summary-section-title">
+      <h2 id="summary-section-title" class="card-title">現在の集計結果（絞り込み反映後）</h2>
+      <div class="summary-grid">
+        <div class="summary-card">
+          <div>入金合計</div>
+          <div class="summary-val val-plus" id="sum-income">0円</div>
+        </div>
+        <div class="summary-card">
+          <div>出金合計</div>
+          <div class="summary-val val-minus" id="sum-expense">0円</div>
+        </div>
+        <div class="summary-card">
+          <div>現在残高</div>
+          <div class="summary-val" id="sum-balance">0円</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="list-section-title">
+      <h2 id="list-section-title" class="card-title">取引の一覧</h2>
+      
+      <div class="filter-group">
+        <div class="form-group" style="flex: 1; min-width: 180px;">
+          <label for="filter-start">開始日</label>
+          <input type="date" id="filter-start">
+        </div>
+        <div class="form-group" style="flex: 1; min-width: 180px;">
+          <label for="filter-end">終了日</label>
+          <input type="date" id="filter-end">
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn btn-secondary" id="btn-filter">期間指定で絞り込み</button>
+          <button class="btn btn-secondary" id="btn-reset-filter" aria-label="フィルターを解除する">解除</button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table id="records-table">
+          <thead>
+            <tr>
+              <th scope="col">日付</th>
+              <th scope="col">摘要</th>
+              <th scope="col">区分</th>
+              <th scope="col" class="text-right">金額</th>
+              <th scope="col" class="text-right">累計残高</th>
+              <th scope="col" style="width: 100px;">操作</th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+            </tbody>
+        </table>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" id="btn-export">📤 データをCSVで保存</button>
+        <button class="btn btn-accent" id="btn-clear-all" aria-label="すべてのデータを削除する">⚠️ 全データ削除</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-overlay" id="help-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-content">
+      <h2 id="modal-title">❓ 使い方ガイド</h2>
+      <p style="margin-bottom: 15px;"><strong>このアプリでできること:</strong></p>
+      <p style="margin-bottom: 20px;">日々の小口現金の入金・出金を簡単に記録し、リアルタイムで現在の残高や期間ごとの集計を確認することができます。</p>
+      
+      <p style="margin-bottom: 10px;"><strong>基本の使い方（4ステップ）:</strong></p>
+      <ol>
+        <li><strong>取引を入力：</strong>「日付」「摘要」「区分（入金/出金）」「金額」を入力します。</li>
+        <li><strong>登録：</strong>「登録」ボタンを押してデータを追加します（自動的に日付順で並び替わります）。</li>
+        <li><strong>期間で絞り込み：</strong>上の検索機能を使って、指定した期間のデータだけを抽出・集計できます。</li>
+        <li><strong>データの保存：</strong>データは端末のブラウザに自動保存されます。また、画面下部の「📤 データをCSVで保存」ボタンからファイルとして書き出すことができます。</li>
+      </ol>
+
+      <p style="background-color: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 5px solid #17a2b8; font-size: 18px;">
+        🔒 <strong>データについて:</strong><br>
+        本アプリで入力されたデータは、すべてご利用の端末（ブラウザのlocalStorage）内にのみ保存され、外部に送信されることはありません。
+      </p>
+
+      <div style="text-align: right;">
+        <button class="btn btn-secondary" id="btn-close-help">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>※本ツールは現金管理のための道具であり、人の評価や監視を目的としたものではありません。</p>
+  </footer>
+
+  <script>
+    // 状態管理
+    let records = [];
+    let filterStart = "";
+    let filterEnd = "";
+
+    // DOM要素
+    const recordForm = document.getElementById('record-form');
+    const inputDate = document.getElementById('input-date');
+    const inputDesc = document.getElementById('input-desc');
+    const inputType = document.getElementById('input-type');
+    const inputAmount = document.getElementById('input-amount');
+    const formError = document.getElementById('form-error');
+
+    const filterStartInput = document.getElementById('filter-start');
+    const filterEndInput = document.getElementById('filter-end');
+    const btnFilter = document.getElementById('btn-filter');
+    const btnResetFilter = document.getElementById('btn-reset-filter');
+
+    const tableBody = document.getElementById('table-body');
+    const sumIncome = document.getElementById('sum-income');
+    const sumExpense = document.getElementById('sum-expense');
+    const sumBalance = document.getElementById('sum-balance');
+
+    const btnExport = document.getElementById('btn-export');
+    const btnClearAll = document.getElementById('btn-clear-all');
+
+    const helpModal = document.getElementById('help-modal');
+    const btnOpenHelp = document.getElementById('btn-open-help');
+    const btnCloseHelp = document.getElementById('btn-close-help');
+
+    // 起動時初期設定
+    window.addEventListener('DOMContentLoaded', () => {
+      // 本日の日付をデフォルト設定
+      const today = new Date().toISOString().split('T')[0];
+      inputDate.value = today;
+
+      // データの読み込み
+      loadData();
+      render();
+    });
+
+    // ローカルストレージからの読み込み
+    function loadData() {
+      try {
+        const data = localStorage.getItem('cash_manager_records');
+        if (data) {
+          records = JSON.parse(data);
+        } else {
+          records = [];
+        }
+      } catch (e) {
+        showError("データの読み込み中にエラーが発生しました。");
+      }
+    }
+
+    // ローカルストレージへの保存
+    function saveData() {
+      try {
+        localStorage.setItem('cash_manager_records', JSON.stringify(records));
+      } catch (e) {
+        showError("データの保存容量を超えているか、保存に失敗しました。");
+      }
+    }
+
+    // エラー表示
+    function showError(msg) {
+      formError.innerHTML = `<span style="color:red;">${msg}</span>`;
+    }
+
+    function clearError() {
+      formError.innerHTML = "";
+    }
+
+    // 取引登録のバリデーションと処理
+    recordForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      clearError();
+
+      const dateVal = inputDate.value;
+      const descVal = inputDesc.value.trim();
+      const typeVal = inputType.value;
+      const amountVal = parseInt(inputAmount.value, 10);
+
+      // バリデーション
+      if (!dateVal) {
+        showError("日付を入力してください。");
+        return;
+      }
+      if (descVal.length > 10) {
+        showError("摘要は10文字以内で入力してください。");
+        return;
+      }
+      if (isNaN(amountVal) || amountVal < 0) {
+        showError("金額には0以上の整数を入力してください。");
+        return;
+      }
+
+      // データの追加
+      const newRecord = {
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+        date: dateVal,
+        description: descVal || "（なし）",
+        type: typeVal,
+        amount: amountVal
+      };
+
+      records.push(newRecord);
+      saveData();
+      render();
+
+      // 入力フォーム一部クリア
+      inputDesc.value = "";
+      inputAmount.value = "0";
+    });
+
+    // フィルタリング処理
+    btnFilter.addEventListener('click', () => {
+      filterStart = filterStartInput.value;
+      filterEnd = filterEndInput.value;
+      render();
+    });
+
+    btnResetFilter.addEventListener('click', () => {
+      filterStartInput.value = "";
+      filterEndInput.value = "";
+      filterStart = "";
+      filterEnd = "";
+      render();
+    });
+
+    // データ削除
+    function deleteRecord(id) {
+      if (confirm("この記録を削除してもよろしいですか？")) {
+        records = records.filter(r => r.id !== id);
+        saveData();
+        render();
+      }
+    }
+
+    // 全データ一括削除
+    btnClearAll.addEventListener('click', () => {
+      if (confirm("【警告】すべての記録を完全に消去します。よろしいですか？")) {
+        records = [];
+        saveData();
+        render();
+      }
+    });
+
+    // 描画と集計の計算
+    function render() {
+      // 1. 日付順で並び替え
+      records.sort((a, b) => {
+        if (a.date < b.date) return -1;
+        if (a.date > b.date) return 1;
+        return 0;
+      });
+
+      // 2. フィルタリング＆累計計算
+      let runningBalance = 0;
+      let totalIncome = 0;
+      let totalExpense = 0;
+
+      tableBody.innerHTML = "";
+
+      records.forEach((record) => {
+        // 累計はフィルタ状況に関係なく全体で順次加算
+        if (record.type === "入金") {
+          runningBalance += record.amount;
+        } else {
+          runningBalance -= record.amount;
+        }
+
+        // 期間フィルター条件
+        const afterStart = !filterStart || record.date >= filterStart;
+        const beforeEnd = !filterEnd || record.date <= filterEnd;
+
+        if (afterStart && beforeEnd) {
+          // フィルター対象内の集計
+          if (record.type === "入金") {
+            totalIncome += record.amount;
+          } else {
+            totalExpense += record.amount;
+          }
+
+          // テーブル行生成
+          const tr = document.createElement('tr');
+
+          const tdDate = document.createElement('td');
+          tdDate.textContent = record.date;
+          tr.appendChild(tdDate);
+
+          const tdDesc = document.createElement('td');
+          tdDesc.textContent = record.description;
+          tr.appendChild(tdDesc);
+
+          const tdType = document.createElement('td');
+          const badge = document.createElement('span');
+          badge.className = record.type === "入金" ? "badge-in" : "badge-out";
+          badge.textContent = record.type;
+          tdType.appendChild(badge);
+          tr.appendChild(tdType);
+
+          const tdAmount = document.createElement('td');
+          tdAmount.className = "text-right";
+          tdAmount.textContent = record.amount.toLocaleString() + "円";
+          tr.appendChild(tdAmount);
+
+          const tdBalance = document.createElement('td');
+          tdBalance.className = "text-right";
+          tdBalance.textContent = runningBalance.toLocaleString() + "円";
+          tr.appendChild(tdBalance);
+
+          // 削除ボタン
+          const tdAction = document.createElement('td');
+          const btnDel = document.createElement('button');
+          btnDel.className = "btn btn-accent";
+          btnDel.style.fontSize = "16px";
+          btnDel.style.padding = "5px 10px";
+          btnDel.style.minHeight = "auto";
+          btnDel.textContent = "削除";
+          btnDel.onclick = () => deleteRecord(record.id);
+          tdAction.appendChild(btnDel);
+          tr.appendChild(tdAction);
+
+          tableBody.appendChild(tr);
+        }
+      });
+
+      if (tableBody.children.length === 0) {
+        const trEmpty = document.createElement('tr');
+        trEmpty.innerHTML = `<td colspan="6" style="text-align: center; padding: 20px;">データがありません。</td>`;
+        tableBody.appendChild(trEmpty);
+      }
+
+      // 集計表示の更新
+      sumIncome.textContent = totalIncome.toLocaleString() + "円";
+      sumExpense.textContent = totalExpense.toLocaleString() + "円";
+      
+      const currentBalance = totalIncome - totalExpense;
+      sumBalance.textContent = currentBalance.toLocaleString() + "円";
+      
+      // 残高の色変更
+      if (currentBalance >= 0) {
+        sumBalance.className = "summary-val val-plus";
+      } else {
+        sumBalance.className = "summary-val val-minus";
+      }
+    }
+
+    // CSVエクスポート
+    btnExport.addEventListener('click', () => {
+      if (records.length === 0) {
+        alert("書き出すデータがありません。");
+        return;
+      }
+
+      // CSVデータの作成
+      let csvContent = "\uFEFF"; // Excel用BOM付きUTF-8
+      csvContent += "日付,摘要,区分,金額\n";
+
+      records.forEach(r => {
+        const row = [
+          `"${r.date.replace(/"/g, '""')}"`,
+          `"${r.description.replace(/"/g, '""')}"`,
+          `"${r.type.replace(/"/g, '""')}"`,
+          r.amount
+        ];
+        csvContent += row.join(",") + "\n";
+      });
+
+      // ファイル保存の処理
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      
+      // 本日の日付をファイル名につける
+      const today = new Date().toISOString().split('T')[0];
+      link.setAttribute("download", `小口現金管理記録_${today}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+
+    // モーダルの制御
+    btnOpenHelp.addEventListener('click', () => {
+      helpModal.style.display = 'flex';
+      btnCloseHelp.focus(); // モーダル内の閉じるボタンにフォーカスを移す
+    });
+
+    btnCloseHelp.addEventListener('click', () => {
+      helpModal.style.display = 'none';
+      btnOpenHelp.focus();
+    });
+
+    // キーボード操作：Escキーでモーダルを閉じる
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && helpModal.style.display === 'flex') {
+        helpModal.style.display = 'none';
+        btnOpenHelp.focus();
+      }
+    });
+  </script>
+</body>
+</html>

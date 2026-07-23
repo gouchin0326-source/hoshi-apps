@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>材料重量計算ツール</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⚖️</text></svg>'>
+  <style>
+    /* CSS変数によるデザイン管理 (十分な色コントラスト: WCAG AA/AAA準拠を意識) */
+    :root {
+      --primary-color: #004d40;
+      --primary-light: #e0f2f1;
+      --text-color: #1a1a1a;
+      --bg-color: #f5f7f8;
+      --card-bg: #ffffff;
+      --border-color: #767676;
+      --focus-outline: #d81b60;
+      --accent-color: #00796b;
+      --font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-family);
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.6;
+      padding: 16px;
+    }
+
+    /* 全体コンテナ */
+    .app-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      padding: 24px;
+      border: 1px solid #e0e0e0;
+    }
+
+    /* ヘッダー */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 3px solid var(--primary-color);
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+    }
+
+    .title-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .app-icon {
+      font-size: 2.2rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      color: var(--primary-color);
+      font-weight: bold;
+    }
+
+    /* ボタン共通 */
+    button {
+      font-family: inherit;
+      font-size: 1rem;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-weight: bold;
+      transition: background-color 0.2s, box-shadow 0.2s;
+    }
+
+    button:focus-visible, 
+    input:focus-visible, 
+    select:focus-visible {
+      outline: 4px solid var(--focus-outline);
+      outline-offset: 2px;
+    }
+
+    /* 個別ボタンの装飾 */
+    .btn-help {
+      background-color: #f0f0f0;
+      color: #333333;
+      border: 2px solid var(--border-color);
+    }
+    .btn-help:hover {
+      background-color: #e0e0e0;
+    }
+
+    .btn-action {
+      background-color: var(--primary-color);
+      color: white;
+      width: 100%;
+      margin-top: 12px;
+    }
+    .btn-action:hover {
+      background-color: var(--accent-color);
+    }
+
+    .btn-secondary {
+      background-color: #ffffff;
+      color: var(--primary-color);
+      border: 2px solid var(--primary-color);
+    }
+    .btn-secondary:hover {
+      background-color: var(--primary-light);
+    }
+
+    /* フォーム構成 */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    legend, label {
+      display: block;
+      font-weight: bold;
+      font-size: 1.1rem;
+      margin-bottom: 8px;
+      color: var(--primary-color);
+    }
+
+    /* ラジオボタン(形状選択)のスタイル調整 */
+    .radio-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      border: none;
+    }
+
+    .radio-label {
+      flex: 1;
+      min-width: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: #fcfcfc;
+      border: 2px solid var(--border-color);
+      padding: 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .radio-label input[type="radio"] {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--primary-color);
+    }
+
+    .radio-label:has(input:checked) {
+      background-color: var(--primary-light);
+      border-color: var(--primary-color);
+    }
+
+    /* テキスト入力、セレクトボックス */
+    .input-field, .select-field {
+      width: 100%;
+      font-size: 1.1rem; /* スマホでのズーム防止のため16px以上に設定 */
+      padding: 12px;
+      border: 2px solid var(--border-color);
+      border-radius: 6px;
+      background-color: #ffffff;
+      color: var(--text-color);
+    }
+
+    /* グリッドレイアウト (寸法入力) */
+    .dimensions-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .input-with-unit {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-with-unit input {
+      padding-right: 50px;
+    }
+
+    .unit-label {
+      position: absolute;
+      right: 12px;
+      font-weight: bold;
+      color: #555555;
+      pointer-events: none;
+    }
+
+    /* 比重のカスタム入力 */
+    .density-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    /* 結果表示エリア */
+    .result-panel {
+      background-color: var(--primary-light);
+      border: 2px solid var(--primary-color);
+      border-radius: 8px;
+      padding: 16px;
+      margin: 24px 0;
+    }
+
+    .result-title {
+      font-size: 1rem;
+      font-weight: bold;
+      margin-bottom: 8px;
+      border-bottom: 1px dashed var(--primary-color);
+      padding-bottom: 4px;
+    }
+
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .result-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .result-value {
+      font-size: 1.4rem;
+      font-weight: bold;
+      color: #00332c;
+    }
+
+    /* エクスポート用のボタン配置 */
+    .button-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    /* モーダル (使い方ダイアログ) */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s, visibility 0.2s;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 12px;
+      max-width: 500px;
+      width: 100%;
+      padding: 24px;
+      max-height: 90vh;
+      overflow-y: auto;
+      border: 3px solid var(--primary-color);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #e0e0e0;
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+
+    .modal-title {
+      font-size: 1.3rem;
+      color: var(--primary-color);
+      font-weight: bold;
+    }
+
+    .modal-body p {
+      margin-bottom: 12px;
+    }
+
+    .modal-body ol {
+      margin-left: 20px;
+      margin-bottom: 16px;
+    }
+
+    .modal-body li {
+      margin-bottom: 8px;
+    }
+
+    .close-modal-btn {
+      float: right;
+      background-color: var(--primary-color);
+      color: white;
+    }
+
+    /* レスポンシブ対応 */
+    @media (min-width: 480px) {
+      .dimensions-grid {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <main class="app-container" aria-label="材料重量計算アプリケーション">
+    
+    <header>
+      <div class="title-area">
+        <span class="app-icon" aria-hidden="true">⚖️</span>
+        <h1>材料重量計算ツール</h1>
+      </div>
+      <button type="button" class="btn-help" id="help-btn" aria-label="ヘルプ：使い方を表示します">
+        ❓ 使い方
+      </button>
+    </header>
+
+    <form id="calc-form" onsubmit="return false;">
+      
+      <fieldset class="form-group">
+        <legend>1. 形状を選んでください</legend>
+        <div class="radio-group">
+          <label class="radio-label">
+            <input type="radio" name="shape" value="cuboid" checked>
+            直方体
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="shape" value="cylinder">
+            円柱
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="shape" value="plate">
+            板 (1mm厚)
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="form-group">
+        <legend>2. 寸法を入力してください</legend>
+        <div id="dimensions-container" class="dimensions-grid">
+          <div id="dim-length-wrapper">
+            <label id="lbl-length" for="input-length">長さ</label>
+            <div class="input-with-unit">
+              <input type="number" id="input-length" class="input-field" min="0" step="any" placeholder="例: 100">
+              <span class="unit-label">mm</span>
+            </div>
+          </div>
+
+          <div id="dim-width-wrapper">
+            <label id="lbl-width" for="input-width">幅 / 直径</label>
+            <div class="input-with-unit">
+              <input type="number" id="input-width" class="input-field" min="0" step="any" placeholder="例: 50">
+              <span class="unit-label">mm</span>
+            </div>
+          </div>
+
+          <div id="dim-height-wrapper">
+            <label id="lbl-height" for="input-height">高さ</label>
+            <div class="input-with-unit">
+              <input type="number" id="input-height" class="input-field" min="0" step="any" placeholder="例: 10">
+              <span class="unit-label">mm</span>
+            </div>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="form-group">
+        <legend>3. 材質・比重を設定してください</legend>
+        <div class="density-group">
+          <div>
+            <label for="select-material">材質プリセット</label>
+            <select id="select-material" class="select-field">
+              <option value="7.87">鉄 (7.87)</option>
+              <option value="2.70">アルミ (2.70)</option>
+              <option value="7.93">ステンレス (7.93)</option>
+              <option value="8.96">銅 (8.96)</option>
+              <option value="custom">カスタム比重...</option>
+            </select>
+          </div>
+          <div>
+            <label for="input-density">比重値</label>
+            <input type="number" id="input-density" class="input-field" step="any" min="0" placeholder="例: 7.85">
+          </div>
+        </div>
+      </fieldset>
+
+    </form>
+
+    <section class="result-panel" aria-live="polite" aria-atomic="true">
+      <h2 class="result-title">計算結果</h2>
+      <div class="result-row">
+        <span>体積:</span>
+        <span class="result-value" id="display-volume">0 mm³</span>
+      </div>
+      <div class="result-row">
+        <span>重量:</span>
+        <span class="result-value" id="display-weight">0 kg</span>
+      </div>
+    </section>
+
+    <footer class="button-group">
+      <button type="button" class="btn-secondary" id="btn-copy">📋 コピー</button>
+      <button type="button" class="btn-secondary" id="btn-download">📥 ダウンロード</button>
+    </footer>
+
+  </main>
+
+  <div class="modal-overlay" id="help-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title-id">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-title-id">❓ このアプリの使い方</h2>
+      </div>
+      <div class="modal-body">
+        <p><strong>このアプリでできること:</strong></p>
+        <p>「直方体」「円柱」「板」といった基本形状の寸法と材質の比重から、自動で<strong>「体積(mm³)」</strong>および<strong>「重量(kg)」</strong>を素早く計算します。</p>
+        
+        <p><strong>基本の使い方:</strong></p>
+        <ol>
+          <li><strong>形状を選ぶ:</strong> 画面の一番上にあるラジオボタンから、対象の形状を選択します。</li>
+          <li><strong>寸法を入力する:</strong> 選択した形状に応じた寸法のテキストボックスが表示されます。数値を半角で入力します。</li>
+          <li><strong>材質/比重を選ぶ:</strong> ドロップダウンから選ぶか、「カスタム比重」を選択して任意の数値を入力します。</li>
+          <li><strong>結果を確認する:</strong> 数値が変化すると、自動的に体積と重量がリアルタイムで再計算されます。</li>
+        </ol>
+
+        <p><strong>安心・安全なデータ管理:</strong></p>
+        <p>入力したデータや選択情報は、お使いの端末(ブラウザ)の <strong>localStorage</strong> にのみ保存されます。外部への送信は一切行われません。ブラウザを閉じても、次回開いた際に直前のデータが復元されます。</p>
+      </div>
+      <button type="button" class="close-modal-btn" id="close-modal-btn">閉じる</button>
+    </div>
+  </div>
+
+  <script>
+    // --- DOM要素の参照 ---
+    const form = document.getElementById('calc-form');
+    const shapeRadios = document.getElementsByName('shape');
+    
+    const dimLengthWrapper = document.getElementById('dim-length-wrapper');
+    const dimWidthWrapper = document.getElementById('dim-width-wrapper');
+    const dimHeightWrapper = document.getElementById('dim-height-wrapper');
+
+    const lblLength = document.getElementById('lbl-length');
+    const lblWidth = document.getElementById('lbl-width');
+    const lblHeight = document.getElementById('lbl-height');
+
+    const inputLength = document.getElementById('input-length');
+    const inputWidth = document.getElementById('input-width');
+    const inputHeight = document.getElementById('input-height');
+
+    const selectMaterial = document.getElementById('select-material');
+    const inputDensity = document.getElementById('input-density');
+
+    const displayVolume = document.getElementById('display-volume');
+    const displayWeight = document.getElementById('display-weight');
+
+    const btnCopy = document.getElementById('btn-copy');
+    const btnDownload = document.getElementById('btn-download');
+
+    // ヘルプモーダル関連
+    const helpBtn = document.getElementById('help-btn');
+    const helpModal = document.getElementById('help-modal');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+
+    // グローバルな計算結果変数
+    let calculatedVolume = 0;
+    let calculatedWeight = 0;
+
+    // --- 各形状における入力欄の表示/非表示の切り替え ---
+    function updateInputFields() {
+      const selectedShape = document.querySelector('input[name="shape"]:checked').value;
+
+      if (selectedShape === 'cuboid') {
+        dimLengthWrapper.style.display = 'block';
+        dimWidthWrapper.style.display = 'block';
+        dimHeightWrapper.style.display = 'block';
+        lblLength.textContent = '長さ';
+        lblWidth.textContent = '幅';
+        lblHeight.textContent = '高さ';
+      } else if (selectedShape === 'cylinder') {
+        dimLengthWrapper.style.display = 'none'; // 長さは不要
+        dimWidthWrapper.style.display = 'block';  // 直径として使用
+        dimHeightWrapper.style.display = 'block'; // 高さとして使用
+        lblWidth.textContent = '直径';
+        lblHeight.textContent = '高さ';
+      } else if (selectedShape === 'plate') {
+        dimLengthWrapper.style.display = 'block';
+        dimWidthWrapper.style.display = 'block';
+        dimHeightWrapper.style.display = 'none';  // 厚さは1mm固定のため非表示
+        lblLength.textContent = '長さ';
+        lblWidth.textContent = '幅';
+      }
+    }
+
+    // --- 比重セレクトボックス変更時の連動 ---
+    function updateDensityFromSelect() {
+      const value = selectMaterial.value;
+      if (value !== 'custom') {
+        inputDensity.value = value;
+        inputDensity.readOnly = true;
+      } else {
+        inputDensity.readOnly = false;
+        inputDensity.placeholder = "比重を入力";
+      }
+    }
+
+    // --- 計算メイン処理 ---
+    function calculate() {
+      const selectedShape = document.querySelector('input[name="shape"]:checked').value;
+      const length = parseFloat(inputLength.value) || 0;
+      const width = parseFloat(inputWidth.value) || 0;  // 円柱の場合は直径
+      const height = parseFloat(inputHeight.value) || 0;
+      const density = parseFloat(inputDensity.value) || 0;
+
+      let volume = 0;
+
+      if (selectedShape === 'cuboid') {
+        volume = length * width * height;
+      } else if (selectedShape === 'cylinder') {
+        // 円柱: π × (直径/2)² × 高さ
+        const radius = width / 2;
+        volume = Math.PI * Math.pow(radius, 2) * height;
+      } else if (selectedShape === 'plate') {
+        // 板: 長さ × 幅 × 厚さ(1mm固定)
+        volume = length * width * 1;
+      }
+
+      // 重量の計算: 体積(mm³) × 比重 ÷ 1,000,000 = 重量(kg)
+      // (1 cm³ = 1000 mm³, 1g/cm³の比重時、1,000,000 mm³ で 1kg となるため)
+      let weight = (volume * density) / 1000000;
+
+      // 四捨五入(小数第三位)
+      calculatedVolume = Math.round(volume * 1000) / 1000; // 見栄えのため体積も適度に丸める
+      calculatedWeight = Math.round(weight * 1000) / 1000;
+
+      // 画面更新
+      displayVolume.textContent = `${calculatedVolume.toLocaleString('ja-JP')} mm³`;
+      displayWeight.textContent = `${calculatedWeight.toLocaleString('ja-JP')} kg`;
+
+      // 自動保存
+      saveData();
+    }
+
+    // --- ローカルストレージへの自動保存 ---
+    function saveData() {
+      const selectedShape = document.querySelector('input[name="shape"]:checked').value;
+      const data = {
+        shape: selectedShape,
+        length: inputLength.value,
+        width: inputWidth.value,
+        height: inputHeight.value,
+        materialSelect: selectMaterial.value,
+        density: inputDensity.value,
+        volume: calculatedVolume,
+        weight: calculatedWeight
+      };
+      localStorage.setItem('material_calc_data', JSON.stringify(data));
+    }
+
+    // --- ローカルストレージからの復元 ---
+    function loadData() {
+      const saved = localStorage.getItem('material_calc_data');
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          
+          // 形状
+          const radioToCheck = document.querySelector(`input[name="shape"][value="${data.shape}"]`);
+          if (radioToCheck) radioToCheck.checked = true;
+
+          // 寸法
+          inputLength.value = data.length || '';
+          inputWidth.value = data.width || '';
+          inputHeight.value = data.height || '';
+
+          // 比重
+          selectMaterial.value = data.materialSelect || '7.87';
+          updateDensityFromSelect(); // readonly等の状態を同期
+          inputDensity.value = data.density || '7.87';
+
+          // 計算処理を回して反映
+          updateInputFields();
+          calculate();
+        } catch (e) {
+          console.error("データの復元に失敗しました:", e);
+        }
+      } else {
+        // 初期状態のセットアップ
+        updateInputFields();
+        updateDensityFromSelect();
+        calculate();
+      }
+    }
+
+    // --- コピー機能 ---
+    function copyToClipboard() {
+      const text = `体積: ${calculatedVolume.toLocaleString('ja-JP')} mm³ / 重量: ${calculatedWeight.toLocaleString('ja-JP')} kg`;
+      navigator.clipboard.writeText(text).then(() => {
+        const originalText = btnCopy.innerHTML;
+        btnCopy.innerHTML = '✅ コピー完了';
+        setTimeout(() => {
+          btnCopy.innerHTML = originalText;
+        }, 2000);
+      }).catch(err => {
+        alert("コピーに失敗しました。環境を確認してください。");
+      });
+    }
+
+    // --- ダウンロード機能 (.txtファイルとして保存) ---
+    function downloadTextFile() {
+      const selectedShape = document.querySelector('input[name="shape"]:checked').value;
+      let shapeName = "直方体";
+      if (selectedShape === 'cylinder') shapeName = "円柱";
+      if (selectedShape === 'plate') shapeName = "板(1mm厚)";
+
+      const text = `【材料重量計算ツール 計算結果】
+--------------------------------------------
+■ 入力条件
+・形状: ${shapeName}
+・寸法: ${selectedShape === 'cylinder' ? '' : '長さ: ' + (inputLength.value || '0') + ' mm / '}直径・幅: ${inputWidth.value || '0'} mm${selectedShape === 'plate' ? '' : ' / 高さ: ' + (inputHeight.value || '0') + ' mm'}
+・比重: ${inputDensity.value}
+
+■ 計算結果
+・体積: ${calculatedVolume.toLocaleString('ja-JP')} mm³
+・重量: ${calculatedWeight.toLocaleString('ja-JP')} kg
+--------------------------------------------
+`;
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `重量計算結果_${new Date().toISOString().slice(0,10)}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // --- モーダル表示制御 ---
+    function openModal() {
+      helpModal.classList.add('active');
+      closeModalBtn.focus();
+    }
+
+    function closeModal() {
+      helpModal.classList.remove('active');
+      helpBtn.focus();
+    }
+
+    // --- イベントリスナー設定 ---
+    
+    // 形状ラジオボタン変更イベント
+    shapeRadios.forEach(radio => {
+      radio.addEventListener('change', () => {
+        updateInputFields();
+        calculate();
+      });
+    });
+
+    // 入力値変更（キーボード・選択どちらも拾えるように input イベントを使用）
+    form.addEventListener('input', calculate);
+
+    // 材質セレクトボックス変更
+    selectMaterial.addEventListener('change', () => {
+      updateDensityFromSelect();
+      calculate();
+    });
+
+    // コピー・ダウンロードボタン
+    btnCopy.addEventListener('click', copyToClipboard);
+    btnDownload.addEventListener('click', downloadTextFile);
+
+    // ヘルプモーダルボタン
+    helpBtn.addEventListener('click', openModal);
+    closeModalBtn.addEventListener('click', closeModal);
+
+    // キーボード操作：モーダル外クリックやEscキー対応
+    helpModal.addEventListener('click', (e) => {
+      if (e.target === helpModal) closeModal();
+    });
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && helpModal.classList.contains('active')) {
+        closeModal();
+      }
+    });
+
+    // 初期化ロード
+    window.addEventListener('DOMContentLoaded', loadData);
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>日数と期限の計算</title>
+<style>
+:root{--bg:#f5f7fb;--card:#ffffff;--ink:#1d2733;--sub:#5b6b80;--line:#e3e9f2;--accent:#2f6df0;--accent2:#13b67f;--warn:#e8912a;--soft:#eef3fe;--soft2:#e9f8f1;--soft3:#fff4e3;}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI","Yu Gothic UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:980px;margin:0 auto;padding:30px 18px 70px}
+.hero{background:linear-gradient(135deg,#2f6df0,#13b67f);border-radius:20px;padding:26px 28px;color:#fff;box-shadow:0 12px 30px rgba(47,109,240,.18)}
+.hero .tag{display:inline-block;font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:4px 12px;border-radius:999px;margin-bottom:10px}
+.hero h1{margin:0 0 6px;font-size:25px} .hero p{margin:0;font-size:14px;line-height:1.7;opacity:.96}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px 22px;margin-top:16px;box-shadow:0 8px 22px rgba(29,39,51,.06)}
+.panel h2{margin:0 0 4px;font-size:16px;display:flex;align-items:center;gap:9px}
+.panel .lead{margin:0 0 12px;color:var(--sub);font-size:12.5px;line-height:1.6}
+label.fld{display:block;font-size:12px;font-weight:700;color:var(--sub);margin-bottom:5px}
+input[type=date],input[type=number],select{border:1.5px solid var(--line);border-radius:11px;padding:11px 12px;font-size:15px;font-family:inherit;background:#fcfdff;color:var(--ink)}
+input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(47,109,240,.12)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+button.b{display:inline-flex;align-items:center;gap:7px;border:none;cursor:pointer;font-weight:700;font-size:13.5px;padding:11px 17px;border-radius:11px;font-family:inherit}
+button.p{background:var(--accent);color:#fff} button.s{background:#fff;color:var(--accent);border:1px solid var(--line)} button.g{background:var(--accent2);color:#fff}
+.result{background:var(--soft2);border:1px solid #bfe9d3;border-radius:12px;padding:14px 16px;margin-top:12px;font-size:15px;color:#176446;line-height:1.6}
+.result b{font-size:20px;color:#0f5a3a}
+.msg{font-size:12.5px;border-radius:11px;padding:10px 13px;margin-top:10px;background:var(--soft3);color:#9a5a12;border:1px solid #f0d6a8}
+footer{margin-top:28px;color:var(--sub);font-size:12px;border-top:1px solid var(--line);padding-top:14px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.clock{font-variant-numeric:tabular-nums;color:var(--accent2);font-weight:700}
+a.home{color:var(--sub);text-decoration:none;font-weight:700} a.home:hover{color:var(--accent)}
+
+/* 追加スタイル */
+.check-row{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13.5px;color:var(--ink)}
+.check-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
+.check-row label{cursor:pointer;user-select:none}
+.note{font-size:11.5px;color:var(--sub);margin-top:6px;line-height:1.5}
+.field-group{display:flex;flex-direction:column;gap:4px}
+.field-row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-top:10px}
+.field-row .field-group{flex:1;min-width:140px}
+.field-row.three .field-group{flex:1;min-width:120px}
+.result-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.result-item{background:rgba(15,90,58,.06);border-radius:8px;padding:6px 12px;font-size:13px}
+.result-copy{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.copy-msg{font-size:11.5px;color:var(--accent2);margin-top:4px;min-height:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ヒーロー -->
+  <div class="hero">
+    <div class="tag">道具箱（開発中）· 日数と期限の計算</div>
+    <h1>📅 日数と期限の計算</h1>
+    <p>「あの日からこの日まで何日？」「○日後はいつ？」を素早く調べられる道具です。<br>インターネット不要。この端末の中だけで動きます。</p>
+  </div>
+
+  <!-- モードA：2つの日付の間は何日？ -->
+  <div class="panel" id="panelA">
+    <h2>📆 モードA：2つの日付の間は何日？</h2>
+    <p class="lead">開始日と終了日を選んで「計算する」を押してください。</p>
+
+    <div class="field-row">
+      <div class="field-group">
+        <label class="fld" for="a-start">開始日</label>
+        <input type="date" id="a-start">
+      </div>
+      <div class="field-group">
+        <label class="fld" for="a-end">終了日</label>
+        <input type="date" id="a-end">
+      </div>
+    </div>
+
+    <div class="check-row">
+      <input type="checkbox" id="a-weekday">
+      <label for="a-weekday">土日を除く（平日だけ）で数える</label>
+    </div>
+
+    <div class="row">
+      <button class="b p" onclick="calcA()">🔢 計算する</button>
+      <button class="b s" onclick="resetA()">↺ リセット</button>
+    </div>
+
+    <div id="a-result" style="display:none">
+      <div class="result">
+        <div class="result-copy">
+          <div id="a-result-text"></div>
+          <button class="b s" style="padding:7px 12px;font-size:12px" onclick="copyResult('a-result-text','a-copy-msg')">📋 コピー</button>
+        </div>
+        <div class="copy-msg" id="a-copy-msg"></div>
+      </div>
+      <p class="note">※ 祝日は考慮していません（土曜・日曜のみ除外）</p>
+    </div>
+    <div id="a-msg" class="msg" style="display:none"></div>
+  </div>
+
+  <!-- モードB：○日後の期限は？ -->
+  <div class="panel" id="panelB">
+    <h2>⏩ モードB：ある日から○日後の期限は？</h2>
+    <p class="lead">基準日・日数・方向を選んで「計算する」を押してください。基準日は既定で今日です。</p>
+
+    <div class="field-row three">
+      <div class="field-group">
+        <label class="fld" for="b-base">基準日</label>
+        <input type="date" id="b-base">
+      </div>
+      <div class="field-group">
+        <label class="fld" for="b-days">日数</label>
+        <input type="number" id="b-days" min="0" max="9999" value="7" style="width:100%">
+      </div>
+      <div class="field-group">
+        <label class="fld" for="b-dir">方向</label>
+        <select id="b-dir" style="width:100%">
+          <option value="after">○日後</option>
+          <option value="before">○日前</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="check-row">
+      <input type="checkbox" id="b-weekday">
+      <label for="b-weekday">営業日で数える（土日を飛ばす）</label>
+    </div>
+
+    <div class="row">
+      <button class="b g" onclick="calcB()">🔍 期限を出す</button>
+      <button class="b s" onclick="resetB()">↺ リセット</button>
+    </div>
+
+    <div id="b-result" style="display:none">
+      <div class="result">
+        <div class="result-copy">
+          <div id="b-result-text"></div>
+          <button class="b s" style="padding:7px 12px;font-size:12px" onclick="copyResult('b-result-text','b-copy-msg')">📋 コピー</button>
+        </div>
+        <div class="copy-msg" id="b-copy-msg"></div>
+      </div>
+      <p class="note">※ 祝日は考慮していません（土曜・日曜のみ除外）</p>
+    </div>
+    <div id="b-msg" class="msg" style="display:none"></div>
+  </div>
+
+  <!-- フッター -->
+  <footer>
+    <div>
+      <a href="../ハブ.html" class="home">🏠 ハブへ</a>
+      &nbsp;·&nbsp;計算は端末の中だけ・データは送信しません
+    </div>
+    <div class="clock" id="clock"></div>
+  </footer>
+</div>
+
+<script>
+(function(){
+  /* ─── ユーティリティ ─── */
+  var DOW = ['日','月','火','水','木','金','土'];
+
+  // ローカルタイムで YYYY-MM-DD → Date (00:00:00 ローカル)
+  function parseLocal(str){
+    if(!str) return null;
+    var p = str.split('-');
+    if(p.length !== 3) return null;
+    var d = new Date(+p[0], +p[1]-1, +p[2]);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  // Date → YYYY-MM-DD
+  function toISO(d){
+    var y = d.getFullYear();
+    var m = String(d.getMonth()+1).padStart(2,'0');
+    var day = String(d.getDate()).padStart(2,'0');
+    return y+'-'+m+'-'+day;
+  }
+
+  // Date → 「2026年7月3日(金)」
+  function toJP(d){
+    return d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日('+DOW[d.getDay()]+')';
+  }
+
+  // 今日の日付文字列 YYYY-MM-DD (ローカル)
+  function todayStr(){
+    var d = new Date();
+    return toISO(new Date(d.getFullYear(), d.getMonth(), d.getDate()));
+  }
+
+  // 土日か
+  function isWeekend(d){ var w = d.getDay(); return w===0||w===6; }
+
+  // 日数差（単純暦日）= end - start（日単位整数）
+  function diffDays(a, b){
+    return Math.round((b.getTime() - a.getTime()) / 86400000);
+  }
+
+  // 平日日数カウント [start, end] 両端含む
+  // 「start 〜 end の範囲の平日の数」
+  function countWeekdays(start, end){
+    var count = 0;
+    var cur = new Date(start);
+    while(cur <= end){
+      if(!isWeekend(cur)) count++;
+      cur.setDate(cur.getDate()+1);
+    }
+    return count;
+  }
+
+  // N営業日後（前）の日付
+  // dir: +1 = 後, -1 = 前
+  function addBusinessDays(base, n, dir){
+    var cur = new Date(base);
+    var remaining = n;
+    while(remaining > 0){
+      cur.setDate(cur.getDate() + dir);
+      if(!isWeekend(cur)) remaining--;
+    }
+    return cur;
+  }
+
+  // XSS 安全なテキスト設定
+  function setText(el, text){ el.textContent = text; }
+
+  /* ─── 既定値セット ─── */
+  function initDefaults(){
+    var t = todayStr();
+    document.getElementById('a-start').value = t;
+    document.getElementById('a-end').value   = t;
+    document.getElementById('b-base').value  = t;
+  }
+  initDefaults();
+
+  /* ─── モードA ─── */
+  window.calcA = function(){
+    var msgEl = document.getElementById('a-msg');
+    var resEl = document.getElementById('a-result');
+    msgEl.style.display = 'none';
+    resEl.style.display = 'none';
+
+    var startStr = document.getElementById('a-start').value;
+    var endStr   = document.getElementById('a-end').value;
+    var weekday  = document.getElementById('a-weekday').checked;
+
+    if(!startStr || !endStr){
+      msgEl.textContent = '開始日と終了日の両方を入力してください。';
+      msgEl.style.display = 'block';
+      return;
+    }
+    var s = parseLocal(startStr);
+    var e = parseLocal(endStr);
+    if(!s || !e){
+      msgEl.textContent = '日付の形式が正しくないようです。もう一度確認してください。';
+      msgEl.style.display = 'block';
+      return;
+    }
+    if(s > e){
+      msgEl.textContent = '開始日が終了日より後になっています。日付を確認してください。';
+      msgEl.style.display = 'block';
+      return;
+    }
+
+    var diff = diffDays(s, e); // end - start
+
+    // 両端含む = diff + 1 日, 両端含まず = diff - 1 日
+    var inclBoth  = diff + 1;
+    var exclBoth  = diff <= 0 ? 0 : diff - 1;
+    // 片端含む (start 含む end 含まず / start 含まず end 含む) は diff 日
+
+    var html = '';
+    html += '<b>' + inclBoth + '日間</b>（開始日・終了日の両方を含む）<br>';
+    html += '<span style="font-size:13px">' + diff + '日間（開始日含む・終了日は含まない）</span><br>';
+    html += '<span style="font-size:13px">' + exclBoth + '日間（両端を含まない）</span>';
+
+    if(weekday){
+      var wd = countWeekdays(s, e);
+      html += '<br><br>📌 <b style="font-size:18px">' + wd + '営業日</b>（土日除き・両端含む）';
+    }
+
+    var textEl = document.getElementById('a-result-text');
+    textEl.innerHTML = '';
+    // innerHTML を使わずに構造を作るため、ここだけ innerHTML を使う（ユーザー入力は含まない固定文）
+    textEl.innerHTML = html;
+    document.getElementById('a-copy-msg').textContent = '';
+    resEl.style.display = 'block';
+  };
+
+  window.resetA = function(){
+    var t = todayStr();
+    document.getElementById('a-start').value = t;
+    document.getElementById('a-end').value   = t;
+    document.getElementById('a-weekday').checked = false;
+    document.getElementById('a-result').style.display = 'none';
+    document.getElementById('a-msg').style.display    = 'none';
+    document.getElementById('a-copy-msg').textContent = '';
+  };
+
+  /* ─── モードB ─── */
+  window.calcB = function(){
+    var msgEl = document.getElementById('b-msg');
+    var resEl = document.getElementById('b-result');
+    msgEl.style.display = 'none';
+    resEl.style.display = 'none';
+
+    var baseStr = document.getElementById('b-base').value;
+    var daysVal = document.getElementById('b-days').value;
+    var dir     = document.getElementById('b-dir').value;
+    var weekday = document.getElementById('b-weekday').checked;
+
+    if(!baseStr){
+      msgEl.textContent = '基準日を入力してください。';
+      msgEl.style.display = 'block';
+      return;
+    }
+    var base = parseLocal(baseStr);
+    if(!base){
+      msgEl.textContent = '基準日の形式が正しくないようです。もう一度確認してください。';
+      msgEl.style.display = 'block';
+      return;
+    }
+    var n = parseInt(daysVal, 10);
+    if(isNaN(n) || n < 0){
+      msgEl.textContent = '日数には 0 以上の整数を入力してください。';
+      msgEl.style.display = 'block';
+      return;
+    }
+
+    var dirSign = dir === 'after' ? 1 : -1;
+    var dirLabel = dir === 'after' ? '後' : '前';
+    var result;
+
+    if(n === 0){
+      result = new Date(base);
+    } else if(weekday){
+      result = addBusinessDays(base, n, dirSign);
+    } else {
+      result = new Date(base);
+      result.setDate(result.getDate() + n * dirSign);
+    }
+
+    var modeLabel = weekday ? '営業日' : '日';
+    var html = toJP(base) + ' の <b>' + n + modeLabel + dirLabel + '</b> は …<br>';
+    html += '<br><b style="font-size:22px">' + toJP(result) + '</b>';
+    if(weekday && n > 0){
+      html += '<br><span style="font-size:13px">（土日を飛ばして ' + n + ' 営業日' + dirLabel + '）</span>';
+    }
+
+    var textEl = document.getElementById('b-result-text');
+    textEl.innerHTML = html;
+    document.getElementById('b-copy-msg').textContent = '';
+    resEl.style.display = 'block';
+  };
+
+  window.resetB = function(){
+    var t = todayStr();
+    document.getElementById('b-base').value  = t;
+    document.getElementById('b-days').value  = '7';
+    document.getElementById('b-dir').value   = 'after';
+    document.getElementById('b-weekday').checked = false;
+    document.getElementById('b-result').style.display = 'none';
+    document.getElementById('b-msg').style.display    = 'none';
+    document.getElementById('b-copy-msg').textContent = '';
+  };
+
+  /* ─── コピー ─── */
+  window.copyResult = function(elId, msgId){
+    var el = document.getElementById(elId);
+    var text = el.innerText || el.textContent;
+    var msgEl = document.getElementById(msgId);
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){
+        msgEl.textContent = 'コピーしました！';
+        setTimeout(function(){ msgEl.textContent = ''; }, 2000);
+      }).catch(function(){
+        fallbackCopy(text, msgEl);
+      });
+    } else {
+      fallbackCopy(text, msgEl);
+    }
+  };
+
+  function fallbackCopy(text, msgEl){
+    try{
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity  = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      msgEl.textContent = 'コピーしました！';
+      setTimeout(function(){ msgEl.textContent = ''; }, 2000);
+    } catch(e){
+      msgEl.textContent = 'コピーに失敗しました。手動でテキストをコピーしてください。';
+    }
+  }
+
+  /* ─── 時計 ─── */
+  function updateClock(){
+    var d = new Date();
+    var h = String(d.getHours()).padStart(2,'0');
+    var m = String(d.getMinutes()).padStart(2,'0');
+    var s = String(d.getSeconds()).padStart(2,'0');
+    var clkEl = document.getElementById('clock');
+    if(clkEl) clkEl.textContent = h+':'+m+':'+s;
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>歩留まり・不良率計算ツール</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📊</text></svg>'>
+  <style>
+    /* ----------------------------------
+       CSS: 基本スタイル & アクセシビリティ
+       ---------------------------------- */
+    :root {
+      --color-bg: #f8f9fa;
+      --color-text: #212529;
+      --color-primary: #0d6efd;
+      --color-primary-hover: #0b5ed7;
+      --color-border: #ced4da;
+      --color-white: #ffffff;
+      --color-success: #198754;
+      --color-success-light: #d1e7dd;
+      --color-danger: #dc3545;
+      --color-danger-light: #f8d7da;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      line-height: 1.5;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 650px;
+      margin: 0 auto;
+      background-color: var(--color-white);
+      padding: 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    /* ヘッダー */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      border-bottom: 2px solid var(--color-border);
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+    }
+
+    .title-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .app-icon {
+      font-size: 2.25rem;
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: bold;
+      color: #000000;
+      background-color: #ffffff;
+    }
+
+    /* ボタン共通 */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 16px;
+      font-size: 1rem;
+      font-weight: 600;
+      border: 2px solid transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s, box-shadow 0.2s;
+    }
+
+    .btn:focus-visible {
+      outline: 3px solid #ffc107;
+      outline-offset: 2px;
+    }
+
+    .btn-info {
+      background-color: #e2e3e5;
+      color: #383d41;
+      border-color: #d6d8db;
+    }
+
+    .btn-info:hover {
+      background-color: #d6d8db;
+    }
+
+    .btn-primary {
+      background-color: var(--color-primary);
+      color: var(--color-white);
+    }
+
+    .btn-primary:hover {
+      background-color: var(--color-primary-hover);
+    }
+
+    .btn-secondary {
+      background-color: #6c757d;
+      color: var(--color-white);
+    }
+
+    .btn-secondary:hover {
+      background-color: #5c636a;
+    }
+
+    /* フォームセクション */
+    .section {
+      margin-bottom: 24px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 8px;
+      font-size: 1.1rem;
+    }
+
+    .radio-group {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 12px;
+    }
+
+    .radio-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: normal;
+      cursor: pointer;
+      font-size: 1.1rem;
+    }
+
+    .radio-label input[type="radio"] {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--color-primary);
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 12px;
+      font-size: 1.1rem;
+      border: 2px solid var(--color-border);
+      border-radius: 6px;
+      background-color: var(--color-white);
+      color: var(--color-text);
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.25);
+    }
+
+    /* エラー表示 */
+    .error-msg {
+      color: var(--color-danger);
+      font-weight: bold;
+      margin-top: 6px;
+      display: none;
+      font-size: 0.95rem;
+    }
+
+    /* 結果表示エリア */
+    .results-card {
+      background-color: var(--color-white);
+      border: 2px solid var(--color-border);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .result-row {
+      font-size: 32px;
+      font-weight: 900;
+      color: #000000;
+      background-color: #ffffff;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .result-row:last-child {
+      margin-bottom: 0;
+    }
+
+    /* 非活性化時のスタイル */
+    .disabled-text {
+      opacity: 0.4;
+    }
+
+    /* 目標設定エリア */
+    .target-card {
+      padding: 16px;
+      border-radius: 8px;
+      border: 2px solid var(--color-border);
+      background-color: #f1f3f5;
+      margin-bottom: 24px;
+      transition: background-color 0.3s, border-color 0.3s;
+    }
+
+    .target-card.status-success {
+      background-color: var(--color-success-light);
+      border-color: var(--color-success);
+      color: #0f5132;
+    }
+
+    .target-card.status-danger {
+      background-color: var(--color-danger-light);
+      border-color: var(--color-danger);
+      color: #842029;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+      margin-top: 8px;
+      font-size: 1rem;
+    }
+
+    .status-badge.success {
+      background-color: var(--color-success);
+      color: var(--color-white);
+    }
+
+    .status-badge.danger {
+      background-color: var(--color-danger);
+      color: var(--color-white);
+    }
+
+    /* エクスポートエリア */
+    .export-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .export-group .btn {
+      flex: 1;
+      min-width: 180px;
+    }
+
+    /* モーダルスタイル */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background-color: var(--color-white);
+      max-width: 500px;
+      width: 100%;
+      border-radius: 8px;
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--color-border);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: bold;
+    }
+
+    .modal-body {
+      font-size: 1rem;
+      margin-bottom: 20px;
+    }
+
+    .modal-body p {
+      margin-bottom: 12px;
+    }
+
+    .modal-body ol {
+      padding-left: 20px;
+      margin-bottom: 16px;
+    }
+
+    .modal-body li {
+      margin-bottom: 8px;
+    }
+
+    /* レスポンシブ調整 */
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+      .container {
+        padding: 16px;
+      }
+      h1 {
+        font-size: 20px;
+      }
+      .result-row {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container" role="main">
+    
+    <header>
+      <div class="title-area">
+        <span class="app-icon" aria-hidden="true">📊</span>
+        <h1>歩留まり・不良率計算ツール</h1>
+      </div>
+      <button class="btn btn-info" id="btnHelp" aria-haspopup="dialog" aria-controls="helpModal">❓使い方</button>
+    </header>
+
+    <div class="section">
+      <div class="form-group">
+        <label id="labelInputTotal" for="inputTotal">投入数（数字のみ）</label>
+        <input type="text" id="inputTotal" class="input-field" placeholder="例: 1000" inputmode="numeric" aria-labelledby="labelInputTotal" aria-describedby="errorTotal">
+        <div id="errorTotal" class="error-msg" role="alert">半角の数字を入力してください。</div>
+      </div>
+
+      <div class="form-group">
+        <span class="label" style="display: block; font-weight: bold; margin-bottom: 8px; font-size: 1.1rem;">入力データの選択</span>
+        <div class="radio-group">
+          <label class="radio-label">
+            <input type="radio" name="dataType" value="good" checked id="radioGood">
+            良品数で指定する
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="dataType" value="bad" id="radioBad">
+            不良数で指定する
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group" id="groupGood">
+        <label id="labelInputGood" for="inputGood">良品数（数字のみ）</label>
+        <input type="text" id="inputGood" class="input-field" placeholder="例: 950" inputmode="numeric" aria-labelledby="labelInputGood" aria-describedby="errorGood">
+        <div id="errorGood" class="error-msg" role="alert">半角の数字を入力してください。また、良品数は投入数以下にしてください。</div>
+      </div>
+
+      <div class="form-group" id="groupBad" style="display: none;">
+        <label id="labelInputBad" for="inputBad">不良数（数字のみ）</label>
+        <input type="text" id="inputBad" class="input-field" placeholder="例: 50" inputmode="numeric" aria-labelledby="labelInputBad" aria-describedby="errorBad">
+        <div id="errorBad" class="error-msg" role="alert">半角の数字を入力してください。また、不良数は投入数以下にしてください。</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 style="font-size: 1.2rem; margin-bottom: 8px;">計算結果</h2>
+      <div class="results-card" id="resultsContainer">
+        <div class="result-row" id="rowYield">
+          <span>歩留まり率:</span>
+          <span id="txtYield">0.0%</span>
+        </div>
+        <div class="result-row" id="rowDefect">
+          <span>不良率:</span>
+          <span id="txtDefect">0.0%</span>
+        </div>
+      </div>
+      <p id="errorZeroMsg" class="error-msg" style="display:none; font-size: 1rem;" role="alert">投入数が 0 のため計算できません。</p>
+    </div>
+
+    <div class="section">
+      <div class="form-group">
+        <label id="labelTarget" for="inputTarget">目標歩留まり率（%）</label>
+        <input type="text" id="inputTarget" class="input-field" placeholder="例: 95.0" inputmode="decimal" aria-labelledby="labelTarget" aria-describedby="errorTarget">
+        <div id="errorTarget" class="error-msg" role="alert">半角の数字を入力してください（0〜100）。</div>
+      </div>
+
+      <div class="target-card" id="targetCard" style="display: none;">
+        <div style="font-weight: bold; font-size: 1.1rem;" id="targetLabel">目標達成状況</div>
+        <div id="targetStatusText" style="margin-top: 4px;">現在の歩留まり率: - / 目標: -</div>
+        <div id="targetBadge" class="status-badge">未設定</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="export-group">
+        <button class="btn btn-primary" id="btnCopy" aria-label="計算結果をクリップボードにコピーします">📋結果をコピー</button>
+        <button class="btn btn-secondary" id="btnDownload" aria-label="計算結果をテキストファイルとしてダウンロードします">📥結果をダウンロード</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="modal-overlay" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">❓ このアプリの使い方</div>
+        <button class="btn" id="btnCloseHelp" style="padding: 4px 8px; border: 1px solid var(--color-border); font-size: 14px;" aria-label="閉じる">✖</button>
+      </div>
+      <div class="modal-body">
+        <p><strong>1. アプリでできること</strong></p>
+        <p>製造や検査における「投入数」から「歩留まり率（良品の割合）」と「不良率」を瞬時に割り出すことができます。また、設定した目標への到達状況をひと目で評価できます。</p>
+        
+        <p><strong>2. 基本的な使い方</strong></p>
+        <ol>
+          <li>「投入数」に、全体の製造数や処理数を半角数字で入力します。</li>
+          <li>「良品数」または「不良数」を選択し、それぞれの数値を半角数字で入力します（リアルタイムで下に計算結果が反映されます）。</li>
+          <li>目標がある場合は「目標歩留まり率」に数値を入力します。達成か未達成かを背景色付きで評価します。</li>
+          <li>「📋結果をコピー」や「📥結果をダウンロード」を使って、結果をかんたんに記録・共有できます。</li>
+        </ol>
+
+        <p><strong>3. 安心のデータ保護（セキュリティ）</strong></p>
+        <p>入力したすべてのデータはこの端末（ブラウザ）の内部だけで完結して処理されるため、サーバーなどの外部へ一切送信されません。機密情報を含む数値でも安心してお使いいただけます。</p>
+      </div>
+      <div style="text-align: right;">
+        <button class="btn btn-secondary" id="btnConfirmClose">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ----------------------------------
+       JavaScript: ロジック & インタラクション
+       ---------------------------------- */
+    const inputTotal = document.getElementById('inputTotal');
+    const inputGood = document.getElementById('inputGood');
+    const inputBad = document.getElementById('inputBad');
+    const inputTarget = document.getElementById('inputTarget');
+    
+    const radioGood = document.getElementById('radioGood');
+    const radioBad = document.getElementById('radioBad');
+    
+    const groupGood = document.getElementById('groupGood');
+    const groupBad = document.getElementById('groupBad');
+
+    const txtYield = document.getElementById('txtYield');
+    const txtDefect = document.getElementById('txtDefect');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const errorZeroMsg = document.getElementById('errorZeroMsg');
+
+    const errorTotal = document.getElementById('errorTotal');
+    const errorGood = document.getElementById('errorGood');
+    const errorBad = document.getElementById('errorBad');
+    const errorTarget = document.getElementById('errorTarget');
+
+    const targetCard = document.getElementById('targetCard');
+    const targetStatusText = document.getElementById('targetStatusText');
+    const targetBadge = document.getElementById('targetBadge');
+
+    const btnCopy = document.getElementById('btnCopy');
+    const btnDownload = document.getElementById('btnDownload');
+
+    const helpModal = document.getElementById('helpModal');
+    const btnHelp = document.getElementById('btnHelp');
+    const btnCloseHelp = document.getElementById('btnCloseHelp');
+    const btnConfirmClose = document.getElementById('btnConfirmClose');
+
+    // 計算に用いる内部変数
+    let valTotal = 0;
+    let valGood = 0;
+    let valBad = 0;
+    let calcYield = 0;
+    let calcDefect = 0;
+
+    // ラジオボタンの切り替え制御
+    document.querySelectorAll('input[name="dataType"]').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        if (e.target.value === 'good') {
+          groupGood.style.display = 'block';
+          groupBad.style.display = 'none';
+        } else {
+          groupGood.style.display = 'none';
+          groupBad.style.display = 'block';
+        }
+        calculate();
+      });
+    });
+
+    // 入力値変更のイベント検知
+    inputTotal.addEventListener('input', calculate);
+    inputGood.addEventListener('input', calculate);
+    inputBad.addEventListener('input', calculate);
+    inputTarget.addEventListener('input', calculate);
+
+    // バリデーション & 計算処理
+    function calculate() {
+      let isError = false;
+
+      // 1. 投入数のバリデーション
+      const rawTotal = inputTotal.value.trim();
+      if (rawTotal === '') {
+        valTotal = 0;
+        errorTotal.style.display = 'none';
+      } else if (!/^\d+$/.test(rawTotal)) {
+        valTotal = 0;
+        errorTotal.style.display = 'block';
+        isError = true;
+      } else {
+        valTotal = parseInt(rawTotal, 10);
+        errorTotal.style.display = 'none';
+      }
+
+      // 2. ラジオボタンに応じた良品数・不良数の取得とバリデーション
+      const mode = document.querySelector('input[name="dataType"]:checked').value;
+      if (mode === 'good') {
+        const rawGood = inputGood.value.trim();
+        if (rawGood === '') {
+          valGood = 0;
+          valBad = valTotal;
+          errorGood.style.display = 'none';
+        } else if (!/^\d+$/.test(rawGood)) {
+          valGood = 0;
+          errorGood.style.display = 'block';
+          isError = true;
+        } else {
+          const tempGood = parseInt(rawGood, 10);
+          if (valTotal > 0 && tempGood > valTotal) {
+            valGood = 0;
+            errorGood.style.display = 'block';
+            isError = true;
+          } else {
+            valGood = tempGood;
+            valBad = valTotal - valGood;
+            errorGood.style.display = 'none';
+          }
+        }
+      } else {
+        const rawBad = inputBad.value.trim();
+        if (rawBad === '') {
+          valBad = 0;
+          valGood = valTotal;
+          errorBad.style.display = 'none';
+        } else if (!/^\d+$/.test(rawBad)) {
+          valBad = 0;
+          errorBad.style.display = 'block';
+          isError = true;
+        } else {
+          const tempBad = parseInt(rawBad, 10);
+          if (valTotal > 0 && tempBad > valTotal) {
+            valBad = 0;
+            errorBad.style.display = 'block';
+            isError = true;
+          } else {
+            valBad = tempBad;
+            valGood = valTotal - valBad;
+            errorBad.style.display = 'none';
+          }
+        }
+      }
+
+      // 3. 投入数0、またはエラー時の表示制御
+      if (valTotal === 0) {
+        // 結果表示を非活性（または計算不可状態）
+        txtYield.textContent = '0.0%';
+        txtDefect.textContent = '0.0%';
+        calcYield = 0;
+        calcDefect = 0;
+        resultsContainer.classList.add('disabled-text');
+        
+        if (rawTotal !== '' && parseInt(rawTotal, 10) === 0) {
+          errorZeroMsg.style.display = 'block';
+        } else {
+          errorZeroMsg.style.display = 'none';
+        }
+      } else if (isError) {
+        // 入力異常時も0%とし、安全に表示
+        txtYield.textContent = '0.0%';
+        txtDefect.textContent = '0.0%';
+        calcYield = 0;
+        calcDefect = 0;
+        resultsContainer.classList.add('disabled-text');
+        errorZeroMsg.style.display = 'none';
+      } else {
+        // 通常計算
+        errorZeroMsg.style.display = 'none';
+        resultsContainer.classList.remove('disabled-text');
+
+        // 四捨五入による算出 (小数点第1位に丸める)
+        calcYield = Math.round((valGood / valTotal) * 100 * 10) / 10;
+        calcDefect = Math.round((valBad / valTotal) * 100 * 10) / 10;
+
+        txtYield.textContent = calcYield.toFixed(1) + '%';
+        txtDefect.textContent = calcDefect.toFixed(1) + '%';
+      }
+
+      // 4. 目標評価
+      evaluateTarget(isError || valTotal === 0);
+    }
+
+    // 目標評価処理
+    function evaluateTarget(isDisabled) {
+      const rawTarget = inputTarget.value.trim();
+      if (rawTarget === '') {
+        targetCard.style.display = 'none';
+        errorTarget.style.display = 'none';
+        return;
+      }
+
+      // 少数対応の検証
+      if (!/^\d+(\.\d+)?$/.test(rawTarget)) {
+        targetCard.style.display = 'none';
+        errorTarget.style.display = 'block';
+        return;
+      }
+
+      const targetVal = parseFloat(rawTarget);
+      if (targetVal < 0 || targetVal > 100) {
+        targetCard.style.display = 'none';
+        errorTarget.style.display = 'block';
+        return;
+      }
+
+      errorTarget.style.display = 'none';
+      targetCard.style.display = 'block';
+
+      if (isDisabled) {
+        targetCard.className = 'target-card';
+        targetStatusText.textContent = `現在の歩留まり率: 計算不可 / 目標: ${targetVal.toFixed(1)}%`;
+        targetBadge.className = 'status-badge';
+        targetBadge.textContent = '計算不可';
+        return;
+      }
+
+      targetStatusText.textContent = `現在の歩留まり率: ${calcYield.toFixed(1)}% / 目標: ${targetVal.toFixed(1)}%`;
+
+      if (calcYield >= targetVal) {
+        targetCard.className = 'target-card status-success';
+        targetBadge.className = 'status-badge success';
+        targetBadge.textContent = '目標達成 🎉';
+      } else {
+        targetCard.className = 'target-card status-danger';
+        targetBadge.className = 'status-badge danger';
+        targetBadge.textContent = '未達成 💦';
+      }
+    }
+
+    // クリップボードへのコピー機能
+    btnCopy.addEventListener('click', () => {
+      const mode = document.querySelector('input[name="dataType"]:checked').value;
+      const subValueLabel = mode === 'good' ? '良品数' : '不良数';
+      const subValue = mode === 'good' ? valGood : valBad;
+
+      const text = `【歩留まり・不良率 計算結果】
+・投入数: ${valTotal}
+・${subValueLabel}: ${subValue}
+────────────────────
+・歩留まり率: ${txtYield.textContent}
+・不良率: ${txtDefect.textContent}
+────────────────────
+※本結果はブラウザツール「歩留まり・不良率計算ツール」にて算出しました。`;
+
+      navigator.clipboard.writeText(text)
+        .then(() => {
+          const originalText = btnCopy.textContent;
+          btnCopy.textContent = '✓ コピー完了！';
+          setTimeout(() => {
+            btnCopy.textContent = originalText;
+          }, 2000);
+        })
+        .catch(err => {
+          alert('コピーに失敗しました。環境により対応していない場合があります。');
+        });
+    });
+
+    // テキストファイルとしてダウンロード機能
+    btnDownload.addEventListener('click', () => {
+      const mode = document.querySelector('input[name="dataType"]:checked').value;
+      const subValueLabel = mode === 'good' ? '良品数' : '不良数';
+      const subValue = mode === 'good' ? valGood : valBad;
+
+      const text = `【歩留まり・不良率 計算結果】
+・投入数: ${valTotal}
+・${subValueLabel}: ${subValue}
+────────────────────
+・歩留まり率: ${txtYield.textContent}
+・不良率: ${txtDefect.textContent}
+────────────────────
+ダウンロード日時: ${new Date().toLocaleString('ja-JP')}`;
+
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `歩留まり不良率結果_${new Date().toISOString().slice(0,10)}.txt`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    });
+
+    // モーダルの開閉制御
+    let activeElementBeforeModal = null;
+
+    function openModal() {
+      activeElementBeforeModal = document.activeElement;
+      helpModal.style.display = 'flex';
+      btnCloseHelp.focus();
+      document.addEventListener('keydown', trapFocus);
+    }
+
+    function closeModal() {
+      helpModal.style.display = 'none';
+      document.removeEventListener('keydown', trapFocus);
+      if (activeElementBeforeModal) {
+        activeElementBeforeModal.focus();
+      }
+    }
+
+    btnHelp.addEventListener('click', openModal);
+    btnCloseHelp.addEventListener('click', closeModal);
+    btnConfirmClose.addEventListener('click', closeModal);
+
+    // モーダルの背景クリックでも閉じる
+    helpModal.addEventListener('click', (e) => {
+      if (e.target === helpModal) {
+        closeModal();
+      }
+    });
+
+    // キーボードのキーバインディング (ESCで閉じる & Tabキーフォーカストラップ)
+    function trapFocus(e) {
+      if (e.key === 'Escape') {
+        closeModal();
+        return;
+      }
+
+      if (e.key === 'Tab') {
+        const focusableElements = helpModal.querySelectorAll('button, [href], input, select, textarea, [tabindex="0"]');
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            lastElement.focus();
+            e.preventDefault();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            firstElement.focus();
+            e.preventDefault();
+          }
+        }
+      }
+    }
+
+    // 初期化実行
+    calculate();
+  </script>
+</body>
+</html>

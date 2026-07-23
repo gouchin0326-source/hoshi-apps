@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>教育研修受講記録システム</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🎓</text></svg>'>
+  <style>
+    /* CSS変数による一貫したデザインとアクセシビリティ（コントラスト比4.5:1以上） */
+    :root {
+      --primary-color: #005a9c;
+      --primary-dark: #003a66;
+      --bg-color: #f7f9fa;
+      --panel-bg: #ffffff;
+      --text-color: #1a1a1a;
+      --text-muted: #4d4d4d;
+      --border-color: #767676;
+      --focus-outline: #ffbf47;
+      --success-color: #198754;
+      --info-color: #0dcaf0;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 16px; /* 16px以上 */
+      line-height: 1.6;
+      color: var(--text-color);
+      background-color: var(--bg-color);
+      margin: 0;
+      padding: 0;
+    }
+
+    /* 全体コンテナ */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    /* ヘッダー */
+    header {
+      background-color: var(--panel-bg);
+      border-bottom: 3px solid var(--primary-color);
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .header-title {
+      display: flex;
+      align-items: center;
+      margin: 0;
+      font-size: 1.8rem;
+      color: var(--primary-color);
+    }
+
+    .header-emoji {
+      font-size: 2.5rem;
+      margin-right: 15px;
+    }
+
+    .header-message {
+      background-color: #eef6fc;
+      border-left: 4px solid var(--primary-color);
+      padding: 12px 16px;
+      margin-top: 15px;
+      font-size: 1rem;
+      color: var(--text-muted);
+      border-radius: 0 4px 4px 0;
+    }
+
+    /* 汎用ボタン */
+    .btn {
+      font-size: 1rem;
+      font-weight: bold;
+      padding: 10px 20px;
+      border: 2px solid transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 48px; /* モバイルのタップ領域確保 */
+      text-decoration: none;
+      transition: background-color 0.2s, border-color 0.2s;
+    }
+
+    .btn:focus-visible {
+      outline: 4px solid var(--focus-outline);
+      outline-offset: 2px;
+    }
+
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-dark);
+    }
+
+    .btn-secondary {
+      background-color: #f0f0f0;
+      color: var(--text-color);
+      border-color: var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background-color: #e2e2e2;
+    }
+
+    .btn-help {
+      background-color: #6c757d;
+      color: #ffffff;
+    }
+
+    .btn-help:hover {
+      background-color: #5a6268;
+    }
+
+    .btn-export {
+      background-color: var(--success-color);
+      color: #ffffff;
+    }
+
+    .btn-export:hover {
+      background-color: #146c43;
+    }
+
+    /* メインコンテンツ・グリッドレイアウト */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    @media (min-width: 900px) {
+      .grid {
+        grid-template-columns: 1fr 2fr;
+      }
+    }
+
+    /* カード・パネルスタイル */
+    .card {
+      background-color: var(--panel-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .card-title {
+      font-size: 1.3rem;
+      margin-top: 0;
+      margin-bottom: 20px;
+      border-bottom: 2px solid var(--primary-color);
+      padding-bottom: 8px;
+      color: var(--primary-color);
+    }
+
+    /* フォームパーツ */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .form-control {
+      width: 100%;
+      font-size: 1rem;
+      padding: 10px;
+      border: 2px solid var(--border-color);
+      border-radius: 4px;
+      background-color: #ffffff;
+      color: var(--text-color);
+      min-height: 48px; /* モバイルの操作性保証 */
+    }
+
+    .form-control:focus {
+      outline: 4px solid var(--focus-outline);
+      outline-offset: 0;
+    }
+
+    /* フィルターエリア */
+    .filter-area {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      background-color: #f0f4f8;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      align-items: flex-end;
+    }
+
+    .filter-group {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .filter-group label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    /* 集計表示エリア */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    @media (min-width: 600px) {
+      .summary-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .summary-box {
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 15px;
+      background-color: #fafafa;
+    }
+
+    .summary-box h4 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 1rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 4px;
+    }
+
+    .summary-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .summary-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px dashed #dddddd;
+      font-size: 0.95rem;
+    }
+
+    .summary-count {
+      font-weight: bold;
+      color: var(--primary-color);
+    }
+
+    /* 一覧テーブルレスポンシブ対応 */
+    .table-container {
+      overflow-x: auto;
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      min-width: 600px;
+    }
+
+    th, td {
+      padding: 12px;
+      border: 1px solid var(--border-color);
+    }
+
+    th {
+      background-color: #eef6fc;
+      color: var(--text-color);
+      font-weight: bold;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    /* モーダルマニュアル */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s, visibility 0.2s;
+      padding: 15px;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background-color: var(--panel-bg);
+      border-radius: 8px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      border: 2px solid var(--primary-color);
+    }
+
+    .modal-header {
+      background-color: var(--primary-color);
+      color: #ffffff;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      font-size: 1.3rem;
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .modal-body ol {
+      padding-left: 20px;
+      margin-bottom: 20px;
+    }
+
+    .modal-body li {
+      margin-bottom: 10px;
+    }
+
+    .modal-footer {
+      padding: 15px 20px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    /* スクリーンリーダー向け非表示 */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="header-top">
+        <h1 class="header-title">
+          <span class="header-emoji" aria-hidden="true">🎓</span>
+          <span>教育研修受講記録システム</span>
+        </h1>
+        <div>
+          <button type="button" class="btn btn-help" id="btn-manual-open" aria-haspopup="dialog" aria-controls="manual-modal">
+            ❓使い方を表示する
+          </button>
+        </div>
+      </div>
+      <div class="header-message">
+        📢 教育記録の管理は、人の評価や監視ではなく、業務改善のためのツールです
+      </div>
+    </header>
+
+    <main class="grid">
+      <section class="card" aria-labelledby="form-title">
+        <h2 id="form-title" class="card-title">✍️ 受講記録の登録</h2>
+        <form id="record-form">
+          <div class="form-group">
+            <label id="lbl-date" for="input-date">受講日 <span style="color: red;">*</span></label>
+            <input type="date" id="input-date" class="form-control" required aria-labelledby="lbl-date">
+          </div>
+
+          <div class="form-group">
+            <label id="lbl-user" for="input-user">受講者 <span style="color: red;">*</span></label>
+            <input type="text" id="input-user" class="form-control" required placeholder="例：山田 太郎" aria-labelledby="lbl-user">
+          </div>
+
+          <div class="form-group">
+            <label id="lbl-title" for="input-title">研修名 <span style="color: red;">*</span></label>
+            <input type="text" id="input-title" class="form-control" required placeholder="例：個人情報保護研修" aria-labelledby="lbl-title">
+          </div>
+
+          <div class="form-group">
+            <label id="lbl-type" for="select-type">区分 <span style="color: red;">*</span></label>
+            <select id="select-type" class="form-control" required aria-labelledby="lbl-type">
+              <option value="" disabled selected>選択してください</option>
+              <option value="安全教育">安全教育</option>
+              <option value="技能">技能</option>
+              <option value="品質">品質</option>
+              <option value="コンプライアンス">コンプライアンス</option>
+              <option value="その他">その他</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label id="lbl-hours" for="input-hours">時間 (時間) <span style="color: red;">*</span></label>
+            <input type="number" id="input-hours" class="form-control" min="0" step="0.1" required placeholder="例：1.5" aria-labelledby="lbl-hours">
+          </div>
+
+          <div class="form-group">
+            <label id="lbl-instructor" for="input-instructor">講師 <span style="color: red;">*</span></label>
+            <input type="text" id="input-instructor" class="form-control" required placeholder="例：鈴木 一郎" aria-labelledby="lbl-instructor">
+          </div>
+
+          <div class="form-group">
+            <label id="lbl-status" for="select-status">修了状況 <span style="color: red;">*</span></label>
+            <select id="select-status" class="form-control" required aria-labelledby="lbl-status">
+              <option value="" disabled selected>選択してください</option>
+              <option value="受講済">受講済</option>
+              <option value="未受講">未受講</option>
+              <option value="予定">予定</option>
+            </select>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">💾 登録する</button>
+        </form>
+      </section>
+
+      <section class="card" aria-labelledby="list-title">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
+          <h2 id="list-title" class="card-title" style="margin-bottom: 0; border: none; padding: 0;">📋 受講記録一覧</h2>
+          <button type="button" class="btn btn-export" id="btn-export-csv">📤 CSVエクスポート</button>
+        </div>
+
+        <div class="filter-area">
+          <div class="filter-group">
+            <label for="filter-user">👤 受講者で絞り込む</label>
+            <input type="text" id="filter-user" class="form-control" placeholder="すべて表示（部分一致）">
+          </div>
+          <div class="filter-group">
+            <label for="filter-type">📁 区分で絞り込む</label>
+            <select id="filter-type" class="form-control">
+              <option value="ALL">すべて表示</option>
+              <option value="安全教育">安全教育</option>
+              <option value="技能">技能</option>
+              <option value="品質">品質</option>
+              <option value="コンプライアンス">コンプライアンス</option>
+              <option value="その他">その他</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="summary-grid">
+          <div class="summary-box">
+            <h4>👤 受講者別の受講件数</h4>
+            <ul id="summary-user" class="summary-list">
+              <li style="color: var(--text-muted); font-size: 0.9rem;">記録が登録されるとここに集計が表示されます</li>
+            </ul>
+          </div>
+          <div class="summary-box">
+            <h4>📁 区分別の受講件数</h4>
+            <ul id="summary-type" class="summary-list">
+              <li style="color: var(--text-muted); font-size: 0.9rem;">記録が登録されるとここに集計が表示されます</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table id="records-table">
+            <thead>
+              <tr>
+                <th scope="col">受講日</th>
+                <th scope="col">受講者</th>
+                <th scope="col">研修名</th>
+                <th scope="col">区分</th>
+                <th scope="col">時間</th>
+                <th scope="col">講師</th>
+                <th scope="col">修了状況</th>
+              </tr>
+            </thead>
+            <tbody id="records-list">
+              </tbody>
+          </table>
+          <div id="no-records-msg" style="text-align: center; padding: 30px; display: none; color: var(--text-muted);">
+            登録された教育・研修データはありません。
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="manual-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-title">❓ このアプリの使い方</h3>
+        <button type="button" id="btn-manual-close-x" style="background: none; border: none; color: #ffffff; font-size: 1.5rem; cursor: pointer; padding: 5px;" aria-label="閉じる">×</button>
+      </div>
+      <div class="modal-body">
+        <h4>(1) このアプリで何ができるか</h4>
+        <p>
+          このアプリは、従業員の安全教育、技術・技能訓練、品質管理、コンプライアンス等の研修受講状況を一覧で管理・集計・エクスポートするツールです。
+        </p>
+
+        <h4>(2) 基本的な使い方（3ステップ）</h4>
+        <ol>
+          <li><strong>記録の登録：</strong> 画面左側の「受講記録の登録」フォームに、受講日・受講者・研修名・区分・時間・講師・修了状況を入力して「登録する」ボタンを押します。</li>
+          <li><strong>データの絞り込みと集計確認：</strong> 登録したデータは即座に画面右側の「受講記録一覧」および「集計表示」に反映されます。「受講者」「区分」のフィルターを用いてリアルタイムに絞り込み検索が可能です。</li>
+          <li><strong>CSVエクスポート：</strong> 登録されたデータはいつでも「CSVエクスポート」ボタンから、CSVファイルとして端末にダウンロードできます。</li>
+        </ol>
+
+        <h4>(3) データについて</h4>
+        <p>
+          登録されたすべてのデータは、<strong>この端末のブラウザ（localStorage）内だけで完結して保存されます。</strong> 外部への送信は一切行われませんので、社外秘やデリケートな情報も安全に入力できます。
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="btn-manual-close-bottom">理解しました（閉じる）</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 定数と状態管理
+    const STORAGE_KEY = 'trainingRecords';
+    let records = [];
+
+    // DOM要素の参照
+    const recordForm = document.getElementById('record-form');
+    const recordsList = document.getElementById('records-list');
+    const noRecordsMsg = document.getElementById('no-records-msg');
+    const btnExportCsv = document.getElementById('btn-export-csv');
+
+    // フィルター用要素
+    const filterUser = document.getElementById('filter-user');
+    const filterType = document.getElementById('filter-type');
+
+    // 集計用要素
+    const summaryUserList = document.getElementById('summary-user');
+    const summaryTypeList = document.getElementById('summary-type');
+
+    // モーダル関連要素
+    const btnManualOpen = document.getElementById('btn-manual-open');
+    const btnManualCloseX = document.getElementById('btn-manual-close-x');
+    const btnManualCloseBottom = document.getElementById('btn-manual-close-bottom');
+    const manualModal = document.getElementById('manual-modal');
+    let lastActiveElement = null; // キーボードアクセシビリティ（フォーカスバック）用
+
+    // アプリ起動時の初期処理
+    window.addEventListener('DOMContentLoaded', () => {
+      loadRecords();
+      renderAll();
+
+      // モーダル表示イベント
+      btnManualOpen.addEventListener('click', openModal);
+      btnManualCloseX.addEventListener('click', closeModal);
+      btnManualCloseBottom.addEventListener('click', closeModal);
+      manualModal.addEventListener('click', (e) => {
+        if (e.target === manualModal) closeModal();
+      });
+
+      // エスケープキーでモーダルを閉じる
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && manualModal.classList.contains('active')) {
+          closeModal();
+        }
+      });
+
+      // フィルターの入力イベント
+      filterUser.addEventListener('input', renderAll);
+      filterType.addEventListener('change', renderAll);
+
+      // フォームの送信処理
+      recordForm.addEventListener('submit', handleFormSubmit);
+
+      // CSVエクスポート
+      btnExportCsv.addEventListener('click', exportToCSV);
+    });
+
+    // データの読み込み
+    function loadRecords() {
+      try {
+        const data = localStorage.getItem(STORAGE_KEY);
+        records = data ? JSON.parse(data) : [];
+      } catch (e) {
+        console.error("データの読み込みに失敗しました", e);
+        records = [];
+      }
+    }
+
+    // データの保存
+    function saveRecords() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+      } catch (e) {
+        alert("データの保存に失敗しました。容量制限等を確認してください。");
+      }
+    }
+
+    // フォーム送信ハンドラ
+    function handleFormSubmit(e) {
+      e.preventDefault();
+
+      const newRecord = {
+        id: Date.now().toString(), // 一意のキー
+        date: document.getElementById('input-date').value,
+        user: document.getElementById('input-user').value.trim(),
+        title: document.getElementById('input-title').value.trim(),
+        type: document.getElementById('select-type').value,
+        hours: parseFloat(document.getElementById('input-hours').value) || 0,
+        instructor: document.getElementById('input-instructor').value.trim(),
+        status: document.getElementById('select-status').value
+      };
+
+      records.push(newRecord);
+      saveRecords();
+      renderAll();
+
+      // フォームを初期化
+      recordForm.reset();
+      // 入力完了を知らせるために日付フォームにフォーカスを設定
+      document.getElementById('input-date').focus();
+    }
+
+    // 表示の一括更新
+    function renderAll() {
+      // フィルタリング処理
+      const searchUser = filterUser.value.trim().toLowerCase();
+      const searchType = filterType.value;
+
+      // 日付の降順（新しい順）で並び替え
+      const sortedRecords = [...records].sort((a, b) => {
+        return new Date(b.date) - new Date(a.date);
+      });
+
+      const filteredRecords = sortedRecords.filter(item => {
+        const matchesUser = searchUser === '' || item.user.toLowerCase().includes(searchUser);
+        const matchesType = searchType === 'ALL' || item.type === searchType;
+        return matchesUser && matchesType;
+      });
+
+      // テーブル描画
+      recordsList.innerHTML = '';
+      if (filteredRecords.length === 0) {
+        noRecordsMsg.style.display = 'block';
+      } else {
+        noRecordsMsg.style.display = 'none';
+        filteredRecords.forEach(item => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${escapeHtml(item.date)}</td>
+            <td>${escapeHtml(item.user)}</td>
+            <td>${escapeHtml(item.title)}</td>
+            <td>${escapeHtml(item.type)}</td>
+            <td>${escapeHtml(item.hours.toString())} 時間</td>
+            <td>${escapeHtml(item.instructor)}</td>
+            <td>${escapeHtml(item.status)}</td>
+          `;
+          recordsList.appendChild(tr);
+        });
+      }
+
+      // 集計表示の更新
+      renderSummary();
+    }
+
+    // 集計の計算と表示
+    function renderSummary() {
+      const userCounts = {};
+      const typeCounts = {};
+
+      records.forEach(item => {
+        // 受講者別件数
+        if (item.user) {
+          userCounts[item.user] = (userCounts[item.user] || 0) + 1;
+        }
+        // 区分別件数
+        if (item.type) {
+          typeCounts[item.type] = (typeCounts[item.type] || 0) + 1;
+        }
+      });
+
+      // 受講者別件数の描画
+      summaryUserList.innerHTML = '';
+      const userKeys = Object.keys(userCounts);
+      if (userKeys.length === 0) {
+        summaryUserList.innerHTML = '<li style="color: var(--text-muted); font-size: 0.9rem;">記録がありません</li>';
+      } else {
+        userKeys.forEach(user => {
+          const li = document.createElement('li');
+          li.className = 'summary-item';
+          li.innerHTML = `<span>👤 ${escapeHtml(user)}</span><span class="summary-count">${userCounts[user]} 件</span>`;
+          summaryUserList.appendChild(li);
+        });
+      }
+
+      // 区分別件数の描画
+      summaryTypeList.innerHTML = '';
+      const typeKeys = Object.keys(typeCounts);
+      if (typeKeys.length === 0) {
+        summaryTypeList.innerHTML = '<li style="color: var(--text-muted); font-size: 0.9rem;">記録がありません</li>';
+      } else {
+        typeKeys.forEach(type => {
+          const li = document.createElement('li');
+          li.className = 'summary-item';
+          li.innerHTML = `<span>📁 ${escapeHtml(type)}</span><span class="summary-count">${typeCounts[type]} 件</span>`;
+          summaryTypeList.appendChild(li);
+        });
+      }
+    }
+
+    // CSVエクスポート処理
+    function exportToCSV() {
+      if (records.length === 0) {
+        alert("エクスポートするデータがありません。先に登録してください。");
+        return;
+      }
+
+      // CSVヘッダー
+      const headers = ["受講日", "受講者", "研修名", "区分", "時間", "講師", "修了状況"];
+      
+      const csvRows = [headers.join(",")];
+
+      records.forEach(item => {
+        const row = [
+          escapeCSVField(item.date),
+          escapeCSVField(item.user),
+          escapeCSVField(item.title),
+          escapeCSVField(item.type),
+          escapeCSVField(item.hours.toString()),
+          escapeCSVField(item.instructor),
+          escapeCSVField(item.status)
+        ];
+        csvRows.push(row.join(","));
+      });
+
+      const csvContent = csvRows.join("\r\n");
+      // Excel対応：BOM（Byte Order Mark）を付与してUTF-8として認識させる
+      const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+      const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
+      
+      const link = document.createElement("a");
+      if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `研修受講記録_export_${getFormattedDate()}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    }
+
+    // お手軽安全なファイル名用日付文字列
+    function getFormattedDate() {
+      const d = new Date();
+      return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    // CSVフィールドの安全なエスケープ
+    function escapeCSVField(val) {
+      if (val === null || val === undefined) return '';
+      let text = val.toString();
+      if (text.includes(',') || text.includes('"') || text.includes('\n') || text.includes('\r')) {
+        text = '"' + text.replace(/"/g, '""') + '"';
+      }
+      return text;
+    }
+
+    // HTMLエスケープ処理（セキュリティ対策）
+    function escapeHtml(str) {
+      if (typeof str !== 'string') return str;
+      return str.replace(/[&<>'"]/g, (tag) => {
+        const chars = {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          "'": '&#39;',
+          '"': '&quot;'
+        };
+        return chars[tag] || tag;
+      });
+    }
+
+    // モーダル開閉用
+    function openModal() {
+      lastActiveElement = document.activeElement;
+      manualModal.classList.add('active');
+      btnManualCloseBottom.focus();
+    }
+
+    function closeModal() {
+      manualModal.classList.remove('active');
+      if (lastActiveElement) {
+        lastActiveElement.focus();
+      }
+    }
+  </script>
+</body>
+</html>

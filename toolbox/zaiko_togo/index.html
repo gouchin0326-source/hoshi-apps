@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>簡易在庫・発注管理システム</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📦</text></svg>'>
+  <style>
+    /* --------------------------------------------------
+       CSS: リセット & 変数 & ユニバーサルデザイン
+       -------------------------------------------------- */
+    :root {
+      --primary-color: #0056b3;
+      --primary-hover: #004085;
+      --bg-color: #f8f9fa;
+      --card-bg: #ffffff;
+      --text-color: #212529;
+      --text-muted: #6c757d;
+      --border-color: #ced4da;
+      --accent-danger: #dc3545;
+      --accent-warning: #ffc107;
+      --accent-success: #28a745;
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+      --font-size-base: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-family);
+      font-size: var(--font-size-base);
+      line-height: 1.6;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      padding: 10px;
+    }
+
+    /* キーボード操作時の視認性向上 */
+    *:focus-visible {
+      outline: 3px solid var(--primary-color);
+      outline-offset: 2px;
+    }
+
+    /* --------------------------------------------------
+       レイアウト: ヘッダー & ナビゲーション
+       -------------------------------------------------- */
+    header {
+      background-color: var(--card-bg);
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    @media (min-width: 768px) {
+      header {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+      }
+    }
+
+    .header-title-container {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .header-emoji {
+      font-size: 2.5rem;
+    }
+
+    .header-title h1 {
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+    .header-title p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* ボタン共通スタイル */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 10px 16px;
+      font-size: 1rem;
+      font-weight: bold;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      cursor: pointer;
+      background-color: #fff;
+      color: var(--text-color);
+      transition: background-color 0.2s, border-color 0.2s;
+      min-height: 44px; /* タップターゲット確保 */
+    }
+
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: #fff;
+      border-color: var(--primary-color);
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn-danger {
+      background-color: var(--accent-danger);
+      color: #fff;
+      border-color: var(--accent-danger);
+    }
+
+    .btn-danger:hover {
+      background-color: #bd2130;
+    }
+
+    .btn-info {
+      background-color: #17a2b8;
+      color: #fff;
+      border-color: #17a2b8;
+    }
+
+    .btn-info:hover {
+      background-color: #138496;
+    }
+
+    /* --------------------------------------------------
+       タブナビゲーション
+       -------------------------------------------------- */
+    nav.tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 15px;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 5px;
+    }
+
+    .tab-btn {
+      flex: 1 1 auto;
+      text-align: center;
+      padding: 12px 10px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      background: none;
+      border: none;
+      border-bottom: 4px solid transparent;
+      cursor: pointer;
+      color: var(--text-color);
+      min-height: 48px;
+    }
+
+    .tab-btn:hover {
+      background-color: rgba(0, 86, 179, 0.05);
+    }
+
+    .tab-btn.active {
+      border-bottom-color: var(--primary-color);
+      color: var(--primary-color);
+    }
+
+    /* --------------------------------------------------
+       コンテンツエリア
+       -------------------------------------------------- */
+    .tab-content {
+      display: none;
+      background-color: var(--card-bg);
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .section-title {
+      font-size: 1.3rem;
+      font-weight: bold;
+    }
+
+    /* --------------------------------------------------
+       テーブル & スクロールコンテナ
+       -------------------------------------------------- */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      margin-bottom: 15px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      min-width: 600px; /* スマートフォンでもスクロールさせるための最小幅 */
+    }
+
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    th {
+      background-color: #f1f3f5;
+      font-weight: bold;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr:hover {
+      background-color: rgba(0, 0, 0, 0.02);
+      cursor: pointer;
+    }
+
+    /* --------------------------------------------------
+       フォーム
+       -------------------------------------------------- */
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 10px;
+      font-size: 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      min-height: 44px;
+    }
+
+    .required-badge {
+      background-color: var(--accent-danger);
+      color: white;
+      font-size: 0.75rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 5px;
+      vertical-align: middle;
+    }
+
+    .form-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .form-col {
+      flex: 1 1 200px;
+    }
+
+    /* --------------------------------------------------
+       モーダル (新規登録、簡易マニュアルなど)
+       -------------------------------------------------- */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 15px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-box {
+      background-color: var(--card-bg);
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+    }
+
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: bold;
+    }
+
+    .modal-body {
+      margin-bottom: 15px;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      border-top: 1px solid var(--border-color);
+      padding-top: 10px;
+    }
+
+    /* --------------------------------------------------
+       ダッシュボード特有スタイル
+       -------------------------------------------------- */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .dashboard-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .dashboard-card-title {
+      font-size: 1rem;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    .dashboard-card-value {
+      font-size: 2rem;
+      font-weight: bold;
+      color: var(--primary-color);
+    }
+
+    /* --------------------------------------------------
+       特殊装飾 & 状態スタイル
+       -------------------------------------------------- */
+    .text-danger {
+      color: var(--accent-danger) !important;
+      font-weight: bold;
+    }
+
+    .bg-danger-light {
+      background-color: rgba(220, 53, 69, 0.1) !important;
+    }
+
+    .badge-check {
+      display: inline-block;
+      background-color: var(--accent-success);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+
+    /* ヘルプガイド用の装飾 */
+    .guide-step {
+      margin-bottom: 15px;
+    }
+    .guide-step-title {
+      font-weight: bold;
+      color: var(--primary-color);
+      margin-bottom: 5px;
+    }
+
+    /* --------------------------------------------------
+       フィルター周り
+       -------------------------------------------------- */
+    .filter-panel {
+      background-color: #f1f3f5;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      align-items: flex-end;
+    }
+
+    .filter-panel .form-group {
+      margin-bottom: 0;
+      flex: 1 1 180px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-title-container">
+      <span class="header-emoji" aria-hidden="true">📦</span>
+      <div class="header-title">
+        <h1>かんたん在庫・発注管理</h1>
+        <p>すぐに使えて自動で計算・保存される業務支援ツール</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-info" id="btn-manual-open" onclick="openManual()">❓ 使い方</button>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab-btn active" role="tab" aria-selected="true" onclick="switchTab('tab-master')">📋 品目マスタ</button>
+    <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('tab-history')">🔄 入出庫記録</button>
+    <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('tab-order')">🚨 発注管理</button>
+    <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('tab-dashboard')">📊 ダッシュボード</button>
+  </nav>
+
+  <main id="tab-master" class="tab-content active">
+    <div class="section-header">
+      <h2 class="section-title">登録品目一覧</h2>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn btn-primary" onclick="openItemModal(false)">➕ 新規登録</button>
+        <button class="btn" onclick="exportCSV('master')">📤 CSVコピー</button>
+      </div>
+    </div>
+
+    <p style="margin-bottom: 10px; font-size: 0.9rem; color: var(--text-muted);">※ 行を長押しすると削除できます。行をクリックで編集できます。</p>
+
+    <div class="table-container">
+      <table id="table-master">
+        <thead>
+          <tr>
+            <th>品目名</th>
+            <th>品番</th>
+            <th>カテゴリ</th>
+            <th>単価(円)</th>
+            <th>単位</th>
+            <th>現在庫</th>
+            <th>発注点</th>
+            <th>発注先</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-master">
+          </tbody>
+      </table>
+    </div>
+  </main>
+
+  <main id="tab-history" class="tab-content">
+    <div class="section-header">
+      <h2 class="section-title">新規入出庫の記録</h2>
+    </div>
+
+    <form id="form-history" onsubmit="saveHistory(event)" style="margin-bottom: 30px; border: 1px solid var(--border-color); padding: 15px; border-radius: 8px;">
+      <div class="form-row">
+        <div class="form-col form-group">
+          <label for="hist-item">品番・品目名 <span class="required-badge">必須</span></label>
+          <select id="hist-item" class="form-control" required>
+            <option value="">-- 品番を選択してください --</option>
+          </select>
+        </div>
+        <div class="form-col form-group" style="min-width: 120px;">
+          <label style="display: block; font-weight: bold; margin-bottom: 8px;">区分 <span class="required-badge">必須</span></label>
+          <div style="display: flex; gap: 20px; align-items: center; height: 44px;">
+            <label style="font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+              <input type="radio" name="hist-type" value="in" checked style="width: 20px; height: 20px;"> 入庫
+            </label>
+            <label style="font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+              <input type="radio" name="hist-type" value="out" style="width: 20px; height: 20px;"> 出庫
+            </label>
+          </div>
+        </div>
+        <div class="form-col form-group">
+          <label for="hist-qty">数量 <span class="required-badge">必須</span></label>
+          <input type="number" id="hist-qty" class="form-control" min="1" required placeholder="例: 10">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-col form-group">
+          <label for="hist-date">日付 <span class="required-badge">必須</span></label>
+          <input type="date" id="hist-date" class="form-control" required>
+        </div>
+        <div class="form-col form-group">
+          <label for="hist-user">担当者</label>
+          <input type="text" id="hist-user" class="form-control" placeholder="例: 山田">
+        </div>
+        <div class="form-col form-group">
+          <label for="hist-memo">メモ</label>
+          <input type="text" id="hist-memo" class="form-control" placeholder="備考や理由など">
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end;">
+        <button type="submit" class="btn btn-primary" style="padding-left: 30px; padding-right: 30px;">📝 記録する</button>
+      </div>
+    </form>
+
+    <div class="section-header">
+      <h3 class="section-title">記録履歴一覧</h3>
+      <button class="btn" onclick="exportCSV('history')">📤 CSVコピー</button>
+    </div>
+
+    <div class="filter-panel">
+      <div class="form-group">
+        <label for="filter-item">品番で絞り込み</label>
+        <select id="filter-item" class="form-control" onchange="applyFilters()">
+          <option value="">すべて</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="filter-start">期間 (開始日)</label>
+        <input type="date" id="filter-start" class="form-control" onchange="applyFilters()">
+      </div>
+      <div class="form-group">
+        <label for="filter-end">期間 (終了日)</label>
+        <input type="date" id="filter-end" class="form-control" onchange="applyFilters()">
+      </div>
+      <div>
+        <button class="btn" onclick="resetFilters()">クリア</button>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table id="table-history">
+        <thead>
+          <tr>
+            <th>日付</th>
+            <th>区分</th>
+            <th>品番</th>
+            <th>品目名</th>
+            <th>数量</th>
+            <th>担当者</th>
+            <th>メモ</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-history">
+          </tbody>
+      </table>
+    </div>
+  </main>
+
+  <main id="tab-order" class="tab-content">
+    <div class="section-header">
+      <h2 class="section-title">要発注リスト (現在庫 ≦ 発注点)</h2>
+      <button class="btn" onclick="exportCSV('order')">📤 CSVコピー</button>
+    </div>
+
+    <p style="margin-bottom: 15px; font-size: 0.9rem; color: var(--text-muted);">
+      ※ 現在庫数が設定された「発注点」以下になると、自動的に赤く強調表示されます。
+    </p>
+
+    <div class="table-container">
+      <table id="table-order">
+        <thead>
+          <tr>
+            <th>品番</th>
+            <th>品目名</th>
+            <th>現在庫</th>
+            <th>発注点</th>
+            <th>発注先</th>
+            <th>発注日入力</th>
+            <th>状態</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-order">
+          </tbody>
+      </table>
+    </div>
+  </main>
+
+  <main id="tab-dashboard" class="tab-content">
+    <h2 class="section-title" style="margin-bottom: 20px;">経営・在庫サマリー</h2>
+
+    <div class="dashboard-grid">
+      <div class="dashboard-card">
+        <p class="dashboard-card-title">📦 総品目数</p>
+        <p class="dashboard-card-value" id="dash-total-items">0</p>
+      </div>
+      <div class="dashboard-card">
+        <p class="dashboard-card-title">🚨 要発注件数</p>
+        <p class="dashboard-card-value" id="dash-need-order" style="color: var(--accent-danger);">0</p>
+      </div>
+      <div class="dashboard-card">
+        <p class="dashboard-card-title">🗓️ 今月の入出庫件数</p>
+        <p class="dashboard-card-value" id="dash-month-records">0</p>
+      </div>
+      <div class="dashboard-card">
+        <p class="dashboard-card-title">💰 在庫金額の目安</p>
+        <p class="dashboard-card-value" id="dash-total-cost">¥0</p>
+      </div>
+    </div>
+  </main>
+
+  <div class="modal-overlay" id="modal-item">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-item-title">新規品目登録</h3>
+        <button class="btn" onclick="closeItemModal()" style="border: none; font-size: 1.5rem; padding: 0 5px; min-height: auto;">&times;</button>
+      </div>
+      <form id="form-item" onsubmit="saveItem(event)">
+        <input type="hidden" id="edit-index" value="">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="item-name">品目名 <span class="required-badge">必須</span></label>
+            <input type="text" id="item-name" class="form-control" required placeholder="例: コピー用紙 A4">
+          </div>
+          <div class="form-group">
+            <label for="item-code">品番 (半角英数推奨・キーになります) <span class="required-badge">必須</span></label>
+            <input type="text" id="item-code" class="form-control" required placeholder="例: P-A4-01">
+          </div>
+          <div class="form-row">
+            <div class="form-col form-group">
+              <label for="item-cat">カテゴリ</label>
+              <input type="text" id="item-cat" class="form-control" placeholder="例: 事務用品">
+            </div>
+            <div class="form-col form-group">
+              <label for="item-unit">単位</label>
+              <input type="text" id="item-unit" class="form-control" placeholder="例: 箱, 個, 本">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-col form-group">
+              <label for="item-price">単価 (円)</label>
+              <input type="number" id="item-price" class="form-control" min="0" placeholder="例: 1200">
+            </div>
+            <div class="form-col form-group">
+              <label for="item-min">発注点 (この数値以下で警告)</label>
+              <input type="number" id="item-min" class="form-control" min="0" placeholder="例: 2">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-col form-group">
+              <label for="item-qty">現在庫数</label>
+              <input type="number" id="item-qty" class="form-control" min="0" placeholder="例: 10">
+            </div>
+            <div class="form-col form-group">
+              <label for="item-supplier">発注先</label>
+              <input type="text" id="item-supplier" class="form-control" placeholder="例: ○○商事">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn" onclick="closeItemModal()">キャンセル</button>
+          <button type="submit" class="btn btn-primary" id="btn-item-save">保存する</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-manual">
+    <div class="modal-box" style="max-width: 650px;">
+      <div class="modal-header">
+        <h3 class="modal-title">❓ 簡易使い方マニュアル</h3>
+        <button class="btn" onclick="closeManual()" style="border: none; font-size: 1.5rem; padding: 0 5px; min-height: auto;">&times;</button>
+      </div>
+      <div class="modal-body" style="line-height: 1.7;">
+        
+        <div style="background-color: #e9ecef; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-weight: bold;">
+          💡 このアプリでできること
+        </div>
+        <p style="margin-bottom: 15px;">
+          このアプリは、品目の管理、日々の入出庫記録、自動での在庫計算、発注の漏れ防止、全体の資産状況の把握（ダッシュボード）をひとまとめに行えるシンプルなツールです。
+        </p>
+
+        <div style="background-color: #e9ecef; padding: 12px; border-radius: 6px; margin-bottom: 15px; font-weight: bold;">
+          🚀 基本の3ステップ
+        </div>
+        
+        <div class="guide-step">
+          <p class="guide-step-title">1. 品目情報を登録する</p>
+          <p>「品目マスタ」タブの <strong>➕新規登録</strong> から、品目名や品番、現在の在庫数、発注点（在庫がこれを下回ったら発注する基準値）などを登録します。</p>
+        </div>
+
+        <div class="guide-step">
+          <p class="guide-step-title">2. 入出庫を都度記録する</p>
+          <p>在庫が動いたときは「入出庫記録」タブで記録をつけます。自動で「品目マスタ」に反映され、現在庫数が増減します。</p>
+        </div>
+
+        <div class="guide-step">
+          <p class="guide-step-title">3. 発注が必要な品目を確認する</p>
+          <p>「発注管理」タブを見ると、在庫が足りない品目が赤く一覧で表示されます。発注日を入力して完了をマークできます。その後、入庫記録を行うと発注済状態は自動でクリアされます。</p>
+        </div>
+
+        <div style="background-color: #e9ecef; padding: 12px; border-radius: 6px; margin-top: 20px; margin-bottom: 10px; font-weight: bold;">
+          💾 データ保存とセーフティ
+        </div>
+        <p style="margin-bottom: 15px; font-size: 0.95rem;">
+          ・データはこの端末（ブラウザ）の <strong>localStorage</strong> にのみ保存されます。サーバー通信をしないため完全にプライベートで安全です。<br>
+          ・ブラウザの履歴やデータを全削除するとクリアされてしまいますのでご注意ください。
+        </p>
+
+        <div style="background-color: #e9ecef; padding: 12px; border-radius: 6px; margin-bottom: 10px; font-weight: bold;">
+          📤 エクスポート（CSV出力）の使い方
+        </div>
+        <p style="font-size: 0.95rem;">
+          ・各画面にある <strong>📤 CSVコピー</strong> ボタンを押すと、Excelや表計算ソフトに直接貼り付け（Ctrl+Vなど）可能なデータがクリップボードにコピーされます。定期的なバックアップにご利用ください。
+        </p>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeManual()">了解しました</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- データ構造定義 & 初期化 ---
+    // items: { id, name, code, category, unit, price, minStock, currentStock, supplier, orderedDate }
+    // histories: { id, date, type, itemCode, qty, user, memo }
+    
+    let items = [];
+    let histories = [];
+
+    // ローカルストレージから読み込み
+    function loadData() {
+      const storedItems = localStorage.getItem('inventory_items');
+      const storedHistories = localStorage.getItem('inventory_histories');
+      
+      if (storedItems) {
+        items = JSON.parse(storedItems);
+      } else {
+        // サンプルデータ (初回起動時に分かりやすくするため)
+        items = [
+          { name: "コピー用紙 A4", code: "P-A4-01", category: "事務用品", unit: "箱", price: 1200, minStock: 5, currentStock: 12, supplier: "アスクル", orderedDate: "" },
+          { name: "クリアファイル A4", code: "F-A4-10", category: "事務用品", unit: "パック", price: 500, minStock: 3, currentStock: 2, supplier: "コクヨ", orderedDate: "" }
+        ];
+        saveItemsToStorage();
+      }
+
+      if (storedHistories) {
+        histories = JSON.parse(storedHistories);
+      } else {
+        histories = [
+          { date: getTodayString(), type: "in", itemCode: "P-A4-01", qty: 12, user: "管理者", memo: "初期登録分" },
+          { date: getTodayString(), type: "in", itemCode: "F-A4-10", qty: 2, user: "管理者", memo: "初期登録分" }
+        ];
+        saveHistoriesToStorage();
+      }
+    }
+
+    function saveItemsToStorage() {
+      localStorage.setItem('inventory_items', JSON.stringify(items));
+    }
+
+    function saveHistoriesToStorage() {
+      localStorage.setItem('inventory_histories', JSON.stringify(histories));
+    }
+
+    // 起動時の初期化
+    window.addEventListener('DOMContentLoaded', () => {
+      loadData();
+      renderAll();
+      
+      // 入出庫記録フォームの日付初期値を今日にする
+      document.getElementById('hist-date').value = getTodayString();
+    });
+
+    // --- 日付取得便利ツール ---
+    function getTodayString() {
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    // --- タブ切り替え制御 ---
+    function switchTab(tabId) {
+      // 全タブ非表示
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+        btn.setAttribute('aria-selected', 'false');
+      });
+
+      // 指定タブを表示
+      const activeTab = document.getElementById(tabId);
+      if (activeTab) {
+        activeTab.classList.add('active');
+      }
+      
+      const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => btn.getAttribute('onclick').includes(tabId));
+      if (activeBtn) {
+        activeBtn.classList.add('active');
+        activeBtn.setAttribute('aria-selected', 'true');
+      }
+
+      // 切り替えに合わせて再描画が必要な場合
+      renderAll();
+    }
+
+    // --- モーダル制御 ---
+    function openManual() {
+      document.getElementById('modal-manual').classList.add('active');
+    }
+
+    function closeManual() {
+      document.getElementById('modal-manual').classList.remove('active');
+    }
+
+    // --- 全体の再描画関数 ---
+    function renderAll() {
+      renderMasterTable();
+      updateHistoryItemDropdowns();
+      renderHistoryTable();
+      renderOrderTable();
+      renderDashboard();
+    }
+
+    // --- 1. 品目マスタ関連 ---
+    function renderMasterTable() {
+      const tbody = document.getElementById('tbody-master');
+      tbody.innerHTML = '';
+
+      items.forEach((item, index) => {
+        const tr = document.createElement('tr');
+        
+        // 長押しイベント（モバイル・デスクトップ両対応）
+        let pressTimer;
+        const startPress = () => {
+          pressTimer = setTimeout(() => {
+            if (confirm(`【警告】品目「${item.name} (${item.code})」を完全に削除しますか？\n※関連する入出庫履歴は残ります。`)) {
+              items.splice(index, 1);
+              saveItemsToStorage();
+              renderAll();
+            }
+          }, 800); // 800ms長押し
+        };
+        const cancelPress = () => {
+          clearTimeout(pressTimer);
+        };
+
+        tr.addEventListener('mousedown', startPress);
+        tr.addEventListener('touchstart', startPress, { passive: true });
+        tr.addEventListener('mouseup', cancelPress);
+        tr.addEventListener('mouseleave', cancelPress);
+        tr.addEventListener('touchend', cancelPress);
+        
+        // シングルクリックで編集
+        tr.addEventListener('click', (e) => {
+          // 長押し判定などと競合しないように簡易的に処理
+          openItemModal(true, index);
+        });
+
+        // 描画データ作成
+        tr.innerHTML = `
+          <td><strong>${escapeHtml(item.name)}</strong></td>
+          <td><code>${escapeHtml(item.code)}</code></td>
+          <td>${escapeHtml(item.category || '-')}</td>
+          <td>${item.price ? Number(item.price).toLocaleString() : '0'}</td>
+          <td>${escapeHtml(item.unit || '個')}</td>
+          <td class="${Number(item.currentStock) <= Number(item.minStock) ? 'text-danger' : ''}">${item.currentStock}</td>
+          <td>${item.minStock || 0}</td>
+          <td>${escapeHtml(item.supplier || '-')}</td>
+        `;
+
+        // 発注警告がある行に微かな警告背景
+        if (Number(item.currentStock) <= Number(item.minStock)) {
+          tr.classList.add('bg-danger-light');
+        }
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    function openItemModal(isEdit = false, index = null) {
+      const modal = document.getElementById('modal-item');
+      const form = document.getElementById('form-item');
+      form.reset();
+
+      if (isEdit && index !== null) {
+        document.getElementById('modal-item-title').innerText = "品目情報の編集";
+        document.getElementById('edit-index').value = index;
+        
+        const item = items[index];
+        document.getElementById('item-name').value = item.name;
+        document.getElementById('item-code').value = item.code;
+        document.getElementById('item-code').disabled = true; // 品番はキーのため編集不可にする
+        document.getElementById('item-cat').value = item.category || '';
+        document.getElementById('item-unit').value = item.unit || '';
+        document.getElementById('item-price').value = item.price || '';
+        document.getElementById('item-min').value = item.minStock || '';
+        document.getElementById('item-qty').value = item.currentStock || 0;
+        document.getElementById('item-supplier').value = item.supplier || '';
+      } else {
+        document.getElementById('modal-item-title').innerText = "新規品目登録";
+        document.getElementById('edit-index').value = "";
+        document.getElementById('item-code').disabled = false;
+        document.getElementById('item-qty').value = 0; // デフォルト在庫は0
+      }
+
+      modal.classList.add('active');
+    }
+
+    function closeItemModal() {
+      document.getElementById('modal-item').classList.remove('active');
+    }
+
+    function saveItem(e) {
+      e.preventDefault();
+      
+      const indexStr = document.getElementById('edit-index').value;
+      const code = document.getElementById('item-code').value.trim();
+      const name = document.getElementById('item-name').value.trim();
+      const category = document.getElementById('item-cat').value.trim();
+      const unit = document.getElementById('item-unit').value.trim();
+      const price = document.getElementById('item-price').value ? Number(document.getElementById('item-price').value) : 0;
+      const minStock = document.getElementById('item-min').value ? Number(document.getElementById('item-min').value) : 0;
+      const currentStock = document.getElementById('item-qty').value ? Number(document.getElementById('item-qty').value) : 0;
+      const supplier = document.getElementById('item-supplier').value.trim();
+
+      if (!name || !code) {
+        alert('品目名と品番は必須入力です。');
+        return;
+      }
+
+      if (indexStr === "") {
+        // 新規登録。品番の重複チェック
+        const exists = items.some(item => item.code === code);
+        if (exists) {
+          alert(`品番「${code}」は既に登録されています。別の品番にしてください。`);
+          return;
+        }
+
+        items.push({
+          name, code, category, unit, price, minStock, currentStock, supplier, orderedDate: ""
+        });
+      } else {
+        // 編集保存
+        const index = parseInt(indexStr, 10);
+        items[index].name = name;
+        items[index].category = category;
+        items[index].unit = unit;
+        items[index].price = price;
+        items[index].minStock = minStock;
+        items[index].currentStock = currentStock;
+        items[index].supplier = supplier;
+      }
+
+      saveItemsToStorage();
+      closeItemModal();
+      renderAll();
+    }
+
+
+    // --- 2. 入出庫記録関連 ---
+    function updateHistoryItemDropdowns() {
+      const selectHist = document.getElementById('hist-item');
+      const selectFilter = document.getElementById('filter-item');
+
+      // 選択状態の一時保持
+      const prevHistVal = selectHist.value;
+      const prevFilterVal = selectFilter.value;
+
+      selectHist.innerHTML = '<option value="">-- 品番を選択してください --</option>';
+      selectFilter.innerHTML = '<option value="">すべて</option>';
+
+      items.forEach(item => {
+        const optionText = `${item.code} [ ${item.name} ]`;
+        
+        const opt1 = document.createElement('option');
+        opt1.value = item.code;
+        opt1.textContent = optionText;
+        selectHist.appendChild(opt1);
+
+        const opt2 = document.createElement('option');
+        opt2.value = item.code;
+        opt2.textContent = optionText;
+        selectFilter.appendChild(opt2);
+      });
+
+      // 選択の再適用
+      selectHist.value = prevHistVal;
+      selectFilter.value = prevFilterVal;
+    }
+
+    function saveHistory(e) {
+      e.preventDefault();
+
+      const code = document.getElementById('hist-item').value;
+      const type = document.querySelector('input[name="hist-type"]:checked').value;
+      const qty = parseInt(document.getElementById('hist-qty').value, 10);
+      const date = document.getElementById('hist-date').value;
+      const user = document.getElementById('hist-user').value.trim();
+      const memo = document.getElementById('hist-memo').value.trim();
+
+      if (!code || !qty || !date) {
+        alert('品番、数量、日付は必須です。');
+        return;
+      }
+
+      // 品目を探して在庫を変更
+      const itemIndex = items.findIndex(item => item.code === code);
+      if (itemIndex === -1) {
+        alert('該当の品目が見つかりませんでした。');
+        return;
+      }
+
+      const currentItem = items[itemIndex];
+      let newStock = Number(currentItem.currentStock || 0);
+
+      if (type === 'in') {
+        newStock += qty;
+        // 入庫されたら自動的に発注済フラグ（orderedDate）をクリア
+        currentItem.orderedDate = "";
+      } else {
+        if (newStock - qty < 0) {
+          if (!confirm(`現在の在庫数(${newStock})を超える出庫になります。よろしいですか？`)) {
+            return;
+          }
+        }
+        newStock -= qty;
+      }
+
+      // 在庫数の反映
+      items[itemIndex].currentStock = newStock;
+      saveItemsToStorage();
+
+      // 履歴への追加 (新着順のため先頭へ)
+      histories.unshift({
+        date,
+        type,
+        itemCode: code,
+        qty,
+        user,
+        memo
+      });
+      saveHistoriesToStorage();
+
+      // フォームの片づけ (リセット)
+      document.getElementById('hist-qty').value = '';
+      document.getElementById('hist-user').value = '';
+      document.getElementById('hist-memo').value = '';
+      document.getElementById('hist-date').value = getTodayString();
+
+      alert('入出庫を記録しました。');
+      renderAll();
+    }
+
+    function renderHistoryTable(filteredHistories = null) {
+      const tbody = document.getElementById('tbody-history');
+      tbody.innerHTML = '';
+
+      const targetList = filteredHistories || histories;
+
+      targetList.forEach(hist => {
+        const matchingItem = items.find(it => it.code === hist.itemCode);
+        const itemName = matchingItem ? matchingItem.name : '(削除済品目)';
+        
+        const tr = document.createElement('tr');
+        
+        const typeBadge = hist.type === 'in' 
+          ? '<span style="color:var(--accent-success); font-weight:bold;">▲ 入庫</span>' 
+          : '<span style="color:var(--accent-danger); font-weight:bold;">▼ 出庫</span>';
+
+        tr.innerHTML = `
+          <td>${escapeHtml(hist.date)}</td>
+          <td>${typeBadge}</td>
+          <td><code>${escapeHtml(hist.itemCode)}</code></td>
+          <td>${escapeHtml(itemName)}</td>
+          <td><strong>${hist.qty}</strong></td>
+          <td>${escapeHtml(hist.user || '-')}</td>
+          <td>${escapeHtml(hist.memo || '-')}</td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    // フィルター適用
+    function applyFilters() {
+      const codeVal = document.getElementById('filter-item').value;
+      const startVal = document.getElementById('filter-start').value;
+      const endVal = document.getElementById('filter-end').value;
+
+      let result = histories;
+
+      if (codeVal) {
+        result = result.filter(h => h.itemCode === codeVal);
+      }
+      if (startVal) {
+        result = result.filter(h => h.date >= startVal);
+      }
+      if (endVal) {
+        result = result.filter(h => h.date <= endVal);
+      }
+
+      renderHistoryTable(result);
+    }
+
+    function resetFilters() {
+      document.getElementById('filter-item').value = '';
+      document.getElementById('filter-start').value = '';
+      document.getElementById('filter-end').value = '';
+      renderHistoryTable(histories);
+    }
+
+
+    // --- 3. 発注管理関連 ---
+    function renderOrderTable() {
+      const tbody = document.getElementById('tbody-order');
+      tbody.innerHTML = '';
+
+      // 現在庫が発注点以下のもの
+      const needOrderItems = items.filter(item => Number(item.currentStock) <= Number(item.minStock));
+
+      if (needOrderItems.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding: 30px;">要発注の品目はありません。安全です。</td></tr>';
+        return;
+      }
+
+      needOrderItems.forEach(item => {
+        const itemIdx = items.findIndex(it => it.code === item.code);
+        const tr = document.createElement('tr');
+        tr.className = 'bg-danger-light text-danger';
+
+        const isOrdered = item.orderedDate ? true : false;
+        const statusHTML = isOrdered 
+          ? `<span class="badge-check">✓ 発注済 (${escapeHtml(item.orderedDate)})</span>`
+          : `<span style="font-weight:bold;">未発注</span>`;
+
+        tr.innerHTML = `
+          <td><code>${escapeHtml(item.code)}</code></td>
+          <td>${escapeHtml(item.name)}</td>
+          <td>${item.currentStock}</td>
+          <td>${item.minStock}</td>
+          <td>${escapeHtml(item.supplier || '-')}</td>
+          <td>
+            <input type="date" value="${item.orderedDate || ''}" 
+                   class="form-control" style="max-width:160px; display:inline-block; min-height:35px; padding: 5px;"
+                   onchange="updateOrderedDate(${itemIdx}, this.value)" 
+                   ${isOrdered ? 'disabled' : ''}>
+          </td>
+          <td>${statusHTML}</td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    function updateOrderedDate(globalIndex, dateStr) {
+      if (!dateStr) return;
+      items[globalIndex].orderedDate = dateStr;
+      saveItemsToStorage();
+      renderAll();
+    }
+
+
+    // --- 4. ダッシュボード関連 ---
+    function renderDashboard() {
+      // 1. 総品目数
+      document.getElementById('dash-total-items').innerText = items.length;
+
+      // 2. 要発注件数
+      const needOrderCount = items.filter(item => Number(item.currentStock) <= Number(item.minStock)).length;
+      document.getElementById('dash-need-order').innerText = needOrderCount;
+
+      // 3. 今月の入出庫件数
+      const today = new Date();
+      const thisYear = today.getFullYear();
+      const thisMonth = String(today.getMonth() + 1).padStart(2, '0');
+      const monthPrefix = `${thisYear}-${thisMonth}`;
+
+      const thisMonthRecordsCount = histories.filter(h => h.date.startsWith(monthPrefix)).length;
+      document.getElementById('dash-month-records').innerText = thisMonthRecordsCount;
+
+      // 4. 在庫金額の目安
+      let totalCost = 0;
+      items.forEach(item => {
+        const qty = Number(item.currentStock || 0);
+        const price = Number(item.price || 0);
+        totalCost += qty * price;
+      });
+      document.getElementById('dash-total-cost').innerText = '¥ ' + totalCost.toLocaleString();
+    }
+
+
+    // --- 5. CSVエクスポート機能 (クリップボードにコピー) ---
+    function exportCSV(type) {
+      let csvContent = "";
+      let filename = "";
+
+      if (type === 'master') {
+        csvContent = "品目名,品番,カテゴリ,単価(円),単位,現在庫数,発注点,発注先\n";
+        items.forEach(it => {
+          csvContent += `"${escapeCSV(it.name)}","${escapeCSV(it.code)}","${escapeCSV(it.category)}",${it.price},"${escapeCSV(it.unit)}",${it.currentStock},${it.minStock},"${escapeCSV(it.supplier)}"\n`;
+        });
+        filename = "品目マスタ";
+      } else if (type === 'history') {
+        csvContent = "日付,区分,品番,数量,担当者,メモ\n";
+        histories.forEach(h => {
+          const typeStr = h.type === 'in' ? '入庫' : '出庫';
+          csvContent += `"${escapeCSV(h.date)}","${typeStr}","${escapeCSV(h.itemCode)}",${h.qty},"${escapeCSV(h.user)}","${escapeCSV(h.memo)}"\n`;
+        });
+        filename = "入出庫記録";
+      } else if (type === 'order') {
+        csvContent = "品番,品目名,現在庫数,発注点,発注先,発注日,状態\n";
+        const needOrderItems = items.filter(item => Number(item.currentStock) <= Number(item.minStock));
+        needOrderItems.forEach(it => {
+          const statusStr = it.orderedDate ? `発注済(${it.orderedDate})` : "未発注";
+          csvContent += `"${escapeCSV(it.code)}","${escapeCSV(it.name)}",${it.currentStock},${it.minStock},"${escapeCSV(it.supplier)}","${escapeCSV(it.orderedDate)}","${statusStr}"\n`;
+        });
+        filename = "要発注リスト";
+      }
+
+      // クリップボードにコピー
+      navigator.clipboard.writeText(csvContent).then(() => {
+        alert(`${filename} のCSVデータをコピーしました！\nExcel等に「貼り付け」してご利用ください。`);
+      }).catch(err => {
+        // 万が一クリップボードAPIが塞がれている場合のフォールバック（簡易ダウンロード）
+        const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${filename}_${getTodayString()}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+    }
+
+    // CSVセーフ文字処理
+    function escapeCSV(val) {
+      if (val === undefined || val === null) return "";
+      return String(val).replace(/"/g, '""');
+    }
+
+    // HTML安全エスケープ処理
+    function escapeHtml(str) {
+      if (typeof str !== 'string') return str;
+      return str.replace(/[&<>'"]/g, (match) => {
+        const escapeMap = {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          "'": '&#39;',
+          '"': '&quot;'
+        };
+        return escapeMap[match];
+      });
+    }
+  </script>
+</body>
+</html>

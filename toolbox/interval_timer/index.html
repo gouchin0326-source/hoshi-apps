@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>インターバルタイマー</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⏱️</text></svg>'>
+  <style>
+    /* CSS変数による一貫したデザインシステム */
+    :root {
+      --color-primary: #1e3a8a; /* 青色: 作業中 */
+      --color-break: #b91c1c;   /* 赤色: 休憩中 */
+      --color-success: #15803d; /* 緑色: 完了 */
+      --color-bg: #f8fafc;
+      --color-surface: #ffffff;
+      --color-text-dark: #1e293b;
+      --color-border: #cbd5e1;
+      --color-focus: #2563eb;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      background-color: var(--color-bg);
+      color: var(--color-text-dark);
+      padding: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+      background-color: var(--color-surface);
+      border: 2px solid var(--color-border);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    /* ヘッダー */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      border-bottom: 2px solid var(--color-border);
+      padding-bottom: 12px;
+    }
+
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 26px;
+      font-weight: bold;
+      color: var(--color-text-dark);
+    }
+
+    .icon-emoji {
+      font-size: 36px;
+    }
+
+    /* ボタン共通スタイル */
+    .btn {
+      font-size: 16px;
+      font-weight: bold;
+      padding: 10px 16px;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background-color 0.2s, border-color 0.2s;
+      min-width: 100px;
+      min-height: 44px;
+    }
+
+    .btn:focus-visible {
+      outline: 3px solid var(--color-focus);
+      outline-offset: 2px;
+    }
+
+    .btn-help {
+      background-color: #e2e8f0;
+      color: #334155;
+      border: 2px solid #cbd5e1;
+    }
+
+    .btn-help:hover {
+      background-color: #cbd5e1;
+    }
+
+    /* 入力セクション */
+    .input-section {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .input-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .input-group label {
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    .input-group input {
+      font-size: 18px;
+      padding: 10px;
+      border: 2px solid var(--color-border);
+      border-radius: 8px;
+      width: 100%;
+      min-height: 44px;
+    }
+
+    .input-group input:focus {
+      outline: none;
+      border-color: var(--color-focus);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+    }
+
+    /* タイマーディスプレイ */
+    .timer-display {
+      background-color: #f1f5f9;
+      border: 2px solid var(--color-border);
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .status-text {
+      font-size: 32px;
+      font-weight: 900;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    .status-work {
+      color: var(--color-primary);
+    }
+
+    .status-break {
+      color: var(--color-break);
+    }
+
+    .status-complete {
+      color: var(--color-success);
+    }
+
+    .time-left {
+      font-size: 64px;
+      font-family: monospace, monospace;
+      font-weight: bold;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .set-count {
+      font-size: 24px;
+      font-weight: bold;
+      color: #475569;
+    }
+
+    /* コントロールボタン */
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .btn-start {
+      background-color: #2563eb;
+      color: #ffffff;
+    }
+
+    .btn-start:hover {
+      background-color: #1d4ed8;
+    }
+
+    .btn-pause {
+      background-color: #d97706;
+      color: #ffffff;
+    }
+
+    .btn-pause:hover {
+      background-color: #b45309;
+    }
+
+    .btn-reset {
+      background-color: #64748b;
+      color: #ffffff;
+    }
+
+    .btn-reset:hover {
+      background-color: #475569;
+    }
+
+    /* エクスポート・アクションボタン */
+    .actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      border-top: 2px solid var(--color-border);
+      padding-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .btn-export {
+      background-color: #0d9488;
+      color: #ffffff;
+    }
+
+    .btn-export:hover {
+      background-color: #0f766e;
+    }
+
+    /* モーダル（簡易マニュアル） */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(15, 23, 42, 0.6);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background-color: var(--color-surface);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 500px;
+      padding: 24px;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+      border: 2px solid var(--color-border);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--color-border);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .modal-body {
+      font-size: 16px;
+      margin-bottom: 20px;
+    }
+
+    .modal-body p {
+      margin-bottom: 12px;
+    }
+
+    .modal-body ol {
+      padding-left: 24px;
+      margin-bottom: 16px;
+    }
+
+    .modal-body li {
+      margin-bottom: 8px;
+    }
+
+    .btn-close {
+      background-color: #e2e8f0;
+      color: #334155;
+      border: 2px solid #cbd5e1;
+      width: 100%;
+    }
+
+    .btn-close:hover {
+      background-color: #cbd5e1;
+    }
+
+    /* レスポンシブ設計（スマートフォン対応） */
+    @media (max-width: 600px) {
+      .input-section {
+        flex-direction: column;
+        gap: 12px;
+      }
+      
+      .controls {
+        flex-direction: column;
+        width: 100%;
+      }
+
+      .controls .btn {
+        width: 100%;
+        min-height: 48px; /* スマホ用最小タップサイズ */
+      }
+
+      .actions {
+        flex-direction: column;
+        width: 100%;
+      }
+
+      .actions .btn {
+        width: 100%;
+        min-height: 48px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="header-title">
+        <span class="icon-emoji" aria-hidden="true">⏱️</span>
+        <h1>インターバルタイマー</h1>
+      </div>
+      <button id="btnHelp" class="btn btn-help" aria-haspopup="dialog" aria-controls="helpModal">❓ 使い方</button>
+    </header>
+
+    <section class="input-section" aria-label="タイマー設定">
+      <div class="input-group">
+        <label id="lblWork" for="inputWork">作業時間 (分)</label>
+        <input type="number" id="inputWork" min="1" step="1" value="25" aria-labelledby="lblWork">
+      </div>
+      <div class="input-group">
+        <label id="lblBreak" for="inputBreak">休憩時間 (分)</label>
+        <input type="number" id="inputBreak" min="1" step="1" value="5" aria-labelledby="lblBreak">
+      </div>
+      <div class="input-group">
+        <label id="lblRounds" for="inputRounds">繰り返し回数</label>
+        <input type="number" id="inputRounds" min="1" step="1" value="4" aria-labelledby="lblRounds">
+      </div>
+    </section>
+
+    <section class="timer-display" aria-live="polite" aria-atomic="true">
+      <div id="timerStatus" class="status-text status-work">作業中</div>
+      <div id="timerClock" class="time-left">25:00</div>
+      <div id="timerSet" class="set-count">1 / 4</div>
+    </section>
+
+    <div class="controls">
+      <button id="btnStart" class="btn btn-start">スタート</button>
+      <button id="btnPause" class="btn btn-pause">一時停止</button>
+      <button id="btnReset" class="btn btn-reset">リセット</button>
+    </div>
+
+    <div class="actions">
+      <button id="btnExportJSON" class="btn btn-export">📋 設定をコピー</button>
+      <button id="btnExportFile" class="btn btn-export">💾 ファイル保存</button>
+    </div>
+  </div>
+
+  <div id="helpModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle" class="modal-title">❓ このアプリの使い方</h2>
+      </div>
+      <div class="modal-body">
+        <p><strong>(1) このアプリでできること</strong><br>
+        「作業時間」と「休憩時間」を交互にカウントダウンし、指定した回数を自動で繰り返すインターバルタイマーです。仕事の生産性を高めるポモドーロ・テクニックなどに最適です。</p>
+        
+        <p><strong>(2) 基本の使い方</strong></p>
+        <ol>
+          <li>「作業時間（分）」「休憩時間（分）」「繰り返し回数」を好みの数値に設定します。</li>
+          <li><strong>[スタート]</strong>ボタンを押すとカウントダウンを開始します。</li>
+          <li>作業時間が終わると自動で休憩時間へ切り替わり、再度カウントダウンします。</li>
+          <li>設定したすべてのセットが終了すると<strong>「完了」</strong>となり、自動で止まります。</li>
+        </ol>
+
+        <p><strong>(3) データの取り扱いについて</strong><br>
+        入力した設定やタイマー状態はお使いのブラウザ（localStorage）にのみ自動保存され、第三者に送信されることはありません。完全ローカル・オフラインで動作します。</p>
+      </div>
+      <button id="btnCloseHelp" class="btn btn-close">マニュアルを閉じる</button>
+    </div>
+  </div>
+
+  <script>
+    // デフォルト値定数
+    const DEFAULT_WORK = 25;
+    const DEFAULT_BREAK = 5;
+    const DEFAULT_ROUNDS = 4;
+
+    // DOM要素
+    const inputWork = document.getElementById('inputWork');
+    const inputBreak = document.getElementById('inputBreak');
+    const inputRounds = document.getElementById('inputRounds');
+
+    const timerStatus = document.getElementById('timerStatus');
+    const timerClock = document.getElementById('timerClock');
+    const timerSet = document.getElementById('timerSet');
+
+    const btnStart = document.getElementById('btnStart');
+    const btnPause = document.getElementById('btnPause');
+    const btnReset = document.getElementById('btnReset');
+    const btnExportJSON = document.getElementById('btnExportJSON');
+    const btnExportFile = document.getElementById('btnExportFile');
+
+    const btnHelp = document.getElementById('btnHelp');
+    const helpModal = document.getElementById('helpModal');
+    const btnCloseHelp = document.getElementById('btnCloseHelp');
+
+    // 内部タイマーステート
+    let state = {
+      workMin: DEFAULT_WORK,
+      breakMin: DEFAULT_BREAK,
+      totalRounds: DEFAULT_ROUNDS,
+      
+      currentRound: 1,
+      isBreak: false, // false: 作業中, true: 休憩中
+      timeLeft: DEFAULT_WORK * 60, // 秒数
+      
+      isRunning: false,
+      isCompleted: false
+    };
+
+    let timerInterval = null;
+
+    // ページロード時の初期復元
+    window.addEventListener('load', () => {
+      loadState();
+      updateUI();
+      if (state.isRunning) {
+        startTimerLogic();
+      }
+    });
+
+    // 入力変更監視（即時更新＆保存）
+    [inputWork, inputBreak, inputRounds].forEach(input => {
+      input.addEventListener('change', () => {
+        sanitizeInputs();
+        if (!state.isRunning && !state.isCompleted) {
+          resetTimerToConfig();
+        }
+        saveState();
+      });
+    });
+
+    // 整数チェック・デフォルト変換
+    function sanitizeInputs() {
+      let w = parseInt(inputWork.value, 10);
+      let b = parseInt(inputBreak.value, 10);
+      let r = parseInt(inputRounds.value, 10);
+
+      if (isNaN(w) || w <= 0) { w = DEFAULT_WORK; inputWork.value = w; }
+      if (isNaN(b) || b <= 0) { b = DEFAULT_BREAK; inputBreak.value = b; }
+      if (isNaN(r) || r <= 0) { r = DEFAULT_ROUNDS; inputRounds.value = r; }
+
+      state.workMin = w;
+      state.breakMin = b;
+      state.totalRounds = r;
+    }
+
+    // 入力値を元にタイマー表示を再構成（開始前の状態に巻き戻す）
+    function resetTimerToConfig() {
+      state.currentRound = 1;
+      state.isBreak = false;
+      state.timeLeft = state.workMin * 60;
+      state.isCompleted = false;
+      updateUI();
+    }
+
+    // UI表示の更新
+    function updateUI() {
+      // 1. 各種入力
+      inputWork.value = state.workMin;
+      inputBreak.value = state.breakMin;
+      inputRounds.value = state.totalRounds;
+
+      // 2. タイマー表示（完了状態 / 通常状態）
+      if (state.isCompleted) {
+        timerStatus.textContent = '完了';
+        timerStatus.className = 'status-text status-complete';
+        timerClock.textContent = '00:00';
+        timerSet.textContent = `${state.totalRounds} / ${state.totalRounds}`;
+      } else {
+        if (state.isBreak) {
+          timerStatus.textContent = '休憩中';
+          timerStatus.className = 'status-text status-break';
+        } else {
+          timerStatus.textContent = '作業中';
+          timerStatus.className = 'status-text status-work';
+        }
+        
+        // 時間フォーマット MM:SS
+        const minutes = Math.floor(state.timeLeft / 60);
+        const seconds = state.timeLeft % 60;
+        const mm = String(minutes).padStart(2, '0');
+        const ss = String(seconds).padStart(2, '0');
+        timerClock.textContent = `${mm}:${ss}`;
+        
+        timerSet.textContent = `${state.currentRound} / ${state.totalRounds}`;
+      }
+    }
+
+    // タイマー開始
+    btnStart.addEventListener('click', () => {
+      if (state.isRunning) return;
+      sanitizeInputs();
+      if (state.isCompleted) {
+        // すでに完了している状態でスタートを押されたら初期化して開始
+        resetTimerToConfig();
+      }
+      state.isRunning = true;
+      saveState();
+      startTimerLogic();
+    });
+
+    function startTimerLogic() {
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        if (state.timeLeft > 0) {
+          state.timeLeft--;
+        } else {
+          // 時間切れ時の切り替え
+          if (!state.isBreak) {
+            // 作業中 -> 休憩へ
+            state.isBreak = true;
+            state.timeLeft = state.breakMin * 60;
+          } else {
+            // 休憩中 -> 次のラウンドの作業へ
+            state.currentRound++;
+            if (state.currentRound > state.totalRounds) {
+              // 全ラウンド完了
+              state.isCompleted = true;
+              state.isRunning = false;
+              clearInterval(timerInterval);
+            } else {
+              state.isBreak = false;
+              state.timeLeft = state.workMin * 60;
+            }
+          }
+        }
+        updateUI();
+        saveState();
+      }, 1000);
+    }
+
+    // 一時停止
+    btnPause.addEventListener('click', () => {
+      state.isRunning = false;
+      clearInterval(timerInterval);
+      saveState();
+    });
+
+    // リセット
+    btnReset.addEventListener('click', () => {
+      state.isRunning = false;
+      clearInterval(timerInterval);
+      
+      // 入力フィールドもデフォルトに戻す
+      inputWork.value = DEFAULT_WORK;
+      inputBreak.value = DEFAULT_BREAK;
+      inputRounds.value = DEFAULT_ROUNDS;
+
+      state.workMin = DEFAULT_WORK;
+      state.breakMin = DEFAULT_BREAK;
+      state.totalRounds = DEFAULT_ROUNDS;
+
+      resetTimerToConfig();
+      saveState();
+    });
+
+    // データの保存
+    function saveState() {
+      localStorage.setItem('intervalTimerData', JSON.stringify(state));
+    }
+
+    // データの復元
+    function loadState() {
+      const stored = localStorage.getItem('intervalTimerData');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          state = { ...state, ...parsed };
+        } catch (e) {
+          console.error('LocalStorageデータ復元失敗:', e);
+        }
+      }
+    }
+
+    // エクスポート: クリップボードにコピー
+    btnExportJSON.addEventListener('click', () => {
+      sanitizeInputs();
+      const exportData = {
+        workMinutes: state.workMin,
+        breakMinutes: state.breakMin,
+        totalRounds: state.totalRounds,
+        lastUpdated: new Date().toISOString()
+      };
+      const jsonStr = JSON.stringify(exportData, null, 2);
+
+      navigator.clipboard.writeText(jsonStr)
+        .then(() => {
+          alert('設定データをクリップボードにコピーしました！');
+        })
+        .catch(err => {
+          alert('コピーに失敗しました。お使いのブラウザの設定を確認してください。');
+        });
+    });
+
+    // エクスポート: テキストファイルを生成してダウンロード
+    btnExportFile.addEventListener('click', () => {
+      sanitizeInputs();
+      const exportData = {
+        workMinutes: state.workMin,
+        breakMinutes: state.breakMin,
+        totalRounds: state.totalRounds,
+        lastUpdated: new Date().toISOString()
+      };
+      const jsonStr = JSON.stringify(exportData, null, 2);
+      
+      const blob = new Blob([jsonStr], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `interval-timer-config-${Date.now()}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+
+    // モーダル（使い方）の操作
+    btnHelp.addEventListener('click', () => {
+      helpModal.classList.add('active');
+      btnCloseHelp.focus(); // モーダルが開いたら閉じるボタンにフォーカスを当てる
+    });
+
+    btnCloseHelp.addEventListener('click', () => {
+      helpModal.classList.remove('active');
+      btnHelp.focus();
+    });
+
+    // 背景クリックでモーダルを閉じる
+    helpModal.addEventListener('click', (e) => {
+      if (e.target === helpModal) {
+        helpModal.classList.remove('active');
+        btnHelp.focus();
+      }
+    });
+
+    // Escキーでモーダルを閉じるアクセシビリティ対応
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && helpModal.classList.contains('active')) {
+        helpModal.classList.remove('active');
+        btnHelp.focus();
+      }
+    });
+  </script>
+</body>
+</html>

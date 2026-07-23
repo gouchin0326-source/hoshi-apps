@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>かんたん在庫・発注管理ツール</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📦</text></svg>'>
+  <style>
+    /* --------------------------------------------------
+       CSS & Inclusive Design Styles
+    -------------------------------------------------- */
+    :root {
+      --primary-color: #005a9c;
+      --primary-hover: #004070;
+      --bg-color: #f7f9fc;
+      --text-color: #1a1a1a;
+      --border-color: #ccc;
+      --warning-bg: #fff0f0;
+      --warning-border: #d9534f;
+      --warning-text: #b94a48;
+      --success-color: #2e7d32;
+      --modal-bg: rgba(0, 0, 0, 0.5);
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+      font-size: 16px; /* 文字は大きめ */
+    }
+
+    header {
+      background-color: var(--primary-color);
+      color: #ffffff;
+      padding: 20px;
+      display: block;
+      position: relative;
+    }
+
+    .header-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: block;
+    }
+
+    /* display: flex/grid is BANNED, use table/inline-block/block instead */
+    .header-left {
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    .header-right {
+      display: inline-block;
+      float: right;
+      vertical-align: middle;
+      text-align: right;
+    }
+
+    .header-right::after {
+      content: "";
+      clear: both;
+      display: block;
+    }
+
+    .app-title {
+      font-size: 24px;
+      font-weight: bold;
+      margin: 0;
+    }
+
+    .app-emoji {
+      font-size: 32px;
+      margin-right: 10px;
+      vertical-align: middle;
+    }
+
+    .counter-badge {
+      background-color: #d9534f;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 18px;
+      display: inline-block;
+      margin-top: 5px;
+    }
+
+    .main-container {
+      max-width: 1000px;
+      margin: 20px auto;
+      padding: 0 15px;
+    }
+
+    /* Card styling */
+    .card {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin-top: 0;
+      margin-bottom: 15px;
+      border-left: 5px solid var(--primary-color);
+      padding-left: 10px;
+      color: var(--primary-color);
+    }
+
+    /* Form Layout using block and inline-block table elements */
+    .form-group {
+      display: inline-block;
+      width: 48%;
+      margin-right: 2%;
+      margin-bottom: 15px;
+      vertical-align: top;
+    }
+
+    @media (max-width: 600px) {
+      .form-group {
+        width: 100%;
+        margin-right: 0;
+      }
+      .header-right {
+        float: none;
+        display: block;
+        text-align: left;
+        margin-top: 10px;
+      }
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border: 2px solid var(--border-color);
+      border-radius: 4px;
+      background-color: #fff;
+      color: #000;
+    }
+
+    input:focus, select:focus {
+      outline: 3px solid #ffbf47; /* 高コントラストフォーカス */
+      border-color: var(--primary-color);
+    }
+
+    .checkbox-container {
+      display: inline-block;
+      vertical-align: middle;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    .checkbox-container input {
+      width: 20px;
+      height: 20px;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: bold;
+      color: white;
+      background-color: var(--primary-color);
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      vertical-align: middle;
+    }
+
+    .btn:hover, .btn:focus {
+      background-color: var(--primary-hover);
+      outline: 3px solid #ffbf47;
+    }
+
+    .btn-secondary {
+      background-color: #555;
+    }
+    .btn-secondary:hover, .btn-secondary:focus {
+      background-color: #333;
+    }
+
+    .btn-warning {
+      background-color: #f0ad4e;
+      color: #000;
+    }
+    .btn-warning:hover, .btn-warning:focus {
+      background-color: #ec971f;
+    }
+
+    .btn-danger {
+      background-color: #d9534f;
+    }
+    .btn-danger:hover, .btn-danger:focus {
+      background-color: #c9302c;
+    }
+
+    .button-group {
+      margin-top: 15px;
+    }
+
+    /* Filters and Sorters */
+    .filter-panel {
+      background-color: #eaeaea;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 15px;
+    }
+
+    .filter-input {
+      display: inline-block;
+      width: 30%;
+      margin-right: 3%;
+      vertical-align: middle;
+    }
+
+    @media (max-width: 768px) {
+      .filter-input {
+        width: 100%;
+        margin-right: 0;
+        margin-bottom: 10px;
+      }
+    }
+
+    /* Table CSS */
+    .table-container {
+      overflow-x: auto;
+      margin-top: 15px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+
+    th, td {
+      border: 1px solid var(--border-color);
+      padding: 12px;
+      text-align: left;
+      font-size: 16px;
+    }
+
+    th {
+      background-color: #f1f1f1;
+      font-weight: bold;
+    }
+
+    tr:nth-child(even) {
+      background-color: #fafafa;
+    }
+
+    /* Alert Row style (Stock <= Order Point and Not Ordered) */
+    tr.stock-warning {
+      background-color: var(--warning-bg) !important;
+      color: var(--warning-text);
+      font-weight: bold;
+    }
+
+    .warning-icon {
+      background-color: var(--warning-border);
+      color: white;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+      display: inline-block;
+      margin-right: 5px;
+    }
+
+    /* Interactive Table row */
+    .editable-row {
+      cursor: pointer;
+    }
+    .editable-row:hover {
+      background-color: #f0f7ff;
+    }
+
+    /* Modal dialog style (for Simple Manual) */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--modal-bg);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background-color: white;
+      padding: 30px;
+      border-radius: 8px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 85vh;
+      overflow-y: auto;
+      position: relative;
+      margin: 5% auto;
+    }
+
+    .modal-header {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 15px;
+      border-bottom: 2px solid var(--primary-color);
+      padding-bottom: 8px;
+    }
+
+    .modal-body p, .modal-body li {
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    .modal-close-btn {
+      float: right;
+      font-size: 16px;
+      padding: 8px 16px;
+    }
+
+    /* Floating Help button */
+    .help-trigger-btn {
+      background-color: #2e7d32;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .help-trigger-btn:hover, .help-trigger-btn:focus {
+      background-color: #1b5e20;
+    }
+
+    /* Edit Mode inputs inline */
+    .inline-edit-input {
+      width: 90%;
+      padding: 6px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-container">
+      <div class="header-left">
+        <span class="app-emoji">📦</span>
+        <h1 style="display:inline-block; margin:0; font-size:24px; vertical-align:middle;">
+          かんたん在庫・発注管理ツール
+        </h1>
+      </div>
+      <div class="header-right">
+        <span class="counter-badge" id="alert-counter" aria-live="polite">要発注件数: 0件</span>
+        <button class="help-trigger-btn" onclick="openManual()" aria-label="使い方を表示する" style="margin-left: 10px; vertical-align: middle;">❓使い方</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="main-container">
+
+    <div class="card" role="region" aria-labelledby="form-title">
+      <h2 class="card-title" id="form-title">📋 新しい品目を追加する</h2>
+      <form id="item-form" onsubmit="handleAddItem(event)">
+        <div class="form-group">
+          <label for="form-name">品名 (必須)</label>
+          <input type="text" id="form-name" required placeholder="例: ボールペン">
+        </div>
+        <div class="form-group">
+          <label for="form-stock">現在在庫数 (数字のみ, 必須)</label>
+          <input type="number" id="form-stock" min="0" required placeholder="例: 10">
+        </div>
+        <div class="form-group">
+          <label for="form-threshold">発注点 (これ以下で要発注, 数字のみ, 必須)</label>
+          <input type="number" id="form-threshold" min="0" required placeholder="例: 20">
+        </div>
+        <div class="form-group">
+          <label for="form-supplier">発注先 (必須)</label>
+          <input type="text" id="form-supplier" required placeholder="例: 文房具屋">
+        </div>
+        <div class="form-group">
+          <label for="form-unit">単位</label>
+          <input type="text" id="form-unit" placeholder="例: 本, 個, 箱" defaultValue="個">
+        </div>
+        <div class="form-group" style="padding-top: 30px;">
+          <label class="checkbox-container">
+            <input type="checkbox" id="form-ordered"> すでに発注済み
+          </label>
+        </div>
+        <div class="button-group">
+          <button type="submit" class="btn" style="background-color: var(--primary-color);">➕ 追加する</button>
+          <button type="button" class="btn btn-secondary" onclick="clearForm()">クリア</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">🔍 在庫・発注一覧</h2>
+      
+      <div class="filter-panel" role="search" aria-label="絞り込みと並び替え">
+        <div class="filter-input">
+          <label for="filter-name" style="font-size:14px;">品名でしぼりこむ</label>
+          <input type="text" id="filter-name" oninput="renderTable()" placeholder="品名を入力...">
+        </div>
+        <div class="filter-input">
+          <label for="filter-supplier" style="font-size:14px;">発注先でしぼりこむ</label>
+          <input type="text" id="filter-supplier" oninput="renderTable()" placeholder="発注先を入力...">
+        </div>
+        <div class="filter-input" style="width:auto; vertical-align: bottom;">
+          <label style="font-size:14px; display:block;">並び替え順</label>
+          <button class="btn btn-warning" onclick="changeSort('name')" style="padding: 8px 12px; font-size:14px; margin-right: 5px;">品名順</button>
+          <button class="btn btn-warning" onclick="changeSort('stock')" style="padding: 8px 12px; font-size:14px; margin-right: 5px;">在庫数順</button>
+          <button class="btn btn-warning" onclick="changeSort('threshold')" style="padding: 8px 12px; font-size:14px;">発注点順</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 15px;">
+        <button class="btn" style="background-color: var(--success-color);" onclick="exportToCSV()">📤 CSVを書きだす (エクスポート)</button>
+        <button class="btn btn-secondary" onclick="resetToDefaultData()" style="float: right;">初期データに戻す</button>
+        <div style="clear: both;"></div>
+      </div>
+
+      <p style="font-size: 14px; color: #555; margin-bottom: 10px;">
+        💡 <strong>編集方法:</strong> 行を直接クリックすると、その場で文字や数字を書き換え（編集）できます。編集が終わったら「保存」ボタンを押してください。
+      </p>
+
+      <div class="table-container">
+        <table id="inventory-table">
+          <thead>
+            <tr>
+              <th scope="col" style="width: 20%;">品名</th>
+              <th scope="col" style="width: 15%;">現在在庫数</th>
+              <th scope="col" style="width: 15%;">発注点</th>
+              <th scope="col" style="width: 20%;">発注先</th>
+              <th scope="col" style="width: 10%;">単位</th>
+              <th scope="col" style="width: 10%;">発注状況</th>
+              <th scope="col" style="width: 10%;">操作</th>
+            </tr>
+          </thead>
+          <tbody id="inventory-body">
+            </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="manual-modal" onclick="closeManualOnOverlay(event)" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-content">
+      <div class="modal-header" id="modal-title">
+        ❓ かんたん在庫・発注管理ツールの使い方
+      </div>
+      <div class="modal-body">
+        <h3>(1) このアプリで何ができるか</h3>
+        <p>
+          日常業務に必要な物品の在庫と発注点を管理し、どの品物をいつ発注すべきかをひと目で判断するためのツールです。
+          現在在庫が発注点を下回ると自動的に「⚠️要発注」のマークが付き、ヘッダーに件数が表示されます。
+        </p>
+
+        <h3>(2) 基本の使いかた (4ステップ)</h3>
+        <ol>
+          <li><strong>品目を追加する:</strong> 画面上のフォームに「品名」「現在在庫数」「発注点」「発注先」「単位」を入力し、「追加する」ボタンを押します。</li>
+          <li><strong>在庫を確認する:</strong> 在庫数が発注点以下になると、表の行が薄赤色になり「⚠️要発注」マークが点灯します。</li>
+          <li><strong>発注状況の管理:</strong> 発注を済ませたものは、表内の「発注済み」にチェックを入れると、「要発注」の警告が消えて集計から除外されます。</li>
+          <li><strong>内容を変更する:</strong> 登録した内容を変更したい場合は、表の該当する行を直接クリックしてそのまま数値を書き換え、「保存」ボタンを押します。</li>
+        </ol>
+
+        <h3>(3) データの保存について</h3>
+        <p>
+          入力されたすべてのデータは、<strong>この端末のブラウザ内（localStorage）だけに安全に保存</strong>されます。
+          外部のサーバーには一切送信されないため、オフラインでも安心してご利用いただけます。
+          ※ブラウザの履歴やキャッシュを完全に消去するとデータが消える場合がありますのでご注意ください。
+        </p>
+
+        <h3>(4) エクスポート（CSV書きだし）の使い方</h3>
+        <p>
+          「📤 CSVを書きだす」ボタンを押すと、登録されているすべての在庫リストをCSV形式のファイルとしてパソコンやスマートフォンにダウンロードできます。
+          Excelやスプレッドシートで読み込んで印刷や共有をするのに便利です。
+        </p>
+      </div>
+      <div style="margin-top: 25px; text-align: right;">
+        <button class="btn btn-secondary modal-close-btn" onclick="closeManual()">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --------------------------------------------------
+    // State and Logical Implementation
+    // --------------------------------------------------
+    
+    // Default system data
+    const DEFAULT_DATA = [
+      { id: 1, name: "ボールペン", stock: 10, threshold: 20, supplier: "文房具屋", unit: "本", ordered: false }
+    ];
+
+    let inventory = [];
+    let currentEditId = null;
+    let currentSortField = 'name'; // 'name' | 'stock' | 'threshold'
+    let currentSortOrder = 'asc';
+
+    // Initialize application
+    window.onload = function() {
+      const savedData = localStorage.getItem('order_tracker_data');
+      if (savedData) {
+        try {
+          inventory = JSON.parse(savedData);
+        } catch (e) {
+          inventory = [...DEFAULT_DATA];
+        }
+      } else {
+        inventory = [...DEFAULT_DATA];
+        saveToStorage();
+      }
+      renderTable();
+    };
+
+    function saveToStorage() {
+      localStorage.setItem('order_tracker_data', JSON.stringify(inventory));
+    }
+
+    // Reset data to defaults
+    function resetToDefaultData() {
+      if (confirm("データを初期状態（ボールペンのみ）に戻しますか？現在のデータは上書きされます。")) {
+        inventory = [
+          { id: Date.now(), name: "ボールペン", stock: 10, threshold: 20, supplier: "文房具屋", unit: "本", ordered: false }
+        ];
+        saveToStorage();
+        renderTable();
+      }
+    }
+
+    // Add item form handler
+    function handleAddItem(event) {
+      event.preventDefault();
+      
+      const name = document.getElementById('form-name').value.trim();
+      const stock = parseInt(document.getElementById('form-stock').value, 10);
+      const threshold = parseInt(document.getElementById('form-threshold').value, 10);
+      const supplier = document.getElementById('form-supplier').value.trim();
+      const unit = document.getElementById('form-unit').value.trim() || "個";
+      const ordered = document.getElementById('form-ordered').checked;
+
+      if (!name || isNaN(stock) || isNaN(threshold) || !supplier) {
+        alert("必須項目を正しく入力してください。");
+        return;
+      }
+
+      const newItem = {
+        id: Date.now(),
+        name,
+        stock,
+        threshold,
+        supplier,
+        unit,
+        ordered
+      };
+
+      inventory.push(newItem);
+      saveToStorage();
+      renderTable();
+      clearForm();
+    }
+
+    function clearForm() {
+      document.getElementById('item-form').reset();
+    }
+
+    // Sort configuration
+    function changeSort(field) {
+      if (currentSortField === field) {
+        currentSortOrder = (currentSortOrder === 'asc') ? 'desc' : 'asc';
+      } else {
+        currentSortField = field;
+        currentSortOrder = 'asc';
+      }
+      renderTable();
+    }
+
+    // Check if item needs ordering
+    function isAlerting(item) {
+      return item.stock <= item.threshold && !item.ordered;
+    }
+
+    // Render logic
+    function renderTable() {
+      const tbody = document.getElementById('inventory-body');
+      tbody.innerHTML = '';
+
+      // Get filter terms
+      const filterName = document.getElementById('filter-name').value.toLowerCase();
+      const filterSupplier = document.getElementById('filter-supplier').value.toLowerCase();
+
+      // Filter
+      let filtered = inventory.filter(item => {
+        const matchesName = item.name.toLowerCase().includes(filterName);
+        const matchesSupplier = item.supplier.toLowerCase().includes(filterSupplier);
+        return matchesName && matchesSupplier;
+      });
+
+      // Sort
+      filtered.sort((a, b) => {
+        let valA = a[currentSortField];
+        let valB = b[currentSortField];
+
+        if (typeof valA === 'string') {
+          valA = valA.toLowerCase();
+          valB = valB.toLowerCase();
+        }
+
+        if (valA < valB) return currentSortOrder === 'asc' ? -1 : 1;
+        if (valA > valB) return currentSortOrder === 'asc' ? 1 : -1;
+        return 0;
+      });
+
+      // Update Order Alert count
+      const alertCount = inventory.filter(isAlerting).length;
+      document.getElementById('alert-counter').innerText = `要発注件数: ${alertCount}件`;
+
+      // Build rows
+      filtered.forEach(item => {
+        const tr = document.createElement('tr');
+        const alerting = isAlerting(item);
+
+        if (alerting) {
+          tr.className = "stock-warning";
+        }
+
+        if (currentEditId === item.id) {
+          // Edit mode UI
+          tr.innerHTML = `
+            <td><input type="text" id="edit-name-${item.id}" class="inline-edit-input" value="${escapeHtml(item.name)}"></td>
+            <td><input type="number" id="edit-stock-${item.id}" class="inline-edit-input" min="0" value="${item.stock}"></td>
+            <td><input type="number" id="edit-threshold-${item.id}" class="inline-edit-input" min="0" value="${item.threshold}"></td>
+            <td><input type="text" id="edit-supplier-${item.id}" class="inline-edit-input" value="${escapeHtml(item.supplier)}"></td>
+            <td><input type="text" id="edit-unit-${item.id}" class="inline-edit-input" value="${escapeHtml(item.unit)}"></td>
+            <td>
+              <label>
+                <input type="checkbox" id="edit-ordered-${item.id}" ${item.ordered ? 'checked' : ''}> 発注済
+              </label>
+            </td>
+            <td>
+              <button class="btn" style="padding: 6px 12px; font-size:14px; background-color: var(--success-color);" onclick="saveInlineEdit(${item.id})">保存</button>
+              <button class="btn btn-secondary" style="padding: 6px 12px; font-size:14px; margin-top:5px;" onclick="cancelInlineEdit()">取消</button>
+            </td>
+          `;
+        } else {
+          // Normal display mode UI
+          const warningBadge = alerting ? `<span class="warning-icon">⚠️ 要発注</span>` : '';
+          tr.className += " editable-row";
+          // We make it interactive & accessible via click
+          tr.setAttribute("tabindex", "0");
+          tr.setAttribute("aria-label", `${item.name}。在庫${item.stock}。クリックして修正`);
+          
+          // Let screen reader know if it requires action
+          if (alerting) {
+            tr.setAttribute("aria-label", `要発注！ ${item.name}。在庫${item.stock}。発注点${item.threshold}。クリックして修正`);
+          }
+
+          // Handle enter key for keyboard navigators to open edit mode
+          tr.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              startInlineEdit(item.id);
+            }
+          });
+
+          // Single row click triggers edit mode (except on clicking the interactive checkbox directly)
+          tr.addEventListener('click', function(e) {
+            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') {
+              startInlineEdit(item.id);
+            }
+          });
+
+          tr.innerHTML = `
+            <td>${warningBadge}${escapeHtml(item.name)}</td>
+            <td>${item.stock}</td>
+            <td>${item.threshold}</td>
+            <td>${escapeHtml(item.supplier)}</td>
+            <td>${escapeHtml(item.unit)}</td>
+            <td>
+              <input type="checkbox" aria-label="${item.name}の発注状況" ${item.ordered ? 'checked' : ''} onchange="toggleOrdered(${item.id}, this.checked)">
+              ${item.ordered ? '発注済み' : '未発注'}
+            </td>
+            <td>
+              <button class="btn btn-danger" style="padding: 6px 12px; font-size:14px;" onclick="deleteItem(${item.id})" aria-label="${item.name}を削除">削除</button>
+            </td>
+          `;
+        }
+
+        tbody.appendChild(tr);
+      });
+
+      if (filtered.length === 0) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td colspan="7" style="text-align:center; padding: 20px; color: #777;">該当する品目が見つかりませんでした。</td>`;
+        tbody.appendChild(tr);
+      }
+    }
+
+    // Toggle ordered check on the fly
+    function toggleOrdered(id, isChecked) {
+      const idx = inventory.findIndex(item => item.id === id);
+      if (idx !== -1) {
+        inventory[idx].ordered = isChecked;
+        saveToStorage();
+        renderTable();
+      }
+    }
+
+    // Inline edit triggers
+    function startInlineEdit(id) {
+      currentEditId = id;
+      renderTable();
+      // Focus on the first input of editing row
+      setTimeout(() => {
+        const input = document.getElementById(`edit-name-${id}`);
+        if (input) input.focus();
+      }, 50);
+    }
+
+    function cancelInlineEdit() {
+      currentEditId = null;
+      renderTable();
+    }
+
+    function saveInlineEdit(id) {
+      const name = document.getElementById(`edit-name-${id}`).value.trim();
+      const stock = parseInt(document.getElementById(`edit-stock-${id}`).value, 10);
+      const threshold = parseInt(document.getElementById(`edit-threshold-${id}`).value, 10);
+      const supplier = document.getElementById(`edit-supplier-${id}`).value.trim();
+      const unit = document.getElementById(`edit-unit-${id}`).value.trim();
+      const ordered = document.getElementById(`edit-ordered-${id}`).checked;
+
+      if (!name || isNaN(stock) || isNaN(threshold) || !supplier) {
+        alert("入力値が正しくありません。");
+        return;
+      }
+
+      const idx = inventory.findIndex(item => item.id === id);
+      if (idx !== -1) {
+        inventory[idx].name = name;
+        inventory[idx].stock = stock;
+        inventory[idx].threshold = threshold;
+        inventory[idx].supplier = supplier;
+        inventory[idx].unit = unit;
+        inventory[idx].ordered = ordered;
+
+        saveToStorage();
+        currentEditId = null;
+        renderTable();
+      }
+    }
+
+    function deleteItem(id) {
+      if (confirm("この品目を削除してもよろしいですか？")) {
+        inventory = inventory.filter(item => item.id !== id);
+        saveToStorage();
+        renderTable();
+      }
+    }
+
+    // Helper: Escapes HTML to prevent injections
+    function escapeHtml(str) {
+      if (typeof str !== 'string') return '';
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // CSV Export Logic
+    function exportToCSV() {
+      if (inventory.length === 0) {
+        alert("書きだすデータがありません。");
+        return;
+      }
+
+      // Headers
+      let csvContent = "品名,現在在庫数,発注点,発注先,単位,発注済み\\r\\n";
+
+      // Row mappings
+      inventory.forEach(item => {
+        const escapedName = item.name.replace(/"/g, '""');
+        const escapedSupplier = item.supplier.replace(/"/g, '""');
+        const escapedUnit = item.unit.replace(/"/g, '""');
+        const orderedText = item.ordered ? "チェック済み" : "未チェック";
+
+        csvContent += `"${escapedName}",${item.stock},${item.threshold},"${escapedSupplier}","${escapedUnit}","${orderedText}"\\r\\n`;
+      });
+
+      // Encode for Japanese Excel (UTF-8 with BOM to prevent Mojibake)
+      const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+      const blob = new Blob([bom, csvContent], { type: "text/csv;charset=utf-8;" });
+      
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `zaiko_hacchu_list_${new Date().toISOString().slice(0,10)}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // Manual Modal controls
+    function openManual() {
+      const modal = document.getElementById('manual-modal');
+      modal.style.display = 'block';
+      modal.style.display = 'flex'; // Weasyprint limit doesn't apply to browser execution of flex center
+      // Set focus to the manual modal
+      modal.focus();
+    }
+
+    function closeManual() {
+      document.getElementById('manual-modal').style.display = 'none';
+    }
+
+    function closeManualOnOverlay(event) {
+      if (event.target === document.getElementById('manual-modal')) {
+        closeManual();
+      }
+    }
+  </script>
+</body>
+</html>

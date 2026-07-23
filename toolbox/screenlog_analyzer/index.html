@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>作業ログ解析 — Screen Logger 差分ビューア</title>
+<style>
+:root{--navy:#1F3864;--gold:#C9962F;--bg:#f1f5f9;--border:#cbd5e1;--danger:#C0392B;--ok:#1D9E75;--idle:#94a3b8}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Yu Gothic UI","Meiryo",sans-serif;background:var(--bg);color:#1e293b;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+header{background:#fff;border-bottom:2px solid var(--navy);padding:6px 14px;display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap}
+header h1{font-size:15px;margin:0;color:var(--navy);white-space:nowrap}
+header .ver{font-size:10px;background:#e2e8f0;border-radius:8px;padding:2px 7px;color:#64748b}
+.btn{padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:12.5px;font-weight:700}
+.btn:hover{background:#f1f5f9}
+.btn-pri{background:var(--navy);color:#fff;border-color:var(--navy)}
+.btn-gold{background:var(--gold);color:#3a2400;border-color:var(--gold)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+main{flex:1;display:flex;overflow:hidden}
+/* 左: タイムライン */
+#timeline{width:300px;border-right:1px solid var(--border);background:#fff;overflow-y:auto;flex-shrink:0;padding:8px}
+#tlHead{position:sticky;top:-8px;background:#fff;z-index:5;padding:2px 0 6px;font-size:11px;color:#64748b}
+.frame{display:flex;gap:8px;align-items:center;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;padding:5px;cursor:pointer;background:#fff}
+.frame.active{border:2px solid var(--gold);background:#fffbeb}
+.frame img{width:64px;height:40px;object-fit:cover;border-radius:4px;background:#eee;flex-shrink:0;pointer-events:none}
+.frame .meta{flex:1;min-width:0}
+.frame .tm{font-size:11.5px;font-weight:700;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.frame .ch{font-size:10.5px;color:#64748b}
+.dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.dot.big{background:var(--danger)}
+.dot.small{background:var(--gold)}
+.dot.idle{background:var(--idle)}
+.pctbar{height:4px;border-radius:3px;background:#e2e8f0;margin-top:3px;overflow:hidden}
+.pctbar>i{display:block;height:100%;background:var(--navy)}
+/* 中央: 比較ビュー */
+#center{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#cvWrap{flex:1;overflow:auto;padding:12px;background:#e2e8f0;text-align:center;position:relative}
+#cv{background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.15);max-width:100%}
+#cvHint{color:#64748b;font-size:13px;margin-top:40px}
+#viewbar{padding:6px 12px;background:#fff;border-bottom:1px solid var(--border);display:flex;gap:6px;align-items:center;flex-wrap:wrap;flex-shrink:0;font-size:12px}
+#viewbar .tool{padding:5px 10px;border-radius:7px;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:12px}
+#viewbar .tool.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+#viewbar .sep{width:1px;height:20px;background:var(--border);margin:0 2px}
+/* 右: 作業ログ */
+#log{width:340px;border-left:1px solid var(--border);background:#fff;overflow-y:auto;flex-shrink:0;padding:10px}
+#log h2{font-size:13px;color:var(--navy);margin:2px 0 8px;border-bottom:1px solid var(--border);padding-bottom:5px}
+.sum{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+.sum .card{border:1px solid var(--border);border-radius:8px;padding:7px;text-align:center}
+.sum .card b{display:block;font-size:18px;color:var(--navy)}
+.sum .card span{font-size:10.5px;color:#64748b}
+.seg{border:1px solid var(--border);border-left-width:4px;border-radius:6px;padding:6px 8px;margin-bottom:5px;font-size:12px;cursor:pointer}
+.seg.big{border-left-color:var(--danger)}
+.seg.small{border-left-color:var(--gold)}
+.seg.idle{border-left-color:var(--idle);color:#64748b}
+.seg .st{font-weight:700}
+.seg .dur{float:right;color:#64748b;font-size:11px}
+.ocrline{font-size:11.5px;margin:2px 0;padding:2px 5px;border-radius:4px;word-break:break-all}
+.ocrline.add{background:#e6f6ef;color:#0f6b47}
+.ocrline.del{background:#fdecec;color:#a3352c;text-decoration:line-through}
+.ocrline.chg{background:#fff7e6;color:#7a5b12}
+.tag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:6px;background:#e2e8f0;color:#475569;margin-left:4px}
+/* パネル */
+.panel{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:100}
+.panel.on{display:flex}
+.panel>div{background:#fff;border-radius:12px;padding:20px;width:min(560px,94vw);max-height:86vh;overflow-y:auto}
+.panel h3{margin:0 0 12px;color:var(--navy);font-size:16px}
+.drop{border:3px dashed var(--navy);border-radius:14px;padding:40px 20px;text-align:center;color:var(--navy);font-weight:700;background:#eff6ff;cursor:pointer}
+.drop.hover{background:#dbeafe}
+.frow{display:flex;gap:10px;margin-bottom:12px;align-items:center}
+.frow label{width:200px;font-size:12.5px;color:#334155;font-weight:700;flex-shrink:0}
+.frow input[type=range]{flex:1}
+.frow .val{width:52px;text-align:right;font-size:12px;color:var(--navy);font-weight:700}
+fieldset{border:1px solid var(--border);border-radius:8px;margin-bottom:12px;padding:10px}
+legend{font-size:12px;font-weight:700;color:var(--navy);padding:0 6px}
+.hint{font-size:11px;color:#94a3b8}
+.note{background:#fffbeb;border:1px solid #f4e2b8;border-radius:8px;padding:8px 10px;font-size:11.5px;color:#7a5b12;margin:8px 0}
+#prog{display:none;align-items:center;gap:8px;font-size:12px;color:var(--navy)}
+#progBar{width:140px;height:8px;background:#e2e8f0;border-radius:5px;overflow:hidden}
+#progBar>i{display:block;height:100%;width:0;background:var(--gold)}
+#toast{position:fixed;bottom:18px;right:18px;background:#334155;color:#fff;padding:10px 18px;border-radius:8px;opacity:0;transition:.3s;pointer-events:none;z-index:200;font-size:13px;font-weight:700}
+#toast.show{opacity:1}
+footer{background:#fff;border-top:1px solid var(--border);padding:5px 14px;font-size:10.5px;color:#94a3b8;flex-shrink:0;text-align:center}
+/* ♿ 見やすさ */
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px;border-radius:4px}
+body.a11y-lg{zoom:1.15}
+body.a11y-xl{zoom:1.3}
+body.a11y-contrast{--navy:#000000;--gold:#8a4b00;--bg:#ffffff;--border:#000000;--danger:#b00020;--ok:#006644;--idle:#444;color:#000}
+body.a11y-contrast .btn,body.a11y-contrast #viewbar .tool{border:2px solid #000;font-weight:800;color:#000}
+body.a11y-contrast .btn-pri,body.a11y-contrast #viewbar .tool.active{background:#000;color:#fff}
+body.a11y-contrast .btn-gold{background:#8a4b00;color:#fff;border-color:#8a4b00}
+body.a11y-contrast .frame{border:2px solid #000}
+body.a11y-contrast .hint,body.a11y-contrast .frame .ch,body.a11y-contrast footer{color:#000}
+body.a11y-space .btn{padding:11px 18px}
+body.a11y-space #viewbar .tool{padding:10px 15px}
+body.a11y-space .frame{padding:9px}
+body.a11y-space .seg{padding:10px 12px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🔍 作業ログ解析 <span class="ver">v0.10β / Screen Logger 差分ビューア / 完全ローカル</span></h1>
+  <button class="btn btn-pri" onclick="UI.openImport()" title="Screen Logger がためたスクショのフォルダを選ぶと、1枚ずつの変化を自動で調べます">📂 スクショを読み込む</button>
+  <button class="btn" onclick="OcrB.run()" id="ocrBtn" disabled title="押すと2つの読み取りエンジンの結果を合わせて、取りこぼしを大きく減らします(実測76%→92%)。1枚数秒かかります">🔤 文字も読み取る(高精度)</button>
+  <button class="btn btn-gold" onclick="Exporter.open()" id="expBtn" disabled title="調べた作業ログを1つのファイルに書き出します">📤 書き出す</button>
+  <button class="btn" onclick="UI.openSettings()" title="変化とみなす細かさを自分好みに調整できます">⚙ 設定</button>
+  <button class="btn" onclick="A11y.open()" title="文字の大きさ・くっきり表示・ゆったり表示など、自分に合う見やすさに変えられます">♿ 見やすさ</button>
+  <span id="prog"><span id="progBar"><i></i></span><span id="progTxt"></span></span>
+  <span class="hint" id="status">未読込 — 「📂 スクショを読み込む」から、たまったスクショのフォルダを選んでください</span>
+</header>
+<main>
+  <div id="timeline"><div id="tlHead"></div><div id="frameList"></div></div>
+  <div id="center">
+    <div id="viewbar">
+      <button class="tool active" data-v="diff" onclick="View.mode('diff',this)" title="変わった場所を赤枠で示します">🟥 変化を表示</button>
+      <button class="tool" data-v="now" onclick="View.mode('now',this)" title="いま選んでいる画面をそのまま表示">🖼 この画面</button>
+      <button class="tool" data-v="prev" onclick="View.mode('prev',this)" title="1つ前の画面を表示(見比べ用)">⏮ 前の画面</button>
+      <span class="sep"></span>
+      <span id="viewInfo" class="hint"></span>
+    </div>
+    <div id="cvWrap"><div id="cvHint">スクショのフォルダを読み込むと、ここに変化が表示されます。</div><canvas id="cv" style="display:none"></canvas></div>
+  </div>
+  <div id="log">
+    <h2>📋 作業ログ（自動まとめ）</h2>
+    <div class="sum" id="sum"></div>
+    <div id="segList"></div>
+  </div>
+</main>
+<footer>このツールは “本人の同意のもと” 自分の作業を振り返るためのものです。人の評価・監視には使いません。／ 画像はこのパソコンの中だけで処理され、どこにも送信しません。</footer>
+
+<!-- 読み込みパネル -->
+<div class="panel" id="importPanel"><div>
+  <h3>📂 スクショを読み込む</h3>
+  <div class="drop" id="drop" onclick="document.getElementById('fileInput').click()">
+    ここをクリックしてフォルダを選ぶ<br><span class="hint">または、スクショ画像をここにドラッグ＆ドロップ</span>
+  </div>
+  <input type="file" id="fileInput" webkitdirectory directory multiple accept="image/*" style="display:none">
+  <input type="file" id="fileInput2" multiple accept="image/*" style="display:none">
+  <div style="text-align:center;margin-top:8px"><button class="btn" onclick="document.getElementById('fileInput2').click()">📄 ファイルを個別に選ぶ</button></div>
+  <div class="note">読み込んだ順(ファイル名の順)に、1枚前との変化を調べます。撮る間隔は Screen Logger 本体側の設定で決めてください。ここでは各スクショの時刻から間隔を自動で読み取ります。</div>
+  <div style="text-align:right"><button class="btn" onclick="UI.close('importPanel')">閉じる</button></div>
+</div></div>
+
+<!-- 設定パネル -->
+<div class="panel" id="settingsPanel"><div>
+  <h3>⚙ 設定（変化の調べ方）</h3>
+  <div class="frow"><label>変化とみなす強さ<br><span class="hint">小さいほど、わずかな変化も拾います</span></label>
+    <input type="range" id="setThresh" min="6" max="50" step="1"><span class="val" id="setThreshV"></span></div>
+  <div class="frow"><label>「作業中」とみなす変化の割合<br><span class="hint">画面のこの割合以上が変われば「大きい変化」</span></label>
+    <input type="range" id="setActive" min="2" max="40" step="1"><span class="val" id="setActiveV"></span></div>
+  <div class="note">設定を変えたら「再計算」を押すと、読み込み済みのスクショに反映されます。</div>
+  <fieldset style="border:1px solid var(--border);border-radius:8px;padding:10px;margin-top:6px">
+    <legend style="font-size:12px;font-weight:700;color:var(--navy);padding:0 6px">📖 よく使う言葉（読み間違いを直す）</legend>
+    <div class="hint" style="margin-bottom:5px">1行に1語。ここに入れた言葉に近い読み取り結果は、その言葉へ自動で直します（例：製品名・部署名・専門用語）。空でもかまいません。</div>
+    <textarea id="dictBox" style="width:100%;height:80px;border:1px solid var(--border);border-radius:6px;padding:7px;font-size:13px;font-family:inherit" placeholder="購買サーチ&#10;安全パトロール&#10;品質会議"></textarea>
+    <div style="text-align:right;margin-top:5px"><button class="btn" onclick="Dict.save()">💾 言葉を保存</button></div>
+  </fieldset>
+  <div style="text-align:right;display:flex;gap:8px;justify-content:flex-end">
+    <button class="btn" onclick="CFG.reset()">初期値に戻す</button>
+    <button class="btn btn-pri" onclick="DiffA.recompute()">🔄 再計算</button>
+    <button class="btn" onclick="UI.close('settingsPanel')">閉じる</button>
+  </div>
+</div></div>
+
+<!-- 見やすさパネル -->
+<div class="panel" id="a11yPanel"><div>
+  <h3>♿ 見やすさ</h3>
+  <fieldset><legend>文字の大きさ</legend>
+    <label><input type="radio" name="a11ysize" value="" onchange="A11y.size(this.value)"> ふつう</label>
+    <label><input type="radio" name="a11ysize" value="lg" onchange="A11y.size(this.value)"> 大きい</label>
+    <label><input type="radio" name="a11ysize" value="xl" onchange="A11y.size(this.value)"> もっと大きい</label>
+  </fieldset>
+  <fieldset><legend>見え方</legend>
+    <label><input type="checkbox" id="a11yContrast" onchange="A11y.toggle('contrast',this.checked)"> くっきり表示（白地に黒・太枠）</label><br>
+    <label><input type="checkbox" id="a11ySpace" onchange="A11y.toggle('space',this.checked)"> ゆったり表示（ボタンを大きく）</label>
+  </fieldset>
+  <div style="text-align:right"><button class="btn btn-pri" onclick="UI.close('a11yPanel')">閉じる</button></div>
+</div></div>
+
+<!-- 書き出しパネル -->
+<div class="panel" id="exportPanel"><div>
+  <h3>📤 作業ログを書き出す</h3>
+  <p class="hint">調べた変化のまとめを、あとで見返せる形で保存します。</p>
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <button class="btn btn-pri" onclick="Exporter.html()">🌐 見やすいHTMLで保存（そのまま開けます）</button>
+    <button class="btn" onclick="Exporter.csv()">📊 CSVで保存（Excelで開けます）</button>
+  </div>
+  <div style="text-align:right;margin-top:12px"><button class="btn" onclick="UI.close('exportPanel')">閉じる</button></div>
+</div></div>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+/* ============ 設定 ============ */
+const CFG = {
+  key:'screenlog_analyzer_cfg_v1',
+  d:{thresh:14, active:8}, // thresh=ブロック輝度差しきい値(18→14=感度up), active=大きい変化とみなす%
+  v:{},
+  load(){ try{this.v=Object.assign({},this.d,JSON.parse(localStorage.getItem(this.key)||'{}'));}catch(e){this.v=Object.assign({},this.d);} this.sync(); },
+  save(){ localStorage.setItem(this.key, JSON.stringify(this.v)); },
+  reset(){ this.v=Object.assign({},this.d); this.save(); this.sync(); },
+  sync(){
+    const t=document.getElementById('setThresh'), a=document.getElementById('setActive');
+    if(t){ t.value=this.v.thresh; document.getElementById('setThreshV').textContent=this.v.thresh; }
+    if(a){ a.value=this.v.active; document.getElementById('setActiveV').textContent=this.v.active+'%'; }
+  }
+};
+
+/* ============ 状態 ============ */
+const WW = 480;            // 差分計算の作業幅(320→480=小さい変化も拾う)
+const BS = 12;             // ブロックサイズ(作業解像度上・細かく)
+const S = { frames:[], sel:-1, viewMode:'diff' };
+
+/* ============ UI 基礎 ============ */
+const UI = {
+  openImport(){ this.open('importPanel'); },
+  openSettings(){ CFG.sync(); Dict.load(); this.open('settingsPanel'); },
+  open(id){ document.getElementById(id).classList.add('on'); },
+  close(id){ document.getElementById(id).classList.remove('on'); }
+};
+function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2200); }
+function setStatus(m){ document.getElementById('status').textContent=m; }
+function fmtDur(sec){ sec=Math.round(sec); if(sec<60) return sec+'秒'; const m=Math.floor(sec/60), s=sec%60; if(m<60) return s? m+'分'+s+'秒' : m+'分'; const h=Math.floor(m/60); return h+'時間'+(m%60)+'分'; }
+function fmtTime(d){ if(!d) return '—'; const p=n=>String(n).padStart(2,'0'); return p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds()); }
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ============ 時刻の推定 ============ */
+// ファイル名から YYYYMMDD_HHMMSS / YYYY-MM-DD HH.MM.SS 等を拾う。無ければ更新日時。
+function parseTimeFromName(name){
+  const m = name.match(/(20\d{2})[-_]?(\d{2})[-_]?(\d{2})[ _T-]?(\d{2})[.:_-]?(\d{2})[.:_-]?(\d{2})/);
+  if(m){ const d=new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+m[6]); if(!isNaN(d)) return d; }
+  return null;
+}
+
+/* ============ 読み込み ============ */
+const Loader = {
+  CAP:1500,
+  async fromFiles(files){
+    const all=Array.from(files);
+    let imgs = all.filter(f=>/image\/(png|jpe?g|webp|bmp)/i.test(f.type) || /\.(png|jpe?g|webp|bmp)$/i.test(f.name));
+    if(!imgs.length){ toast('画像ファイルが見つかりませんでした'); return; }
+    imgs.sort((a,b)=> (a.webkitRelativePath||a.name).localeCompare(b.webkitRelativePath||b.name, undefined, {numeric:true}));
+    if(imgs.length>this.CAP){ toast(`枚数が多いため新しい方から${this.CAP}枚だけ読み込みます`); imgs=imgs.slice(-this.CAP); }
+    // 撮る時にWindows OCRが作った文字ファイルを集める(.ocr.json=bbox付き優先 / .txt=旧形式)
+    const sJson={}, sTxt={};
+    for(const f of all){ if(/\.ocr\.json$/i.test(f.name)) sJson[f.name.replace(/\.ocr\.json$/i,'')]=f;
+      else if(/\.txt$/i.test(f.name)) sTxt[f.name.replace(/\.txt$/i,'')]=f; }
+    const items=[];
+    for(const f of imgs){ const base=f.name.replace(/\.(png|jpe?g|webp|bmp)$/i,''); const it={name:f.name, blob:f, mtime:f.lastModified};
+      if(sJson[base]){ try{ it.ocrJson=JSON.parse(await sJson[base].text()); }catch(e){} }
+      else if(sTxt[base]){ try{ it.sidecar=await sTxt[base].text(); }catch(e){} }
+      items.push(it); }
+    await this.ingest(items);
+  },
+  async ingest(items){
+    UI.close('importPanel');
+    S.frames = []; S.sel=-1;
+    prog(true, 0, '画像を読み込み中…');
+    const tmp = document.createElement('canvas');
+    for(let i=0;i<items.length;i++){
+      const it=items[i];
+      let bmp;
+      try{ bmp = await createImageBitmap(it.blob); }catch(e){ continue; }
+      const wh = Math.max(1, Math.round(WW * bmp.height / bmp.width));
+      tmp.width=WW; tmp.height=wh;
+      const g=tmp.getContext('2d',{willReadFrequently:true});
+      g.drawImage(bmp,0,0,WW,wh);
+      const px=g.getImageData(0,0,WW,wh).data;
+      const lum=new Uint8ClampedArray(WW*wh);
+      for(let p=0,q=0;q<lum.length;p+=4,q++) lum[q]=(px[p]*0.299+px[p+1]*0.587+px[p+2]*0.114)|0;
+      // サムネ
+      tmp.width=128; tmp.height=Math.max(1,Math.round(128*bmp.height/bmp.width));
+      tmp.getContext('2d').drawImage(bmp,0,0,tmp.width,tmp.height);
+      const thumb=tmp.toDataURL('image/jpeg',0.6);
+      let t = parseTimeFromName(it.name) || (it.mtime? new Date(it.mtime): null);
+      let ocr=null;
+      if(it.ocrJson && Array.isArray(it.ocrJson.lines)){
+        const ls=it.ocrJson.lines.map(L=>({t:Dict.fix((L.t||'').replace(/\s+/g,'')), bb:[L.x|0,L.y|0,L.w|0,L.h|0]})).filter(x=>x.t.length>=2);
+        ocr={text:it.ocrJson.text||'', lines:ls, hasBbox:true};
+      } else if(it.sidecar!=null){ ocr={text:it.sidecar, lines:OcrB.lines(it.sidecar)}; }
+      S.frames.push({name:it.name, blob:it.blob, w:bmp.width, h:bmp.height, ww:WW, wh, lum, thumb, time:t, diff:null, ocr});
+      bmp.close&&bmp.close();
+      prog(true, (i+1)/items.length, `画像を読み込み中… ${i+1}/${items.length}`);
+    }
+    prog(false);
+    if(!S.frames.length){ toast('読み込める画像がありませんでした'); return; }
+    DiffA.recompute();
+    document.getElementById('ocrBtn').disabled=false;
+    document.getElementById('expBtn').disabled=false;
+    S.sel=S.frames.length>1?1:0;
+    const withText=S.frames.filter(f=>f.ocr).length;
+    if(withText){ OcrB.computeDiffs(); }   // 撮る時の文字があれば自動で文字差分も表示
+    render(); View.draw();
+    setStatus(withText? `${S.frames.length}枚 読み込み完了（うち${withText}枚は撮影時の文字も反映済み）`
+                      : `${S.frames.length}枚 読み込み完了 — 左の一覧で選ぶと変化を確認できます`);
+  }
+};
+function prog(on,ratio,txt){
+  const w=document.getElementById('prog'); w.style.display=on?'inline-flex':'none';
+  if(on){ document.querySelector('#progBar>i').style.width=Math.round((ratio||0)*100)+'%'; document.getElementById('progTxt').textContent=txt||''; }
+}
+
+/* ============ ティアA: 画素差分 ============ */
+const DiffA = {
+  recompute(){
+    if(S.frames.length<1) return;
+    for(let i=0;i<S.frames.length;i++){
+      S.frames[i].diff = (i===0)? {pct:0, regions:[], first:true} : this.diff(S.frames[i-1], S.frames[i]);
+    }
+    Activity.build();
+    render(); View.draw();
+    UI.close('settingsPanel');
+  },
+  diff(a,b){
+    // サイズ違いは大変化扱い
+    if(a.wh!==b.wh){ return {pct:100, regions:[{x:0,y:0,w:b.w,h:b.h}]}; }
+    const cols=Math.ceil(WW/BS), rows=Math.ceil(b.wh/BS);
+    const changed=new Uint8Array(cols*rows);
+    const T=CFG.v.thresh;
+    for(let by=0;by<rows;by++){
+      for(let bx=0;bx<cols;bx++){
+        let sum=0,cnt=0;
+        const x0=bx*BS,y0=by*BS,x1=Math.min(x0+BS,WW),y1=Math.min(y0+BS,b.wh);
+        for(let y=y0;y<y1;y++){ let idx=y*WW+x0; for(let x=x0;x<x1;x++,idx++){ sum+=Math.abs(a.lum[idx]-b.lum[idx]); cnt++; } }
+        if(cnt && sum/cnt > T) changed[by*cols+bx]=1;
+      }
+    }
+    let cc=0; for(let i=0;i<changed.length;i++) cc+=changed[i];
+    const pct = Math.round(cc/(cols*rows)*1000)/10;
+    const regions = this.regions(changed,cols,rows,b);
+    return {pct, regions};
+  },
+  regions(changed,cols,rows,b){
+    // 連結成分→バウンディングボックス(元画像座標)
+    const seen=new Uint8Array(cols*rows), out=[], sx=b.w/WW, sy=b.h/b.wh;
+    for(let i=0;i<changed.length;i++){
+      if(!changed[i]||seen[i]) continue;
+      let minx=cols,miny=rows,maxx=0,maxy=0,st=[i]; seen[i]=1;
+      while(st.length){ const p=st.pop(), px=p%cols, py=(p/cols)|0;
+        if(px<minx)minx=px; if(px>maxx)maxx=px; if(py<miny)miny=py; if(py>maxy)maxy=py;
+        const nb=[p-1,p+1,p-cols,p+cols];
+        for(const n of nb){ if(n>=0&&n<changed.length&&changed[n]&&!seen[n]){
+          if((n%cols===0&&p%cols===cols-1)||(p%cols===0&&n%cols===cols-1)) continue;
+          seen[n]=1; st.push(n);
+        }}
+      }
+      out.push({x:Math.round(minx*BS*sx), y:Math.round(miny*BS*sy), w:Math.round((maxx-minx+1)*BS*sx), h:Math.round((maxy-miny+1)*BS*sy)});
+    }
+    out.sort((p,q)=>q.w*q.h-p.w*p.h);
+    return out.slice(0,40);
+  },
+  cls(pct){ if(pct>=CFG.v.active) return 'big'; if(pct>=0.3) return 'small'; return 'idle'; }
+};
+
+/* ============ 活動セグメント ============ */
+const Activity = {
+  segs:[],
+  build(){
+    this.segs=[];
+    if(S.frames.length<2){ this.render(); return; }
+    let cur=null;
+    for(let i=1;i<S.frames.length;i++){
+      const c=DiffA.cls(S.frames[i].diff.pct);
+      if(cur && cur.cls===c){ cur.end=i; cur.n++; }
+      else { if(cur) this.segs.push(cur); cur={cls:c, start:i, end:i, n:1}; }
+    }
+    if(cur) this.segs.push(cur);
+    this.render();
+  },
+  dur(seg){
+    const a=S.frames[seg.start-1]?.time, b=S.frames[seg.end]?.time;
+    if(a&&b) return (b-a)/1000;
+    return seg.n * this.avgInterval();
+  },
+  avgInterval(){
+    let sum=0,c=0;
+    for(let i=1;i<S.frames.length;i++){ const a=S.frames[i-1].time,b=S.frames[i].time; if(a&&b){ const d=(b-a)/1000; if(d>0&&d<3600){sum+=d;c++;} } }
+    return c? sum/c : 60;
+  },
+  render(){
+    const label={big:'作業中（大きい変化）', small:'小さい変化', idle:'変化なし（待機）'};
+    let active=0, idle=0;
+    for(const s of this.segs){ const d=this.dur(s); if(s.cls==='idle') idle+=d; else active+=d; }
+    const sum=document.getElementById('sum');
+    sum.innerHTML =
+      `<div class="card"><b>${S.frames.length}</b><span>スクショ枚数</span></div>`+
+      `<div class="card"><b>${this.segs.length}</b><span>変化のまとまり</span></div>`+
+      `<div class="card"><b>${fmtDur(active)}</b><span>作業していた時間</span></div>`+
+      `<div class="card"><b>${fmtDur(idle)}</b><span>動きのなかった時間</span></div>`;
+    const list=document.getElementById('segList');
+    list.innerHTML = this.segs.map(s=>{
+      const a=S.frames[s.start], b=S.frames[s.end];
+      return `<div class="seg ${s.cls}" onclick="selectFrame(${s.start})">`+
+        `<span class="st">${label[s.cls]}</span><span class="dur">${fmtDur(this.dur(s))}</span><br>`+
+        `<span class="hint">${fmtTime(a.time)} 〜 ${fmtTime(b.time)}・${s.n}枚</span></div>`;
+    }).join('') || '<p class="hint">2枚以上で変化のまとまりが出ます。</p>';
+  }
+};
+
+/* ============ タイムライン描画 ============ */
+function render(){
+  document.getElementById('tlHead').textContent = S.frames.length? `全 ${S.frames.length} 枚（新しい変化=赤）` : '';
+  const el=document.getElementById('frameList');
+  el.innerHTML = S.frames.map((f,i)=>{
+    const d=f.diff||{pct:0}; const cls=i===0?'idle':DiffA.cls(d.pct);
+    const ocrTag = f.ocr? `<span class="tag">文字✓</span>`:'';
+    return `<div class="frame ${i===S.sel?'active':''}" onclick="selectFrame(${i})">`+
+      `<img src="${f.thumb}" alt="">`+
+      `<div class="meta"><div class="tm">${fmtTime(f.time)} <span class="hint">#${i+1}</span>${ocrTag}</div>`+
+      `<div class="ch">${i===0?'最初の画面':`変化 ${d.pct}%`}</div>`+
+      `<div class="pctbar"><i style="width:${Math.min(100,d.pct)}%"></i></div></div>`+
+      `<div class="dot ${cls}"></div></div>`;
+  }).join('');
+  const af=el.querySelector('.frame.active'); if(af) af.scrollIntoView({block:'nearest'});
+}
+function selectFrame(i){ S.sel=i; render(); View.draw(); showOcrDiff(); }
+
+/* ============ 中央ビュー ============ */
+const View = {
+  mode(m,btn){ S.viewMode=m; document.querySelectorAll('#viewbar .tool').forEach(t=>t.classList.remove('active')); btn.classList.add('active'); this.draw(); },
+  async draw(){
+    const f=S.frames[S.sel]; const cv=document.getElementById('cv'), hint=document.getElementById('cvHint');
+    if(!f){ cv.style.display='none'; hint.style.display='block'; return; }
+    hint.style.display='none'; cv.style.display='inline-block';
+    let target=f, showRegions=false;
+    if(S.viewMode==='prev'){ target=S.frames[S.sel-1]||f; }
+    if(S.viewMode==='diff'){ showRegions=true; }
+    let bmp; try{ bmp=await createImageBitmap(target.blob); }catch(e){ return; }
+    const maxW=Math.min(900, bmp.width); const sc=maxW/bmp.width;
+    cv.width=Math.round(bmp.width*sc); cv.height=Math.round(bmp.height*sc);
+    const g=cv.getContext('2d'); g.drawImage(bmp,0,0,cv.width,cv.height); bmp.close&&bmp.close();
+    if(showRegions && f.diff && f.diff.regions){
+      g.lineWidth=Math.max(2,3*sc); g.strokeStyle='rgba(192,57,43,.95)'; g.fillStyle='rgba(192,57,43,.12)';
+      for(const r of f.diff.regions){ g.fillRect(r.x*sc,r.y*sc,r.w*sc,r.h*sc); g.strokeRect(r.x*sc,r.y*sc,r.w*sc,r.h*sc); }
+    }
+    const info=document.getElementById('viewInfo');
+    info.textContent = S.sel===0? '最初の画面（比較対象なし）'
+      : `#${S.sel+1}／${fmtTime(f.time)}／前の画面から ${f.diff?f.diff.pct:0}% が変化`+(f.diff&&f.diff.regions.length?`・変化した場所 ${f.diff.regions.length}か所`:'');
+  }
+};
+
+/* ============ 共通: bigram Dice類似度(P3/P4/P5) ============ */
+function _bigrams(s){ s=(s||'').replace(/\s+/g,''); if(s.length<2) return s?[s]:[]; const b=[]; for(let i=0;i<s.length-1;i++)b.push(s.slice(i,i+2)); return b; }
+function diceSim(a,b){ const A=_bigrams(a),B=_bigrams(b); if(!A.length&&!B.length)return 1; if(!A.length||!B.length)return 0; const m=new Map(); A.forEach(x=>m.set(x,(m.get(x)||0)+1)); let inter=0; B.forEach(x=>{const c=m.get(x)||0; if(c>0){inter++;m.set(x,c-1);}}); return 2*inter/(A.length+B.length); }
+/* 変化領域(赤枠)の近接・重なりをまとめてクロップ回数を減らす(P2) */
+function _boxUnion(a,b){ const x=Math.min(a.x,b.x),y=Math.min(a.y,b.y); return {x,y,w:Math.max(a.x+a.w,b.x+b.w)-x,h:Math.max(a.y+a.h,b.y+b.h)-y}; }
+function _boxNear(a,b,gap){ return !(a.x> b.x+b.w+gap || b.x> a.x+a.w+gap || a.y> b.y+b.h+gap || b.y> a.y+a.h+gap); }
+function mergeBoxes(regions){ if(!regions||!regions.length)return []; let b=regions.map(r=>({x:r.x,y:r.y,w:r.w,h:r.h})); let ch=true;
+  while(ch){ ch=false; outer: for(let i=0;i<b.length;i++)for(let j=i+1;j<b.length;j++){ if(_boxNear(b[i],b[j],24)){ b[i]=_boxUnion(b[i],b[j]); b.splice(j,1); ch=true; break outer; } } }
+  return b.slice(0,12); }
+
+/* ============ P5: 社内用語辞書(後補正) ============ */
+const Dict={ key:'screenlog_dict_v1',
+  terms(){ try{ return (localStorage.getItem(this.key)||'').split(/\n+/).map(s=>s.trim()).filter(s=>s.length>=2); }catch(e){ return []; } },
+  load(){ const el=document.getElementById('dictBox'); if(el) el.value=localStorage.getItem(this.key)||''; },
+  save(){ const el=document.getElementById('dictBox'); if(el){ localStorage.setItem(this.key, el.value||''); toast('よく使う言葉を保存しました'); if(S.frames.some(f=>f.ocr)) OcrB.computeDiffs(); } },
+  // 実測: Dice≥0.8は厳しすぎ(5文字語の1文字誤読=0.75で補正されず辞書が機能しない)→0.72採用
+  fix(s){ const d=this.terms(); if(!d.length) return s; let best=s,bd=0; for(const t of d){ const sim=diceSim(s,t); if(sim>bd){bd=sim;best=t;} } return bd>=0.72?best:s; }
+};
+
+/* ============ ティアB: OCR 意味差分 ============ */
+const OcrB = {
+  worker:null, running:false,
+  base(p){ return new URL('lib/tesseract/'+p, location.href).href; },
+  loadLib(){ return new Promise((res,rej)=>{ if(window.Tesseract){res();return;} const s=document.createElement('script'); s.src=this.base('tesseract.min.js'); s.onload=()=>window.Tesseract?res():rej(new Error('OCRエンジン初期化失敗')); s.onerror=()=>rej(new Error('OCRエンジン(同梱)の読み込み失敗')); document.head.appendChild(s); }); },
+  async getWorker(){ if(this.worker) return this.worker; await this.loadLib(); this.worker=await window.Tesseract.createWorker('jpn+eng',1,{ workerPath:this.base('worker.min.js'), corePath:this.base('tesseract-core-simd-lstm.wasm.js'), langPath:this.base('lang'), gzip:false });
+    await this.worker.setParameters({tessedit_pageseg_mode:'6'});  // PSM6=実画面A/Bで最良(暗背景43→71%・全体59→73%)
+    return this.worker; },
+  // アンサンブル: 2つの行リストの和集合(Dice≥0.85は同一行とみなし長い方を残す)
+  unionLines(a,b){
+    const nm=x=>(x&&x.t!==undefined)?x.t:x;
+    const out=(a||[]).map(x=>({t:nm(x)}));
+    for(const rb of (b||[])){ const t=nm(rb); let dup=false;
+      for(const ra of out){ if(diceSim(ra.t,t)>=0.85){ dup=true; if(t.length>ra.t.length) ra.t=t; break; } }
+      if(!dup) out.push({t}); }
+    return out;
+  },
+  /* 前処理=適応拡大 + グレースケール + コントラスト強調。
+     ※設計書P1(極性反転+Otsu)は実測で白抜き文字を"悪化"させたため撤回(root causeは白抜きでなく小フォント→対策はP2)。
+     コントラスト処理は色の白抜き文字も明暗維持でそのまま読めるため堅牢(白抜きバー実測100%)。 */
+  async prep(blob, scaleOverride){
+    let bmp; try{ bmp=await createImageBitmap(blob); }catch(e){ return blob; }
+    const scale = scaleOverride || Math.min(3, Math.max(1.5, 2200/bmp.height));
+    const W=Math.max(1,Math.round(bmp.width*scale)), H=Math.max(1,Math.round(bmp.height*scale));
+    const c=document.createElement('canvas'); c.width=W; c.height=H;
+    const g=c.getContext('2d',{willReadFrequently:true}); g.imageSmoothingEnabled=true; g.imageSmoothingQuality='high';
+    g.drawImage(bmp,0,0,W,H); bmp.close&&bmp.close();
+    const d=g.getImageData(0,0,W,H), p=d.data;
+    for(let i=0;i<p.length;i+=4){ let v=p[i]*0.299+p[i+1]*0.587+p[i+2]*0.114; v=(v-128)*1.5+128; v=v<0?0:v>255?255:v; p[i]=p[i+1]=p[i+2]=v; }
+    g.putImageData(d,0,0);
+    return await new Promise(r=>c.toBlob(r,'image/png'));
+  },
+  /* P2: 画像の一部(変化領域)を切り出して高倍率にしてOCR。小さい文字が読めるうえ処理が軽い */
+  async cropOcr(blob, box){
+    let bmp; try{ bmp=await createImageBitmap(blob); }catch(e){ return {text:'',lines:[]}; }
+    const pad=10, x=Math.max(0,box.x-pad), y=Math.max(0,box.y-pad),
+      w=Math.min(bmp.width-x, box.w+2*pad), h=Math.min(bmp.height-y, box.h+2*pad);
+    if(w<6||h<6){ bmp.close&&bmp.close(); return {text:'',lines:[]}; }
+    const scale=Math.min(6, Math.max(2, 700/h));   // 小領域ほど大きく拡大(最大6倍・全画面には使わない)
+    const c=document.createElement('canvas'); c.width=Math.round(w*scale); c.height=Math.round(h*scale);
+    const g=c.getContext('2d'); g.imageSmoothingEnabled=true; g.imageSmoothingQuality='high';
+    g.drawImage(bmp,x,y,w,h,0,0,c.width,c.height); bmp.close&&bmp.close();
+    const cropBlob=await new Promise(r=>c.toBlob(r,'image/png'));
+    const src=await this.prep(cropBlob, 1);        // すでに拡大済み→prepは等倍でP1(極性+Otsu)だけ
+    const {data}=await this.getWorker().then(w=>w.recognize(src));
+    return {text:data.text||'', lines:this.lines(data.text||'')};
+  },
+  async run(){
+    if(this.running||!S.frames.length) return;
+    if(location.protocol==='file:'){ toast('文字読み取りは「起動.bat」から開いた時だけ使えます'); return; }
+    this.running=true; document.getElementById('ocrBtn').disabled=true;
+    try{
+      await this.getWorker();
+      for(let i=0;i<S.frames.length;i++){
+        prog(true,(i+1)/S.frames.length,`文字を読み取り中… ${i+1}/${S.frames.length}`);
+        if(S.frames[i].ocr){
+          // アンサンブル: 撮影時の文字(WinOCR)がある画面に、Tesseractの読みを重ねて取りこぼしを拾う
+          // (実画面A/B実測: WinOCR単体76% / PSM6単体73% → 和集合92%)
+          if(!S.frames[i].ocr.boosted){
+            if(i>0 && S.frames[i-1].ocr && S.frames[i-1].ocr.boosted && S.frames[i].diff && S.frames[i].diff.pct<0.3){
+              S.frames[i].ocr=S.frames[i-1].ocr;         // 変化なし→前の合議結果を流用
+            }else{
+              const {data}=await this.worker.recognize(await this.prep(S.frames[i].blob));
+              const tLines=this.lines(data.text||'');
+              S.frames[i].ocr={ text:S.frames[i].ocr.text, lines:this.unionLines(S.frames[i].ocr.lines,tLines), hasBbox:S.frames[i].ocr.hasBbox, boosted:true };
+            }
+          }
+          continue;
+        }
+        if(i>0 && S.frames[i-1].ocr && S.frames[i].diff && S.frames[i].diff.pct<0.3){ S.frames[i].ocr=S.frames[i-1].ocr; continue; }
+        if(i===0){
+          const {data}=await this.worker.recognize(await this.prep(S.frames[0].blob));
+          S.frames[0].ocr={ text:data.text||'', lines:this.lines(data.text||'') };
+        } else {
+          // P2: 変化領域を「全幅の帯」に広げ(行を途中で切らない)、前後フレームでクロップOCRして直接差分を取る
+          const boxes=mergeBoxes(S.frames[i].diff?S.frames[i].diff.regions:[]);
+          const W=S.frames[i].w;
+          let bands=boxes.map(b=>({x:0,y:b.y,w:W,h:b.h})).sort((a,b)=>a.y-b.y);
+          const merged=[]; for(const bd of bands){ const last=merged[merged.length-1];
+            if(last && bd.y<=last.y+last.h+8){ last.h=Math.max(last.y+last.h,bd.y+bd.h)-last.y; } else merged.push({...bd}); }
+          let prevLines=[], curLines=[], txt=[];
+          for(const box of merged){
+            const rc=await this.cropOcr(S.frames[i].blob, box);   curLines.push(...rc.lines); if(rc.text) txt.push(rc.text);
+            const rp=await this.cropOcr(S.frames[i-1].blob, box); prevLines.push(...rp.lines);
+          }
+          S.frames[i].ocr={ text:txt.join('\n'), lines:curLines, regionBased:true };
+          S.frames[i].ocrDiff=this.textDiff(prevLines, curLines);
+          S.frames[i]._regionDiff=true;
+        }
+      }
+      this.computeDiffs();
+      prog(false); toast('文字の読み取りが完了しました');
+    }catch(e){ prog(false); toast('文字読み取りでエラー: '+e.message); }
+    this.running=false; document.getElementById('ocrBtn').disabled=false;
+  },
+  computeDiffs(){
+    for(let i=1;i<S.frames.length;i++){
+      if(S.frames[i]._regionDiff) continue;             // 領域クロップで直接算出済み(P2)はそのまま
+      if(S.frames[i].ocr&&S.frames[i-1].ocr) S.frames[i].ocrDiff=this.textDiff(S.frames[i-1].ocr.lines, S.frames[i].ocr.lines);
+    }
+    // P4 時間方向の安定化: あるフレームで消えた行が次フレームで復活(Dice≥0.75)=OCRの揺れ→両方消す
+    for(let i=1;i<S.frames.length-1;i++){
+      const cur=S.frames[i].ocrDiff, nxt=S.frames[i+1] && S.frames[i+1].ocrDiff;
+      if(!cur||!nxt) continue;
+      cur.del=cur.del.filter(dline=>{ const j=nxt.add.findIndex(a=>diceSim(dline,a)>=0.75); if(j>=0){ nxt.add.splice(j,1); return false; } return true; });
+    }
+    render(); showOcrDiff();
+  },
+  lines(t){ const seen=new Set(), out=[]; (t||'').split(/\n+/).forEach(s=>{ s=Dict.fix(s.replace(/\s+/g,'').trim()); if(s.length>=2 && !seen.has(s)){ seen.add(s); out.push({t:s}); } }); return out; },
+  textDiff(prevLines, curLines){
+    const nm=x=>(x&&x.t!==undefined)?x.t:x;
+    const P=(prevLines||[]).map(nm), C=(curLines||[]).map(nm);
+    // 1) 完全一致を相殺
+    const cnt=new Map(); P.forEach(l=>cnt.set(l,(cnt.get(l)||0)+1));
+    const addRaw=[]; for(const l of C){ const n=cnt.get(l)||0; if(n>0) cnt.set(l,n-1); else addRaw.push(l); }
+    const delRaw=[]; for(const [l,n] of cnt){ for(let k=0;k<n;k++) delRaw.push(l); }
+    // 2) P4 あいまい一致: 残った del×add を Dice でペア化(≥0.75=「変化した行」1件にまとめる)
+    const changed=[], used=new Set(), del=[];
+    for(const dline of delRaw){ let bi=-1,bs=0; for(let i=0;i<addRaw.length;i++){ if(used.has(i))continue; const s=diceSim(dline,addRaw[i]); if(s>bs){bs=s;bi=i;} }
+      if(bi>=0 && bs>=0.75){ changed.push({from:dline,to:addRaw[bi]}); used.add(bi); } else del.push(dline); }
+    const add=addRaw.filter((_,i)=>!used.has(i));
+    return {add:add.slice(0,25), del:del.slice(0,25), changed:changed.slice(0,25)};
+  }
+};
+function showOcrDiff(){
+  const f=S.frames[S.sel]; let host=document.getElementById('ocrDiffBox');
+  if(!host){ host=document.createElement('div'); host.id='ocrDiffBox'; document.getElementById('log').appendChild(host); }
+  const dd=f&&f.ocrDiff; const cg=(dd&&dd.changed)||[];
+  if(!dd || (dd.add.length+dd.del.length+cg.length===0)){ host.innerHTML=''; return; }
+  host.innerHTML = `<h2>🔤 この画面での文字の変化 <span class="hint">#${S.sel+1}</span></h2>`+
+    cg.map(c=>`<div class="ocrline chg">± ${esc(c.from)} → ${esc(c.to)}</div>`).join('')+
+    dd.add.map(l=>`<div class="ocrline add">＋ ${esc(l)}</div>`).join('')+
+    dd.del.map(l=>`<div class="ocrline del">－ ${esc(l)}</div>`).join('')+
+    `<div class="note">文字の読み取りは目安です。うまく読めない画面もあります。</div>`;
+}
+
+/* ============ 書き出し ============ */
+const Exporter = {
+  open(){ if(!S.frames.length){ toast('先にスクショを読み込んでください'); return; } UI.open('exportPanel'); },
+  rows(){
+    return S.frames.map((f,i)=>({ n:i+1, time:fmtTime(f.time), pct:i===0?'':(f.diff?f.diff.pct:0), cls:i===0?'最初':({big:'作業中',small:'小変化',idle:'変化なし'}[DiffA.cls(f.diff.pct)]),
+      chg:(f.ocrDiff&&f.ocrDiff.changed)?f.ocrDiff.changed.map(c=>c.from+'→'+c.to).join(' / '):'',
+      add:f.ocrDiff?f.ocrDiff.add.join(' / '):'', del:f.ocrDiff?f.ocrDiff.del.join(' / '):'' }));
+  },
+  csv(){
+    const head=['番号','時刻','変化%','区分','変化した文字','増えた文字','消えた文字'];
+    const lines=[head.join(',')].concat(this.rows().map(r=>[r.n,r.time,r.pct,r.cls,r.chg,r.add,r.del].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')));
+    this.dl('作業ログ.csv','﻿'+lines.join('\r\n'),'text/csv');
+  },
+  html(){
+    const A=Activity, label={big:'作業中（大きい変化）',small:'小さい変化',idle:'変化なし（待機）'};
+    let active=0,idle=0; for(const s of A.segs){ const d=A.dur(s); if(s.cls==='idle')idle+=d;else active+=d; }
+    const segHtml=A.segs.map(s=>`<tr><td>${label[s.cls]}</td><td>${fmtTime(S.frames[s.start].time)}〜${fmtTime(S.frames[s.end].time)}</td><td>${s.n}枚</td><td>${fmtDur(A.dur(s))}</td></tr>`).join('');
+    const rowHtml=this.rows().map(r=>`<tr><td>${r.n}</td><td>${r.time}</td><td>${r.pct}</td><td>${r.cls}</td><td>${esc(r.chg)}</td><td>${esc(r.add)}</td><td>${esc(r.del)}</td></tr>`).join('');
+    const html=`<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>作業ログ</title><style>body{font-family:"Yu Gothic UI",Meiryo,sans-serif;margin:24px;color:#1e293b}h1{color:#1F3864;font-size:20px}table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13px}th,td{border:1px solid #cbd5e1;padding:5px 8px;text-align:left}th{background:#1F3864;color:#fff}.s{display:flex;gap:12px;margin:10px 0}.s div{border:1px solid #cbd5e1;border-radius:8px;padding:10px 16px}.s b{font-size:22px;color:#1F3864;display:block}small{color:#64748b}</style></head><body>`+
+      `<h1>🔍 作業ログ（Screen Logger 差分解析）</h1><small>スクショ ${S.frames.length}枚 を自動でまとめました。本人の振り返り用です。</small>`+
+      `<div class="s"><div><b>${fmtDur(active)}</b>作業していた時間</div><div><b>${fmtDur(idle)}</b>動きのなかった時間</div><div><b>${A.segs.length}</b>変化のまとまり</div></div>`+
+      `<h2>変化のまとまり</h2><table><tr><th>区分</th><th>時間帯</th><th>枚数</th><th>長さ</th></tr>${segHtml}</table>`+
+      `<h2>1枚ごとの記録</h2><table><tr><th>#</th><th>時刻</th><th>変化%</th><th>区分</th><th>変化した文字</th><th>増えた文字</th><th>消えた文字</th></tr>${rowHtml}</table>`+
+      `</body></html>`;
+    this.dl('作業ログ.html',html,'text/html');
+  },
+  dl(name,data,mime){ const b=new Blob([data],{type:mime+';charset=utf-8'}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(u),1000); UI.close('exportPanel'); toast(name+' を書き出しました'); }
+};
+
+/* ============ 見やすさ ============ */
+const A11y={
+  key:'screenlog_a11y',
+  open(){ this.sync(); UI.open('a11yPanel'); },
+  size(v){ document.body.classList.remove('a11y-lg','a11y-xl'); if(v) document.body.classList.add('a11y-'+v); this.save(); },
+  toggle(k,on){ document.body.classList.toggle('a11y-'+k,on); this.save(); },
+  save(){ const st={size:document.body.classList.contains('a11y-xl')?'xl':document.body.classList.contains('a11y-lg')?'lg':'', contrast:document.body.classList.contains('a11y-contrast'), space:document.body.classList.contains('a11y-space')}; localStorage.setItem(this.key,JSON.stringify(st)); },
+  load(){ try{ const st=JSON.parse(localStorage.getItem(this.key)||'{}'); if(st.size)document.body.classList.add('a11y-'+st.size); if(st.contrast)document.body.classList.add('a11y-contrast'); if(st.space)document.body.classList.add('a11y-space'); }catch(e){} },
+  sync(){ try{ const st=JSON.parse(localStorage.getItem(this.key)||'{}'); document.querySelectorAll('[name=a11ysize]').forEach(r=>r.checked=(r.value===(st.size||''))); const c=document.getElementById('a11yContrast'),s=document.getElementById('a11ySpace'); if(c)c.checked=!!st.contrast; if(s)s.checked=!!st.space; }catch(e){} }
+};
+
+/* ============ 設定スライダー結線 ============ */
+document.getElementById('setThresh').addEventListener('input',e=>{ CFG.v.thresh=+e.target.value; document.getElementById('setThreshV').textContent=e.target.value; CFG.save(); });
+document.getElementById('setActive').addEventListener('input',e=>{ CFG.v.active=+e.target.value; document.getElementById('setActiveV').textContent=e.target.value+'%'; CFG.save(); });
+
+/* ============ 読み込み結線 ============ */
+document.getElementById('fileInput').addEventListener('change',e=>Loader.fromFiles(e.target.files));
+document.getElementById('fileInput2').addEventListener('change',e=>Loader.fromFiles(e.target.files));
+(function(){ const d=document.getElementById('drop');
+  ['dragenter','dragover'].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.add('hover');}));
+  ['dragleave','drop'].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.remove('hover');}));
+  d.addEventListener('drop',e=>{ const fs=e.dataTransfer.files; if(fs&&fs.length) Loader.fromFiles(fs); });
+})();
+
+/* ============ 初期化 ============ */
+CFG.load(); A11y.load();
+
+/* ============ W8: 決定論部の単体テスト(?fixtures=1) ============ */
+if(location.search.indexOf('fixtures=1')>=0){
+  const fail=[]; const ok=(c,m)=>{ if(!c) fail.push(m); };
+  // diceSim
+  ok(diceSim('購買サーチ','購買サーチ')===1,'dice同一=1');
+  ok(diceSim('abc','xyz')===0,'dice無関係=0');
+  ok(diceSim('今月の指摘事項は3件でした','今月の指摘事項は5件でした')>=0.75,'dice1文字差>=0.75');
+  // textDiff: 完全一致相殺+add/del
+  let r=OcrB.textDiff([{t:'AAAA'},{t:'BBBB'}],[{t:'AAAA'},{t:'CCCC'}]);
+  ok(r.add.join()==='CCCC' && r.del.join()==='BBBB' && r.changed.length===0,'textDiff 無関係はadd/del');
+  // textDiff: あいまい一致=changed(P4)
+  r=OcrB.textDiff([{t:'今月の指摘事項は3件でした'}],[{t:'今月の指摘事項は5件でした'}]);
+  ok(r.changed.length===1 && r.add.length===0 && r.del.length===0,'textDiff 1文字差はchanged1件');
+  // textDiff: 追加のみ
+  r=OcrB.textDiff([],[{t:'あたらしい行です'}]);
+  ok(r.add.length===1 && r.del.length===0,'textDiff 追加のみ');
+  // P4 時間安定化: del→次でadd復活を除去
+  S.frames=[{ocr:{lines:[]},_regionDiff:true,ocrDiff:{add:[],del:[],changed:[]}},
+            {ocr:{lines:[]},_regionDiff:true,ocrDiff:{add:[],del:['ちらつき行データ'],changed:[]}},
+            {ocr:{lines:[]},_regionDiff:true,ocrDiff:{add:['ちらつき行データ'],del:[],changed:[]}}];
+  OcrB.computeDiffs();
+  ok(S.frames[1].ocrDiff.del.length===0 && S.frames[2].ocrDiff.add.length===0,'P4 時間ジッター除去');
+  // P5 用語辞書
+  localStorage.setItem('screenlog_dict_v1','購買サーチ\n安全パトロール');
+  ok(Dict.fix('購買サーヂ')==='購買サーチ','P5 辞書で誤読補正');
+  ok(Dict.fix('全然ちがう言葉')==='全然ちがう言葉','P5 遠い語は補正しない');
+  localStorage.removeItem('screenlog_dict_v1');
+  // mergeBoxes: 重なりは1つに
+  ok(mergeBoxes([{x:0,y:0,w:100,h:50},{x:80,y:10,w:100,h:50}]).length===1,'mergeBoxes 重なり結合');
+  ok(mergeBoxes([{x:0,y:0,w:50,h:50},{x:400,y:400,w:50,h:50}]).length===2,'mergeBoxes 離れは別');
+  window.__fx={pass:fail.length===0, fail};
+  S.frames=[];
+}
+
+/* ============ 自己テスト用フック(?selftest=1) ============ */
+if(location.search.indexOf('selftest=1')>=0){
+  window.__diag={};
+  (async()=>{
+    try{
+      const man=await (await fetch('_testshots/manifest.json')).json();
+      const items=[];
+      const useSide=location.search.indexOf('sidecar=1')>=0, useJson=location.search.indexOf('json=1')>=0;
+      for(const name of man){ const blob=await (await fetch('_testshots/'+name)).blob(); const it={name,blob,mtime:null};
+        if(useJson){ try{ const r=await fetch('_testshots/'+name.replace(/\.png$/i,'.ocr.json')); if(r.ok) it.ocrJson=await r.json(); }catch(e){} }
+        else if(useSide){ try{ const r=await fetch('_testshots/'+name.replace(/\.png$/i,'.txt')); if(r.ok) it.sidecar=await r.text(); }catch(e){} }
+        items.push(it); }
+      await Loader.ingest(items);
+      window.__diag.pcts=S.frames.map(f=>f.diff?f.diff.pct:null);
+      window.__diag.segs=Activity.segs.map(s=>({cls:s.cls,n:s.n}));
+      window.__diag.sideDiffs=S.frames.map(f=>f.ocrDiff||null);
+      window.__diag.ready=true;
+      if(location.search.indexOf('ocr=1')>=0){ await OcrB.run(); window.__diag.ocr=S.frames.map(f=>f.ocr?f.ocr.lines.length:0); window.__diag.ocrDiffs=S.frames.map(f=>f.ocrDiff||null); window.__diag.ocrReady=true; }
+    }catch(e){ window.__diag.error=String(e&&e.message||e); }
+  })();
+}
+</script>
+</body>
+</html>

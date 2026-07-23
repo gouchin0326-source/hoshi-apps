@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>設備更新計画: 設備投資計画のためのツール</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⚙️</text></svg>'>
+  <style>
+    /* 全体設計: やさしい配色、高コントラスト、16px以上の見やすいフォント */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans JP", sans-serif;
+    }
+
+    body {
+      background-color: #f3f4f6;
+      color: #111827;
+      line-height: 1.6;
+      font-size: 16px;
+      padding-bottom: 60px;
+    }
+
+    /* フォーカスのアウトライン強調（キーボード操作対応） */
+    *:focus-visible {
+      outline: 3px solid #2563eb;
+      outline-offset: 2px;
+    }
+
+    /* ヘッダー */
+    header {
+      background-color: #ffffff;
+      color: #000000;
+      padding: 15px 20px;
+      border-bottom: 2px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .header-title-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-emoji {
+      font-size: 32px;
+    }
+
+    header h1 {
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    /* 共通ボタン */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      padding: 10px 18px;
+      border: 2px solid transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background-color: #1e3a8a;
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background-color: #172554;
+    }
+
+    .btn-secondary {
+      background-color: #e5e7eb;
+      color: #1f2937;
+      border-color: #d1d5db;
+    }
+
+    .btn-secondary:hover {
+      background-color: #d1d5db;
+    }
+
+    .btn-danger {
+      background-color: #dc2626;
+      color: #ffffff;
+    }
+
+    .btn-danger:hover {
+      background-color: #b91c1c;
+    }
+
+    .btn-success {
+      background-color: #15803d;
+      color: #ffffff;
+    }
+
+    .btn-success:hover {
+      background-color: #166534;
+    }
+
+    /* メインレイアウト */
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* 警告・通知エリア (最上部で最重要) */
+    .alert-section {
+      background-color: #fef2f2;
+      border: 3px solid #ef4444;
+      border-radius: 8px;
+      padding: 15px;
+    }
+
+    .alert-section h2 {
+      font-size: 18px;
+      color: #991b1b;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .alert-list {
+      list-style: none;
+    }
+
+    .alert-item {
+      background-color: #ffffff;
+      border-left: 5px solid #dc2626;
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      border-radius: 0 4px 4px 0;
+      color: #111827;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .alert-badge-passed {
+      background-color: #fee2e2;
+      color: #b91c1c;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    .alert-badge-near {
+      background-color: #fef3c7;
+      color: #92400e;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    /* 集計表示エリア */
+    .summary-section {
+      background-color: #eff6ff;
+      border: 2px solid #3b82f6;
+      border-radius: 8px;
+      padding: 15px;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .summary-card {
+      text-align: center;
+    }
+
+    .summary-label {
+      font-size: 14px;
+      color: #1e40af;
+      font-weight: bold;
+    }
+
+    .summary-value {
+      font-size: 24px;
+      font-weight: 800;
+      color: #1e3a8a;
+    }
+
+    /* グリッドレイアウト */
+    .grid-container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    @media (min-width: 900px) {
+      .grid-container {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        align-items: start;
+      }
+    }
+
+    /* フォームカード */
+    .card {
+      background-color: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .card h2 {
+      font-size: 20px;
+      margin-bottom: 15px;
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 8px;
+    }
+
+    /* フォーム部品 */
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 6px;
+      font-size: 15px;
+    }
+
+    .form-group label .required {
+      color: #dc2626;
+      font-size: 13px;
+      margin-left: 5px;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border: 2px solid #9ca3af;
+      border-radius: 6px;
+      background-color: #ffffff;
+      color: #000000;
+    }
+
+    .form-control:focus {
+      border-color: #2563eb;
+    }
+
+    .error-message {
+      color: #dc2626;
+      font-size: 14px;
+      font-weight: bold;
+      margin-top: 5px;
+      display: none;
+    }
+
+    /* 一覧表示・フィルター部 */
+    .list-section-header {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .filter-bar {
+      background-color: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 15px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      align-items: flex-end;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .filter-group label {
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    /* テーブル設計 */
+    .table-container {
+      overflow-x: auto;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background-color: #ffffff;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 15px;
+      color: #000000;
+    }
+
+    th, td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #cbd5e1;
+      line-height: 1.5;
+    }
+
+    th {
+      background-color: #f1f5f9;
+      font-weight: bold;
+      border-bottom: 2px solid #94a3b8;
+    }
+
+    /* 行ホバー */
+    tr:hover {
+      background-color: #f8fafc;
+    }
+
+    /* テーブル内バッジ */
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .badge-plan { background-color: #e0f2fe; color: #0369a1; }
+    .badge-apply { background-color: #fef3c7; color: #b45309; }
+    .badge-ordered { background-color: #fae8ff; color: #a21caf; }
+    .badge-completed { background-color: #dcfce7; color: #15803d; }
+
+    /* モーダル */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background-color: #ffffff;
+      border-radius: 12px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      border: 3px solid #1e3a8a;
+    }
+
+    .modal-header {
+      background-color: #1e3a8a;
+      color: #ffffff;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h3 {
+      font-size: 20px;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: #ffffff;
+      font-size: 28px;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .modal-footer {
+      padding: 15px 20px;
+      border-top: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      background-color: #f9fafb;
+    }
+
+    /* 使い方マニュアルのスタイル */
+    .manual-step {
+      margin-bottom: 15px;
+      padding-left: 10px;
+      border-left: 4px solid #1e3a8a;
+    }
+
+    .manual-step h4 {
+      font-size: 16px;
+      font-weight: bold;
+      color: #1e3a8a;
+      margin-bottom: 4px;
+    }
+
+    /* エクスポートセクション */
+    .export-section {
+      background-color: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+
+    .export-textarea {
+      width: 100%;
+      height: 120px;
+      font-family: monospace;
+      font-size: 14px;
+      padding: 10px;
+      border: 2px solid #9ca3af;
+      border-radius: 6px;
+      margin-top: 10px;
+      margin-bottom: 10px;
+      background-color: #f9fafb;
+      color: #000000;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* 下部初期化 */
+    .danger-zone {
+      margin-top: 30px;
+      border-top: 2px dashed #dc2626;
+      padding-top: 20px;
+    }
+
+    /* モバイル・レスポンシブ微調整 */
+    @media (max-width: 600px) {
+      header h1 {
+        font-size: 18px;
+      }
+      .btn {
+        width: 100%;
+      }
+      .filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .btn-group {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-title-container">
+      <span class="header-emoji" aria-hidden="true">⚙️</span>
+      <h1>設備更新計画: 設備投資計画のためのツール</h1>
+    </div>
+    <div>
+      <button type="button" class="btn btn-secondary" id="openManualBtn">❓使い方</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="alert-section" id="warningSection" style="display: none;">
+      <h2>⚠️ 更新期限が近い・過ぎている設備</h2>
+      <div class="alert-list" id="warningList">
+        </div>
+    </section>
+
+    <section class="summary-section">
+      <div class="summary-card">
+        <p class="summary-label">今年度更新予定の設備件数</p>
+        <p class="summary-value" id="summaryCount">0 件</p>
+      </div>
+      <div class="summary-card">
+        <p class="summary-label">今年度概算費用合計</p>
+        <p class="summary-value" id="summaryCost">0 万円</p>
+      </div>
+    </section>
+
+    <div class="grid-container">
+      <section class="card">
+        <h2>設備登録フォーム</h2>
+        <form id="equipmentForm" novalidate>
+          <div class="form-group">
+            <label for="eqName">設備名<span class="required">(必須)</span></label>
+            <input type="text" id="eqName" class="form-control" required placeholder="例: 空調機 A">
+            <div class="error-message" id="eqNameError">設備名を入力してください。</div>
+          </div>
+
+          <div class="form-group">
+            <label for="eqNumber">設備番号<span class="required">(必須)</span></label>
+            <input type="text" id="eqNumber" class="form-control" required placeholder="例: EQ-1002">
+            <div class="error-message" id="eqNumberError">設備番号を入力してください。</div>
+          </div>
+
+          <div class="form-group">
+            <label for="eqIntroDate">導入日<span class="required">(必須)</span></label>
+            <input type="date" id="eqIntroDate" class="form-control" required>
+            <div class="error-message" id="eqIntroDateError">正しい導入日を選択してください。</div>
+          </div>
+
+          <div class="form-group">
+            <label for="eqInterval">推奨更新年数 (年)<span class="required">(必須)</span></label>
+            <input type="number" id="eqInterval" class="form-control" min="1" step="1" required placeholder="例: 10">
+            <div class="error-message" id="eqIntervalError">1以上の数値を入力してください。</div>
+          </div>
+
+          <div class="form-group">
+            <label for="eqStatus">状態<span class="required">(必須)</span></label>
+            <select id="eqStatus" class="form-control" required>
+              <option value="">選択してください</option>
+              <option value="計画中">計画中</option>
+              <option value="予算申請中">予算申請中</option>
+              <option value="発注済">発注済</option>
+              <option value="更新済">更新済</option>
+            </select>
+            <div class="error-message" id="eqStatusError">状態を選択してください。</div>
+          </div>
+
+          <div class="form-group">
+            <label for="eqCost">概算費用 (万円)</label>
+            <input type="number" id="eqCost" class="form-control" min="0" placeholder="例: 150">
+            <div class="error-message" id="eqCostError">0以上の数値を入力してください。</div>
+          </div>
+
+          <div class="form-group">
+            <label for="eqMemo">メモ</label>
+            <textarea id="eqMemo" class="form-control" rows="3" placeholder="仕様や見積連絡先など"></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">➕ 設備を登録・追加する</button>
+        </form>
+      </section>
+
+      <section style="display: flex; flex-direction: column; gap: 15px;">
+        <div class="list-section-header">
+          <h2>設備登録一覧</h2>
+          
+          <div class="filter-bar" role="search" aria-label="絞り込みと並び替え">
+            <div class="filter-group">
+              <label for="filterStatus">状態フィルター</label>
+              <select id="filterStatus" class="form-control" style="width: auto; min-width: 140px;">
+                <option value="ALL">すべて表示</option>
+                <option value="計画中">計画中</option>
+                <option value="予算申請中">予算申請中</option>
+                <option value="発注済">発注済</option>
+                <option value="更新済">更新済</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label for="filterYear">導入年度フィルター</label>
+              <select id="filterYear" class="form-control" style="width: auto; min-width: 140px;">
+                </select>
+            </div>
+
+            <div class="filter-group">
+              <label for="sortKey">並び替え</label>
+              <select id="sortKey" class="form-control" style="width: auto; min-width: 180px;">
+                <option value="none">登録順</option>
+                <option value="dateAsc">更新予定日 (古い順)</option>
+                <option value="dateDesc">更新予定日 (新しい順)</option>
+                <option value="costDesc">概算費用 (高い順)</option>
+                <option value="costAsc">概算費用 (低い順)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table id="equipmentTable">
+            <thead>
+              <tr>
+                <th scope="col">設備名</th>
+                <th scope="col">設備番号</th>
+                <th scope="col">導入日</th>
+                <th scope="col">更新年数</th>
+                <th scope="col">次回予定日</th>
+                <th scope="col">状態</th>
+                <th scope="col">概算費用</th>
+                <th scope="col">メモ</th>
+                <th scope="col">操作</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody">
+              </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <section class="export-section">
+      <h2>📤 データの保存とエクスポート</h2>
+      <p>現在登録されている設備データをCSV形式で出力します。保存や他システムでの読込にご利用ください。</p>
+      
+      <button type="button" class="btn btn-success" id="generateCsvBtn" style="margin-top: 10px;">📊 CSVデータを作成する</button>
+
+      <div id="exportArea" style="display: none; margin-top: 15px;">
+        <label for="csvOutput" style="font-weight: bold; display: block; margin-bottom: 5px;">生成されたCSVデータ (コピー・保存可能です)</label>
+        <textarea id="csvOutput" class="export-textarea" readonly></textarea>
+        <div class="btn-group">
+          <button type="button" class="btn btn-primary" id="copyCsvBtn">📋 クリップボードにコピー</button>
+          <button type="button" class="btn btn-secondary" id="downloadCsvBtn">💾 CSVファイルとして保存</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="danger-zone">
+      <h3>データの初期化</h3>
+      <p style="font-size: 14px; margin-bottom: 10px; color: #4b5563;">※ ブラウザに保存されているすべてのデータを削除し、最初の状態に戻します。</p>
+      <button type="button" class="btn btn-danger" id="resetAllBtn">⚠️ データを初期化する</button>
+    </section>
+  </main>
+
+  <div class="modal-overlay" id="manualModal" role="dialog" aria-modal="true" aria-labelledby="manualTitle">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="manualTitle">❓ このツールの使い方</h3>
+        <button type="button" class="modal-close" id="closeManualBtn" aria-label="閉じる">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom: 20px;">
+          <h4 style="font-size: 18px; margin-bottom: 8px;">(1) このアプリでできること</h4>
+          <p>保有する設備の導入日と耐用(更新)年数に基づき、<strong>次回の推奨更新予定日を自動計算</strong>し、計画的な設備投資(予算の算出・準備)をサポートするシステムです。</p>
+        </div>
+
+        <div>
+          <h4 style="font-size: 18px; margin-bottom: 8px;">(2) 基本操作手順</h4>
+          <div class="manual-step">
+            <h4>ステップ 1. 設備の登録</h4>
+            <p>左側の「設備登録フォーム」に必要な情報を入力し、「設備を登録・追加する」ボタンを押します。</p>
+          </div>
+          <div class="manual-step">
+            <h4>ステップ 2. 期限警告と集計の確認</h4>
+            <p>更新時期が「過ぎた」、または「1年以内（近い）」の設備は、ページ最上部に赤色の背景で自動強調され、即座に要対応設備を把握できます。</p>
+          </div>
+          <div class="manual-step">
+            <h4>ステップ 3. データの抽出・並び替え</h4>
+            <p>フィルター機能を使うことで、特定の「状態」や「導入年度」だけの絞り込み、さらに費用順や更新時期順での並べ替えが行えます。</p>
+          </div>
+          <div class="manual-step">
+            <h4>ステップ 4. 保存・共有</h4>
+            <p>一番下の「データを作成する」を押すと、表計算ソフトにそのまま貼り付けられるCSVコードを即時生成し、ファイルダウンロードも可能です。</p>
+          </div>
+        </div>
+
+        <div style="margin-top: 20px; background-color: #f3f4f6; padding: 12px; border-radius: 6px;">
+          <h4 style="font-size: 15px; margin-bottom: 4px; color: #1f2937;">🔒 データ管理について</h4>
+          <p style="font-size: 14px; color: #4b5563;">本ツールに入力されたデータは、<strong>すべてお使いの端末(ブラウザのlocalStorage)内にのみ保存</strong>されます。インターネットを介した外部サーバーへの送信は一切行われないため、オフラインでも安心してご利用いただけます。</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="closeManualBottomBtn">分かりました</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="editModal" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="editTitle">⚙️ 設備情報の編集</h3>
+        <button type="button" class="modal-close" id="closeEditBtn" aria-label="閉じる">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="editForm" novalidate>
+          <input type="hidden" id="editIndex">
+
+          <div class="form-group">
+            <label for="editEqName">設備名<span class="required">(必須)</span></label>
+            <input type="text" id="editEqName" class="form-control" required>
+            <div class="error-message" id="editEqNameError">設備名を入力してください。</div>
+          </div>
+
+          <div class="form-group">
+            <label for="editEqNumber">設備番号<span class="required">(必須)</span></label>
+            <input type="text" id="editEqNumber" class="form-control" required>
+            <div class="error-message" id="editEqNumberError">設備番号を入力してください。</div>
+          </div>
+
+          <div class="form-group">
+            <label for="editEqIntroDate">導入日<span class="required">(必須)</span></label>
+            <input type="date" id="editEqIntroDate" class="form-control" required>
+            <div class="error-message" id="editEqIntroDateError">正しい導入日を選択してください。</div>
+          </div>
+
+          <div class="form-group">
+            <label for="editEqInterval">推奨更新年数 (年)<span class="required">(必須)</span></label>
+            <input type="number" id="editEqInterval" class="form-control" min="1" step="1" required>
+            <div class="error-message" id="editEqIntervalError">1以上の数値を入力してください。</div>
+          </div>
+
+          <div class="form-group">
+            <label for="editEqStatus">状態<span class="required">(必須)</span></label>
+            <select id="editEqStatus" class="form-control" required>
+              <option value="">選択してください</option>
+              <option value="計画中">計画中</option>
+              <option value="予算申請中">予算申請中</option>
+              <option value="発注済">発注済</option>
+              <option value="更新済">更新済</option>
+            </select>
+            <div class="error-message" id="editEqStatusError">状態を選択してください。</div>
+          </div>
+
+          <div class="form-group">
+            <label for="editEqCost">概算費用 (万円)</label>
+            <input type="number" id="editEqCost" class="form-control" min="0">
+            <div class="error-message" id="editEqCostError">0以上の数値を入力してください。</div>
+          </div>
+
+          <div class="form-group">
+            <label for="editEqMemo">メモ</label>
+            <textarea id="editEqMemo" class="form-control" rows="3"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="cancelEditBtn">キャンセル</button>
+        <button type="button" class="btn btn-primary" id="saveEditBtn">変更を保存</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- 状態管理・初期データ ---
+    let equipmentList = [];
+    
+    // サンプルデータ (初回起動時に格納)
+    const initialSamples = [
+      {
+        name: "本館メイン高圧受電盤",
+        number: "EQ-MAIN-01",
+        introDate: "2015-04-10",
+        interval: 10, // 2025-04-10 (既に過ぎている)
+        status: "計画中",
+        cost: 450,
+        memo: "B棟配電にも影響。老朽化進行のため更新検討要。"
+      },
+      {
+        name: "サーバー室精密エアコン",
+        number: "EQ-SRV-22",
+        introDate: "2018-09-01",
+        interval: 8, // 2026-09-01 (近い)
+        status: "予算申請中",
+        cost: 120,
+        memo: "24時間連続稼働中。早めの入れ替えを推奨。"
+      },
+      {
+        name: "製造ライン用ロボットアーム",
+        number: "EQ-LINE-05",
+        introDate: "2024-11-15",
+        interval: 5, // 2029-11-15 (安全)
+        status: "更新済",
+        cost: 600,
+        memo: "メーカー長期保守契約あり。"
+      }
+    ];
+
+    // ローカルストレージキー
+    const STORAGE_KEY = "equipmentData";
+
+    // アプリ初期化
+    window.addEventListener("DOMContentLoaded", () => {
+      loadData();
+      renderApp();
+      setupEventListeners();
+    });
+
+    // データの読み込み
+    function loadData() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          equipmentList = JSON.parse(saved);
+        } catch (e) {
+          console.error("データ展開に失敗しました。再構成します。", e);
+          equipmentList = [...initialSamples];
+        }
+      } else {
+        equipmentList = [...initialSamples];
+        saveToStorage();
+      }
+    }
+
+    // ストレージへの保存
+    function saveToStorage() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(equipmentList));
+    }
+
+    // 計算ロジック
+    function calculateNextUpdate(introDateStr, intervalYears) {
+      if (!introDateStr || isNaN(intervalYears)) return "";
+      const introDate = new Date(introDateStr);
+      if (isNaN(introDate.getTime())) return "";
+      introDate.setFullYear(introDate.getFullYear() + parseInt(intervalYears, 10));
+      return introDate.toISOString().split("T")[0];
+    }
+
+    // 「近い」「過ぎた」判定
+    // 今年の12月31日より前なら「過ぎた」 / 1年以内なら「近い」
+    function checkDeadlineStatus(nextUpdateStr) {
+      if (!nextUpdateStr) return { status: "normal", label: "" };
+      const nextDate = new Date(nextUpdateStr);
+      const today = new Date();
+      const currentYear = today.getFullYear();
+      const endOfThisYear = new Date(`${currentYear}-12-31T23:59:59`);
+
+      // 1年後の期日
+      const oneYearLater = new Date();
+      oneYearLater.setFullYear(today.getFullYear() + 1);
+
+      if (nextDate <= endOfThisYear) {
+        return { status: "passed", label: "過ぎた" };
+      } else if (nextDate <= oneYearLater) {
+        return { status: "near", label: "近い" };
+      }
+      return { status: "normal", label: "" };
+    }
+
+    // メイン画面の描画処理
+    function renderApp() {
+      renderSummary();
+      renderFilterOptions();
+      renderWarningPanel();
+      renderTable();
+    }
+
+    // 集計表示 (今年度1月1日〜12月31日)
+    function renderSummary() {
+      const today = new Date();
+      const currentYear = today.getFullYear();
+      const startOfYear = new Date(`${currentYear}-01-01`);
+      const endOfYear = new Date(`${currentYear}-12-31`);
+
+      let count = 0;
+      let totalCost = 0;
+
+      equipmentList.forEach(item => {
+        const nextDateStr = calculateNextUpdate(item.introDate, item.interval);
+        if (nextDateStr) {
+          const nextDate = new Date(nextDateStr);
+          if (nextDate >= startOfYear && nextDate <= endOfYear) {
+            count++;
+            if (item.cost && !isNaN(item.cost)) {
+              totalCost += parseFloat(item.cost);
+            }
+          }
+        }
+      });
+
+      document.getElementById("summaryCount").textContent = `${count} 件`;
+      document.getElementById("summaryCost").textContent = `${totalCost.toLocaleString()} 万円`;
+    }
+
+    // 警告枠の表示 (近い・過ぎた)
+    function renderWarningPanel() {
+      const warningSection = document.getElementById("warningSection");
+      const warningList = document.getElementById("warningList");
+      warningList.innerHTML = "";
+
+      const dangerousItems = [];
+
+      equipmentList.forEach((item, index) => {
+        const nextDateStr = calculateNextUpdate(item.introDate, item.interval);
+        const deadline = checkDeadlineStatus(nextDateStr);
+
+        if (deadline.status === "passed" || deadline.status === "near") {
+          dangerousItems.push({
+            ...item,
+            originalIndex: index,
+            deadlineStatus: deadline.status,
+            deadlineLabel: deadline.label,
+            nextDateStr: nextDateStr
+          });
+        }
+      });
+
+      if (dangerousItems.length > 0) {
+        warningSection.style.display = "block";
+        dangerousItems.forEach(item => {
+          const div = document.createElement("div");
+          div.className = "alert-item";
+
+          const badgeClass = item.deadlineStatus === "passed" ? "alert-badge-passed" : "alert-badge-near";
+          const formattedCost = item.cost ? `${parseFloat(item.cost).toLocaleString()}万円` : "未設定";
+
+          div.innerHTML = `
+            <div>
+              <span class="${badgeClass}">更新期限: ${item.deadlineLabel}</span>
+              <strong style="margin-left: 8px;">${escapeHtml(item.name)}</strong> (${escapeHtml(item.number)})
+            </div>
+            <div>
+              次回更新予定日: <strong>${item.nextDateStr}</strong> | 費用: ${formattedCost}
+              <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 13px; margin-left: 10px;" onclick="openEditModal(${item.originalIndex})">編集</button>
+            </div>
+          `;
+          warningList.appendChild(div);
+        });
+      } else {
+        warningSection.style.display = "none";
+      }
+    }
+
+    // 導入年度の動的フィルタオプション作成
+    function renderFilterOptions() {
+      const filterYear = document.getElementById("filterYear");
+      const currentSelected = filterYear.value || "ALL";
+
+      // 重複のない導入年度を抽出
+      const years = new Set();
+      equipmentList.forEach(item => {
+        if (item.introDate) {
+          const year = new Date(item.introDate).getFullYear();
+          if (!isNaN(year)) {
+            years.add(year);
+          }
+        }
+      });
+
+      const sortedYears = Array.from(years).sort((a, b) => b - a);
+
+      let optionsHtml = '<option value="ALL">すべて表示</option>';
+      sortedYears.forEach(year => {
+        optionsHtml += `<option value="${year}">${year} 年</option>`;
+      });
+
+      filterYear.innerHTML = optionsHtml;
+      filterYear.value = currentSelected;
+    }
+
+    // 一覧テーブル表示 (フィルター・ソート適用後)
+    function renderTable() {
+      const tableBody = document.getElementById("tableBody");
+      tableBody.innerHTML = "";
+
+      const statusFilter = document.getElementById("filterStatus").value;
+      const yearFilter = document.getElementById("filterYear").value;
+      const sortKey = document.getElementById("sortKey").value;
+
+      // フィルター処理
+      let filtered = equipmentList.map((item, index) => ({ ...item, originalIndex: index }));
+
+      if (statusFilter !== "ALL") {
+        filtered = filtered.filter(item => item.status === statusFilter);
+      }
+
+      if (yearFilter !== "ALL") {
+        const targetYear = parseInt(yearFilter, 10);
+        filtered = filtered.filter(item => {
+          if (!item.introDate) return false;
+          return new Date(item.introDate).getFullYear() === targetYear;
+        });
+      }
+
+      // 計算列「次回更新予定日」をアタッチ
+      filtered.forEach(item => {
+        item.calculatedNextUpdate = calculateNextUpdate(item.introDate, item.interval);
+      });
+
+      // 並び替え処理
+      if (sortKey === "dateAsc") {
+        filtered.sort((a, b) => {
+          if (!a.calculatedNextUpdate) return 1;
+          if (!b.calculatedNextUpdate) return -1;
+          return new Date(a.calculatedNextUpdate) - new Date(b.calculatedNextUpdate);
+        });
+      } else if (sortKey === "dateDesc") {
+        filtered.sort((a, b) => {
+          if (!a.calculatedNextUpdate) return 1;
+          if (!b.calculatedNextUpdate) return -1;
+          return new Date(b.calculatedNextUpdate) - new Date(a.calculatedNextUpdate);
+        });
+      } else if (sortKey === "costDesc") {
+        filtered.sort((a, b) => {
+          const costA = parseFloat(a.cost) || 0;
+          const costB = parseFloat(b.cost) || 0;
+          return costB - costA;
+        });
+      } else if (sortKey === "costAsc") {
+        filtered.sort((a, b) => {
+          const costA = parseFloat(a.cost) || 0;
+          const costB = parseFloat(b.cost) || 0;
+          return costA - costB;
+        });
+      }
+
+      if (filtered.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 20px; color: #6b7280;">該当する設備がありません。</td></tr>';
+        return;
+      }
+
+      filtered.forEach(item => {
+        const tr = document.createElement("tr");
+
+        // 状態別バッジクラス
+        let badgeClass = "badge-plan";
+        if (item.status === "予算申請中") badgeClass = "badge-apply";
+        if (item.status === "発注済") badgeClass = "badge-ordered";
+        if (item.status === "更新済") badgeClass = "badge-completed";
+
+        const formattedCost = item.cost ? `${parseFloat(item.cost).toLocaleString()} 万円` : "-";
+        const deadline = checkDeadlineStatus(item.calculatedNextUpdate);
+
+        // 「近い」「過ぎた」場合の一覧行のデザイン調整
+        let rowStyle = "";
+        if (deadline.status === "passed") {
+          rowStyle = "background-color: #fee2e2; border-left: 5px solid #dc2626;";
+        } else if (deadline.status === "near") {
+          rowStyle = "background-color: #fef3c7; border-left: 5px solid #d97706;";
+        }
+
+        tr.setAttribute("style", rowStyle);
+
+        tr.innerHTML = `
+          <td><strong>${escapeHtml(item.name)}</strong></td>
+          <td><code>${escapeHtml(item.number)}</code></td>
+          <td>${escapeHtml(item.introDate)}</td>
+          <td>${parseInt(item.interval, 10)}年</td>
+          <td>
+            <strong>${escapeHtml(item.calculatedNextUpdate)}</strong>
+            ${deadline.status === "passed" ? '<div style="color: #b91c1c; font-size: 12px; font-weight: bold;">[期限超過]</div>' : ''}
+            ${deadline.status === "near" ? '<div style="color: #b45309; font-size: 12px; font-weight: bold;">[期限至近]</div>' : ''}
+          </td>
+          <td><span class="badge ${badgeClass}">${escapeHtml(item.status)}</span></td>
+          <td>${formattedCost}</td>
+          <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(item.memo || '')}">${escapeHtml(item.memo || "-")}</td>
+          <td>
+            <div class="btn-group" style="gap: 5px;">
+              <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 14px;" onclick="openEditModal(${item.originalIndex})" aria-label="${escapeHtml(item.name)}を編集">編集</button>
+              <button class="btn btn-danger" style="padding: 6px 12px; font-size: 14px;" onclick="deleteEquipment(${item.originalIndex})" aria-label="${escapeHtml(item.name)}を削除">削除</button>
+            </div>
+          </td>
+        `;
+        tableBody.appendChild(tr);
+      });
+    }
+
+    // XSS防止用エスケープ
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    // --- 各種操作機能 ---
+
+    // 削除処理
+    window.deleteEquipment = function(index) {
+      const target = equipmentList[index];
+      if (confirm(`設備「${target.name}」を完全に削除しますか？`)) {
+        equipmentList.splice(index, 1);
+        saveToStorage();
+        renderApp();
+      }
+    };
+
+    // 新規登録バリデーション & 送信
+    const form = document.getElementById("equipmentForm");
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      if (validateForm("eqName", "eqNameError") &
+          validateForm("eqNumber", "eqNumberError") &
+          validateForm("eqIntroDate", "eqIntroDateError") &
+          validateNumberForm("eqInterval", "eqIntervalError") &
+          validateForm("eqStatus", "eqStatusError") &
+          validateCostForm("eqCost", "eqCostError")) {
+
+        const newDevice = {
+          name: document.getElementById("eqName").value.trim(),
+          number: document.getElementById("eqNumber").value.trim(),
+          introDate: document.getElementById("eqIntroDate").value,
+          interval: parseInt(document.getElementById("eqInterval").value, 10),
+          status: document.getElementById("eqStatus").value,
+          cost: document.getElementById("eqCost").value ? parseFloat(document.getElementById("eqCost").value) : null,
+          memo: document.getElementById("eqMemo").value.trim()
+        };
+
+        equipmentList.push(newDevice);
+        saveToStorage();
+        renderApp();
+        form.reset();
+        clearAllErrors();
+        alert("新規設備を登録しました。");
+      }
+    });
+
+    // フォーム検証
+    function validateForm(inputId, errorId) {
+      const input = document.getElementById(inputId);
+      const error = document.getElementById(errorId);
+      if (!input.value.trim()) {
+        error.style.display = "block";
+        input.setAttribute("aria-invalid", "true");
+        return false;
+      } else {
+        error.style.display = "none";
+        input.removeAttribute("aria-invalid");
+        return true;
+      }
+    }
+
+    function validateNumberForm(inputId, errorId) {
+      const input = document.getElementById(inputId);
+      const error = document.getElementById(errorId);
+      const val = parseInt(input.value, 10);
+      if (isNaN(val) || val <= 0) {
+        error.style.display = "block";
+        input.setAttribute("aria-invalid", "true");
+        return false;
+      } else {
+        error.style.display = "none";
+        input.removeAttribute("aria-invalid");
+        return true;
+      }
+    }
+
+    function validateCostForm(inputId, errorId) {
+      const input = document.getElementById(inputId);
+      const error = document.getElementById(errorId);
+      if (input.value !== "") {
+        const val = parseFloat(input.value);
+        if (isNaN(val) || val < 0) {
+          error.style.display = "block";
+          input.setAttribute("aria-invalid", "true");
+          return false;
+        }
+      }
+      error.style.display = "none";
+      input.removeAttribute("aria-invalid");
+      return true;
+    }
+
+    function clearAllErrors() {
+      document.querySelectorAll(".error-message").forEach(el => el.style.display = "none");
+      document.querySelectorAll(".form-control").forEach(el => el.removeAttribute("aria-invalid"));
+    }
+
+    // 編集モーダル操作
+    const editModal = document.getElementById("editModal");
+    window.openEditModal = function(index) {
+      const target = equipmentList[index];
+      document.getElementById("editIndex").value = index;
+      document.getElementById("editEqName").value = target.name;
+      document.getElementById("editEqNumber").value = target.number;
+      document.getElementById("editEqIntroDate").value = target.introDate;
+      document.getElementById("editEqInterval").value = target.interval;
+      document.getElementById("editEqStatus").value = target.status;
+      document.getElementById("editEqCost").value = target.cost !== null ? target.cost : "";
+      document.getElementById("editEqMemo").value = target.memo || "";
+
+      clearEditErrors();
+      editModal.style.display = "flex";
+      document.getElementById("editEqName").focus();
+    };
+
+    function closeEditModal() {
+      editModal.style.display = "none";
+    }
+
+    function clearEditErrors() {
+      document.querySelectorAll("#editModal .error-message").forEach(el => el.style.display = "none");
+    }
+
+    document.getElementById("saveEditBtn").addEventListener("click", () => {
+      const index = document.getElementById("editIndex").value;
+      if (validateForm("editEqName", "editEqNameError") &
+          validateForm("editEqNumber", "editEqNumberError") &
+          validateForm("editEqIntroDate", "editEqIntroDateError") &
+          validateNumberForm("editEqInterval", "editEqIntervalError") &
+          validateForm("editEqStatus", "editEqStatusError") &
+          validateCostForm("editEqCost", "editEqCostError")) {
+
+        equipmentList[index] = {
+          name: document.getElementById("editEqName").value.trim(),
+          number: document.getElementById("editEqNumber").value.trim(),
+          introDate: document.getElementById("editEqIntroDate").value,
+          interval: parseInt(document.getElementById("editEqInterval").value, 10),
+          status: document.getElementById("editEqStatus").value,
+          cost: document.getElementById("editEqCost").value !== "" ? parseFloat(document.getElementById("editEqCost").value) : null,
+          memo: document.getElementById("editEqMemo").value.trim()
+        };
+
+        saveToStorage();
+        renderApp();
+        closeEditModal();
+      }
+    });
+
+    // 使い方マニュアルモーダル
+    const manualModal = document.getElementById("manualModal");
+    document.getElementById("openManualBtn").addEventListener("click", () => {
+      manualModal.style.display = "flex";
+      document.getElementById("closeManualBtn").focus();
+    });
+
+    function closeManualModal() {
+      manualModal.style.display = "none";
+    }
+
+    // CSVエクスポート
+    document.getElementById("generateCsvBtn").addEventListener("click", () => {
+      let csv = "設備名,設備番号,導入日,推奨更新年数,次回更新予定日,状態,概算費用(万円),メモ\\n";
+      
+      equipmentList.forEach(item => {
+        const nextDate = calculateNextUpdate(item.introDate, item.interval);
+        const costStr = item.cost !== null ? item.cost : "";
+        const memoCleaned = (item.memo || "").replace(/"/g, '""');
+
+        csv += `"${item.name}","${item.number}","${item.introDate}",${item.interval},"${nextDate}","${item.status}",${costStr},"${memoCleaned}"\\n`;
+      });
+
+      const outputArea = document.getElementById("csvOutput");
+      outputArea.value = csv;
+      document.getElementById("exportArea").style.display = "block";
+      outputArea.scrollIntoView({ behavior: "smooth" });
+    });
+
+    // クリップボードにコピー
+    document.getElementById("copyCsvBtn").addEventListener("click", () => {
+      const outputArea = document.getElementById("csvOutput");
+      outputArea.select();
+      navigator.clipboard.writeText(outputArea.value).then(() => {
+        alert("CSVデータをクリップボードにコピーしました！表計算ソフトなどにそのまま貼り付けられます。");
+      }).catch(err => {
+        alert("コピーに失敗しました。お手数ですが手動でコピーしてください。");
+      });
+    });
+
+    // ダウンロード
+    document.getElementById("downloadCsvBtn").addEventListener("click", () => {
+      const content = document.getElementById("csvOutput").value;
+      // UTF-8 BOMをつけてExcel文字化け防止
+      const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+      const blob = new Blob([bom, content], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `設備更新計画_${new Date().toISOString().split("T")[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+
+    // 初期化処理
+    document.getElementById("resetAllBtn").addEventListener("click", () => {
+      if (confirm("本当に保存されているすべての設備データを削除して初期状態(サンプル状態)に戻しますか？")) {
+        localStorage.removeItem(STORAGE_KEY);
+        loadData();
+        renderApp();
+        alert("すべてのデータが初期化されました。");
+      }
+    });
+
+    // イベントリスナー一括定義
+    function setupEventListeners() {
+      // モーダルクローズ
+      document.getElementById("closeManualBtn").addEventListener("click", closeManualModal);
+      document.getElementById("closeManualBottomBtn").addEventListener("click", closeManualModal);
+      document.getElementById("closeEditBtn").addEventListener("click", closeEditModal);
+      document.getElementById("cancelEditBtn").addEventListener("click", closeEditModal);
+
+      // フィルターアクション
+      document.getElementById("filterStatus").addEventListener("change", renderTable);
+      document.getElementById("filterYear").addEventListener("change", renderTable);
+      document.getElementById("sortKey").addEventListener("change", renderTable);
+
+      // モーダル外部クリックで閉じる
+      window.addEventListener("click", (e) => {
+        if (e.target === manualModal) closeManualModal();
+        if (e.target === editModal) closeEditModal();
+      });
+
+      // キーボードESCキーでモーダルを閉じる
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          closeManualModal();
+          closeEditModal();
+        }
+      });
+    }
+  </script>
+</body>
+</html>

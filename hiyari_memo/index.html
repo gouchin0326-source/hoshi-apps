@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ヒヤリ・改善メモ</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">💡</text></svg>'>
+  <style>
+    /* CSS変数によるカラー・スタイルの定義 */
+    :root {
+      --primary-color: #004bb0;
+      --primary-hover: #003780;
+      --bg-color: #f4f6f9;
+      --card-bg: #ffffff;
+      --text-color: #222222;
+      --text-muted: #555555;
+      --border-color: #cccccc;
+      --error-color: #d32f2f;
+      --success-color: #2e7d32;
+      --focus-outline: #ffbf47;
+      
+      --priority-high-bg: #ffebee;
+      --priority-high-border: #ef5350;
+      --priority-high-text: #c62828;
+      
+      --priority-medium-bg: #fff3e0;
+      --priority-medium-border: #ffb74d;
+      --priority-medium-text: #ef6c00;
+      
+      --priority-low-bg: #e8f5e9;
+      --priority-low-border: #81c784;
+      --priority-low-text: #2e7d32;
+    }
+
+    /* 基本リセットとアクセシビリティ対応のベース設定 */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans JP", sans-serif;
+      font-size: 16px; /* 16px以上 */
+      line-height: 1.6;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      padding: 16px;
+    }
+
+    /* キーボード操作時のフォーカス強調表示 */
+    *:focus-visible {
+      outline: 4px solid var(--focus-outline);
+      outline-offset: 2px;
+    }
+
+    /* 構造化レイアウト */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* ヘッダー */
+    header {
+      background-color: var(--card-bg);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      margin-bottom: 24px;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .title-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .app-icon {
+      font-size: 2.5rem;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      color: var(--primary-color);
+    }
+
+    .warning-text {
+      background-color: #fff9c4;
+      border-left: 5px solid #fbc02d;
+      padding: 8px 16px;
+      font-weight: bold;
+      margin-top: 12px;
+      border-radius: 4px;
+      color: #333;
+    }
+
+    /* 汎用ボタン */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background-color 0.2s, transform 0.1s;
+      min-width: 44px; /* タッチターゲット */
+      min-height: 44px;
+    }
+
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background-color: #eeeeee;
+      color: #333333;
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background-color: #dddddd;
+    }
+
+    .btn-help {
+      background-color: #4b5563;
+      color: #ffffff;
+    }
+
+    .btn-help:hover {
+      background-color: #374151;
+    }
+
+    /* フォーム・レイアウト */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+
+    @media (min-width: 900px) {
+      .main-grid {
+        grid-template-columns: 1fr 2fr;
+      }
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border-radius: 8px;
+      padding: 24px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      border: 1px solid #e0e0e0;
+    }
+
+    .card-title {
+      font-size: 1.3rem;
+      margin-bottom: 16px;
+      border-bottom: 2px solid var(--primary-color);
+      padding-bottom: 8px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+
+    .required-badge {
+      background-color: var(--error-color);
+      color: white;
+      font-size: 0.75rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    .form-control {
+      width: 100%;
+      font-size: 1rem;
+      padding: 10px;
+      border: 2px solid var(--border-color);
+      border-radius: 6px;
+      background-color: #ffffff;
+      color: var(--text-color);
+    }
+
+    .form-control:focus {
+      border-color: var(--primary-color);
+      outline: none;
+    }
+
+    textarea.form-control {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    /* 集計表示エリア */
+    .summary-box {
+      background-color: #eef2f7;
+      border-radius: 6px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .summary-title {
+      font-size: 1.1rem;
+      font-weight: bold;
+      margin-bottom: 12px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+    }
+
+    .summary-item {
+      background: #ffffff;
+      padding: 8px 12px;
+      border-radius: 4px;
+      border-left: 4px solid var(--primary-color);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .summary-item-unresolved {
+      border-left-color: var(--error-color);
+      font-weight: bold;
+    }
+
+    /* フィルタエリア */
+    .filter-panel {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: flex-end;
+      background-color: #f9f9f9;
+      padding: 16px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border-color);
+    }
+
+    .filter-group {
+      flex: 1;
+      min-width: 150px;
+    }
+
+    .filter-group label {
+      display: block;
+      font-size: 0.9rem;
+      margin-bottom: 4px;
+      font-weight: bold;
+    }
+
+    /* 改善メモカード一覧表示 */
+    .memo-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    @media (min-width: 600px) {
+      .memo-list {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      }
+    }
+
+    .memo-card {
+      background-color: var(--card-bg);
+      border-radius: 8px;
+      padding: 16px;
+      border: 2px solid var(--border-color);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* 優先度別カードスタイル適用 */
+    .priority-高 {
+      border-color: var(--priority-high-border);
+      background-color: var(--priority-high-bg);
+    }
+    .priority-中 {
+      border-color: var(--priority-medium-border);
+      background-color: var(--priority-medium-bg);
+    }
+    .priority-低 {
+      border-color: var(--priority-low-border);
+      background-color: var(--priority-low-bg);
+    }
+
+    .memo-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+      font-weight: bold;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      color: #ffffff;
+    }
+
+    .badge-kind {
+      background-color: #4b5563;
+    }
+
+    .badge-status {
+      background-color: #0d9488;
+    }
+
+    .priority-text {
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    .priority-text-高 { background-color: var(--priority-high-border); color: #fff; }
+    .priority-text-中 { background-color: var(--priority-medium-border); color: #333; }
+    .priority-text-低 { background-color: var(--priority-low-border); color: #fff; }
+
+    .memo-content {
+      font-size: 1.05rem;
+      margin-bottom: 12px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .memo-meta {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      border-top: 1px solid rgba(0,0,0,0.1);
+      padding-top: 8px;
+      margin-top: auto;
+    }
+
+    /* エクスポートセクション */
+    .export-section {
+      margin-top: 24px;
+      border-top: 2px solid var(--border-color);
+      padding-top: 16px;
+    }
+
+    .export-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .textarea-copy {
+      width: 100%;
+      height: 120px;
+      font-family: monospace;
+      font-size: 0.9rem;
+      padding: 8px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      background-color: #fcfcfc;
+    }
+
+    /* ポップアップモーダル（使い方説明） */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0,0,0,0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background-color: var(--card-bg);
+      border-radius: 8px;
+      padding: 24px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    .modal-title {
+      font-size: 1.5rem;
+      margin-bottom: 16px;
+      color: var(--primary-color);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-steps {
+      margin: 16px 0;
+      padding-left: 20px;
+    }
+
+    .modal-steps li {
+      margin-bottom: 10px;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    /* スクリーンリーダー用ユーティリティ */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header role="banner">
+      <div class="header-top">
+        <div class="title-area">
+          <span class="app-icon" aria-hidden="true">💡</span>
+          <h1>ヒヤリ・改善メモ</h1>
+        </div>
+        <button type="button" class="btn btn-help" id="btn-open-help" aria-haspopup="dialog">
+          ❓ 使い方
+        </button>
+      </div>
+      <p class="warning-text">⚠️ このデータは、サーバーに送信されません。あなたの端末のブラウザ内だけに保存されるため、評価や監視に使われる心配はありません。</p>
+    </header>
+
+    <main class="main-grid" role="main">
+      
+      <section class="card" aria-labelledby="form-title">
+        <h2 id="form-title" class="card-title">📝 メモを登録する</h2>
+        <form id="memo-form">
+          <div class="form-group">
+            <label for="form-kind">種類</label>
+            <select id="form-kind" class="form-control">
+              <option value="安全">安全</option>
+              <option value="品質">品質</option>
+              <option value="効率">効率</option>
+              <option value="その他">その他</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="form-content">内容<span class="required-badge">必須</span></label>
+            <textarea id="form-content" class="form-control" placeholder="ヒヤリとしたこと、改善したい内容を書きましょう" required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="form-location">気づいた場所<span class="required-badge">必須</span></label>
+            <input type="text" id="form-location" class="form-control" placeholder="例: 食堂、会議室、倉庫A" required>
+          </div>
+
+          <div class="form-group">
+            <label for="form-priority">優先度</label>
+            <select id="form-priority" class="form-control">
+              <option value="高">高</option>
+              <option value="中" selected>中</option>
+              <option value="低">低</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="form-status">対応状況</label>
+            <select id="form-status" class="form-control">
+              <option value="未対応" selected>未対応</option>
+              <option value="対応中">対応中</option>
+              <option value="完了">完了</option>
+            </select>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%;">💾 保存する</button>
+        </form>
+      </section>
+
+      <section class="card" aria-labelledby="list-title">
+        <h2 id="list-title" class="card-title">🔍 メモの一覧・集計</h2>
+
+        <div class="summary-box" aria-live="polite">
+          <div class="summary-title">📊 現在の状況</div>
+          <div class="summary-grid">
+            <div class="summary-item">安全: <span id="count-safety">0</span>件</div>
+            <div class="summary-item">品質: <span id="count-quality">0</span>件</div>
+            <div class="summary-item">効率: <span id="count-efficiency">0</span>件</div>
+            <div class="summary-item">その他: <span id="count-other">0</span>件</div>
+            <div class="summary-item summary-item-unresolved">未対応: <span id="count-unresolved">0</span>件</div>
+          </div>
+        </div>
+
+        <fieldset class="filter-panel">
+          <legend class="sr-only">表示フィルター条件</legend>
+          <div class="filter-group">
+            <label for="filter-kind">種類で絞り込む</label>
+            <select id="filter-kind" class="form-control">
+              <option value="全件">全件</option>
+              <option value="安全">安全</option>
+              <option value="品質">品質</option>
+              <option value="効率">効率</option>
+              <option value="その他">その他</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="filter-status">対応状況で絞り込む</label>
+            <select id="filter-status" class="form-control">
+              <option value="全件">全件</option>
+              <option value="未対応">未対応</option>
+              <option value="対応中">対応中</option>
+              <option value="完了">完了</option>
+            </select>
+          </div>
+          <div>
+            <button type="button" id="btn-apply-filter" class="btn btn-secondary">適用する</button>
+          </div>
+        </fieldset>
+
+        <div id="memo-container" class="memo-list" aria-live="polite">
+          </div>
+
+        <div class="export-section">
+          <h3>📤 データの取り出し (エクスポート)</h3>
+          <p style="font-size:0.9rem; margin-bottom:12px; color:var(--text-muted);">登録したデータをCSVファイルや、貼り付け用テキストに書き出すことができます。</p>
+          <div class="export-buttons">
+            <button type="button" id="btn-export-csv" class="btn btn-secondary">📥 CSVエクスポート</button>
+            <button type="button" id="btn-copy-text" class="btn btn-secondary">📋 テキストをコピー用に出力</button>
+          </div>
+          <div>
+            <label for="export-textarea" class="sr-only">コピー用テキスト</label>
+            <textarea id="export-textarea" class="textarea-copy" readonly placeholder="「コピー用に出力」ボタンを押すと、ここにテキスト形式で一覧が出力されます。選択してコピーできます。"></textarea>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="help-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title-text">
+    <div class="modal-content">
+      <h2 id="modal-title-text" class="modal-title">❓ このアプリの使い方</h2>
+      <div>
+        <p><strong>(1) このアプリでできること</strong></p>
+        <p style="margin-bottom:12px;">職場で気づいた「ヒヤリとしたこと（危険）」や「改善したいこと」を簡単な操作ですぐに記録できる個人用のメモ帳です。</p>
+
+        <p><strong>(2) 基本の使いかた (3ステップ)</strong></p>
+        <ol class="modal-steps">
+          <li><strong>左側のフォームに入力：</strong> 種類、内容、気づいた場所、優先度、対応状況を選んで「保存する」を押します。</li>
+          <li><strong>一覧で状況を確認：</strong> 登録したデータは「優先度の高い順」に自動で並びます。フィルタ機能で特定の項目だけを見つけることも可能です。</li>
+          <li><strong>状態を更新：</strong> 登録後に状況が変わったら、必要に応じてデータを端末に保存し直すことができます（各カードから削除や状況管理が行えます）。</li>
+        </ol>
+
+        <p><strong>(3) セキュリティとデータ保存について</strong></p>
+        <p style="margin-bottom:12px;">入力したデータは、あなたが使っているこの端末（ブラウザの「localStorage」という仕組み）にのみ記録されます。外部サーバーに送信されることは絶対にないため、他人に勝手に見られたり監視されたりすることはありません。</p>
+
+        <p><strong>(4) 📤 エクスポート（出力）のやり方</strong></p>
+        <ul class="modal-steps">
+          <li><strong>CSVエクスポート：</strong> 登録データがすべて入ったExcel等で開ける「CSVファイル」をダウンロードします。</li>
+          <li><strong>テキストをコピー：</strong> 画面下部のボタンを押すと、テキストエリアに見やすく整形された一覧が出現します。メールやチャットに貼り付けたい時に便利です。</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btn-close-help" class="btn btn-primary">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- 状態管理用データ定義 ---
+    let memos = [];
+
+    // --- DOM要素取得 ---
+    const memoForm = document.getElementById('memo-form');
+    const formKind = document.getElementById('form-kind');
+    const formContent = document.getElementById('form-content');
+    const formLocation = document.getElementById('form-location');
+    const formPriority = document.getElementById('form-priority');
+    const formStatus = document.getElementById('form-status');
+
+    const countSafety = document.getElementById('count-safety');
+    const countQuality = document.getElementById('count-quality');
+    const countEfficiency = document.getElementById('count-efficiency');
+    const countOther = document.getElementById('count-other');
+    const countUnresolved = document.getElementById('count-unresolved');
+
+    const filterKind = document.getElementById('filter-kind');
+    const filterStatus = document.getElementById('filter-status');
+    const btnApplyFilter = document.getElementById('btn-apply-filter');
+
+    const memoContainer = document.getElementById('memo-container');
+
+    const btnExportCsv = document.getElementById('btn-export-csv');
+    const btnCopyText = document.getElementById('btn-copy-text');
+    const exportTextarea = document.getElementById('export-textarea');
+
+    const helpModal = document.getElementById('help-modal');
+    const btnOpenHelp = document.getElementById('btn-open-help');
+    const btnCloseHelp = document.getElementById('btn-close-help');
+
+    // --- ローカルストレージ連携 ---
+    function loadData() {
+      const data = localStorage.getItem('hiyari_memos');
+      if (data) {
+        try {
+          memos = JSON.parse(data);
+        } catch (e) {
+          memos = [];
+        }
+      } else {
+        // 初期サンプルデータ
+        memos = [
+          { id: 1710000000000, kind: "安全", content: "通路に太い電源コードが配線されたまま放置されており、つまずきかけた。", location: "第3工場・資材置き場付近", priority: "高", status: "未対応" },
+          { id: 1710000000001, kind: "効率", content: "工具棚のラベリングが擦れて消えかかっており、目的のサイズを探すのに時間がかかる。", location: "共通工具棚", priority: "中", status: "対応中" }
+        ];
+        saveData();
+      }
+    }
+
+    function saveData() {
+      localStorage.setItem('hiyari_memos', JSON.stringify(memos));
+    }
+
+    // --- 優先度を並び替えるための数値マップ ---
+    const priorityWeight = {
+      '高': 3,
+      '中': 2,
+      '低': 1
+    };
+
+    // --- 一覧描画と集計 ---
+    function render() {
+      // 1. 集計処理 (全件を対象に計算)
+      let safety = 0, quality = 0, efficiency = 0, other = 0, unresolved = 0;
+      memos.forEach(m => {
+        if (m.kind === '安全') safety++;
+        if (m.kind === '品質') quality++;
+        if (m.kind === '効率') efficiency++;
+        if (m.kind === 'その他') other++;
+        if (m.status === '未対応') unresolved++;
+      });
+
+      countSafety.textContent = safety;
+      countQuality.textContent = quality;
+      countEfficiency.textContent = efficiency;
+      countOther.textContent = other;
+      countUnresolved.textContent = unresolved;
+
+      // 2. フィルタ条件取得
+      const kFilter = filterKind.value;
+      const sFilter = filterStatus.value;
+
+      // 3. フィルタ適用
+      let filteredMemos = memos.filter(m => {
+        const matchKind = (kFilter === '全件' || m.kind === kFilter);
+        const matchStatus = (sFilter === '全件' || m.status === sFilter);
+        return matchKind && matchStatus;
+      });
+
+      // 4. ソート (優先度 高 -> 低)
+      filteredMemos.sort((a, b) => {
+        const weightA = priorityWeight[a.priority] || 0;
+        const weightB = priorityWeight[b.priority] || 0;
+        return weightB - weightA; 
+      });
+
+      // 5. リスト生成
+      memoContainer.innerHTML = '';
+      if (filteredMemos.length === 0) {
+        memoContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 20px;">該当するメモはありませんでした。</p>';
+        return;
+      }
+
+      filteredMemos.forEach(memo => {
+        const card = document.createElement('div');
+        card.className = `memo-card priority-${memo.priority}`;
+        card.setAttribute('role', 'article');
+
+        card.innerHTML = `
+          <div>
+            <div class="memo-card-header">
+              <span class="badge badge-kind">${escapeHtml(memo.kind)}</span>
+              <span class="priority-text priority-text-${memo.priority}">優先度:${escapeHtml(memo.priority)}</span>
+            </div>
+            <div class="memo-content">${escapeHtml(memo.content)}</div>
+          </div>
+          <div class="memo-meta">
+            <div>📍 場所: <strong>${escapeHtml(memo.location)}</strong></div>
+            <div style="margin-top:4px; display:flex; justify-content:space-between; align-items:center;">
+              <span>状況: <span class="badge badge-status">${escapeHtml(memo.status)}</span></span>
+              <button class="btn btn-secondary" style="padding: 4px 8px; font-size:0.85rem; min-height:30px; min-width:auto;" onclick="deleteMemo(${memo.id})" aria-label="このメモを削除する">🗑️ 削除</button>
+            </div>
+          </div>
+        `;
+        memoContainer.appendChild(card);
+      });
+    }
+
+    // HTMLエスケープ処理 (セキュリティ対策)
+    function escapeHtml(string) {
+      if (typeof string !== 'string') return '';
+      return string.replace(/[&'`"<>]/g, function (match) {
+        return {
+          '&': '&amp;',
+          "'": '&#x27;',
+          '`': '&#x60;',
+          '"': '&quot;',
+          '<': '&lt;',
+          '>': '&gt;'
+        }[match];
+      });
+    }
+
+    // --- メモ登録アクション ---
+    memoForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const newMemo = {
+        id: Date.now(),
+        kind: formKind.value,
+        content: formContent.value.trim(),
+        location: formLocation.value.trim(),
+        priority: formPriority.value,
+        status: formStatus.value
+      };
+
+      if (!newMemo.content || !newMemo.location) {
+        alert('「内容」と「気づいた場所」は必須です。');
+        return;
+      }
+
+      memos.push(newMemo);
+      saveData();
+      render();
+
+      // フォームの入力項目をリセット（セレクトボックスはデフォルト値に）
+      formContent.value = '';
+      formLocation.value = '';
+      formKind.selectedIndex = 0;
+      formPriority.value = '中';
+      formStatus.value = '未対応';
+
+      // 登録完了アナウンス
+      alert('メモを保存しました。');
+    });
+
+    // --- 個別削除アクション ---
+    window.deleteMemo = function(id) {
+      if (confirm('このメモを削除してもよろしいですか？（元に戻せません）')) {
+        memos = memos.filter(m => m.id !== id);
+        saveData();
+        render();
+      }
+    };
+
+    // --- フィルタボタンクリック ---
+    btnApplyFilter.addEventListener('click', function() {
+      render();
+    });
+
+    // --- CSVエクスポート ---
+    btnExportCsv.addEventListener('click', function() {
+      if (memos.length === 0) {
+        alert('書き出すデータがありません。');
+        return;
+      }
+
+      // BOM付きUTF-8でExcel文字化けを防ぐ
+      const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+      const headers = ['種類', '内容', '気づいた場所', '優先度', '対応状況'];
+      
+      const csvRows = [headers.join(',')];
+      
+      memos.forEach(m => {
+        const values = [
+          m.kind,
+          m.content.replace(/"/g, '""'), // ダブルクォーテーションをエスケープ
+          m.location.replace(/"/g, '""'),
+          m.priority,
+          m.status
+        ];
+        // 項目をダブルクォーテーションで囲んでカンマで結合
+        csvRows.push(values.map(v => `"${v}"`).join(','));
+      });
+
+      const csvContent = csvRows.join('\r\n');
+      const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
+      
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `hiyari_export_${new Date().toISOString().slice(0,10)}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+
+    // --- テキスト形式出力 & コピー補助 ---
+    btnCopyText.addEventListener('click', function() {
+      if (memos.length === 0) {
+        exportTextarea.value = '登録されているデータがありません。';
+        return;
+      }
+
+      let formattedText = '【ヒヤリ・改善メモ 一覧】\n';
+      formattedText += `出力日: ${new Date().toLocaleDateString('ja-JP')}\n`;
+      formattedText += '-------------------------------------------\n';
+
+      memos.forEach((m, idx) => {
+        formattedText += `■ メモ ${idx + 1}\n`;
+        formattedText += `・種類      : ${m.kind}\n`;
+        formattedText += `・内容      : ${m.content}\n`;
+        formattedText += `・場所      : ${m.location}\n`;
+        formattedText += `・優先度    : ${m.priority}\n`;
+        formattedText += `・対応状況  : ${m.status}\n`;
+        formattedText += '-------------------------------------------\n';
+      });
+
+      exportTextarea.value = formattedText;
+      exportTextarea.select();
+      
+      // テキストエリアの自動フォーカスと通知
+      try {
+        document.execCommand('copy');
+        alert('テキストエリアに出力し、クリップボードにコピーしました！そのまま貼り付けできます。');
+      } catch (err) {
+        alert('テキストエリアに出力しました。コピーしてご利用ください。');
+      }
+    });
+
+    // --- モーダルダイアログ制御 ---
+    let lastFocusedElement;
+
+    btnOpenHelp.addEventListener('click', function() {
+      lastFocusedElement = document.activeElement;
+      helpModal.style.display = 'flex';
+      btnCloseHelp.focus();
+      document.addEventListener('keydown', trapFocus);
+    });
+
+    function closeModal() {
+      helpModal.style.display = 'none';
+      document.removeEventListener('keydown', trapFocus);
+      if (lastFocusedElement) lastFocusedElement.focus();
+    }
+
+    btnCloseHelp.addEventListener('click', closeModal);
+
+    // 背景クリックでも閉じる
+    helpModal.addEventListener('click', function(e) {
+      if (e.target === helpModal) {
+        closeModal();
+      }
+    });
+
+    // キーボードのEscapeキーでモーダルを閉じる
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && helpModal.style.display === 'flex') {
+        closeModal();
+      }
+    });
+
+    // モーダル内フォーカストラップ（アクセシビリティ対応）
+    function trapFocus(e) {
+      if (helpModal.style.display !== 'flex') return;
+      const focusableElements = helpModal.querySelectorAll('button, [tabindex="0"]');
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (e.key === 'Tab') {
+        if (e.shiftKey) { // Shift + Tab
+          if (document.activeElement === firstElement) {
+            lastElement.focus();
+            e.preventDefault();
+          }
+        } else { // Tab
+          if (document.activeElement === lastElement) {
+            firstElement.focus();
+            e.preventDefault();
+          }
+        }
+      }
+    }
+
+    // --- 起動初期化 ---
+    window.addEventListener('DOMContentLoaded', () => {
+      loadData();
+      render();
+    });
+  </script>
+</body>
+</html>

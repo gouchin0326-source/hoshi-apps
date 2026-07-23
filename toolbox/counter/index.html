@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>かんたんマルチカウンター</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🔢</text></svg>'>
+  <style>
+    /* 基本のカラー設計（高コントラスト・白背景・黒文字） */
+    :root {
+      --bg-color: #ffffff;
+      --text-color: #000000;
+      --primary-color: #0056b3; /* コントラスト比配慮の暗め青 */
+      --danger-color: #c82333;  /* コントラスト比配慮の暗め赤 */
+      --border-color: #333333;
+      --light-gray: #f0f0f0;
+      --focus-outline: #ff9900;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      padding: 16px;
+      line-height: 1.5;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid var(--border-color);
+      margin-bottom: 24px;
+    }
+
+    .title-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .app-icon {
+      font-size: 2.5rem;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: bold;
+    }
+
+    /* ボタン共通スタイル */
+    button, .btn-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 48px;
+      min-height: 48px; /* タップターゲット 48px保障 */
+      padding: 8px 16px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      border-radius: 6px;
+      border: 2px solid var(--text-color);
+      cursor: pointer;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      transition: background-color 0.1s, transform 0.1s;
+    }
+
+    button:focus-visible, input:focus-visible {
+      outline: 4px solid var(--focus-outline);
+      outline-offset: 2px;
+    }
+
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: #ffffff;
+      border-color: var(--primary-color);
+    }
+    .btn-primary:hover {
+      background-color: #004085;
+    }
+
+    .btn-danger {
+      background-color: var(--danger-color);
+      color: #ffffff;
+      border-color: var(--danger-color);
+    }
+    .btn-danger:hover {
+      background-color: #bd2130;
+    }
+
+    .btn-secondary {
+      background-color: var(--light-gray);
+      color: var(--text-color);
+    }
+    .btn-secondary:hover {
+      background-color: #dddddd;
+    }
+
+    .header-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* メインレイアウト */
+    main {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .action-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    /* カウンター一覧 */
+    .counters-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .counter-card {
+      border: 3px solid var(--border-color);
+      border-radius: 8px;
+      padding: 16px;
+      background-color: var(--bg-color);
+      box-shadow: 0 4px 0 var(--border-color);
+    }
+
+    .counter-header {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .counter-name-input {
+      flex: 1;
+      min-width: 150px;
+      height: 44px;
+      font-size: 1.1rem;
+      padding: 8px;
+      border: 2px solid var(--border-color);
+      border-radius: 4px;
+    }
+
+    .counter-body {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .count-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-calc {
+      width: 56px;
+      height: 56px;
+      font-size: 1.8rem;
+    }
+
+    .count-display {
+      font-size: 2.2rem; /* 24px以上 */
+      font-weight: bold;
+      min-width: 80px;
+      text-align: center;
+      padding: 4px 12px;
+      border: 2px dashed var(--border-color);
+      border-radius: 6px;
+      background-color: var(--light-gray);
+    }
+
+    .counter-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      justify-content: flex-end;
+      width: 100%;
+      border-top: 1px solid var(--border-color);
+      padding-top: 12px;
+    }
+
+    /* データ連携・エクスポートエリア */
+    .data-section {
+      margin-top: 40px;
+      border-top: 2px solid var(--border-color);
+      padding-top: 24px;
+    }
+
+    .data-section h2 {
+      font-size: 1.4rem;
+      margin-bottom: 12px;
+    }
+
+    .export-box {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 120px;
+      font-family: monospace;
+      font-size: 1rem;
+      padding: 8px;
+      border: 2px solid var(--border-color);
+      border-radius: 4px;
+      resize: vertical;
+    }
+
+    .export-buttons {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* モーダルダイアログ */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 1000;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background-color: var(--bg-color);
+      border: 3px solid var(--border-color);
+      border-radius: 8px;
+      max-width: 550px;
+      width: 100%;
+      padding: 24px;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+
+    .modal-header h2 {
+      font-size: 1.4rem;
+    }
+
+    .modal-body p, .modal-body li {
+      font-size: 1.1rem;
+      margin-bottom: 8px;
+    }
+
+    .modal-body ol {
+      margin-left: 24px;
+      margin-bottom: 16px;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    /* レスポンシブ設計（スマートフォン向け補正） */
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+      }
+
+      .app-icon {
+        font-size: 2rem;
+      }
+
+      button, .btn-link {
+        font-size: 1.1rem;
+        padding: 12px; /* スマホでよりタップしやすく */
+      }
+
+      .counter-body {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .count-controls {
+        justify-content: space-between;
+      }
+
+      .btn-calc {
+        flex: 1;
+      }
+
+      .count-display {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="title-area">
+      <span class="app-icon" aria-hidden="true">🔢</span>
+      <h1>かんたんマルチカウンター</h1>
+    </div>
+    <div class="header-buttons">
+      <button id="btn-help" class="btn-secondary" aria-label="ヘルプを開く">❓使い方</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="action-bar">
+      <button id="btn-add" class="btn-primary" aria-label="新規カウンターを追加">+ カウンターを追加</button>
+    </div>
+
+    <div id="counters-container" class="counters-grid">
+      </div>
+
+    <section class="data-section">
+      <h2>💾 データのバックアップ・エクスポート</h2>
+      <div class="export-box">
+        <label for="export-data">現在のカウンターのデータ (JSON形式):</label>
+        <textarea id="export-data" readonly placeholder="カウンターを追加するとここにデータが表示されます。"></textarea>
+        <div class="export-buttons">
+          <button id="btn-copy" class="btn-secondary">📋 コピーする</button>
+          <a id="btn-download" class="btn-secondary" style="text-decoration: none;" download="counters_data.csv">📥 CSVでダウンロード</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="help-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-title">❓ 使い方マニュアル</h2>
+        <button id="btn-close-help" class="btn-secondary" aria-label="マニュアルを閉じる">×</button>
+      </div>
+      <div class="modal-body">
+        <p><strong>このアプリでできること:</strong></p>
+        <p>複数の独立したカウンター（計数器）を作成して、数値のカウントや記録をスマートに管理できます。</p>
+        
+        <p><strong>基本の使い方 4ステップ:</strong></p>
+        <ol>
+          <li><strong>カウンターの追加:</strong> 「+ カウンターを追加」ボタンを押すと新しいカウンターが作成されます。</li>
+          <li><strong>名前の変更:</strong> 各カウンターの入力欄から、いつでも好きな名前に変えられます。空欄のときは自動的に「カウンター1」等の名前になります。</li>
+          <li><strong>数値の調整:</strong> 「＋」ボタンで1増え、「－」ボタンで1減ります。マイナスの数にはなりません。「リセット」を押すと0に戻ります。</li>
+          <li><strong>データの保存・出力:</strong> 入力やカウントは、自動的にこの端末に保存されます。下の「エクスポート」からデータのコピーやCSVファイル保存が可能です。</li>
+        </ol>
+
+        <p><strong>🔒 プライバシー・セキュリティ:</strong></p>
+        <p>入力した内容やカウンターのデータは、<strong>すべてこの端末（ブラウザ）内だけで完結</strong>して保存されます。外部のサーバーへ送信されることはありません。</p>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-confirm-close" class="btn-primary">分かりました</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- 状態管理 ---
+    let counters = [];
+    const STORAGE_KEY = 'easy_multi_counters_data';
+
+    // --- DOM要素の取得 ---
+    const container = document.getElementById('counters-container');
+    const btnAdd = document.getElementById('btn-add');
+    const exportTextarea = document.getElementById('export-data');
+    const btnCopy = document.getElementById('btn-copy');
+    const btnDownload = document.getElementById('btn-download');
+    
+    // モーダル関連
+    const helpModal = document.getElementById('help-modal');
+    const btnHelp = document.getElementById('btn-help');
+    const btnCloseHelp = document.getElementById('btn-close-help');
+    const btnConfirmClose = document.getElementById('btn-confirm-close');
+
+    // --- 初期化処理 ---
+    window.addEventListener('DOMContentLoaded', () => {
+      loadData();
+      if (counters.length === 0) {
+        // 初期状態で1つ追加しておく
+        addCounter();
+      } else {
+        render();
+      }
+    });
+
+    // --- ローカルストレージ連携 ---
+    function loadData() {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          counters = JSON.parse(stored);
+        }
+      } catch (e) {
+        console.error("データの読み込みに失敗しました", e);
+        counters = [];
+      }
+    }
+
+    function saveAndSync() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(counters));
+      } catch (e) {
+        console.error("データの保存に失敗しました", e);
+      }
+      updateExportArea();
+    }
+
+    // --- カウンター操作ロジック ---
+    function addCounter() {
+      // 一意なIDの生成
+      const id = 'cnt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      
+      // デフォルト名の決定
+      const countNum = counters.length + 1;
+      const defaultName = `カウンター ${countNum}`;
+
+      const newCounter = {
+        id: id,
+        name: '',
+        value: 0
+      };
+
+      counters.push(newCounter);
+      saveAndSync();
+      render();
+
+      // 追加したカウンターの名前入力欄にフォーカスを当てる
+      setTimeout(() => {
+        const input = document.getElementById(`input-${id}`);
+        if (input) input.focus();
+      }, 50);
+    }
+
+    function removeCounter(id) {
+      counters = counters.filter(c => c.id !== id);
+      saveAndSync();
+      render();
+    }
+
+    function updateValue(id, change) {
+      const counter = counters.find(c => c.id === id);
+      if (counter) {
+        const newValue = counter.value + change;
+        counter.value = newValue < 0 ? 0 : newValue; // 0未満にはならない
+        saveAndSync();
+        renderValueOnly(id);
+      }
+    }
+
+    function resetValue(id) {
+      const counter = counters.find(c => c.id === id);
+      if (counter) {
+        counter.value = 0;
+        saveAndSync();
+        renderValueOnly(id);
+      }
+    }
+
+    function updateName(id, name) {
+      const counter = counters.find(c => c.id === id);
+      if (counter) {
+        counter.name = name;
+        saveAndSync();
+      }
+    }
+
+    // --- 描画ロジック ---
+    // カウンターの値表示だけを高速に書き換える（再フォーカスによるちらつき防止）
+    function renderValueOnly(id) {
+      const counter = counters.find(c => c.id === id);
+      if (counter) {
+        const display = document.getElementById(`val-${id}`);
+        if (display) {
+          display.textContent = counter.value;
+        }
+      }
+    }
+
+    function render() {
+      container.innerHTML = '';
+
+      counters.forEach((counter, index) => {
+        const defaultPlaceholder = `カウンター ${index + 1}`;
+        const card = document.createElement('div');
+        card.className = 'counter-card';
+        card.setAttribute('role', 'region');
+        card.setAttribute('aria-label', counter.name || defaultPlaceholder);
+
+        card.innerHTML = `
+          <div class="counter-header">
+            <label for="input-${counter.id}" class="sr-only" style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0;">名前</label>
+            <input 
+              type="text" 
+              id="input-${counter.id}" 
+              class="counter-name-input" 
+              value="${counter.name}" 
+              placeholder="${defaultPlaceholder}" 
+              aria-label="カウンターの名前を変更"
+            >
+          </div>
+          <div class="counter-body">
+            <div class="count-controls">
+              <button class="btn-calc btn-secondary" id="btn-minus-${counter.id}" aria-label="1減らす">-</button>
+              <div class="count-display" id="val-${counter.id}">${counter.value}</div>
+              <button class="btn-calc btn-primary" id="btn-plus-${counter.id}" aria-label="1増やす">+</button>
+            </div>
+            <div class="counter-actions">
+              <button class="btn-danger" id="btn-reset-${counter.id}" aria-label="数値を0に戻す">リセット</button>
+              <button class="btn-secondary" id="btn-del-${counter.id}" aria-label="このカウンターを削除" style="border-color: var(--danger-color); color: var(--danger-color);">削除</button>
+            </div>
+          </div>
+        `;
+
+        container.appendChild(card);
+
+        // --- イベントバインド ---
+        const inputName = card.querySelector(`#input-${counter.id}`);
+        inputName.addEventListener('input', (e) => {
+          updateName(counter.id, e.target.value);
+          // アクセシビリティ：スクリーンリーダー用にカードのaria-labelも書き換え
+          card.setAttribute('aria-label', e.target.value || defaultPlaceholder);
+        });
+
+        card.querySelector(`#btn-minus-${counter.id}`).addEventListener('click', () => {
+          updateValue(counter.id, -1);
+        });
+
+        card.querySelector(`#btn-plus-${counter.id}`).addEventListener('click', () => {
+          updateValue(counter.id, 1);
+        });
+
+        card.querySelector(`#btn-reset-${counter.id}`).addEventListener('click', () => {
+          resetValue(counter.id);
+        });
+
+        card.querySelector(`#btn-del-${counter.id}`).addEventListener('click', () => {
+          if (confirm(`「${counter.name || defaultPlaceholder}」を削除してもよろしいですか？`)) {
+            removeCounter(counter.id);
+          }
+        });
+      });
+
+      updateExportArea();
+    }
+
+    // --- エクスポート・バックアップ関連 ---
+    function updateExportArea() {
+      // JSONの書き出し
+      const jsonStr = JSON.stringify(counters, null, 2);
+      exportTextarea.value = jsonStr;
+
+      // CSVの生成
+      let csvContent = "data:text/csv;charset=utf-8,ID,名前,現在値\n";
+      counters.forEach((c, index) => {
+        const name = c.name || `カウンター ${index + 1}`;
+        // カンマやクォーテーションをエスケープ
+        const safeName = `"${name.replace(/"/g, '""')}"`;
+        csvContent += `${c.id},${safeName},${c.value}\n`;
+      });
+      
+      btnDownload.setAttribute("href", encodeURI(csvContent));
+    }
+
+    // クリップボードにコピー
+    btnCopy.addEventListener('click', () => {
+      exportTextarea.select();
+      exportTextarea.setSelectionRange(0, 99999); // スマホ対応
+      try {
+        navigator.clipboard.writeText(exportTextarea.value);
+        const originalText = btnCopy.textContent;
+        btnCopy.textContent = "✅ コピーしました！";
+        btnCopy.style.backgroundColor = "#e1eedd";
+        setTimeout(() => {
+          btnCopy.textContent = originalText;
+          btnCopy.style.backgroundColor = "";
+        }, 2000);
+      } catch (err) {
+        alert("コピーに失敗しました。枠内の文字を直接選択してコピーしてください。");
+      }
+    });
+
+    // カウンター新規作成ボタン
+    btnAdd.addEventListener('click', () => {
+      addCounter();
+    });
+
+    // --- モーダル制御（アクセシビリティ考慮） ---
+    let lastActiveElement = null;
+
+    function openModal() {
+      lastActiveElement = document.activeElement;
+      helpModal.classList.add('active');
+      btnConfirmClose.focus(); // モーダル内ボタンにフォーカス
+      document.body.style.overflow = 'hidden'; // 背面のスクロールを抑制
+    }
+
+    function closeModal() {
+      helpModal.classList.remove('active');
+      document.body.style.overflow = '';
+      if (lastActiveElement) {
+        lastActiveElement.focus(); // 開く前のフォーカスに戻す
+      }
+    }
+
+    btnHelp.addEventListener('click', openModal);
+    btnCloseHelp.addEventListener('click', closeModal);
+    btnConfirmClose.addEventListener('click', closeModal);
+
+    // キーボード操作：モーダル表示中にEscキーで閉じる / Tabキーの循環ガード
+    helpModal.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+      }
+      if (e.key === 'Tab') {
+        const focusableElements = helpModal.querySelectorAll('button, [tabindex="0"]');
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            lastElement.focus();
+            e.preventDefault();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            firstElement.focus();
+            e.preventDefault();
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

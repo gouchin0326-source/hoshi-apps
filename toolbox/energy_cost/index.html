@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>エネルギーコスト記録: 削減のためのツール</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⚡</text></svg>'>
+  <style>
+    :root {
+      --primary-color: #005a9c;
+      --primary-hover: #004080;
+      --bg-color: #f7f9fa;
+      --card-bg: #ffffff;
+      --text-color: #2b2b2b;
+      --border-color: #cccccc;
+      --increase-color: #d9534f;
+      --decrease-color: #0066cc;
+      --focus-outline: #ffbf47;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 0;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    /* Skip Link for Keyboard Users */
+    .skip-link {
+      position: absolute;
+      top: -40px;
+      left: 0;
+      background: var(--focus-outline);
+      color: #000;
+      padding: 8px;
+      z-index: 100;
+      transition: top 0.2s;
+    }
+    .skip-link:focus {
+      top: 0;
+    }
+
+    header {
+      background-color: var(--primary-color);
+      color: #ffffff;
+      padding: 24px 16px;
+      text-align: center;
+      border-bottom: 4px solid var(--primary-hover);
+    }
+
+    .header-content {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .header-title-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .header-emoji {
+      font-size: 3rem;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.8rem;
+    }
+
+    header p {
+      margin: 8px 0 0 0;
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #e6f2ff;
+    }
+
+    main {
+      max-width: 1000px;
+      margin: 20px auto;
+      padding: 0 16px;
+    }
+
+    /* Card/Section Layout */
+    .card {
+      background: var(--card-bg);
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .card-title {
+      font-size: 1.3rem;
+      margin-top: 0;
+      margin-bottom: 16px;
+      border-bottom: 3px solid var(--primary-color);
+      padding-bottom: 6px;
+      color: var(--primary-color);
+    }
+
+    /* Buttons */
+    .btn {
+      background-color: var(--primary-color);
+      color: #ffffff;
+      border: 2px solid transparent;
+      border-radius: 6px;
+      padding: 12px 20px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: background-color 0.2s, outline 0.1s;
+    }
+
+    .btn:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn:focus, input:focus, select:focus {
+      outline: 4px solid var(--focus-outline);
+      outline-offset: 2px;
+    }
+
+    .btn-secondary {
+      background-color: #555555;
+    }
+    .btn-secondary:hover {
+      background-color: #333333;
+    }
+
+    .btn-danger {
+      background-color: #cc0000;
+    }
+    .btn-danger:hover {
+      background-color: #990000;
+    }
+
+    .btn-help {
+      background-color: #f0ad4e;
+      color: #000000;
+      border: 2px solid #eea236;
+    }
+    .btn-help:hover {
+      background-color: #ec971f;
+    }
+
+    /* Forms */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group label {
+      font-weight: bold;
+      margin-bottom: 6px;
+      font-size: 1.1rem;
+    }
+
+    .form-control {
+      padding: 10px;
+      font-size: 1.1rem;
+      border: 2px solid var(--border-color);
+      border-radius: 6px;
+      background-color: #ffffff;
+      color: var(--text-color);
+    }
+
+    /* Table Container & Tables */
+    .table-container {
+      overflow-x: auto;
+      margin-top: 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 1.05rem;
+    }
+
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    th {
+      background-color: #eaeaea;
+      color: #000000;
+      font-weight: bold;
+    }
+
+    tr:nth-child(even) {
+      background-color: #fcfcfc;
+    }
+
+    /* Comparison Styling */
+    .val-increase {
+      color: var(--increase-color);
+      font-weight: bold;
+    }
+
+    .val-decrease {
+      color: var(--decrease-color);
+      font-weight: bold;
+    }
+
+    .val-neutral {
+      color: #666666;
+    }
+
+    .bold-red {
+      color: var(--increase-color);
+      font-weight: bold;
+    }
+
+    /* Filters Layout */
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    /* Summary Section Grid */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    /* Modal Styling */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+
+    .modal-content {
+      background: #ffffff;
+      border: 3px solid var(--primary-color);
+      border-radius: 8px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 24px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+
+    .modal-title {
+      font-size: 1.4rem;
+      margin: 0;
+      color: var(--primary-color);
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 1.8rem;
+      cursor: pointer;
+      color: #333;
+    }
+
+    /* Utility Helpers */
+    .text-right {
+      text-align: right;
+    }
+
+    .error-msg {
+      background-color: #fcd7d7;
+      border: 2px solid #cc0000;
+      color: #cc0000;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      font-weight: bold;
+      display: none;
+    }
+
+    .action-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    /* Screen Reader Only */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+      body {
+        font-size: 15px;
+      }
+      header h1 {
+        font-size: 1.4rem;
+      }
+      header p {
+        font-size: 1rem;
+      }
+      th, td {
+        padding: 8px;
+      }
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <a href="#main-content" class="skip-link">メインコンテンツへスキップ</a>
+
+  <header>
+    <div class="header-content">
+      <div class="header-title-container">
+        <span class="header-emoji" aria-hidden="true">⚡</span>
+        <h1>エネルギーコスト記録: 削減のためのツール</h1>
+      </div>
+      <p>人の評価や監視ではなく、エネルギーコスト削減のための道具です</p>
+    </div>
+  </header>
+
+  <main id="main-content">
+
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+      <button class="btn btn-help" id="btn-open-manual" aria-haspopup="dialog" aria-controls="manual-modal">
+        ❓ 使い方を見る
+      </button>
+      <div class="action-row" style="margin: 0;">
+        <button class="btn btn-secondary" id="btn-export">📤 データ書き出し (コピー)</button>
+        <button class="btn btn-secondary" id="btn-download">💾 CSVダウンロード</button>
+        <button class="btn btn-danger" id="btn-clear-data">🗑️ 全データ消去</button>
+      </div>
+    </div>
+
+    <div class="error-msg" id="validation-error" role="alert">
+      入力が不完全です。対象月、使用量、単価を正しく入力してください。
+    </div>
+
+    <section class="card" aria-labelledby="form-section-title">
+      <h2 class="card-title" id="form-section-title">新規データの登録</h2>
+      <form id="record-form">
+        <div class="form-grid">
+          <div class="form-group">
+            <label id="label-month" for="input-month">対象月 <span style="color:red">*</span></label>
+            <input type="month" id="input-month" class="form-control" required aria-labelledby="label-month">
+          </div>
+          <div class="form-group">
+            <label id="label-type" for="input-type">種別 <span style="color:red">*</span></label>
+            <select id="input-type" class="form-control" required aria-labelledby="label-type">
+              <option value="電気">電気</option>
+              <option value="ガス">ガス</option>
+              <option value="水道">水道</option>
+              <option value="燃料">燃料</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label id="label-usage" for="input-usage">使用量 <span style="color:red">*</span></label>
+            <input type="number" id="input-usage" class="form-control" step="any" min="0" placeholder="例: 150" required aria-labelledby="label-usage">
+          </div>
+          <div class="form-group">
+            <label id="label-price" for="input-price">単価 (円) <span style="color:red">*</span></label>
+            <input type="number" id="input-price" class="form-control" step="any" min="0" placeholder="例: 28.5" required aria-labelledby="label-price">
+          </div>
+        </div>
+        <button type="submit" class="btn">✨ この内容で登録する</button>
+      </form>
+    </section>
+
+    <section class="card" aria-labelledby="filter-section-title">
+      <h2 class="card-title" id="filter-section-title">表示フィルター</h2>
+      <div class="filter-grid">
+        <div class="form-group">
+          <label for="filter-type">種別</label>
+          <select id="filter-type" class="form-control">
+            <option value="全て">全て表示</option>
+            <option value="電気">電気</option>
+            <option value="ガス">ガス</option>
+            <option value="水道">水道</option>
+            <option value="燃料">燃料</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="filter-period">期間</label>
+          <select id="filter-period" class="form-control">
+            <option value="全期間">全期間</option>
+            <option value="今月">今月</option>
+            <option value="前月">前月</option>
+            <option value="今年">今年</option>
+            <option value="前年">前年</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="table-section-title">
+      <h2 class="card-title" id="table-section-title">記録一覧</h2>
+      <div class="table-container">
+        <table id="records-table">
+          <thead>
+            <tr>
+              <th scope="col">日付 (対象月)</th>
+              <th scope="col">種別</th>
+              <th scope="col" class="text-right">使用量</th>
+              <th scope="col" class="text-right">単価</th>
+              <th scope="col" class="text-right">金額</th>
+              <th scope="col" class="text-right">前月比</th>
+              <th scope="col" class="text-right">前年同月比</th>
+              <th scope="col" style="text-align: center;">操作</th>
+            </tr>
+          </thead>
+          <tbody id="records-tbody">
+            </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="summary-section-title">
+      <h2 class="card-title" id="summary-section-title">コスト分析・集計</h2>
+      <div class="summary-grid">
+        <div>
+          <h3>📌 種別別合計</h3>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">種別</th>
+                  <th scope="col" class="text-right">合計金額 (円)</th>
+                </tr>
+              </thead>
+              <tbody id="summary-type-tbody">
+                </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div>
+          <h3>📅 期間別合計</h3>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">期間</th>
+                  <th scope="col" class="text-right">合計金額 (円)</th>
+                </tr>
+              </thead>
+              <tbody id="summary-period-tbody">
+                </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <div class="modal-overlay" id="manual-modal" role="dialog" aria-modal="true" aria-labelledby="manual-modal-title">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="manual-modal-title">❓ 使い方ガイド</h2>
+        <button class="close-btn" id="btn-close-manual" aria-label="閉じる">&times;</button>
+      </div>
+      <div>
+        <h3>1. このアプリで何ができるか</h3>
+        <p>
+          電気、ガス、水道、燃料の毎月のコストを素早く記録・可視化し、前月や前年同月との正確な比較を通じて「どのコストが増えているか」を把握するためのツールです。人の評価ではなく、純粋な削減活動の支援を目的としています。
+        </p>
+
+        <h3>2. 基本的な使い方</h3>
+        <ol style="padding-left: 20px; line-height: 1.8;">
+          <li><strong>対象月の選択:</strong> 「対象月」欄のカレンダーアイコンを押し、記録したい年月を選びます。</li>
+          <li><strong>項目の入力:</strong> 「種別」を選び、「使用量」と「単価」をキーボードから入力します。</li>
+          <li><strong>登録する:</strong> 「この内容で登録する」ボタンを押すと、下部の一覧に追加され、前月比・前年比が自動計算されます。</li>
+          <li><strong>確認・絞り込み:</strong> フィルターを利用して、特定の期間や特定のエネルギー種別だけの合計を調べることができます。</li>
+        </ol>
+
+        <h3>3. データについて</h3>
+        <p>
+          入力されたすべてのデータは、<strong>この端末のブラウザ内（localStorage）だけに完全保存されます。</strong> 外部のサーバーには一切送信されないため、安心してお使いいただけます。別のPCへデータを移行したい場合は、画面上部の「データ書き出し」機能をご利用ください。
+        </p>
+      </div>
+      <div style="margin-top: 20px; text-align: right;">
+        <button class="btn" id="btn-close-manual-bottom">理解しました (閉じる)</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initial State & Data Store
+    let records = [];
+
+    // Setup LocalStorage persistence
+    const STORAGE_KEY = 'energy_cost_records';
+
+    function loadRecords() {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try {
+          records = JSON.parse(stored);
+        } catch (e) {
+          records = [];
+        }
+      } else {
+        // Sample seed data to populate immediately for user to explore easily
+        const now = new Date();
+        const thisYear = now.getFullYear();
+        const thisMonthStr = String(now.getMonth() + 1).padStart(2, '0');
+        const prevMonthStr = String(now.getMonth() === 0 ? 12 : now.getMonth()).padStart(2, '0');
+        const prevYearStr = String(now.getMonth() + 1).padStart(2, '0');
+        const prevYear = thisYear - 1;
+
+        records = [
+          { id: '1', date: `${thisYear}-${thisMonthStr}`, type: '電気', usage: 220, unitPrice: 28.5 },
+          { id: '2', date: `${thisYear}-${thisMonthStr}`, type: 'ガス', usage: 35, unitPrice: 150.0 },
+          { id: '3', date: `${thisYear}-${prevMonthStr}`, type: '電気', usage: 210, unitPrice: 28.0 },
+          { id: '4', date: `${prevYear}-${prevYearStr}`, type: '電気', usage: 200, unitPrice: 27.0 },
+        ];
+        saveRecords();
+      }
+    }
+
+    function saveRecords() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    }
+
+    // Helper functions
+    function roundTo2(num) {
+      return Math.round((num + Number.EPSILON) * 100) / 100;
+    }
+
+    function parseYearMonth(dateStr) {
+      const parts = dateStr.split('-');
+      return {
+        year: parseInt(parts[0], 10),
+        month: parseInt(parts[1], 10)
+      };
+    }
+
+    // Find difference calculations (MoM, YoY)
+    function getComparisonValue(currentRecord, typeOfComparison) {
+      // typeOfComparison: 'mom' (month over month) or 'yoy' (year over year)
+      const currentYM = parseYearMonth(currentRecord.date);
+      let targetYear = currentYM.year;
+      let targetMonth = currentYM.month;
+
+      if (typeOfComparison === 'mom') {
+        if (targetMonth === 1) {
+          targetYear -= 1;
+          targetMonth = 12;
+        } else {
+          targetMonth -= 1;
+        }
+      } else if (typeOfComparison === 'yoy') {
+        targetYear -= 1;
+      }
+
+      const targetMonthStr = String(targetMonth).padStart(2, '0');
+      const targetDateKey = `${targetYear}-${targetMonthStr}`;
+
+      const matchedRecord = records.find(r => r.date === targetDateKey && r.type === currentRecord.type && r.id !== currentRecord.id);
+      if (!matchedRecord) return null;
+
+      const currentCost = currentRecord.usage * currentRecord.unitPrice;
+      const targetCost = matchedRecord.usage * matchedRecord.unitPrice;
+      return currentCost - targetCost;
+    }
+
+    // Filter validation checks
+    function isWithinPeriod(dateStr, periodFilter) {
+      if (periodFilter === '全期間') return true;
+
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth() + 1; // 1-12
+      
+      const recordYM = parseYearMonth(dateStr);
+
+      if (periodFilter === '今月') {
+        return recordYM.year === currentYear && recordYM.month === currentMonth;
+      }
+      if (periodFilter === '前月') {
+        let prevYear = currentYear;
+        let prevMonth = currentMonth - 1;
+        if (prevMonth === 0) {
+          prevYear -= 1;
+          prevMonth = 12;
+        }
+        return recordYM.year === prevYear && recordYM.month === prevMonth;
+      }
+      if (periodFilter === '今年') {
+        return recordYM.year === currentYear;
+      }
+      if (periodFilter === '前年') {
+        return recordYM.year === (currentYear - 1);
+      }
+      return true;
+    }
+
+    // Update Tables & Analysis UI
+    function render() {
+      const typeFilter = document.getElementById('filter-type').value;
+      const periodFilter = document.getElementById('filter-period').value;
+
+      // Filter and sort records (Latest date first)
+      const filteredRecords = records.filter(r => {
+        const matchesType = (typeFilter === '全て' || r.type === typeFilter);
+        const matchesPeriod = isWithinPeriod(r.date, periodFilter);
+        return matchesType && matchesPeriod;
+      });
+
+      // Sort chronological descending
+      filteredRecords.sort((a, b) => b.date.localeCompare(a.date));
+
+      // 1. Render Table
+      const tbody = document.getElementById('records-tbody');
+      tbody.innerHTML = '';
+
+      if (filteredRecords.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 20px;">条件に合うデータがありません。新規追加してください。</td></tr>`;
+      } else {
+        filteredRecords.forEach(r => {
+          const amount = roundTo2(r.usage * r.unitPrice);
+          const momDiff = getComparisonValue(r, 'mom');
+          const yoyDiff = getComparisonValue(r, 'yoy');
+
+          const displayDiff = (diff) => {
+            if (diff === null) return `<span class="val-neutral">-</span>`;
+            const formatted = roundTo2(Math.abs(diff)).toLocaleString();
+            if (diff > 0) {
+              return `<span class="val-increase">+${formatted}円</span>`;
+            } else if (diff < 0) {
+              return `<span class="val-decrease">-${formatted}円</span>`;
+            } else {
+              return `<span class="val-neutral">±0円</span>`;
+            }
+          };
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><strong>${r.date}</strong></td>
+            <td><span class="type-badge">${r.type}</span></td>
+            <td class="text-right">${Number(r.usage).toLocaleString()}</td>
+            <td class="text-right">${Number(r.unitPrice).toLocaleString()}円</td>
+            <td class="text-right"><strong>${amount.toLocaleString()}円</strong></td>
+            <td class="text-right">${displayDiff(momDiff)}</td>
+            <td class="text-right">${displayDiff(yoyDiff)}</td>
+            <td style="text-align: center;">
+              <button class="btn btn-danger" style="padding: 4px 8px; font-size: 0.9rem;" onclick="deleteRecord('${r.id}')" aria-label="${r.date} ${r.type}の記録を削除">削除</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      // 2. Render Type Summary (using entire records list to check increase/decrease based on filters)
+      const typeTotals = { '電気': 0, 'ガス': 0, '水道': 0, '燃料': 0 };
+      const typeTrends = { '電気': false, 'ガス': false, '水道': false, '燃料': false }; // track if they are increasing in the latest month
+
+      // Calculate simple direction of change (MoM) of the latest records available
+      Object.keys(typeTotals).forEach(type => {
+        const typeRecords = records.filter(r => r.type === type).sort((a,b) => b.date.localeCompare(a.date));
+        if (typeRecords.length >= 1) {
+          const latestVal = typeRecords[0];
+          const diff = getComparisonValue(latestVal, 'mom');
+          if (diff && diff > 0) {
+            typeTrends[type] = true; // Increasing
+          }
+        }
+      });
+
+      // Sum active filtered values
+      filteredRecords.forEach(r => {
+        if (typeTotals[r.type] !== undefined) {
+          typeTotals[r.type] += (r.usage * r.unitPrice);
+        }
+      });
+
+      const typeTbody = document.getElementById('summary-type-tbody');
+      typeTbody.innerHTML = '';
+      Object.entries(typeTotals).forEach(([type, total]) => {
+        const isIncreasing = typeTrends[type];
+        const classStr = isIncreasing ? 'bold-red' : '';
+        const trendIcon = isIncreasing ? ' 📈 増加傾向' : '';
+        typeTbody.innerHTML += `
+          <tr class="${classStr}">
+            <td><strong>${type}${trendIcon}</strong></td>
+            <td class="text-right"><strong>${roundTo2(total).toLocaleString()} 円</strong></td>
+          </tr>
+        `;
+      });
+
+      // 3. Render Period Summary (Current month, Last month, Current year, Last year total based on all records)
+      const periodSums = {
+        '今月': 0,
+        '前月': 0,
+        '今年': 0,
+        '前年': 0
+      };
+
+      records.forEach(r => {
+        const amt = r.usage * r.unitPrice;
+        if (isWithinPeriod(r.date, '今月')) periodSums['今月'] += amt;
+        if (isWithinPeriod(r.date, '前月')) periodSums['前月'] += amt;
+        if (isWithinPeriod(r.date, '今年')) periodSums['今年'] += amt;
+        if (isWithinPeriod(r.date, '前年')) periodSums['前年'] += amt;
+      });
+
+      const periodTbody = document.getElementById('summary-period-tbody');
+      periodTbody.innerHTML = `
+        <tr><td>今月合計</td><td class="text-right"><strong>${roundTo2(periodSums['今月']).toLocaleString()} 円</strong></td></tr>
+        <tr><td>前月合計</td><td class="text-right"><strong>${roundTo2(periodSums['前月']).toLocaleString()} 円</strong></td></tr>
+        <tr><td>今年累計</td><td class="text-right"><strong>${roundTo2(periodSums['今年']).toLocaleString()} 円</strong></td></tr>
+        <tr><td>前年累計</td><td class="text-right"><strong>${roundTo2(periodSums['前年']).toLocaleString()} 円</strong></td></tr>
+      `;
+    }
+
+    // Delete handling
+    window.deleteRecord = function(id) {
+      if (confirm('本当にこの記録を削除しますか？')) {
+        records = records.filter(r => r.id !== id);
+        saveRecords();
+        render();
+      }
+    };
+
+    // DOM Setup
+    document.addEventListener('DOMContentLoaded', () => {
+      loadRecords();
+
+      // Set target month to current month by default
+      const today = new Date();
+      const monthInput = document.getElementById('input-month');
+      monthInput.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+
+      // Register Submit Event
+      document.getElementById('record-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const dateVal = document.getElementById('input-month').value;
+        const typeVal = document.getElementById('input-type').value;
+        const usageVal = parseFloat(document.getElementById('input-usage').value);
+        const priceVal = parseFloat(document.getElementById('input-price').value);
+        const errorBox = document.getElementById('validation-error');
+
+        if (!dateVal || isNaN(usageVal) || isNaN(priceVal) || usageVal < 0 || priceVal < 0) {
+          errorBox.style.display = 'block';
+          errorBox.focus();
+          return;
+        }
+
+        errorBox.style.display = 'none';
+
+        // Add new record
+        const newRecord = {
+          id: Date.now().toString(),
+          date: dateVal,
+          type: typeVal,
+          usage: usageVal,
+          unitPrice: priceVal
+        };
+
+        records.push(newRecord);
+        saveRecords();
+        render();
+
+        // Clear input and refocus usage field
+        document.getElementById('input-usage').value = '';
+        document.getElementById('input-price').value = '';
+        document.getElementById('input-usage').focus();
+      });
+
+      // Filter Change Events
+      document.getElementById('filter-type').addEventListener('change', render);
+      document.getElementById('filter-period').addEventListener('change', render);
+
+      // Manual Modal Controls
+      const manualModal = document.getElementById('manual-modal');
+      const openManualBtn = document.getElementById('btn-open-manual');
+      const closeManualBtn = document.getElementById('btn-close-manual');
+      const closeManualBottomBtn = document.getElementById('btn-close-manual-bottom');
+
+      function openModal() {
+        manualModal.style.display = 'flex';
+        closeManualBtn.focus();
+      }
+
+      function closeModal() {
+        manualModal.style.display = 'none';
+        openManualBtn.focus();
+      }
+
+      openManualBtn.addEventListener('click', openModal);
+      closeManualBtn.addEventListener('click', closeModal);
+      closeManualBottomBtn.addEventListener('click', closeModal);
+
+      // Close modal on escape key
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && manualModal.style.display === 'flex') {
+          closeModal();
+        }
+      });
+
+      // Export / Backup Actions
+      document.getElementById('btn-export').addEventListener('click', () => {
+        const dataStr = JSON.stringify(records, null, 2);
+        navigator.clipboard.writeText(dataStr).then(() => {
+          alert('登録データをクリップボードにコピーしました！そのままバックアップファイルやテキストに貼り付け可能です。');
+        }).catch(err => {
+          alert('データのコピーに失敗しました。以下のデータを手動でコピーしてください:\\n\\n' + dataStr);
+        });
+      });
+
+      document.getElementById('btn-download').addEventListener('click', () => {
+        if (records.length === 0) {
+          alert('出力するデータがありません。');
+          return;
+        }
+        let csvContent = 'data:text/csv;charset=utf-8,対象月,種別,使用量,単価,金額\\n';
+        records.forEach(r => {
+          const amt = roundTo2(r.usage * r.unitPrice);
+          csvContent += `${r.date},${r.type},${r.usage},${r.unitPrice},${amt}\\n`;
+        });
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement('a');
+        link.setAttribute('href', encodedUri);
+        link.setAttribute('download', `energy_cost_records_${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      });
+
+      // Clear Data action
+      document.getElementById('btn-clear-data').addEventListener('click', () => {
+        if (confirm('保存されているすべての記録が消去されます。本当によろしいですか？')) {
+          records = [];
+          saveRecords();
+          render();
+        }
+      });
+
+      // Initial UI Render
+      render();
+    });
+  </script>
+</body>
+</html>

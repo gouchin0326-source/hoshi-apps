@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>採算を考えるための損益分岐点計算ツール</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📈</text></svg>'>
+  <style>
+    /* Reset & Base Styles (No external fonts, accessible colors) */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans JP", sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      background-color: #f3f4f6; /* High contrast dark gray on light gray background */
+      color: #1f2937;
+    }
+    
+    /* Accessibility & Focus Indicators */
+    :focus-visible {
+      outline: 3px solid #2563eb;
+      outline-offset: 2px;
+    }
+
+    /* Container layout */
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px 15px;
+    }
+
+    /* Header Styling */
+    header {
+      background-color: #1e3a8a; /* Deep blue background, perfect contrast with white */
+      color: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .header-icon {
+      font-size: 2.5rem;
+      line-height: 1;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+    /* Buttons row (How to use & History list) */
+    .top-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 20px;
+      font-size: 1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background-color 0.2s, transform 0.1s;
+    }
+    .btn:active {
+      transform: scale(0.98);
+    }
+    .btn-primary {
+      background-color: #059669; /* Rich green */
+      color: #ffffff;
+    }
+    .btn-primary:hover {
+      background-color: #047857;
+    }
+    .btn-secondary {
+      background-color: #4b5563; /* Accessible gray */
+      color: #ffffff;
+    }
+    .btn-secondary:hover {
+      background-color: #374151;
+    }
+    .btn-accent {
+      background-color: #d97706; /* Dark yellow/amber */
+      color: #ffffff;
+    }
+    .btn-accent:hover {
+      background-color: #b45309;
+    }
+    .btn-danger {
+      background-color: #dc2626; /* Accessible red */
+      color: #ffffff;
+    }
+    .btn-danger:hover {
+      background-color: #b91c1c;
+    }
+
+    /* Message / Info Banners */
+    .banner {
+      background-color: #eff6ff;
+      border-left: 5px solid #3b82f6;
+      color: #1e3a8a;
+      padding: 15px;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 20px;
+      font-size: 1rem;
+    }
+    .banner p {
+      margin: 0;
+    }
+    .banner-close {
+      float: right;
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #1e3a8a;
+    }
+
+    /* Form and Inputs Panel */
+    .card {
+      background-color: #ffffff;
+      padding: 24px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+    .card-title {
+      font-size: 1.25rem;
+      margin-top: 0;
+      margin-bottom: 15px;
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 10px;
+      color: #111827;
+    }
+
+    /* Input Field Responsiveness */
+    .form-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    @media (min-width: 640px) {
+      .form-grid {
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+      .form-group {
+        flex: 1 1 calc(50% - 15px);
+      }
+    }
+    @media (min-width: 1024px) {
+      .form-group {
+        flex: 1 1 calc(25% - 15px);
+      }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .form-group label {
+      font-weight: bold;
+      color: #374151;
+    }
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .input-control {
+      width: 100%;
+      padding: 12px;
+      font-size: 1rem;
+      border: 2px solid #9ca3af;
+      border-radius: 6px;
+      background-color: #ffffff;
+      color: #111827;
+    }
+    .input-control:focus {
+      border-color: #2563eb;
+    }
+    .input-suffix {
+      position: absolute;
+      right: 12px;
+      color: #4b5563;
+      pointer-events: none;
+      font-weight: bold;
+    }
+    /* Padding for inputs with unit suffix */
+    .input-with-suffix {
+      padding-right: 40px;
+    }
+
+    /* Error Display */
+    .error-msg {
+      background-color: #fef2f2;
+      border: 1px solid #f87171;
+      color: #991b1b;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      display: none;
+      font-weight: bold;
+    }
+
+    /* Big Results Box */
+    .results-box {
+      background-color: #f0fdf4; /* Light pleasant green */
+      border: 2px solid #86efac;
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 20px;
+      text-align: center;
+      display: none;
+    }
+    .results-title {
+      font-size: 1.1rem;
+      color: #166534;
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+    .results-main {
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: #14532d;
+      word-wrap: break-word;
+      line-height: 1.4;
+    }
+    @media (min-width: 640px) {
+      .results-main {
+        font-size: 1.8rem;
+      }
+    }
+    .results-secondary {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px dashed #86efac;
+      font-size: 1.2rem;
+      color: #1e3a8a;
+      font-weight: bold;
+    }
+
+    /* Modal Overlay */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease-in-out;
+    }
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal-content {
+      background-color: #ffffff;
+      border-radius: 8px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 24px;
+      position: relative;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 12px;
+      margin-bottom: 15px;
+    }
+    .modal-header h2 {
+      margin: 0;
+      font-size: 1.3rem;
+      color: #1f2937;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .modal-body {
+      font-size: 1rem;
+      color: #374151;
+      line-height: 1.7;
+    }
+    .modal-body ol {
+      padding-left: 20px;
+    }
+    .modal-body li {
+      margin-bottom: 8px;
+    }
+
+    /* Export Area (CSV Display) */
+    .export-section {
+      display: none;
+      background-color: #fafafa;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+    .export-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .export-header h3 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+    .csv-textarea {
+      width: 100%;
+      height: 150px;
+      font-family: monospace;
+      font-size: 0.95rem;
+      padding: 10px;
+      border: 2px solid #9ca3af;
+      border-radius: 6px;
+      background-color: #f9fafb;
+      resize: vertical;
+      color: #111827;
+    }
+
+    /* History Table Quick View */
+    .history-preview {
+      margin-top: 20px;
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      text-align: left;
+    }
+    th, td {
+      border: 1px solid #d1d5db;
+      padding: 10px;
+      white-space: nowrap;
+    }
+    th {
+      background-color: #f3f4f6;
+      color: #374151;
+      font-weight: bold;
+    }
+    tr:nth-child(even) td {
+      background-color: #f9fafb;
+    }
+
+    /* Notification message */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #10b981;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-weight: bold;
+      display: none;
+      z-index: 1001;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <header role="banner">
+      <span class="header-icon" aria-hidden="true">📈</span>
+      <h1>採算を考えるための損益分岐点計算ツール</h1>
+    </header>
+
+    <div class="top-actions">
+      <button type="button" class="btn btn-accent" id="btn-how-to-use" aria-haspopup="dialog" aria-controls="modal-how-to">❓ 使い方</button>
+      <button type="button" class="btn btn-secondary" id="btn-show-history">📋 履歴一覧 / エクスポート</button>
+    </div>
+
+    <div class="banner" id="intro-banner" role="status">
+      <button class="banner-close" id="btn-close-banner" aria-label="この説明を閉じる">×</button>
+      <p>💡 <strong>大切なご案内:</strong> このツールは人の評価や監視ではなく、あなた自身が採算をリラックスして考えるための道具です。</p>
+    </div>
+
+    <main class="card">
+      <h2 class="card-title">条件を入力してください</h2>
+      
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="input-fixed-cost">固定費 (月額)</label>
+          <div class="input-wrapper">
+            <input type="number" id="input-fixed-cost" class="input-control input-with-suffix" placeholder="例: 200000" min="0" required>
+            <span class="input-suffix">円</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="input-price">売価 (1個あたり)</label>
+          <div class="input-wrapper">
+            <input type="number" id="input-price" class="input-control input-with-suffix" placeholder="例: 1000" min="0" required>
+            <span class="input-suffix">円</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="input-variable-cost">変動費 (1個あたり)</label>
+          <div class="input-wrapper">
+            <input type="number" id="input-variable-cost" class="input-control input-with-suffix" placeholder="例: 400" min="0" required>
+            <span class="input-suffix">円</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="input-target-profit">目標利益額 (任意)</label>
+          <div class="input-wrapper">
+            <input type="number" id="input-target-profit" class="input-control input-with-suffix" placeholder="例: 100000" min="0">
+            <span class="input-suffix">円</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="error-msg" id="error-box" role="alert" aria-live="assertive"></div>
+
+      <button type="button" class="btn btn-primary" id="btn-calculate" style="width: 100%; padding: 15px; font-size: 1.15rem;">計算開始</button>
+    </main>
+
+    <section class="results-box" id="results-container" aria-live="polite">
+      <h2 class="results-title">📊 計算結果</h2>
+      <div class="results-main" id="results-text"></div>
+      <div class="results-secondary" id="results-target-text" style="display: none;"></div>
+    </section>
+
+    <section class="export-section" id="export-section">
+      <div class="export-header">
+        <h3>📊 履歴データ (CSV)</h3>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-copy-csv">📋 コピー</button>
+          <button type="button" class="btn btn-primary btn-sm" id="btn-download-csv">📥 ダウンロード</button>
+          <button type="button" class="btn btn-danger btn-sm" id="btn-clear-history">🗑️ 履歴消去</button>
+        </div>
+      </div>
+      <textarea class="csv-textarea" id="csv-content" readonly aria-label="CSV形式の履歴データ"></textarea>
+
+      <div class="history-preview">
+        <h4>直近の履歴</h4>
+        <div id="history-table-container"></div>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="modal-overlay" id="modal-how-to" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-title">❓ 使い方マニュアル</h2>
+        <button type="button" class="btn btn-secondary" id="btn-close-modal" aria-label="マニュアルを閉じる">閉じる</button>
+      </div>
+      <div class="modal-body">
+        <h3>(1) このアプリでできること</h3>
+        <p>あなたのビジネスやサービスの固定費、売価、変動費を入力するだけで、赤字を出さないために「何個売る必要があるか（損益分岐点）」を瞬時に計算します。目標とする利益がある場合の必要販売数も算出できます。</p>
+
+        <h3>(2) 基本の使い方（4ステップ）</h3>
+        <ol>
+          <li><strong>固定費</strong>に、毎月必ず発生する費用（家賃、基本料、システム利用料など）を円単位で入力します。</li>
+          <li><strong>売価</strong>に、商品やサービス1個あたりに設定する販売価格を入力します。</li>
+          <li><strong>変動費</strong>に、1個売れるごとに追加で発生する費用（材料費、梱包費、仕入れ値など）を入力します。</li>
+          <li><strong>「計算開始」</strong>ボタンを押すと、画面下部に計算結果が大きく表示され、履歴に保存されます。</li>
+        </ol>
+
+        <h3>(3) データの取り扱いについて</h3>
+        <p><strong>完全ローカル設計です。</strong> 入力した情報や計算結果は、すべてお使いのスマートフォンやパソコンのブラウザ内（localStorage）だけに暗号化されることなく安全に保存されます。外部のサーバー等に送信されることは一切ありませんので、安心してご利用ください。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast-message" role="status"></div>
+
+  <script>
+    // Constants & State
+    const STORAGE_KEY = 'breakeven_history';
+    
+    // Elements
+    const inputFixedCost = document.getElementById('input-fixed-cost');
+    const inputPrice = document.getElementById('input-price');
+    const inputVariableCost = document.getElementById('input-variable-cost');
+    const inputTargetProfit = document.getElementById('input-target-profit');
+    const btnCalculate = document.getElementById('btn-calculate');
+    
+    const errorBox = document.getElementById('error-box');
+    const resultsContainer = document.getElementById('results-container');
+    const resultsText = document.getElementById('results-text');
+    const resultsTargetText = document.getElementById('results-target-text');
+    
+    const introBanner = document.getElementById('intro-banner');
+    const btnCloseBanner = document.getElementById('btn-close-banner');
+    
+    const btnHowToUse = document.getElementById('btn-how-to-use');
+    const btnCloseModal = document.getElementById('btn-close-modal');
+    const modalHowTo = document.getElementById('modal-how-to');
+    
+    const btnShowHistory = document.getElementById('btn-show-history');
+    const exportSection = document.getElementById('export-section');
+    const csvContent = document.getElementById('csv-content');
+    const btnCopyCsv = document.getElementById('btn-copy-csv');
+    const btnDownloadCsv = document.getElementById('btn-download-csv');
+    const btnClearHistory = document.getElementById('btn-clear-history');
+    const historyTableContainer = document.getElementById('history-table-container');
+    const toastMessage = document.getElementById('toast-message');
+
+    // Startup check for banner and initial history load
+    window.addEventListener('DOMContentLoaded', () => {
+      // If banner state was saved as hidden before
+      if (localStorage.getItem('hide_intro_banner') === 'true') {
+        introBanner.style.display = 'none';
+      }
+      renderHistory();
+    });
+
+    // Close intro banner
+    btnCloseBanner.addEventListener('click', () => {
+      introBanner.style.display = 'none';
+      localStorage.setItem('hide_intro_banner', 'true');
+    });
+
+    // Modal behavior
+    function openModal() {
+      modalHowTo.classList.add('active');
+      btnCloseModal.focus();
+    }
+    function closeModal() {
+      modalHowTo.classList.remove('active');
+      btnHowToUse.focus();
+    }
+    btnHowToUse.addEventListener('click', openModal);
+    btnCloseModal.addEventListener('click', closeModal);
+    modalHowTo.addEventListener('click', (e) => {
+      if (e.target === modalHowTo) closeModal();
+    });
+    // ESC key close
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modalHowTo.classList.contains('active')) {
+        closeModal();
+      }
+    });
+
+    // Toast show helper
+    function showToast(message) {
+      toastMessage.textContent = message;
+      toastMessage.style.display = 'block';
+      setTimeout(() => {
+        toastMessage.style.display = 'none';
+      }, 3000);
+    }
+
+    // Number formatter
+    function formatYen(amount) {
+      return new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', currencyDisplay: 'symbol' }).format(amount).replace('円', '') + '円';
+    }
+
+    // Calculation Handler
+    btnCalculate.addEventListener('click', () => {
+      // Clear previous error and results
+      errorBox.style.display = 'none';
+      resultsContainer.style.display = 'none';
+      resultsTargetText.style.display = 'none';
+
+      // Parse Inputs
+      const fixedCost = parseFloat(inputFixedCost.value);
+      const price = parseFloat(inputPrice.value);
+      const variableCost = parseFloat(inputVariableCost.value);
+      const targetProfitVal = inputTargetProfit.value.trim();
+      const targetProfit = targetProfitVal !== '' ? parseFloat(targetProfitVal) : null;
+
+      // Validation
+      if (isNaN(fixedCost) || fixedCost < 0) {
+        showError('固定費(月額)を0以上の数字で正しく入力してください。');
+        inputFixedCost.focus();
+        return;
+      }
+      if (isNaN(price) || price <= 0) {
+        showError('売価(1個あたり)を0より大きい数字で正しく入力してください。');
+        inputPrice.focus();
+        return;
+      }
+      if (isNaN(variableCost) || variableCost < 0) {
+        showError('変動費(1個あたり)を0以上の数字で正しく入力してください。');
+        inputVariableCost.focus();
+        return;
+      }
+      if (price <= variableCost) {
+        showError('売価(1個あたり)は、変動費(1個あたり)よりも高い金額を設定してください。売り上げても赤字になります。');
+        inputPrice.focus();
+        return;
+      }
+      if (targetProfit !== null && (isNaN(targetProfit) || targetProfit < 0)) {
+        showError('目標利益額を入力する場合は、0以上の数字を入力してください。');
+        inputTargetProfit.focus();
+        return;
+      }
+
+      // Math
+      // Break-even quantity = Fixed cost / (Price - Variable cost)
+      const contributionMargin = price - variableCost;
+      const breakEvenQty = Math.ceil(fixedCost / contributionMargin);
+      const breakEvenRev = breakEvenQty * price;
+
+      let targetQty = null;
+      if (targetProfit !== null) {
+        targetQty = Math.ceil((fixedCost + targetProfit) / contributionMargin);
+      }
+
+      // Display results
+      resultsText.innerHTML = `損益分岐点数量: <span style="color: #047857; font-size: 1.8rem;">${breakEvenQty.toLocaleString()} 個</span><br>必要売上金額: <span style="color: #047857; font-size: 1.8rem;">${formatYen(breakEvenRev)}</span>`;
+      
+      if (targetQty !== null) {
+        const targetRev = targetQty * price;
+        resultsTargetText.innerHTML = `🎯 目標利益(${formatYen(targetProfit)})達成に必要な数量: <span style="color: #1e3a8a; font-weight: 900;">${targetQty.toLocaleString()} 個</span> (売上額: ${formatYen(targetRev)})`;
+        resultsTargetText.style.display = 'block';
+      }
+
+      resultsContainer.style.display = 'block';
+      resultsContainer.scrollIntoView({ behavior: 'smooth' });
+
+      // Save to localStorage
+      const historyItem = {
+        timestamp: new Date().toLocaleString('ja-JP'),
+        fixedCost,
+        price,
+        variableCost,
+        breakEvenQty,
+        breakEvenRev,
+        targetProfit: targetProfit !== null ? targetProfit : ''
+      };
+
+      saveToHistory(historyItem);
+    });
+
+    function showError(msg) {
+      errorBox.textContent = msg;
+      errorBox.style.display = 'block';
+      errorBox.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // LocalStorage Management
+    function getHistory() {
+      const data = localStorage.getItem(STORAGE_KEY);
+      return data ? JSON.parse(data) : [];
+    }
+
+    function saveToHistory(item) {
+      const history = getHistory();
+      history.unshift(item); // Add to the start
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const history = getHistory();
+      
+      // Update CSV Box
+      const headers = ['日時', '固定費(円)', '売価(円)', '変動費(円)', '損益分岐点数量(個)', '必要売上金額(円)', '目標利益額(円)'];
+      let csvLines = [headers.join(',')];
+      
+      history.forEach(item => {
+        csvLines.push([
+          `"${item.timestamp}"`,
+          item.fixedCost,
+          item.price,
+          item.variableCost,
+          item.breakEvenQty,
+          item.breakEvenRev,
+          item.targetProfit !== '' ? item.targetProfit : ''
+        ].join(','));
+      });
+      csvContent.value = csvLines.join('\\n');
+
+      // Update HTML Table
+      if (history.length === 0) {
+        historyTableContainer.innerHTML = '<p style="color: #6b7280; margin-top: 10px;">保存された計算履歴はありません。</p>';
+        return;
+      }
+
+      let tableHtml = `
+        <table>
+          <thead>
+            <tr>
+              <th>日時</th>
+              <th>固定費</th>
+              <th>売価</th>
+              <th>変動費</th>
+              <th>分岐点数量</th>
+              <th>分岐点売上</th>
+              <th>目標利益</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      // Display up to 5 items for preview
+      history.slice(0, 5).forEach(item => {
+        tableHtml += `
+          <tr>
+            <td>${item.timestamp}</td>
+            <td>${formatYen(item.fixedCost)}</td>
+            <td>${formatYen(item.price)}</td>
+            <td>${formatYen(item.variableCost)}</td>
+            <td><strong>${item.breakEvenQty.toLocaleString()} 個</strong></td>
+            <td><strong>${formatYen(item.breakEvenRev)}</strong></td>
+            <td>${item.targetProfit !== '' ? formatYen(item.targetProfit) : '-'}</td>
+          </tr>
+        `;
+      });
+
+      tableHtml += `
+          </tbody>
+        </table>
+      `;
+      if (history.length > 5) {
+        tableHtml += `<p style="font-size: 0.85rem; color: #6b7280; text-align: right; margin-top: 5px;">他 ${history.length - 5} 件の履歴がCSVとしてエクスポート可能です。</p>`;
+      }
+      historyTableContainer.innerHTML = tableHtml;
+    }
+
+    // Toggle History/Export View
+    btnShowHistory.addEventListener('click', () => {
+      if (exportSection.style.display === 'block') {
+        exportSection.style.display = 'none';
+        btnShowHistory.textContent = '📋 履歴一覧 / エクスポート';
+      } else {
+        exportSection.style.display = 'block';
+        btnShowHistory.textContent = '🙈 履歴を非表示にする';
+        exportSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+
+    // Copy CSV
+    btnCopyCsv.addEventListener('click', () => {
+      csvContent.select();
+      csvContent.setSelectionRange(0, 99999); // For mobile devices
+      navigator.clipboard.writeText(csvContent.value)
+        .then(() => {
+          showToast('CSVデータをクリップボードにコピーしました！');
+        })
+        .catch(() => {
+          showToast('コピーに失敗しました。手動で選択してコピーしてください。');
+        });
+    });
+
+    // Download CSV
+    btnDownloadCsv.addEventListener('click', () => {
+      const csvStr = csvContent.value;
+      // Use BOM for Excel compatibility with Japanese characters
+      const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+      const blob = new Blob([bom, csvStr], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      
+      const dateStr = new Date().toISOString().slice(0,10).replace(/-/g, '');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `損益分岐点計算履歴_${dateStr}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('CSVファイルのダウンロードを開始しました。');
+    });
+
+    // Clear History
+    btnClearHistory.addEventListener('click', () => {
+      if (confirm('すべての履歴データを消去してもよろしいですか？（ブラウザ内から完全に削除されます）')) {
+        localStorage.removeItem(STORAGE_KEY);
+        renderHistory();
+        showToast('履歴をすべて消去しました。');
+      }
+    });
+  </script>
+</body>
+</html>

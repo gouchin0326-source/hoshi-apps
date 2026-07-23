@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>会議アクション管理ツール</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📝</text></svg>'>
+  <style>
+    /* -------------------------------------------
+       基本デザイン & リセット (アクセシビリティ考慮)
+       ------------------------------------------- */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans JP", sans-serif;
+      background-color: #f3f4f6;
+      color: #111827;
+      line-height: 1.6;
+      font-size: 16px; /* スマホで16px以上 */
+      padding: 16px;
+    }
+
+    /* 視覚的コントラスト比確保のための共通色 */
+    :root {
+      --primary-color: #1d4ed8; /* 濃い青 */
+      --primary-hover: #1e40af;
+      --danger-color: #b91c1c; /* 濃い赤 (警告用) */
+      --danger-bg: #fef2f2;
+      --success-color: #047857; /* 濃い緑 */
+      --gray-dark: #374151;
+      --gray-light: #e5e7eb;
+      --focus-ring: 3px solid #3b82f6;
+    }
+
+    /* フォーカス時のアウトライン強調 */
+    input:focus, select:focus, textarea:focus, button:focus {
+      outline: var(--focus-ring);
+      outline-offset: 2px;
+    }
+
+    header {
+      background-color: #ffffff;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .title-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .app-icon {
+      font-size: 2.5rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      color: #111827;
+      font-weight: 800;
+    }
+
+    .button-group-header {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* ボタンの共通スタイル */
+    .btn {
+      font-size: 16px;
+      padding: 10px 16px;
+      border: 2px solid transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 44px; /* タップターゲット確保 */
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: #ffffff;
+    }
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background-color: #4b5563;
+      color: #ffffff;
+    }
+    .btn-secondary:hover {
+      background-color: #374151;
+    }
+
+    .btn-danger {
+      background-color: var(--danger-color);
+      color: #ffffff;
+    }
+    .btn-danger:hover {
+      background-color: #991b1b;
+    }
+
+    .btn-help {
+      background-color: #0d9488;
+      color: #ffffff;
+    }
+    .btn-help:hover {
+      background-color: #0f766e;
+    }
+
+    /* -------------------------------------------
+       メインフォーム（会議設定・フィルター）
+       ------------------------------------------- */
+    .config-panel {
+      background-color: #ffffff;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    @media (min-width: 768px) {
+      .form-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-weight: bold;
+      color: var(--gray-dark);
+      font-size: 16px;
+    }
+
+    input[type="text"], input[type="date"], select, textarea {
+      font-size: 16px;
+      padding: 10px;
+      border: 2px solid #9ca3af;
+      border-radius: 6px;
+      width: 100%;
+      color: #111827;
+      background-color: #ffffff;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    /* 警告表示 */
+    .alert-banner {
+      background-color: var(--danger-bg);
+      border: 2px solid var(--danger-color);
+      color: var(--danger-color);
+      padding: 14px;
+      border-radius: 8px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* フィルターセクション */
+    .filter-panel {
+      background-color: #f9fafb;
+      border: 1px solid var(--gray-light);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .filter-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    @media (min-width: 600px) {
+      .filter-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    /* アクション一覧・フォーム表示エリア */
+    .section-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    /* カード・フォームスタイル */
+    .cards-container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card {
+      background-color: #ffffff;
+      border-radius: 8px;
+      border-left: 6px solid #9ca3af;
+      padding: 16px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      position: relative;
+    }
+
+    /* 状態に応じた左ボーダー色 */
+    .card[data-status="進行中"] {
+      border-left-color: var(--primary-color);
+    }
+    .card[data-status="完了"] {
+      border-left-color: var(--success-color);
+    }
+    .card.expired-uncompleted {
+      border-left-color: var(--danger-color);
+      background-color: var(--danger-bg);
+      border-top: 2px solid var(--danger-color);
+      border-right: 2px solid var(--danger-color);
+      border-bottom: 2px solid var(--danger-color);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .card-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* チェックボックスサイズ拡大 */
+    .checkbox-large {
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      accent-color: var(--success-color);
+    }
+
+    .card-body-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    @media (min-width: 768px) {
+      .card-body-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .expired-badge {
+      background-color: var(--danger-color);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    /* 新規アクション追加用の入力フォーム（モーダルやアコーディオンではなくインライン追加） */
+    .add-form-container {
+      background-color: #eff6ff;
+      border: 2px dashed var(--primary-color);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .add-form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    /* -------------------------------------------
+       簡易マニュアル（モーダル）
+       ------------------------------------------- */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+
+    .modal-content {
+      background-color: #ffffff;
+      border-radius: 12px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 24px;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--gray-light);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+
+    .modal-title {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #111827;
+    }
+
+    .modal-body {
+      color: #374151;
+      font-size: 16px;
+    }
+
+    .modal-body h3 {
+      margin-top: 16px;
+      margin-bottom: 8px;
+      color: #111827;
+      font-size: 1.1rem;
+      border-left: 4px solid var(--primary-color);
+      padding-left: 8px;
+    }
+
+    .modal-body ol, .modal-body ul {
+      margin-left: 20px;
+      margin-bottom: 16px;
+    }
+
+    .modal-body li {
+      margin-bottom: 8px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* 完了した会議・アクション用のスタイル */
+    .completed-text {
+      text-decoration: line-through;
+      color: #6b7280;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-top">
+      <div class="title-area">
+        <span class="app-icon" aria-hidden="true">📝</span>
+        <h1>会議アクション管理ツール</h1>
+      </div>
+      <div class="button-group-header">
+        <button type="button" class="btn btn-help" id="btn-manual-open">❓使い方</button>
+        <button type="button" class="btn btn-secondary" id="btn-export">📤 CSVダウンロード</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div id="danger-banner" class="alert-banner hidden" role="alert">
+      ⚠️ 期限を過ぎた未完了のアクションが <span id="expired-count">0</span> 件あります。確認してください。
+    </div>
+
+    <section class="config-panel" aria-label="会議設定">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="input-meeting-name">会議名 (この名前で自動保存されます)</label>
+          <input type="text" id="input-meeting-name" placeholder="例: 週次定例ミーティング" value="定例会議">
+        </div>
+        <div class="form-group">
+          <label for="input-meeting-date">開催日</label>
+          <input type="date" id="input-meeting-date">
+        </div>
+      </div>
+    </section>
+
+    <section class="filter-panel" aria-label="フィルター">
+      <h2 style="font-size: 1.1rem; margin-bottom: 12px;">🔍 表示フィルター</h2>
+      <div class="filter-grid">
+        <div class="form-group">
+          <label for="filter-assignee">担当者で絞り込み</label>
+          <select id="filter-assignee">
+            <option value="">(すべて表示)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="filter-status">状態で絞り込み</label>
+          <select id="filter-status">
+            <option value="">(すべて表示)</option>
+            <option value="未着手">未着手</option>
+            <option value="進行中">進行中</option>
+            <option value="完了">完了</option>
+            <option value="未完了">未完了 (未着手 + 進行中)</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <div class="section-title-bar">
+      <h2 style="font-size: 1.25rem;">📝 アクション項目一覧</h2>
+      <button type="button" class="btn btn-primary" id="btn-add-form-show">＋ アクション追加</button>
+    </div>
+
+    <div id="add-form-area" class="add-form-container hidden">
+      <h3 style="margin-bottom: 12px; font-size: 1.1rem;">新規アクションの作成</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="action-assignee">担当者</label>
+          <input type="text" id="action-assignee" placeholder="例: 山田 太郎">
+        </div>
+        <div class="form-group">
+          <label for="action-due">期限</label>
+          <input type="date" id="action-due">
+        </div>
+        <div class="form-group" style="grid-column: span 1;">
+          <label for="action-status">状態</label>
+          <select id="action-status">
+            <option value="未着手">未着手</option>
+            <option value="進行中" selected>進行中</option>
+            <option value="完了">完了</option>
+          </select>
+        </div>
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label for="action-content">内容</label>
+          <textarea id="action-content" placeholder="具体的なタスク内容を記述してください"></textarea>
+        </div>
+      </div>
+      <div class="add-form-actions">
+        <button type="button" class="btn btn-secondary" id="btn-add-form-cancel">キャンセル</button>
+        <button type="button" class="btn btn-primary" id="btn-add-action-submit">追加する</button>
+      </div>
+    </div>
+
+    <div class="cards-container" id="cards-container" role="region" aria-live="polite">
+      </div>
+  </main>
+
+  <div id="manual-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-title" class="modal-title">❓ 使い方マニュアル</h2>
+        <button type="button" class="btn btn-secondary" id="btn-manual-close" style="padding: 4px 10px; min-height: 32px;">閉じる</button>
+      </div>
+      <div class="modal-body">
+        <h3>1. このアプリでできること</h3>
+        <p>会議で決定した宿題・タスク（アクション項目）をその場で追加し、担当者・期日をリアルタイムに管理できます。自動的に「期限の近い順」に整理され、未完了の期限超過タスクはひと目でわかるように赤く警告されます。</p>
+
+        <h3>2. 基本的な操作手順</h3>
+        <ol>
+          <li><strong>会議名の設定:</strong> 画面上部の「会議名」と「開催日」を入力します。自動的にブラウザ内に保存が開始されます。</li>
+          <li><strong>アクションを追加する:</strong> 「＋ アクション追加」ボタンを押し、担当者、内容、期限、初期状態を設定して「追加する」を押します。</li>
+          <li><strong>進捗の管理:</strong> カード内のチェックボックスを入れると一発で「完了」状態に更新されます。フィルターを使って特定の担当者のみのタスクを絞り込むこともできます。</li>
+          <li><strong>期日超過の検知:</strong> 期限が過ぎた未完了タスクがあると、一覧上部およびタスクカードが自動で赤く強調されます。</li>
+        </ol>
+
+        <h3>3. データ保存について</h3>
+        <p>入力した会議情報やアクションデータは、外部サーバーには送信されず、<strong>この端末のブラウザ（localStorage）にのみ安全に保存</strong>されます。ブラウザを再起動しても内容は保持されます。</p>
+
+        <h3>4. エクスポート方法</h3>
+        <p>上部の「📤 CSVダウンロード」ボタンを押すと、現在表示されている会議のアクション一覧をすべて集計し、Excel等で開ける「CSVファイル」としてダウンロードできます。</p>
+
+        <div style="margin-top: 24px; text-align: center;">
+          <button type="button" class="btn btn-primary" id="btn-manual-ok">わかりました（閉じる）</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- アプリケーションの状態管理 ---
+    let state = {
+      meetingName: "定例会議",
+      meetingDate: "",
+      actions: []
+    };
+
+    // 今日（JST基準）の日付文字列を取得 (YYYY-MM-DD)
+    function getTodayString() {
+      const offset = new Date().getTimezoneOffset();
+      const localDate = new Date(Date.now() - (offset * 60000));
+      return localDate.toISOString().split('T')[0];
+    }
+
+    // --- DOM要素取得 ---
+    const inputMeetingName = document.getElementById('input-meeting-name');
+    const inputMeetingDate = document.getElementById('input-meeting-date');
+    const cardsContainer = document.getElementById('cards-container');
+    const dangerBanner = document.getElementById('danger-banner');
+    const expiredCountSpan = document.getElementById('expired-count');
+    const filterAssignee = document.getElementById('filter-assignee');
+    const filterStatus = document.getElementById('filter-status');
+
+    // 追加フォーム要素
+    const btnAddFormShow = document.getElementById('btn-add-form-show');
+    const btnAddFormCancel = document.getElementById('btn-add-form-cancel');
+    const btnAddActionSubmit = document.getElementById('btn-add-action-submit');
+    const addFormArea = document.getElementById('add-form-area');
+    const actionAssignee = document.getElementById('action-assignee');
+    const actionDue = document.getElementById('action-due');
+    const actionStatus = document.getElementById('action-status');
+    const actionContent = document.getElementById('action-content');
+
+    // モーダル要素
+    const modal = document.getElementById('manual-modal');
+    const btnManualOpen = document.getElementById('btn-manual-open');
+    const btnManualClose = document.getElementById('btn-manual-close');
+    const btnManualOk = document.getElementById('btn-manual-ok');
+
+    // エクスポート
+    const btnExport = document.getElementById('btn-export');
+
+    // --- ローカルストレージ連動 ---
+    // 会議名変更時、古いキーのデータを保持しつつ新キーに移行または新規作成
+    function loadDataForMeeting(name) {
+      const stored = localStorage.getItem(`meeting_action_${name}`);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          state.meetingName = name;
+          state.meetingDate = parsed.meetingDate || "";
+          state.actions = parsed.actions || [];
+        } catch (e) {
+          console.error("データの読み込みに失敗しました", e);
+        }
+      } else {
+        // 新規会議キー
+        state.meetingName = name;
+        state.meetingDate = getTodayString();
+        state.actions = [];
+      }
+      inputMeetingDate.value = state.meetingDate;
+      render();
+    }
+
+    function saveData() {
+      state.meetingName = inputMeetingName.value.trim() || "無題の会議";
+      state.meetingDate = inputMeetingDate.value;
+      localStorage.setItem(`meeting_action_${state.meetingName}`, JSON.stringify(state));
+      updateFilterAssignees();
+    }
+
+    // --- フィルター候補(担当者一覧)の動的更新 ---
+    function updateFilterAssignees() {
+      const previousSelection = filterAssignee.value;
+      // 重複なしの担当者リストを作成
+      const assignees = [...new Set(state.actions.map(a => a.assignee.trim()).filter(Boolean))];
+      
+      filterAssignee.innerHTML = '<option value="">(すべて表示)</option>';
+      assignees.forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        if (name === previousSelection) {
+          option.selected = true;
+        }
+        filterAssignee.appendChild(option);
+      });
+    }
+
+    // --- 計算・ソート・描画処理 ---
+    function render() {
+      // 1. 期限超過した「未完了」のカウント
+      const today = getTodayString();
+      let expiredUncompletedCount = 0;
+      
+      state.actions.forEach(act => {
+        const isUncompleted = act.status !== "完了";
+        const isExpired = act.due && act.due < today;
+        if (isUncompleted && isExpired) {
+          expiredUncompletedCount++;
+        }
+      });
+
+      if (expiredUncompletedCount > 0) {
+        dangerBanner.classList.remove('hidden');
+        expiredCountSpan.textContent = expiredUncompletedCount;
+      } else {
+        dangerBanner.classList.add('hidden');
+      }
+
+      // 2. フィルタリング
+      const filterUser = filterAssignee.value;
+      const filterStat = filterStatus.value;
+
+      let filteredActions = state.actions.filter(act => {
+        // 担当者フィルタ
+        if (filterUser && act.assignee.trim() !== filterUser) return false;
+        // 状態フィルタ
+        if (filterStat) {
+          if (filterStat === "未完了") {
+            if (act.status === "完了") return false;
+          } else if (act.status !== filterStat) {
+            return false;
+          }
+        }
+        return true;
+      });
+
+      // 3. ソート処理 (期限が近い順に並び替え: 期限なしは最後)
+      // 区分け: 1週間以内(今日〜7日後) → 1ヶ月以内(今日〜30日後) → それ以降・過去
+      // 今回は明確な「期限の近い順(昇順)」でソート（過去期限切れも緊急度が高いため先頭に寄せる）
+      filteredActions.sort((a, b) => {
+        if (!a.due) return 1;
+        if (!b.due) return -1;
+        return a.due.localeCompare(b.due);
+      });
+
+      // 4. DOM構築
+      cardsContainer.innerHTML = '';
+
+      if (filteredActions.length === 0) {
+        const emptyMsg = document.createElement('p');
+        emptyMsg.style.textAlign = 'center';
+        emptyMsg.style.color = '#6b7280';
+        emptyMsg.style.padding = '24px';
+        emptyMsg.textContent = '該当するアクション項目はありません。';
+        cardsContainer.appendChild(emptyMsg);
+        return;
+      }
+
+      filteredActions.forEach(act => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.setAttribute('data-status', act.status);
+
+        // 期限超過＆未完了か判定
+        const isExpired = act.due && act.due < today;
+        const isUncompleted = act.status !== "完了";
+        if (isExpired && isUncompleted) {
+          card.classList.add('expired-uncompleted');
+        }
+
+        // カード内部HTML
+        card.innerHTML = `
+          <div class="card-header">
+            <div class="card-title-group">
+              <input type="checkbox" class="checkbox-large action-checkbox" data-id="${act.id}" ${act.status === '完了' ? 'checked' : ''} aria-label="タスク完了状態の切り替え">
+              <strong class="assignee-label ${act.status === '完了' ? 'completed-text' : ''}" style="font-size:1.1rem;">担当: ${escapeHtml(act.assignee || '未設定')}</strong>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+              ${isExpired && isUncompleted ? '<span class="expired-badge">期限超過</span>' : ''}
+              <select class="status-selector" data-id="${act.id}" style="width: auto; padding: 4px 8px;" aria-label="状態の変更">
+                <option value="未着手" ${act.status === '未着手' ? 'selected' : ''}>未着手</option>
+                <option value="進行中" ${act.status === '進行中' ? 'selected' : ''}>進行中</option>
+                <option value="完了" ${act.status === '完了' ? 'selected' : ''}>完了</option>
+              </select>
+              <button class="btn btn-danger btn-delete-action" data-id="${act.id}" style="padding: 4px 10px; min-height: 32px; font-size:14px;" aria-label="アクションの削除">削除</button>
+            </div>
+          </div>
+          <div class="card-body-grid">
+            <div class="${act.status === '完了' ? 'completed-text' : ''}">
+              <div style="font-size:14px; color:#4b5563;">内容</div>
+              <p style="white-space: pre-wrap; font-size: 16px;">${escapeHtml(act.content || '（内容なし）')}</p>
+            </div>
+            <div>
+              <div style="font-size:14px; color:#4b5563;">期限</div>
+              <input type="date" class="action-due-inline" data-id="${act.id}" value="${act.due || ''}" aria-label="期限の直接編集">
+            </div>
+          </div>
+        `;
+
+        cardsContainer.appendChild(card);
+      });
+
+      // イベントリスナーの追加
+      attachCardEvents();
+    }
+
+    // HTMLエスケープ処理
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+    }
+
+    // カード内操作イベントハンドラ
+    function attachCardEvents() {
+      // チェックボックスの変更イベント
+      document.querySelectorAll('.action-checkbox').forEach(chk => {
+        chk.addEventListener('change', (e) => {
+          const id = e.target.getAttribute('data-id');
+          const targetAction = state.actions.find(a => a.id === id);
+          if (targetAction) {
+            targetAction.status = e.target.checked ? "完了" : "進行中";
+            saveData();
+            render();
+          }
+        });
+        // Enterキーでも動作をサポート(キーボード操作)
+        chk.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            chk.checked = !chk.checked;
+            chk.dispatchEvent(new Event('change'));
+          }
+        });
+      });
+
+      // 状態ドロップダウンの変更イベント
+      document.querySelectorAll('.status-selector').forEach(sel => {
+        sel.addEventListener('change', (e) => {
+          const id = e.target.getAttribute('data-id');
+          const targetAction = state.actions.find(a => a.id === id);
+          if (targetAction) {
+            targetAction.status = e.target.value;
+            saveData();
+            render();
+          }
+        });
+      });
+
+      // 期限日付の変更イベント
+      document.querySelectorAll('.action-due-inline').forEach(inp => {
+        inp.addEventListener('change', (e) => {
+          const id = e.target.getAttribute('data-id');
+          const targetAction = state.actions.find(a => a.id === id);
+          if (targetAction) {
+            targetAction.due = e.target.value;
+            saveData();
+            render();
+          }
+        });
+      });
+
+      // 削除ボタンイベント
+      document.querySelectorAll('.btn-delete-action').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const id = e.target.getAttribute('data-id');
+          if (confirm("このアクション項目を削除してもよろしいですか？")) {
+            state.actions = state.actions.filter(a => a.id !== id);
+            saveData();
+            render();
+          }
+        });
+      });
+    }
+
+    // --- グローバルイベントリスナー ---
+
+    // 会議名変更時：即座に保存キーを変更・切り替え
+    inputMeetingName.addEventListener('change', () => {
+      const newName = inputMeetingName.value.trim() || "定例会議";
+      loadDataForMeeting(newName);
+    });
+
+    inputMeetingDate.addEventListener('change', saveData);
+    filterAssignee.addEventListener('change', render);
+    filterStatus.addEventListener('change', render);
+
+    // インライン追加フォーム表示・非表示
+    btnAddFormShow.addEventListener('click', () => {
+      addFormArea.classList.remove('hidden');
+      actionAssignee.focus(); // キーボードフォーカス移動
+    });
+
+    btnAddFormCancel.addEventListener('click', () => {
+      addFormArea.classList.add('hidden');
+      // フォーム初期化
+      actionAssignee.value = '';
+      actionDue.value = '';
+      actionContent.value = '';
+    });
+
+    // 新規アクションの追加登録
+    btnAddActionSubmit.addEventListener('click', () => {
+      const assigneeVal = actionAssignee.value.trim();
+      const dueVal = actionDue.value;
+      const contentVal = actionContent.value.trim();
+      const statusVal = actionStatus.value;
+
+      if (!assigneeVal) {
+        alert("担当者を入力してください。");
+        actionAssignee.focus();
+        return;
+      }
+
+      const newAction = {
+        id: 'act_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+        assignee: assigneeVal,
+        due: dueVal || "",
+        content: contentVal || "",
+        status: statusVal
+      };
+
+      state.actions.push(newAction);
+      saveData();
+
+      // リセット
+      actionAssignee.value = '';
+      actionDue.value = '';
+      actionContent.value = '';
+      addFormArea.classList.add('hidden');
+
+      render();
+    });
+
+    // --- CSV エクスポート ---
+    btnExport.addEventListener('click', () => {
+      if (state.actions.length === 0) {
+        alert("エクスポートするアクションデータがありません。");
+        return;
+      }
+
+      // BOM追加（Excel文字化け防止）
+      let csvContent = "\uFEFF";
+      
+      // ヘッダー行
+      csvContent += "会議名,開催日,担当者,内容,期限,状態,完了フラグ\r\n";
+
+      state.actions.forEach(act => {
+        const row = [
+          state.meetingName,
+          state.meetingDate,
+          act.assignee,
+          act.content.replace(/\r?\n/g, " "), // 改行をスペースに置換
+          act.due,
+          act.status,
+          act.status === "完了" ? "1" : "0"
+        ].map(val => {
+          // ダブルクォーテーションのエスケープ
+          let clean = (val || "").replace(/"/g, '""');
+          return `"${clean}"`;
+        }).join(",");
+
+        csvContent += row + "\r\n";
+      });
+
+      // ダウンロードリンクを動的に生成
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `meeting_actions_${state.meetingName}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+
+    // --- 簡易マニュアルモーダル制御 ---
+    const toggleModal = (show) => {
+      if (show) {
+        modal.classList.remove('hidden');
+        btnManualClose.focus();
+      } else {
+        modal.classList.add('hidden');
+      }
+    };
+
+    btnManualOpen.addEventListener('click', () => toggleModal(true));
+    btnManualClose.addEventListener('click', () => toggleModal(false));
+    btnManualOk.addEventListener('click', () => toggleModal(false));
+
+    // 背景クリックでも閉じる
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        toggleModal(false);
+      }
+    });
+
+    // --- 初期ロード処理 ---
+    window.addEventListener('DOMContentLoaded', () => {
+      // 初期会議データ読み込み
+      loadDataForMeeting("定例会議");
+      
+      // 初期ロード完了後、使い方が分かるように初回アクセスの方向けに確認
+      if (!localStorage.getItem('visited_before')) {
+        toggleModal(true);
+        localStorage.setItem('visited_before', 'true');
+      }
+    });
+  </script>
+</body>
+</html>

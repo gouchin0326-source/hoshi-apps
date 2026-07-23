@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>経費精算を助ける道具</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🧾</text></svg>'>
+  <style>
+    /* Reset & Base Styling */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    :root {
+      --primary-color: #1e3a8a; /* Deep Navy */
+      --primary-light: #eff6ff;
+      --accent-color: #b45309; /* Deep Amber */
+      --accent-light: #fef3c7;
+      --bg-color: #fcfcf9; /* Soft off-white */
+      --text-color: #1f2937;
+      --border-color: #d1d5db;
+      --success-color: #065f46;
+      --success-bg: #d1fae5;
+      --pending-color: #92400e;
+      --pending-bg: #fef3c7;
+      --settled-color: #374151;
+      --settled-bg: #e5e7eb;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans JP", sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.6;
+      font-size: 16px; /* Slightly larger text size for accessibility */
+    }
+    
+    /* Accessibility focus styling */
+    *:focus-visible {
+      outline: 3px solid #3b82f6;
+      outline-offset: 2px;
+    }
+
+    /* Container Layout */
+    .app-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    /* Header Styling */
+    header {
+      background-color: var(--primary-color);
+      color: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 0;
+    }
+    .header-emoji {
+      font-size: 2.5rem;
+      line-height: 1;
+    }
+    .header-text {
+      font-size: 1.5rem;
+      font-weight: bold;
+      letter-spacing: 0.05em;
+    }
+    .btn-manual {
+      background-color: #ffffff;
+      color: var(--primary-color);
+      border: 2px solid var(--primary-color);
+      padding: 8px 16px;
+      font-size: 1rem;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background-color 0.2s, color 0.2s;
+    }
+    .btn-manual:hover {
+      background-color: var(--primary-light);
+    }
+
+    /* Main Grid Layout */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+    @media (min-width: 1024px) {
+      .main-grid {
+        grid-template-columns: 1fr 320px;
+      }
+    }
+
+    /* Section Boxes */
+    .card {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    .card-title {
+      font-size: 1.2rem;
+      margin-top: 0;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 3px solid var(--primary-color);
+      color: var(--primary-color);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Form Element Styling */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    label {
+      font-weight: bold;
+      font-size: 0.95rem;
+      color: #374151;
+    }
+    .required-tag {
+      background-color: #ef4444;
+      color: white;
+      font-size: 0.75rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      font-size: 1rem;
+      border: 1.5px solid var(--border-color);
+      border-radius: 6px;
+      background-color: #ffffff;
+      color: var(--text-color);
+      font-family: inherit;
+    }
+    input:focus, select:focus {
+      border-color: var(--primary-color);
+    }
+
+    /* Action Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      font-weight: bold;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .btn:hover {
+      opacity: 0.9;
+    }
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: #ffffff;
+    }
+    .btn-secondary {
+      background-color: #4b5563;
+      color: #ffffff;
+    }
+    .btn-accent {
+      background-color: var(--accent-color);
+      color: #ffffff;
+    }
+    .btn-block {
+      width: 100%;
+    }
+
+    /* Table Container Styling (Responsive) */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      margin-top: 16px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.95rem;
+    }
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    th {
+      background-color: var(--primary-light);
+      color: var(--primary-color);
+      font-weight: bold;
+      white-space: nowrap;
+    }
+    tr:hover {
+      background-color: #f9fafb;
+    }
+    .text-right {
+      text-align: right;
+    }
+    .text-center {
+      text-align: center;
+    }
+
+    /* Status Badges */
+    .status-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      border-radius: 4px;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .status-badge.status-apply {
+      background-color: var(--pending-bg);
+      color: var(--pending-color);
+    }
+    .status-badge.status-approve {
+      background-color: var(--success-bg);
+      color: var(--success-color);
+    }
+    .status-badge.status-settled {
+      background-color: var(--settled-bg);
+      color: var(--settled-color);
+    }
+
+    /* Action buttons in Table */
+    .btn-table-edit {
+      padding: 4px 10px;
+      font-size: 0.85rem;
+      border-radius: 4px;
+      background-color: #ffffff;
+      border: 1.5px solid var(--primary-color);
+      color: var(--primary-color);
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .btn-table-edit:hover {
+      background-color: var(--primary-light);
+    }
+
+    /* Totals Summary Panels */
+    .totals-container {
+      margin-top: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    .total-box {
+      border: 1.5px solid var(--border-color);
+      border-radius: 8px;
+      padding: 16px;
+      background-color: #f9fafb;
+    }
+    .total-box-title {
+      font-size: 0.9rem;
+      color: #4b5563;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+    .total-box-value {
+      font-size: 1.4rem;
+      font-weight: bold;
+      color: var(--primary-color);
+    }
+    .unsettled-box {
+      border-color: var(--accent-color);
+      background-color: var(--accent-light);
+    }
+    .unsettled-box .total-box-title {
+      color: var(--accent-color);
+    }
+    .unsettled-box .total-box-value {
+      color: var(--accent-color);
+    }
+    .category-total-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .category-total-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      border-bottom: 1px dashed var(--border-color);
+      font-size: 0.9rem;
+    }
+    .category-total-item:last-child {
+      border-bottom: none;
+    }
+
+    /* Right Sidebar (Filters) */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .filter-group {
+      margin-bottom: 12px;
+    }
+    .filter-group:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Modal Styling for Help & Edit */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-content {
+      background-color: #ffffff;
+      border-radius: 8px;
+      max-width: 550px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 24px;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
+    .modal-close-btn {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #6b7280;
+    }
+    .modal-title {
+      font-size: 1.3rem;
+      color: var(--primary-color);
+      margin-top: 0;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--primary-color);
+    }
+    .manual-step {
+      margin-bottom: 12px;
+      padding-left: 12px;
+      border-left: 3px solid var(--accent-color);
+    }
+    .manual-step-title {
+      font-weight: bold;
+      color: var(--accent-color);
+    }
+
+    /* Footer styling */
+    footer {
+      margin-top: 40px;
+      text-align: center;
+      font-size: 0.9rem;
+      color: #6b7280;
+      padding: 16px 0;
+      border-top: 1px solid var(--border-color);
+    }
+
+    /* Empty state messaging */
+    .empty-state {
+      text-align: center;
+      padding: 32px;
+      color: #6b7280;
+      font-size: 1.1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <header>
+      <div class="header-title">
+        <span class="header-emoji" aria-hidden="true">🧾</span>
+        <h1 class="header-text">経費精算を助ける道具</h1>
+      </div>
+      <button class="btn-manual" onclick="toggleModal('manualModal', true)" aria-label="使い方の説明を見る">
+        ❓ 使い方
+      </button>
+    </header>
+
+    <div class="main-grid">
+      <main style="display: flex; flex-direction: column; gap: 24px;">
+        
+        <section class="card" aria-labelledby="form-title">
+          <h2 id="form-title" class="card-title">✍️ 新規登録</h2>
+          <form id="expenseForm" onsubmit="handleFormSubmit(event)">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="applyDate">申請日<span class="required-tag" aria-hidden="true">必須</span></label>
+                <input type="date" id="applyDate" required>
+              </div>
+              
+              <div class="form-group">
+                <label for="useDate">利用日<span class="required-tag" aria-hidden="true">必須</span></label>
+                <input type="date" id="useDate" required>
+              </div>
+
+              <div class="form-group">
+                <label for="category">費目<span class="required-tag" aria-hidden="true">必須</span></label>
+                <select id="category" required>
+                  <option value="" disabled selected>選択してください</option>
+                  <option value="交通費">交通費</option>
+                  <option value="消耗品">消耗品</option>
+                  <option value="接待">接待</option>
+                  <option value="宿泊">宿泊</option>
+                  <option value="その他">その他</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="amount">金額（円）<span class="required-tag" aria-hidden="true">必須</span></label>
+                <input type="number" id="amount" min="1" step="1" placeholder="例: 1500" required>
+              </div>
+
+              <div class="form-group">
+                <label for="vendor">支払先<span class="required-tag" aria-hidden="true">必須</span></label>
+                <input type="text" id="vendor" placeholder="例: ○○文具店、JR東海" required>
+              </div>
+
+              <div class="form-group">
+                <label for="purpose">用途<span class="required-tag" aria-hidden="true">必須</span></label>
+                <input type="text" id="purpose" placeholder="例: 会議用資料の印刷用紙" required>
+              </div>
+
+              <div class="form-group">
+                <label for="status">状態<span class="required-tag" aria-hidden="true">必須</span></label>
+                <select id="status" required>
+                  <option value="申請中" selected>申請中</option>
+                  <option value="承認済">承認済</option>
+                  <option value="精算済">精算済</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 12px;">
+              <button type="button" class="btn btn-secondary" onclick="resetForm()">クリア</button>
+              <button type="submit" class="btn btn-primary">➕ 経費を登録する</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="card" aria-labelledby="list-title">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--primary-color); padding-bottom: 8px; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+            <h2 id="list-title" class="card-title" style="border: none; margin: 0; padding: 0;">📋 経費一覧</h2>
+            <button class="btn btn-accent" onclick="exportToCSV()" title="現在の一覧（絞り込み含む）をCSV出力します">
+              📤 CSV形式で保存する
+            </button>
+          </div>
+
+          <div class="table-container">
+            <table id="expenseTable">
+              <thead>
+                <tr>
+                  <th scope="col" class="text-center">操作</th>
+                  <th scope="col">申請日</th>
+                  <th scope="col">利用日</th>
+                  <th scope="col">費目</th>
+                  <th scope="col" class="text-right">金額</th>
+                  <th scope="col">支払先</th>
+                  <th scope="col">用途</th>
+                  <th scope="col" class="text-center">状態</th>
+                </tr>
+              </thead>
+              <tbody id="expenseTableBody">
+                </tbody>
+            </table>
+          </div>
+
+          <div id="noDataMessage" class="empty-state" style="display: none;">
+            登録されているデータ、または条件に合うデータがありません。
+          </div>
+
+          <div class="totals-container">
+            <div class="total-box">
+              <div class="total-box-title">📂 費目別の合計金額</div>
+              <ul class="category-total-list" id="categoryTotalsList">
+                </ul>
+            </div>
+
+            <div class="total-box unsettled-box">
+              <div class="total-box-title">⚠️ 未精算合計金額</div>
+              <div class="total-box-value" id="unsettledTotal">0 円</div>
+              <p style="margin: 6px 0 0 0; font-size: 0.8rem; color: #78350f;">※状態が「申請中」「承認済」の合計額</p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <aside class="sidebar">
+        <section class="card" aria-labelledby="filter-title">
+          <h2 id="filter-title" class="card-title">🔍 絞り込み検索</h2>
+          
+          <div class="filter-group">
+            <label for="filterCategory">費目</label>
+            <select id="filterCategory" onchange="applyFilters()">
+              <option value="">すべて</option>
+              <option value="交通費">交通費</option>
+              <option value="消耗品">消耗品</option>
+              <option value="接待">接待</option>
+              <option value="宿泊">宿泊</option>
+              <option value="その他">その他</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label>利用日 期間</label>
+            <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px;">
+              <input type="date" id="filterStartDate" onchange="applyFilters()" aria-label="開始日">
+              <span style="text-align: center; font-size: 0.9rem; color: #4b5563;">から</span>
+              <input type="date" id="filterEndDate" onchange="applyFilters()" aria-label="終了日">
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label for="filterStatus">状態</label>
+            <select id="filterStatus" onchange="applyFilters()">
+              <option value="">すべて</option>
+              <option value="申請中">申請中</option>
+              <option value="承認済">承認済</option>
+              <option value="精算済">精算済</option>
+            </select>
+          </div>
+
+          <button class="btn btn-secondary btn-block" style="margin-top: 16px;" onclick="resetFilters()">
+            ✕ 絞り込みをクリア
+          </button>
+        </section>
+      </aside>
+    </div>
+
+    <footer>
+      <p>経費精算を助ける道具 - このツールに登録したデータはお使いのウェブブラウザ内に保存されます（外部送信はありません）</p>
+    </footer>
+  </div>
+
+  <div id="manualModal" class="modal-backdrop" onclick="closeModalOnBackdrop(event, 'manualModal')" role="dialog" aria-modal="true" aria-labelledby="manual-modal-title">
+    <div class="modal-content">
+      <button class="modal-close-btn" onclick="toggleModal('manualModal', false)" aria-label="ヘルプを閉じる">×</button>
+      <h2 id="manual-modal-title" class="modal-title">❓ 経費精算を助ける道具 の使い方</h2>
+      
+      <div>
+        <p><strong>1. このアプリでできること</strong><br>
+        日々発生する交通費や消耗品代、接待費用などの経費情報をサクサク記録し、状態管理（申請中／承認済／精算済）を行うことができます。また、登録した経費一覧をいつでもCSVファイルとしてダウンロードできます。</p>
+
+        <p><strong>2. 基本的な手順 (3ステップ)</strong></p>
+        <div class="manual-step">
+          <div class="manual-step-title">ステップ 1: 経費を登録する</div>
+          <div>上部の「新規登録」フォームに必要な情報を入力し、「経費を登録する」ボタンを押すと、下部の一覧表に即座に反映されます。</div>
+        </div>
+        <div class="manual-step">
+          <div class="manual-step-title">ステップ 2: 状態を更新する</div>
+          <div>一覧表の行にある「編集」ボタンを押すと、そのデータの「状態（申請中／承認済／精算済）」だけをサッと変更できます。</div>
+        </div>
+        <div class="manual-step">
+          <div class="manual-step-title">ステップ 3: CSVとして書き出す</div>
+          <div>「CSV形式で保存する」ボタンを押すと、いつでもお手持ちの表計算ソフト（Excel等）で読み込めるCSVファイルをダウンロードできます。</div>
+        </div>
+
+        <p><strong>3. 安心のデータ設計</strong><br>
+        入力したすべてのデータは、インターネット上のサーバーではなく、<strong>今お使いのデバイス（スマホやパソコン）のブラウザ内部（localStorage）にのみ保存されます。</strong>外部に情報が漏洩する心配はありません。</p>
+      </div>
+
+      <button class="btn btn-primary btn-block" style="margin-top: 16px;" onclick="toggleModal('manualModal', false)">マニュアルを閉じてアプリを使う</button>
+    </div>
+  </div>
+
+  <div id="editStatusModal" class="modal-backdrop" onclick="closeModalOnBackdrop(event, 'editStatusModal')" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
+    <div class="modal-content">
+      <button class="modal-close-btn" onclick="toggleModal('editStatusModal', false)" aria-label="編集を閉じる">×</button>
+      <h2 id="edit-modal-title" class="modal-title">✏️ 状態の編集</h2>
+      
+      <form id="editStatusForm" onsubmit="handleEditStatusSubmit(event)">
+        <input type="hidden" id="editItemIndex">
+        
+        <div class="form-group" style="margin-bottom: 20px;">
+          <p id="editItemSummary" style="background-color: var(--primary-light); padding: 12px; border-radius: 6px; font-size: 0.95rem; line-height: 1.5;">
+            </p>
+          <label for="editStatus">新しい状態を選んでください</label>
+          <select id="editStatus" required style="margin-top: 8px;">
+            <option value="申請中">申請中</option>
+            <option value="承認済">承認済</option>
+            <option value="精算済">精算済</option>
+          </select>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+          <button type="button" class="btn btn-secondary" onclick="toggleModal('editStatusModal', false)">キャンセル</button>
+          <button type="submit" class="btn btn-primary">変更を保存する</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // State management
+    let expenses = [];
+
+    // On Load
+    window.addEventListener('DOMContentLoaded', () => {
+      // Set default dates
+      const todayString = new Date().toISOString().split('T')[0];
+      document.getElementById('applyDate').value = todayString;
+      document.getElementById('useDate').value = todayString;
+
+      // Load from LocalStorage
+      loadFromStorage();
+
+      // If database is completely empty, insert initial user-friendly sample data so it's ready to use instantly
+      if (expenses.length === 0) {
+        expenses = [
+          {
+            id: 'sample-1',
+            applyDate: todayString,
+            useDate: todayString,
+            category: '交通費',
+            amount: 1280,
+            vendor: 'JR東日本',
+            purpose: '顧客訪問（打ち合わせのため）',
+            status: '申請中'
+          },
+          {
+            id: 'sample-2',
+            applyDate: todayString,
+            useDate: todayString,
+            category: '消耗品',
+            amount: 3240,
+            vendor: 'オフィス用品店',
+            purpose: 'プリンター用コピー用紙及び事務用品',
+            status: '承認済'
+          }
+        ];
+        saveToStorage();
+      }
+
+      // Render Dashboard
+      renderDashboard();
+    });
+
+    // Local Storage Helpers
+    function saveToStorage() {
+      localStorage.setItem('exp_tool_data', JSON.stringify(expenses));
+    }
+
+    function loadFromStorage() {
+      const stored = localStorage.getItem('exp_tool_data');
+      if (stored) {
+        try {
+          expenses = JSON.parse(stored);
+        } catch (e) {
+          console.error("データの読み込みに失敗しました:", e);
+          expenses = [];
+        }
+      }
+    }
+
+    // Modal Control functions
+    function toggleModal(modalId, isShow) {
+      const modal = document.getElementById(modalId);
+      if (isShow) {
+        modal.style.display = 'flex';
+        // Add focus trapping or focus first interactive item if needed
+      } else {
+        modal.style.display = 'none';
+      }
+    }
+
+    function closeModalOnBackdrop(event, modalId) {
+      if (event.target === document.getElementById(modalId)) {
+        toggleModal(modalId, false);
+      }
+    }
+
+    // Form submission
+    function handleFormSubmit(event) {
+      event.preventDefault();
+
+      const applyDate = document.getElementById('applyDate').value;
+      const useDate = document.getElementById('useDate').value;
+      const category = document.getElementById('category').value;
+      const amount = parseInt(document.getElementById('amount').value, 10);
+      const vendor = document.getElementById('vendor').value.trim();
+      const purpose = document.getElementById('purpose').value.trim();
+      const status = document.getElementById('status').value;
+
+      if (!applyDate || !useDate || !category || isNaN(amount) || !vendor || !purpose || !status) {
+        alert("すべての必須項目を正しく入力してください。");
+        return;
+      }
+
+      const newExpense = {
+        id: 'item-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+        applyDate,
+        useDate,
+        category,
+        amount,
+        vendor,
+        purpose,
+        status
+      };
+
+      expenses.unshift(newExpense); // Insert at beginning
+      saveToStorage();
+      renderDashboard();
+      resetForm();
+    }
+
+    function resetForm() {
+      document.getElementById('expenseForm').reset();
+      const todayString = new Date().toISOString().split('T')[0];
+      document.getElementById('applyDate').value = todayString;
+      document.getElementById('useDate').value = todayString;
+    }
+
+    // Edit Modal helpers
+    function openEditStatusModal(id) {
+      const index = expenses.findIndex(e => e.id === id);
+      if (index === -1) return;
+
+      const item = expenses[index];
+      document.getElementById('editItemIndex').value = index;
+      document.getElementById('editStatus').value = item.status;
+      document.getElementById('editItemSummary').innerHTML = `
+        <strong>費目:</strong> ${escapeHtml(item.category)}<br>
+        <strong>金額:</strong> ${item.amount.toLocaleString()} 円<br>
+        <strong>支払先:</strong> ${escapeHtml(item.vendor)}<br>
+        <strong>用途:</strong> ${escapeHtml(item.purpose)}
+      `;
+
+      toggleModal('editStatusModal', true);
+    }
+
+    function handleEditStatusSubmit(event) {
+      event.preventDefault();
+      const index = parseInt(document.getElementById('editItemIndex').value, 10);
+      const newStatus = document.getElementById('editStatus').value;
+
+      if (expenses[index]) {
+        expenses[index].status = newStatus;
+        saveToStorage();
+        renderDashboard();
+      }
+      toggleModal('editStatusModal', false);
+    }
+
+    // Filter processing
+    function getFilteredData() {
+      const fCategory = document.getElementById('filterCategory').value;
+      const fStartDate = document.getElementById('filterStartDate').value;
+      const fEndDate = document.getElementById('filterEndDate').value;
+      const fStatus = document.getElementById('filterStatus').value;
+
+      return expenses.filter(item => {
+        // Category filter
+        if (fCategory && item.category !== fCategory) return false;
+        
+        // Date range filters
+        if (fStartDate && item.useDate < fStartDate) return false;
+        if (fEndDate && item.useDate > fEndDate) return false;
+
+        // Status filter
+        if (fStatus && item.status !== fStatus) return false;
+
+        return true;
+      });
+    }
+
+    function applyFilters() {
+      renderDashboard();
+    }
+
+    function resetFilters() {
+      document.getElementById('filterCategory').value = '';
+      document.getElementById('filterStartDate').value = '';
+      document.getElementById('filterEndDate').value = '';
+      document.getElementById('filterStatus').value = '';
+      renderDashboard();
+    }
+
+    // Calculation & Render
+    function renderDashboard() {
+      const filtered = getFilteredData();
+      const tableBody = document.getElementById('expenseTableBody');
+      tableBody.innerHTML = '';
+
+      if (filtered.length === 0) {
+        document.getElementById('noDataMessage').style.display = 'block';
+      } else {
+        document.getElementById('noDataMessage').style.display = 'none';
+        filtered.forEach(item => {
+          const row = document.createElement('tr');
+          
+          let badgeClass = 'status-apply';
+          if (item.status === '承認済') badgeClass = 'status-approve';
+          if (item.status === '精算済') badgeClass = 'status-settled';
+
+          row.innerHTML = `
+            <td class="text-center">
+              <button class="btn-table-edit" onclick="openEditStatusModal('${item.id}')" title="状態を編集する">状態変更</button>
+            </td>
+            <td>${escapeHtml(item.applyDate)}</td>
+            <td>${escapeHtml(item.useDate)}</td>
+            <td><strong>${escapeHtml(item.category)}</strong></td>
+            <td class="text-right"><strong>${item.amount.toLocaleString()} 円</strong></td>
+            <td>${escapeHtml(item.vendor)}</td>
+            <td>${escapeHtml(item.purpose)}</td>
+            <td class="text-center">
+              <span class="status-badge ${badgeClass}">${escapeHtml(item.status)}</span>
+            </td>
+          `;
+          tableBody.appendChild(row);
+        });
+      }
+
+      // Compute aggregates (Always compute based on the filtered dataset to match current view)
+      computeStatistics(filtered);
+    }
+
+    function computeStatistics(dataset) {
+      // 1. Unsettled calculations (申請中/承認済)
+      const unsettledTotal = dataset
+        .filter(item => item.status === '申請中' || item.status === '承認済')
+        .reduce((sum, item) => sum + item.amount, 0);
+
+      document.getElementById('unsettledTotal').innerText = unsettledTotal.toLocaleString() + ' 円';
+
+      // 2. Category sums
+      const categories = ['交通費', '消耗品', '接待', '宿泊', 'その他'];
+      const categorySums = {};
+      categories.forEach(cat => { categorySums[cat] = 0; });
+
+      dataset.forEach(item => {
+        if (categorySums.hasOwnProperty(item.category)) {
+          categorySums[item.category] += item.amount;
+        } else {
+          categorySums[item.category] = item.amount;
+        }
+      });
+
+      const listContainer = document.getElementById('categoryTotalsList');
+      listContainer.innerHTML = '';
+      categories.forEach(cat => {
+        const li = document.createElement('li');
+        li.className = 'category-total-item';
+        li.innerHTML = `<span>${cat}</span><strong>${categorySums[cat].toLocaleString()} 円</strong>`;
+        listContainer.appendChild(li);
+      });
+    }
+
+    // Utility: CSV Export
+    function exportToCSV() {
+      const filtered = getFilteredData();
+      if (filtered.length === 0) {
+        alert("書き出しできるデータがありません。");
+        return;
+      }
+
+      // Headers (BOM included for Excel auto-detection of UTF-8)
+      const headers = ["申請日", "利用日", "費目", "金額", "支払先", "用途", "状態"];
+      
+      const rows = filtered.map(item => [
+        item.applyDate,
+        item.useDate,
+        item.category,
+        item.amount,
+        item.vendor,
+        item.purpose,
+        item.status
+      ]);
+
+      const csvContent = [headers, ...rows]
+        .map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(","))
+        .join("\\r\\n");
+
+      const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+      const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
+      
+      // Filename construction
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const date = String(now.getDate()).padStart(2, '0');
+      const filename = `経費精算_${year}${month}${date}.csv`;
+
+      // Download trigger
+      const link = document.createElement("a");
+      if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    }
+
+    // Security Helper: Escape HTML
+    function escapeHtml(unsafe) {
+      if (!unsafe) return '';
+      return String(unsafe)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>品質不具合管理ツール</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🛠️</text></svg>'>
+  <style>
+    /* 基本デザイン・コントラスト・フォントサイズ（16px以上） */
+    :root {
+      --primary-color: #004d40;
+      --primary-light: #e0f2f1;
+      --text-color: #1a1a1a;
+      --bg-color: #fafafa;
+      --border-color: #767676;
+      --focus-outline: #d84315;
+      
+      --severity-high: #ffcdd2; /* 重大（赤系：コントラスト確保のため背景は淡く、文字は黒） */
+      --status-uncompleted: #fff9c4; /* 未完了（黄系） */
+      --status-completed: #e8f5e9; /* 完了 */
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--text-color);
+      background-color: var(--bg-color);
+      margin: 0;
+      padding: 16px;
+    }
+
+    /* ヘッダー */
+    header {
+      background-color: var(--primary-color);
+      color: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .header-title-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-emoji {
+      font-size: 2.5rem;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.8rem;
+    }
+
+    /* ボタン共通（キーボード操作対応、コントラスト確保） */
+    button, .btn {
+      font-size: 16px;
+      font-weight: bold;
+      padding: 12px 20px;
+      border-radius: 6px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-decoration: none;
+      min-height: 48px; /* タップターゲット確保 */
+    }
+
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: 4px solid var(--focus-outline);
+      outline-offset: 2px;
+    }
+
+    .btn-help {
+      background-color: #ffffff;
+      color: var(--primary-color);
+      border: 2px solid var(--primary-color);
+    }
+
+    .btn-help:hover {
+      background-color: var(--primary-light);
+    }
+
+    .btn-submit {
+      background-color: #00796b;
+      color: #ffffff;
+      width: 100%;
+      margin-top: 12px;
+    }
+
+    .btn-submit:hover {
+      background-color: #004d40;
+    }
+
+    .btn-export {
+      background-color: #0d47a1;
+      color: #ffffff;
+    }
+
+    .btn-export:hover {
+      background-color: #0a357a;
+    }
+
+    /* フォーム */
+    .form-section {
+      background: #ffffff;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .form-section h2 {
+      margin-top: 0;
+      margin-bottom: 16px;
+      font-size: 1.4rem;
+      border-bottom: 2px solid var(--primary-color);
+      padding-bottom: 8px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group.full-width {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      font-weight: bold;
+      color: var(--text-color);
+    }
+
+    .required-badge {
+      background-color: #d32f2f;
+      color: white;
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 8px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    input, select, textarea {
+      font-size: 16px;
+      padding: 10px;
+      border: 2px solid var(--border-color);
+      border-radius: 6px;
+      background-color: #ffffff;
+      color: var(--text-color);
+      width: 100%;
+    }
+
+    /* 一覧表セクション */
+    .table-section {
+      background: #ffffff;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+    }
+
+    .table-section h2 {
+      margin-top: 0;
+      margin-bottom: 16px;
+      font-size: 1.4rem;
+      border-bottom: 2px solid var(--primary-color);
+      padding-bottom: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 16px;
+      text-align: left;
+    }
+
+    th, td {
+      border: 1px solid var(--border-color);
+      padding: 12px;
+      font-size: 16px;
+      word-break: break-all;
+    }
+
+    th {
+      background-color: var(--primary-light);
+      color: var(--text-color);
+      font-weight: bold;
+    }
+
+    /* 行ごとの背景色ルール（重大かつ未完了など複合時は重大度を優先的に明示） */
+    tr.severity-high {
+      background-color: var(--severity-high) !important;
+    }
+    
+    tr.uncompleted-row {
+      background-color: var(--status-uncompleted);
+    }
+
+    /* フッターおよび操作部 */
+    .footer-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      background: #ffffff;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .summary-box {
+      font-size: 1.2rem;
+      font-weight: bold;
+      border-left: 5px solid #00796b;
+      padding-left: 12px;
+    }
+
+    .statement-text {
+      font-size: 14px;
+      color: #555555;
+      text-align: center;
+      margin-top: 24px;
+      padding: 12px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    /* 簡易マニュアル モーダル */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+
+    .modal-content {
+      background-color: #ffffff;
+      border-radius: 8px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      border: 3px solid var(--primary-color);
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--primary-color);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      font-size: 1.4rem;
+    }
+
+    .modal-body ol {
+      padding-left: 24px;
+    }
+
+    .modal-body li {
+      margin-bottom: 12px;
+    }
+
+    .btn-close {
+      background-color: #767676;
+      color: #ffffff;
+    }
+
+    .btn-close:hover {
+      background-color: #4b4b4b;
+    }
+
+    /* レスポンシブ対応 (768px未満でテーブルを縦並びカード形式に変換) */
+    @media (max-width: 767px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+
+      thead {
+        display: none; /* ヘッダーを隠す */
+      }
+
+      tr {
+        margin-bottom: 16px;
+        border: 2px solid var(--border-color);
+        border-radius: 6px;
+        padding: 8px;
+      }
+
+      td {
+        border: none;
+        border-bottom: 1px dashed var(--border-color);
+        position: relative;
+        padding-left: 50%;
+        text-align: right;
+      }
+
+      td:last-child {
+        border-bottom: none;
+      }
+
+      td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 12px;
+        width: 45%;
+        text-align: left;
+        font-weight: bold;
+        color: var(--text-color);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-title-container">
+      <span class="header-emoji" aria-hidden="true">🛠️</span>
+      <h1>品質不具合管理ツール</h1>
+    </div>
+    <button class="btn btn-help" id="openHelpBtn" aria-haspopup="dialog" aria-controls="helpModal">❓ 使い方を見る</button>
+  </header>
+
+  <section class="form-section">
+    <h2>📝 新しい報告を登録する</h2>
+    <form id="issueForm">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="regDate">受付日<span class="required-badge">必須</span></label>
+          <input type="date" id="regDate" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="customerName">お客さまの名前（顧客名）<span class="required-badge">必須</span></label>
+          <input type="text" id="customerName" placeholder="例：〇〇株式会社 様" required>
+        </div>
+
+        <div class="form-group">
+          <label for="partNumber">製品の番号（品番）<span class="required-badge">必須</span></label>
+          <input type="text" id="partNumber" placeholder="例：AB-12345" required>
+        </div>
+
+        <div class="form-group">
+          <label for="severity">不具合の大きさ（重大度）<span class="required-badge">必須</span></label>
+          <select id="severity" required>
+            <option value="">-- 選んでください --</option>
+            <option value="重大">重大（すぐに対応が必要）</option>
+            <option value="中程度">中程度（通常対応）</option>
+            <option value="軽微">軽微（様子見・軽微）</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="status">今の状況（対応状況）<span class="required-badge">必須</span></label>
+          <select id="status" required>
+            <option value="">-- 選んでください --</option>
+            <option value="受付">受付（これから確認します）</option>
+            <option value="調査中">調査中（原因を調べています）</option>
+            <option value="対策中">対策中（直しているところです）</option>
+            <option value="完了">完了（すべて終わりました）</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="assignee">対応している人（対応者）<span class="required-badge">必須</span></label>
+          <input type="text" id="assignee" placeholder="例：山田 太郎" required>
+        </div>
+
+        <div class="form-group full-width">
+          <label for="issueDetails">困っている内容（不具合内容）<span class="required-badge">必須</span></label>
+          <textarea id="issueDetails" rows="2" placeholder="どのような不具合が起きているか詳しく書いてください" required></textarea>
+        </div>
+
+        <div class="form-group full-width">
+          <label for="cause">原因<span class="required-badge">必須</span></label>
+          <textarea id="cause" rows="2" placeholder="なぜこの不具合が起きたのか原因を書いてください" required></textarea>
+        </div>
+
+        <div class="form-group full-width">
+          <label for="action">これからの対策<span class="required-badge">必須</span></label>
+          <textarea id="action" rows="2" placeholder="同じことが起きないように何をするか書いてください" required></textarea>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-submit">📥 この内容で登録する</button>
+    </form>
+  </section>
+
+  <section class="table-section">
+    <h2>📋 不具合の一覧</h2>
+    <div style="overflow-x: auto;">
+      <table id="issueTable">
+        <thead>
+          <tr>
+            <th scope="col">受付日</th>
+            <th scope="col">顧客名</th>
+            <th scope="col">品番</th>
+            <th scope="col">重大度</th>
+            <th scope="col">対応状況</th>
+            <th scope="col">対応者</th>
+            <th scope="col">原因</th>
+            <th scope="col">対策</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="footer-actions">
+    <div class="summary-box" id="uncompletedCount" aria-live="polite">
+      未完了件数: 0件
+    </div>
+    <div>
+      <button class="btn btn-export" id="exportBtn">📤 CSVエクスポート</button>
+    </div>
+  </section>
+
+  <footer class="statement-text">
+    品質改善のためのツールです。人の評価や監視ではなく、業務の効率化を目的としています。
+  </footer>
+
+  <div class="modal-backdrop" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modalTitle">❓ このツールの使い方</h3>
+        <button class="btn btn-close" id="closeHelpBtn" aria-label="閉じる">×</button>
+      </div>
+      <div class="modal-body">
+        <p><strong>1. このアプリでできること</strong></p>
+        <p>発生した不具合の情報を記録し、「重大なもの」や「まだ終わっていないもの」をパッと見で確認できるように整理・保存・出力します。</p>
+        
+        <p><strong>2. 基本的な手順（3ステップ）</strong></p>
+        <ol>
+          <li><strong>情報の入力:</strong> 上のフォームに不具合の内容を漏れなく入力し、「この内容で登録する」ボタンを押します。</li>
+          <li><strong>一覧で確認:</strong> 下の一覧表に自動で並びます。対応がまだ終わっていない行は<span style="background-color: var(--status-uncompleted); padding: 2px 4px; border-radius: 4px;">黄色</span>、重大なものは優先的に上部に集まり<span style="background-color: var(--severity-high); padding: 2px 4px; border-radius: 4px;">赤色</span>で表示されます。</li>
+          <li><strong>CSVで保存:</strong> 最後に「CSVエクスポート」ボタンを押すと、パソコンやスマホにデータをファイルとして保存できます。</li>
+        </ol>
+
+        <p><strong>3. セキュリティとデータについて</strong></p>
+        <p>入力したデータはお使いの端末（ブラウザ）の中にのみ安全に保存されます。インターネットを通じて外部に送信されることはありません。</p>
+      </div>
+      <div style="text-align: right; margin-top: 16px;">
+        <button class="btn btn-close" id="closeHelpBottomBtn">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // データ初期化
+    let issues = [];
+
+    // ローカルストレージから読み込み
+    function loadData() {
+      const stored = localStorage.getItem('quality_issues');
+      if (stored) {
+        try {
+          issues = JSON.parse(stored);
+        } catch (e) {
+          console.error("データの読み込みに失敗しました", e);
+          issues = [];
+        }
+      } else {
+        // 初期サンプルデータ
+        issues = [
+          {
+            regDate: "2026-07-10",
+            customerName: "サンプル工業株式会社",
+            partNumber: "SMP-001",
+            issueDetails: "製品の表面に微細な傷を発見。",
+            severity: "重大",
+            status: "受付",
+            assignee: "品質 太郎",
+            cause: "現在、製造ラインの搬送部を調査中。",
+            action: "センサーの感度調整を行う予定。"
+          },
+          {
+            regDate: "2026-07-12",
+            customerName: "テスト電機株式会社",
+            partNumber: "TST-99",
+            issueDetails: "ボタンの反応が一部鈍い箇所がある。",
+            severity: "中程度",
+            status: "対策中",
+            assignee: "開発 次郎",
+            cause: "基盤のハンダ不良が原因と判明。",
+            action: "ハンダ工程の温度管理を見直します。"
+          }
+        ];
+        saveData();
+      }
+    }
+
+    // ローカルストレージへ保存
+    function saveData() {
+      localStorage.setItem('quality_issues', JSON.stringify(issues));
+    }
+
+    // 表示用のソートと描画
+    function renderTable() {
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+
+      // ソート順定義
+      // 1. 重大度優先度: 重大(3) > 中程度(2) > 軽微(1)
+      // 2. 対応状況優先度: 未完了（受付・調査中・対策中）(2) > 完了(1)
+      const severityOrder = { "重大": 3, "中程度": 2, "軽微": 1 };
+      const isUncompleted = (status) => status !== "完了";
+
+      const sortedIssues = [...issues].sort((a, b) => {
+        // 重大度で降順ソート (高いものが上)
+        const aSev = severityOrder[a.severity] || 0;
+        const bSev = severityOrder[b.severity] || 0;
+        if (aSev !== bSev) {
+          return bSev - aSev;
+        }
+        // 対応状況でソート (未完了が上)
+        const aUncomp = isUncompleted(a.status) ? 1 : 0;
+        const bUncomp = isUncompleted(b.status) ? 1 : 0;
+        if (aUncomp !== bUncomp) {
+          return bUncomp - aUncomp;
+        }
+        // 同一条件なら受付日の降順 (新しいものが上)
+        return new Date(b.regDate) - new Date(a.regDate);
+      });
+
+      let uncompletedCount = 0;
+
+      sortedIssues.forEach(issue => {
+        const tr = document.createElement('tr');
+        
+        // 未完了チェック
+        const uncompleted = isUncompleted(issue.status);
+        if (uncompleted) {
+          uncompletedCount++;
+          tr.classList.add('uncompleted-row');
+        }
+        
+        // 重大度のクラス付与（最優先ハイライト）
+        if (issue.severity === "重大") {
+          tr.classList.add('severity-high');
+        }
+
+        // 行の構築 (レスポンシブ用の data-label 属性付与)
+        tr.innerHTML = `
+          <td data-label="受付日">${escapeHtml(issue.regDate)}</td>
+          <td data-label="顧客名">${escapeHtml(issue.customerName)}</td>
+          <td data-label="品番">${escapeHtml(issue.partNumber)}</td>
+          <td data-label="重大度"><strong>${escapeHtml(issue.severity)}</strong></td>
+          <td data-label="対応状況">${escapeHtml(issue.status)}</td>
+          <td data-label="対応者">${escapeHtml(issue.assignee)}</td>
+          <td data-label="原因">${escapeHtml(issue.cause)}</td>
+          <td data-label="対策">${escapeHtml(issue.action)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // 未完了件数の表示更新
+      document.getElementById('uncompletedCount').innerText = `未完了件数: ${uncompletedCount}件`;
+    }
+
+    // HTMLエスケープ処理
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+    }
+
+    // 新規登録処理
+    document.getElementById('issueForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const newIssue = {
+        regDate: document.getElementById('regDate').value,
+        customerName: document.getElementById('customerName').value,
+        partNumber: document.getElementById('partNumber').value,
+        severity: document.getElementById('severity').value,
+        status: document.getElementById('status').value,
+        assignee: document.getElementById('assignee').value,
+        issueDetails: document.getElementById('issueDetails').value,
+        cause: document.getElementById('cause').value,
+        action: document.getElementById('action').value
+      };
+
+      issues.push(newIssue);
+      saveData();
+      renderTable();
+
+      // フォームのクリアと初期フォーカス設定
+      this.reset();
+      document.getElementById('regDate').focus();
+    });
+
+    // CSVエクスポート
+    document.getElementById('exportBtn').addEventListener('click', function() {
+      if (issues.length === 0) {
+        alert("出力するデータがありません。");
+        return;
+      }
+
+      const headers = ["受付日", "顧客名", "品番", "不具合内容", "重大度", "対応状況", "対応者", "原因", "対策"];
+      
+      const csvRows = [
+        headers.join(','), // ヘッダー
+        ...issues.map(row => {
+          return [
+            row.regDate,
+            row.customerName,
+            row.partNumber,
+            row.issueDetails,
+            row.severity,
+            row.status,
+            row.assignee,
+            row.cause,
+            row.action
+          ].map(val => {
+            // ダブルクォーテーションで囲み、内部のクォーテーションはエスケープ
+            const escaped = ('' + (val || '')).replace(/"/g, '""');
+            return `"${escaped}"`;
+          }).join(',');
+        })
+      ];
+
+      const csvContent = "\uFEFF" + csvRows.join("\r\n"); // Excelの文字化けを防ぐためのBOM付与
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      
+      const link = document.createElement("a");
+      if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `品質不具合一覧_${new Date().toISOString().slice(0,10)}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    });
+
+    // モーダル操作
+    const helpModal = document.getElementById('helpModal');
+    const openHelpBtn = document.getElementById('openHelpBtn');
+    const closeHelpBtn = document.getElementById('closeHelpBtn');
+    const closeHelpBottomBtn = document.getElementById('closeHelpBottomBtn');
+
+    function openModal() {
+      helpModal.style.display = 'flex';
+      closeHelpBtn.focus();
+    }
+
+    function closeModal() {
+      helpModal.style.display = 'none';
+      openHelpBtn.focus();
+    }
+
+    openHelpBtn.addEventListener('click', openModal);
+    closeHelpBtn.addEventListener('click', closeModal);
+    closeHelpBottomBtn.addEventListener('click', closeModal);
+
+    // キーボードのESCキーでモーダルを閉じる
+    window.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && helpModal.style.display === 'flex') {
+        closeModal();
+      }
+    });
+
+    // 初期化ロード
+    window.onload = function() {
+      loadData();
+      renderTable();
+      
+      // デフォルトの日付を入力欄に設定
+      const today = new Date().toISOString().slice(0, 10);
+      document.getElementById('regDate').value = today;
+    };
+  </script>
+</body>
+</html>

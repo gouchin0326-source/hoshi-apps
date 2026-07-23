@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>品質損失コスト集計ツール</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⚠️</text></svg>'>
+  <style>
+    /* Reset & Base Styles */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+      background-color: #f7f9fa;
+      color: #1a1a1a;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+    
+    /* Layout Wrapper */
+    .container {
+      max-width: 1024px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 3px solid #005a9c;
+      padding-bottom: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0;
+    }
+    .header-emoji {
+      font-size: 2.5rem;
+    }
+    .header-title h1 {
+      font-size: 1.5rem;
+      margin: 0;
+      color: #005a9c;
+    }
+
+    /* Primary Buttons */
+    .btn {
+      background-color: #005a9c;
+      color: #ffffff;
+      border: none;
+      padding: 10px 16px;
+      font-size: 1rem;
+      font-weight: bold;
+      border-radius: 4px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 48px; /* Touch target */
+      text-decoration: none;
+    }
+    .btn:hover, .btn:focus {
+      background-color: #004070;
+      outline: 3px solid #ffcc00;
+    }
+    .btn-secondary {
+      background-color: #e0e0e0;
+      color: #1a1a1a;
+      border: 1px solid #707070;
+    }
+    .btn-secondary:hover, .btn-secondary:focus {
+      background-color: #cccccc;
+      outline: 3px solid #005a9c;
+    }
+    .btn-danger {
+      background-color: #d32f2f;
+      color: #ffffff;
+    }
+    .btn-danger:hover, .btn-danger:focus {
+      background-color: #b71c1c;
+      outline: 3px solid #ffcc00;
+    }
+
+    /* Card Panels */
+    .card {
+      background-color: #ffffff;
+      border: 1px solid #cccccc;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .card h2 {
+      font-size: 1.25rem;
+      margin-top: 0;
+      margin-bottom: 16px;
+      color: #005a9c;
+      border-left: 5px solid #005a9c;
+      padding-left: 8px;
+    }
+
+    /* Form Styles */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+    .form-group label {
+      font-weight: bold;
+      margin-bottom: 6px;
+      font-size: 1rem;
+    }
+    .form-control {
+      width: 100%;
+      height: 48px; /* Accessible touch size */
+      font-size: 1rem;
+      padding: 8px 12px;
+      border: 1.5px solid #707070;
+      border-radius: 4px;
+      background-color: #ffffff;
+      color: #1a1a1a;
+    }
+    .form-control:focus {
+      border-color: #005a9c;
+      outline: 3px solid #ffcc00;
+    }
+    .error-msg {
+      color: #d32f2f;
+      font-weight: bold;
+      font-size: 0.9rem;
+      margin-top: 4px;
+      min-height: 1.25rem;
+    }
+
+    /* Filter Box */
+    .filter-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      background-color: #eef4f8;
+      padding: 16px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      align-items: flex-end;
+    }
+
+    /* Table Styles */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid #cccccc;
+      border-radius: 4px;
+      background-color: #ffffff;
+      margin-bottom: 16px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      min-width: 600px;
+    }
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #cccccc;
+      font-size: 1rem;
+    }
+    th {
+      background-color: #eef4f8;
+      color: #005a9c;
+      font-weight: bold;
+    }
+    tr:nth-child(even) {
+      background-color: #fcfdfe;
+    }
+    .text-right {
+      text-align: right;
+    }
+    
+    /* Summary Highlight */
+    .high-loss {
+      background-color: #ffebee !important; /* Soft light red, 1.5+ contrast */
+      color: #b71c1c;
+      font-weight: bold;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 24px 16px;
+      margin-top: 40px;
+      border-top: 1px solid #cccccc;
+      color: #555555;
+      font-size: 1rem;
+    }
+
+    /* Modal / Popups */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.6);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+    .modal-content {
+      background-color: #ffffff;
+      border-radius: 8px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #e0e0e0;
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+    .modal-header h3 {
+      margin: 0;
+      font-size: 1.3rem;
+      color: #005a9c;
+    }
+
+    /* Export Box */
+    .export-container {
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .csv-textarea {
+      width: 100%;
+      height: 120px;
+      font-family: monospace;
+      font-size: 0.95rem;
+      padding: 8px;
+      border: 1px solid #cccccc;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
+      .filter-grid {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="header-title">
+        <span class="header-emoji" aria-hidden="true">⚠️</span>
+        <h1>品質損失コスト集計ツール</h1>
+      </div>
+      <button class="btn btn-secondary" id="openManualBtn" aria-label="使い方の説明を開く">❓ 使い方を見る</button>
+    </header>
+
+    <section class="card" aria-labelledby="form-heading">
+      <h2 id="form-heading">不良・手直しデータの新規入力</h2>
+      <form id="lossForm" novalidate>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="inputDate">発生日 <span style="color:#d32f2f;">*</span></label>
+            <input type="date" id="inputDate" class="form-control" required>
+            <div class="error-msg" id="errorDate" role="alert"></div>
+          </div>
+          <div class="form-group">
+            <label for="inputPart">品番 <span style="color:#d32f2f;">*</span></label>
+            <input type="text" id="inputPart" class="form-control" placeholder="例: AB-1234" required>
+            <div class="error-msg" id="errorPart" role="alert"></div>
+          </div>
+          <div class="form-group">
+            <label for="inputProcess">工程 <span style="color:#d32f2f;">*</span></label>
+            <input type="text" id="inputProcess" class="form-control" placeholder="例: 加工、組立、検査" required>
+            <div class="error-msg" id="errorProcess" role="alert"></div>
+          </div>
+          <div class="form-group">
+            <label for="inputDefect">不良内容 <span style="color:#d32f2f;">*</span></label>
+            <input type="text" id="inputDefect" class="form-control" placeholder="例: 寸法外れ、傷" required>
+            <div class="error-msg" id="errorDefect" role="alert"></div>
+          </div>
+          <div class="form-group">
+            <label for="inputRework">手直し時間(人時) <span style="color:#d32f2f;">*</span></label>
+            <input type="number" id="inputRework" class="form-control" step="0.1" min="0" placeholder="例: 1.5" required>
+            <div class="error-msg" id="errorRework" role="alert"></div>
+          </div>
+          <div class="form-group">
+            <label for="inputRate">時間単価 (円) <span style="color:#d32f2f;">*</span></label>
+            <input type="number" id="inputRate" class="form-control" min="0" placeholder="例: 3000" required>
+            <div class="error-msg" id="errorRate" role="alert"></div>
+          </div>
+          <div class="form-group">
+            <label for="inputScrap">廃棄材料費 (円) <span style="color:#d32f2f;">*</span></label>
+            <input type="number" id="inputScrap" class="form-control" min="0" placeholder="例: 5000" required>
+            <div class="error-msg" id="errorScrap" role="alert"></div>
+          </div>
+        </div>
+        
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px;">
+          <button type="submit" class="btn">＋ データを登録する</button>
+          <button type="button" class="btn btn-secondary" id="clearFormBtn">リセット</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card" aria-labelledby="list-heading">
+      <h2 id="list-heading">登録データ一覧</h2>
+
+      <div class="filter-grid">
+        <div class="form-group" style="flex: 1; min-width: 150px;">
+          <label for="filterProcess">工程で絞り込む</label>
+          <input type="text" id="filterProcess" class="form-control" placeholder="すべての工程">
+        </div>
+        <div class="form-group" style="flex: 1; min-width: 150px;">
+          <label for="filterPeriod">期間(年月)で絞り込む</label>
+          <input type="month" id="filterPeriod" class="form-control">
+        </div>
+        <button type="button" class="btn btn-secondary" id="clearFilterBtn" style="height: 48px;">フィルター解除</button>
+      </div>
+
+      <div class="table-container">
+        <table id="dataTable">
+          <thead>
+            <tr>
+              <th scope="col">発生日</th>
+              <th scope="col">品番</th>
+              <th scope="col">工程</th>
+              <th scope="col">不良内容</th>
+              <th scope="col">手直し時間(人時)</th>
+              <th scope="col">時間単価</th>
+              <th scope="col">廃棄材料費</th>
+              <th scope="col">損失金額</th>
+              <th scope="col" style="width: 80px;">操作</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            </tbody>
+        </table>
+      </div>
+      
+      <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: space-between; align-items: center;">
+        <div>
+          <button class="btn" id="exportCsvBtn">📤 CSVデータを出力する</button>
+        </div>
+        <div>
+          <button class="btn btn-danger" id="allDeleteBtn">⚠️ 全データを消去</button>
+        </div>
+      </div>
+
+      <div class="export-container" id="exportArea" style="display: none;">
+        <label for="csvOutput" style="font-weight: bold;">CSVデータ (コピーしてExcelなどに貼り付けできます):</label>
+        <textarea id="csvOutput" class="csv-textarea" readonly></textarea>
+        <div style="display: flex; gap: 12px;">
+          <button class="btn btn-secondary" id="copyCsvBtn">📋 クリップボードにコピー</button>
+          <a class="btn" id="downloadCsvLink" download="quality_loss_data.csv">💾 CSVファイルをダウンロード</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="summary-heading">
+      <h2 id="summary-heading">品質損失コストの集計結果</h2>
+      
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
+        <div>
+          <h3 style="font-size: 1.1rem; color: #005a9c; margin-bottom: 8px;">【工程別】 損失金額・件数</h3>
+          <p style="font-size: 0.9rem; margin-top:0; color:#555;">※ 損失合計が5万円以上の工程は赤色で強調表示されます。</p>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">工程</th>
+                  <th scope="col" class="text-right">件数</th>
+                  <th scope="col" class="text-right">損失金額合計</th>
+                </tr>
+              </thead>
+              <tbody id="processSummaryBody">
+                </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div>
+          <h3 style="font-size: 1.1rem; color: #005a9c; margin-bottom: 8px;">【期間別(月度)】 損失金額・件数</h3>
+          <p style="font-size: 0.9rem; margin-top:0; color:#555;">&nbsp;</p>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">期間</th>
+                  <th scope="col" class="text-right">件数</th>
+                  <th scope="col" class="text-right">損失金額合計</th>
+                </tr>
+              </thead>
+              <tbody id="periodSummaryBody">
+                </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal-overlay" id="manualModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modalTitle">❓ このアプリの使い方</h3>
+        <button class="btn btn-secondary" id="closeManualBtn" style="min-height: 36px; padding: 4px 12px;" aria-label="閉じる">閉じる</button>
+      </div>
+      <div>
+        <h4 style="margin-top: 0; color: #005a9c;">1. このアプリで何ができるか</h4>
+        <p>製造現場や作業工程で発生した「不具合の手直し工数」や「廃棄された材料」のコストを登録し、どの工程や時期に多くの損失が発生しているかを一目で確認・分析できます。</p>
+
+        <h4 style="color: #005a9c;">2. 基本的な操作手順 (3ステップ)</h4>
+        <ol style="padding-left: 20px; line-height: 1.8;">
+          <li><strong>データの入力:</strong> ページ上部の入力フォームに「発生日」「品番」「工程」「不良内容」「手直し時間」「単価」「廃棄材料費」を入力し、「＋ データを登録する」ボタンを押します。</li>
+          <li><strong>データの確認と絞り込み:</strong> 登録したデータは一覧に表示され、「工程」や「期間」で簡単に絞り込み表示が可能です。</li>
+          <li><strong>損失コストの分析とデータ出力:</strong> ページ下部で、どの工程・どの月にコストが集中しているかが自動で集計されます。「CSVデータを出力する」ボタンを使えば、Excel等への保存も即座に行えます。</li>
+        </ol>
+
+        <h4 style="color: #005a9c;">3. データ保存とセキュリティについて</h4>
+        <p>入力されたデータはお使いのスマートフォンのブラウザ内(localStorage)にのみ安全に保存されます。外部サーバーへの送信は一切行いませんので、機密データでも安心してご利用いただけます。</p>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>品質コスト削減のための道具です</p>
+  </footer>
+
+  <script>
+    // State management
+    let state = {
+      records: []
+    };
+
+    // DOM Elements
+    const form = document.getElementById('lossForm');
+    const inputDate = document.getElementById('inputDate');
+    const inputPart = document.getElementById('inputPart');
+    const inputProcess = document.getElementById('inputProcess');
+    const inputDefect = document.getElementById('inputDefect');
+    const inputRework = document.getElementById('inputRework');
+    const inputRate = document.getElementById('inputRate');
+    const inputScrap = document.getElementById('inputScrap');
+
+    const errorDate = document.getElementById('errorDate');
+    const errorPart = document.getElementById('errorPart');
+    const errorProcess = document.getElementById('errorProcess');
+    const errorDefect = document.getElementById('errorDefect');
+    const errorRework = document.getElementById('errorRework');
+    const errorRate = document.getElementById('errorRate');
+    const errorScrap = document.getElementById('errorScrap');
+
+    const tableBody = document.getElementById('tableBody');
+    const processSummaryBody = document.getElementById('processSummaryBody');
+    const periodSummaryBody = document.getElementById('periodSummaryBody');
+
+    const filterProcess = document.getElementById('filterProcess');
+    const filterPeriod = document.getElementById('filterPeriod');
+    const clearFilterBtn = document.getElementById('clearFilterBtn');
+
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
+    const exportArea = document.getElementById('exportArea');
+    const csvOutput = document.getElementById('csvOutput');
+    const copyCsvBtn = document.getElementById('copyCsvBtn');
+    const downloadCsvLink = document.getElementById('downloadCsvLink');
+    const allDeleteBtn = document.getElementById('allDeleteBtn');
+    const clearFormBtn = document.getElementById('clearFormBtn');
+
+    const openManualBtn = document.getElementById('openManualBtn');
+    const closeManualBtn = document.getElementById('closeManualBtn');
+    const manualModal = document.getElementById('manualModal');
+
+    // Init & Load Data
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedData = localStorage.getItem('quality_loss_records');
+      if (savedData) {
+        try {
+          state.records = JSON.parse(savedData);
+        } catch (e) {
+          state.records = [];
+        }
+      }
+      render();
+      
+      // Set today's date in form as default
+      const today = new Date().toISOString().split('T')[0];
+      inputDate.value = today;
+    });
+
+    // Save data
+    function saveData() {
+      localStorage.setItem('quality_loss_records', JSON.stringify(state.records));
+    }
+
+    // Modal behavior
+    openManualBtn.addEventListener('click', () => {
+      manualModal.style.display = 'flex';
+      closeManualBtn.focus();
+    });
+    closeManualBtn.addEventListener('click', () => {
+      manualModal.style.display = 'none';
+    });
+    window.addEventListener('click', (e) => {
+      if (e.target === manualModal) {
+        manualModal.style.display = 'none';
+      }
+    });
+
+    // Form Reset
+    clearFormBtn.addEventListener('click', () => {
+      form.reset();
+      clearErrors();
+      const today = new Date().toISOString().split('T')[0];
+      inputDate.value = today;
+    });
+
+    // Form Submission / Validation
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      clearErrors();
+
+      let hasError = false;
+
+      // Validate Date
+      if (!inputDate.value) {
+        errorDate.textContent = '※ 発生日を入力してください。';
+        hasError = true;
+      }
+
+      // Validate Part
+      if (!inputPart.value.trim()) {
+        errorPart.textContent = '※ 品番を入力してください。';
+        hasError = true;
+      }
+
+      // Validate Process
+      if (!inputProcess.value.trim()) {
+        errorProcess.textContent = '※ 工程を入力してください。';
+        hasError = true;
+      }
+
+      // Validate Defect
+      if (!inputDefect.value.trim()) {
+        errorDefect.textContent = '※ 不良内容を入力してください。';
+        hasError = true;
+      }
+
+      // Validate Rework Time
+      const reworkVal = parseFloat(inputRework.value);
+      if (isNaN(reworkVal) || reworkVal < 0) {
+        errorRework.textContent = '※ 0以上の数値を入力してください。';
+        hasError = true;
+      }
+
+      // Validate Rate
+      const rateVal = parseFloat(inputRate.value);
+      if (isNaN(rateVal) || rateVal < 0) {
+        errorRate.textContent = '※ 0以上の数値を入力してください。';
+        hasError = true;
+      }
+
+      // Validate Scrap Cost
+      const scrapVal = parseFloat(inputScrap.value);
+      if (isNaN(scrapVal) || scrapVal < 0) {
+        errorScrap.textContent = '※ 0以上の数値を入力してください。';
+        hasError = true;
+      }
+
+      if (hasError) return;
+
+      // Calculate Total Loss: (Rework * Rate) + Scrap
+      const lossCost = Math.round((reworkVal * rateVal) + scrapVal);
+
+      // Add to State
+      const newRecord = {
+        id: Date.now().toString(),
+        date: inputDate.value,
+        part: inputPart.value.trim(),
+        process: inputProcess.value.trim(),
+        defect: inputDefect.value.trim(),
+        rework: reworkVal,
+        rate: rateVal,
+        scrap: scrapVal,
+        loss: lossCost
+      };
+
+      state.records.push(newRecord);
+      saveData();
+      render();
+
+      // Reset Form fields except Date
+      inputPart.value = '';
+      inputProcess.value = '';
+      inputDefect.value = '';
+      inputRework.value = '';
+      inputRate.value = '';
+      inputScrap.value = '';
+    });
+
+    // Clear error messages
+    function clearErrors() {
+      errorDate.textContent = '';
+      errorPart.textContent = '';
+      errorProcess.textContent = '';
+      errorDefect.textContent = '';
+      errorRework.textContent = '';
+      errorRate.textContent = '';
+      errorScrap.textContent = '';
+    }
+
+    // Filters behavior
+    filterProcess.addEventListener('input', render);
+    filterPeriod.addEventListener('input', render);
+    clearFilterBtn.addEventListener('click', () => {
+      filterProcess.value = '';
+      filterPeriod.value = '';
+      render();
+    });
+
+    // Delete Record
+    function deleteRecord(id) {
+      if (confirm('このレコードを削除しますか？')) {
+        state.records = state.records.filter(r => r.id !== id);
+        saveData();
+        render();
+      }
+    }
+
+    // Clear All Records
+    allDeleteBtn.addEventListener('click', () => {
+      if (confirm('本当にすべてのデータを削除しますか？ この操作は取り消せません。')) {
+        state.records = [];
+        saveData();
+        render();
+      }
+    });
+
+    // Render Function
+    function render() {
+      // 1. Get Filters
+      const fProcess = filterProcess.value.trim().toLowerCase();
+      const fPeriod = filterPeriod.value; // YYYY-MM
+
+      // 2. Filter records
+      const filteredRecords = state.records.filter(record => {
+        let matchProcess = true;
+        let matchPeriod = true;
+
+        if (fProcess) {
+          matchProcess = record.process.toLowerCase().includes(fProcess);
+        }
+        if (fPeriod) {
+          // record.date is YYYY-MM-DD, filter is YYYY-MM
+          matchPeriod = record.date.startsWith(fPeriod);
+        }
+
+        return matchProcess && matchPeriod;
+      });
+
+      // Sort chronological descending
+      filteredRecords.sort((a, b) => b.date.localeCompare(a.date));
+
+      // 3. Render Table List
+      tableBody.innerHTML = '';
+      if (filteredRecords.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #555;">該当するデータはありません。新規データを登録してください。</td></tr>`;
+      } else {
+        filteredRecords.forEach(record => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${escapeHtml(record.date)}</td>
+            <td>${escapeHtml(record.part)}</td>
+            <td>${escapeHtml(record.process)}</td>
+            <td>${escapeHtml(record.defect)}</td>
+            <td class="text-right">${record.rework.toLocaleString()}</td>
+            <td class="text-right">¥${record.rate.toLocaleString()}</td>
+            <td class="text-right">¥${record.scrap.toLocaleString()}</td>
+            <td class="text-right" style="font-weight: bold; color: #005a9c;">¥${record.loss.toLocaleString()}</td>
+            <td>
+              <button class="btn btn-danger" style="min-height:36px; padding: 4px 8px; font-size:0.9rem;" onclick="deleteRecord('${record.id}')" aria-label="削除">削除</button>
+            </td>
+          `;
+          tableBody.appendChild(tr);
+        });
+      }
+
+      // 4. Calculate Summaries
+      // Aggregate by Process
+      const processAgg = {};
+      // Aggregate by Period (YYYY-MM)
+      const periodAgg = {};
+
+      filteredRecords.forEach(record => {
+        // Process aggregation
+        const proc = record.process;
+        if (!processAgg[proc]) {
+          processAgg[proc] = { count: 0, loss: 0 };
+        }
+        processAgg[proc].count += 1;
+        processAgg[proc].loss += record.loss;
+
+        // Period aggregation
+        const period = record.date.substring(0, 7); // YYYY-MM
+        if (!periodAgg[period]) {
+          periodAgg[period] = { count: 0, loss: 0 };
+        }
+        periodAgg[period].count += 1;
+        periodAgg[period].loss += record.loss;
+      });
+
+      // Render Process Summary
+      processSummaryBody.innerHTML = '';
+      const processKeys = Object.keys(processAgg).sort((a,b) => processAgg[b].loss - processAgg[a].loss); // High loss first
+      if (processKeys.length === 0) {
+        processSummaryBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: #555;">データがありません</td></tr>`;
+      } else {
+        processKeys.forEach(proc => {
+          const tr = document.createElement('tr');
+          const isHighLoss = processAgg[proc].loss >= 50000; // Threshold for highlighting (>= 50,000 yen)
+          if (isHighLoss) {
+            tr.classList.add('high-loss');
+          }
+          tr.innerHTML = `
+            <td>${escapeHtml(proc)}</td>
+            <td class="text-right">${processAgg[proc].count} 件</td>
+            <td class="text-right">¥${processAgg[proc].loss.toLocaleString()}</td>
+          `;
+          processSummaryBody.appendChild(tr);
+        });
+      }
+
+      // Render Period Summary
+      periodSummaryBody.innerHTML = '';
+      const periodKeys = Object.keys(periodAgg).sort((a,b) => b.localeCompare(a)); // Newest first
+      if (periodKeys.length === 0) {
+        periodSummaryBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: #555;">データがありません</td></tr>`;
+      } else {
+        periodKeys.forEach(period => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${escapeHtml(period)}</td>
+            <td class="text-right">${periodAgg[period].count} 件</td>
+            <td class="text-right">¥${periodAgg[period].loss.toLocaleString()}</td>
+          `;
+          periodSummaryBody.appendChild(tr);
+        });
+      }
+
+      // Clean up CSV Export Area if open
+      exportArea.style.display = 'none';
+    }
+
+    // Export to CSV Logic
+    exportCsvBtn.addEventListener('click', () => {
+      // Headers: 発生日,品番,工程,不良内容,手直し時間,時間単価,廃棄材料費,損失金額
+      let csvContent = "発生日,品番,工程,不良内容,手直し時間,時間単価,廃棄材料費,損失金額\n";
+      
+      // Use filtered or all? Generally, filtered records are exported or all records. Let's export currently displayed (filtered) data.
+      const fProcess = filterProcess.value.trim().toLowerCase();
+      const fPeriod = filterPeriod.value;
+      const recordsToExport = state.records.filter(record => {
+        let matchProcess = true;
+        let matchPeriod = true;
+        if (fProcess) matchProcess = record.process.toLowerCase().includes(fProcess);
+        if (fPeriod) matchPeriod = record.date.startsWith(fPeriod);
+        return matchProcess && matchPeriod;
+      });
+
+      if (recordsToExport.length === 0) {
+        alert('出力対象のデータがありません。');
+        return;
+      }
+
+      recordsToExport.forEach(r => {
+        const row = [
+          r.date,
+          escapeCsvField(r.part),
+          escapeCsvField(r.process),
+          escapeCsvField(r.defect),
+          r.rework,
+          r.rate,
+          r.scrap,
+          r.loss
+        ].join(',');
+        csvContent += row + "\n";
+      });
+
+      // Display in textarea
+      csvOutput.value = csvContent;
+      exportArea.style.display = 'flex';
+
+      // Setup Download Link (UTF-8 with BOM for Excel compatibility in Japanese systems)
+      const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+      const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      downloadCsvLink.href = url;
+    });
+
+    // Copy CSV
+    copyCsvBtn.addEventListener('click', () => {
+      csvOutput.select();
+      document.execCommand('copy');
+      alert('CSVデータをクリップボードにコピーしました！');
+    });
+
+    // Escape CSV values
+    function escapeCsvField(val) {
+      if (val.includes(',') || val.includes('"') || val.includes('\n')) {
+        return '"' + val.replace(/"/g, '""') + '"';
+      }
+      return val;
+    }
+
+    // XSS Escape Utility
+    function escapeHtml(string) {
+      if (typeof string !== 'string') {
+        return string;
+      }
+      return string.replace(/[&<>"']/g, function(match) {
+        const escapeMap = {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#x27;'
+        };
+        return escapeMap[match];
+      });
+    }
+  </script>
+</body>
+</html>
