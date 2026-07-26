@@ -1,22 +1,14 @@
 {
-  "generated_at": "2026-07-27 07:07:05",
+  "generated_at": "2026-07-27 07:13:05",
   "gpu": {
-    "occupant": "run_zimage（run_zimage_cli）",
-    "note": "経過5s / 目安あと約2分",
-    "vram_used_gb": 2.8,
+    "occupant": "モデル待機中（アイドル）",
+    "note": "生成は完了済み・モデルがVRAMに残っています",
+    "vram_used_gb": 11.0,
     "vram_total_gb": 15.9,
-    "util": 47,
+    "util": 1,
     "lock": {
-      "locked": true,
-      "holder": {
-        "pid": 26056,
-        "session": "run_zimage_cli",
-        "job": "run_zimage",
-        "started_at": "2026-07-27T07:07:00+0900",
-        "age_sec": 5,
-        "alive": true,
-        "est_minutes": 3
-      },
+      "locked": false,
+      "holder": null,
       "stale": false
     }
   },
@@ -49,7 +41,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-27 07:04",
+    "updated": "2026-07-27 07:10",
     "current": null
   },
   "queue": [
@@ -136,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 5
+    "push_today": 6
   },
   "ai_works": [
     {
@@ -213,10 +205,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 9,
-    "mem_pct": 43,
+    "cpu_pct": 3,
+    "mem_pct": 45,
     "mem_total_gb": 31.7,
     "disk_used_gb": 315.1,
-    "disk_free_gb": 1546.7
+    "disk_free_gb": 1546.6
   }
 }
