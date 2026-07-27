@@ -1,22 +1,14 @@
 {
-  "generated_at": "2026-07-27 23:43:05",
+  "generated_at": "2026-07-27 23:49:05",
   "gpu": {
-    "occupant": "hibana_i2v_c8_zanko（opus-20260727-hibana）",
-    "note": "経過121s / 目安あと約5分",
-    "vram_used_gb": 12.9,
+    "occupant": "モデル待機中（アイドル）",
+    "note": "生成は完了済み・モデルがVRAMに残っています",
+    "vram_used_gb": 3.7,
     "vram_total_gb": 15.9,
-    "util": 100,
+    "util": 1,
     "lock": {
-      "locked": true,
-      "holder": {
-        "pid": 34836,
-        "session": "opus-20260727-hibana",
-        "job": "hibana_i2v_c8_zanko",
-        "started_at": "2026-07-27T23:41:03+0900",
-        "age_sec": 121,
-        "alive": true,
-        "est_minutes": 8
-      },
+      "locked": false,
+      "holder": null,
       "stale": false
     }
   },
@@ -49,7 +41,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-27 23:42",
+    "updated": "2026-07-27 23:48",
     "current": null
   },
   "queue": [
@@ -136,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 171
+    "push_today": 172
   },
   "ai_works": [
     {
@@ -213,10 +205,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 58,
+    "cpu_pct": 4,
     "mem_pct": 51,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 328.6,
-    "disk_free_gb": 1533.2
+    "disk_used_gb": 329.3,
+    "disk_free_gb": 1532.4
   }
 }
