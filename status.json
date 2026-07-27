@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-07-27 23:25:06",
+  "generated_at": "2026-07-27 23:31:05",
   "gpu": {
-    "occupant": "hibana_i2v_c2_temoto（opus-20260727-hibana）",
-    "note": "経過180s / 目安あと約5分",
-    "vram_used_gb": 10.6,
+    "occupant": "hibana_i2v_c4_kakeai（opus-20260727-hibana）",
+    "note": "経過161s / 目安あと約5分",
+    "vram_used_gb": 12.8,
     "vram_total_gb": 15.9,
     "util": 100,
     "lock": {
@@ -11,9 +11,9 @@
       "holder": {
         "pid": 34836,
         "session": "opus-20260727-hibana",
-        "job": "hibana_i2v_c2_temoto",
-        "started_at": "2026-07-27T23:22:04+0900",
-        "age_sec": 180,
+        "job": "hibana_i2v_c4_kakeai",
+        "started_at": "2026-07-27T23:28:24+0900",
+        "age_sec": 161,
         "alive": true,
         "est_minutes": 8
       },
@@ -49,7 +49,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-27 23:24",
+    "updated": "2026-07-27 23:30",
     "current": null
   },
   "queue": [
@@ -136,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 168
+    "push_today": 169
   },
   "ai_works": [
     {
@@ -214,7 +214,7 @@
   ],
   "resources": {
     "cpu_pct": 11,
-    "mem_pct": 85,
+    "mem_pct": 56,
     "mem_total_gb": 31.7,
     "disk_used_gb": 329.8,
     "disk_free_gb": 1531.9
