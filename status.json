@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-07-28 16:25:08",
+  "generated_at": "2026-07-28 16:31:07",
   "gpu": {
-    "occupant": "モデル待機中（アイドル）",
-    "note": "生成は完了済み・モデルがVRAMに残っています",
-    "vram_used_gb": 10.8,
+    "occupant": "コード開発（ローカルLLM）",
+    "note": "qwen2.5:7b",
+    "vram_used_gb": 5.4,
     "vram_total_gb": 15.9,
-    "util": 1,
+    "util": 0,
     "lock": {
       "locked": false,
       "holder": null,
@@ -19,7 +19,7 @@
     },
     {
       "name": "生成 (ComfyUI)",
-      "up": true
+      "up": false
     },
     {
       "name": "チャットUI (Open WebUI)",
@@ -41,7 +41,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-28 16:23",
+    "updated": "2026-07-28 16:29",
     "current": null
   },
   "queue": [
@@ -128,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 99
+    "push_today": 100
   },
   "ai_works": [
     {
@@ -205,10 +205,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 15,
-    "mem_pct": 49,
+    "cpu_pct": 1,
+    "mem_pct": 44,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 351.0,
+    "disk_used_gb": 350.9,
     "disk_free_gb": 1510.8
   }
 }
