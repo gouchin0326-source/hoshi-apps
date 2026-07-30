@@ -1,14 +1,22 @@
 {
-  "generated_at": "2026-07-30 19:49:05",
+  "generated_at": "2026-07-30 19:55:05",
   "gpu": {
-    "occupant": "空き（アイドル）",
-    "note": "誰も使っていません",
-    "vram_used_gb": 1.5,
+    "occupant": "appmv_kv_sc06（opus-20260727-hibana）",
+    "note": "経過2s / 目安あと約1分",
+    "vram_used_gb": 13.1,
     "vram_total_gb": 15.9,
-    "util": 0,
+    "util": 95,
     "lock": {
-      "locked": false,
-      "holder": null,
+      "locked": true,
+      "holder": {
+        "pid": 6308,
+        "session": "opus-20260727-hibana",
+        "job": "appmv_kv_sc06",
+        "started_at": "2026-07-30T19:55:02+0900",
+        "age_sec": 2,
+        "alive": true,
+        "est_minutes": 2
+      },
       "stale": false
     }
   },
@@ -41,7 +49,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-30 19:48",
+    "updated": "2026-07-30 19:54",
     "current": null
   },
   "queue": [
@@ -128,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 134
+    "push_today": 135
   },
   "ai_works": [
     {
@@ -205,10 +213,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 7,
-    "mem_pct": 77,
+    "cpu_pct": 4,
+    "mem_pct": 47,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 369.9,
-    "disk_free_gb": 1491.9
+    "disk_used_gb": 370.1,
+    "disk_free_gb": 1491.6
   }
 }
