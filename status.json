@@ -1,14 +1,22 @@
 {
-  "generated_at": "2026-07-30 10:37:07",
+  "generated_at": "2026-07-30 10:43:05",
   "gpu": {
-    "occupant": "空き（アイドル）",
-    "note": "誰も使っていません",
-    "vram_used_gb": 0.8,
+    "occupant": "appmv_kv_sc02（opus-20260727-hibana）",
+    "note": "経過4s / 目安あと約1分",
+    "vram_used_gb": 11.9,
     "vram_total_gb": 15.9,
-    "util": 1,
+    "util": 98,
     "lock": {
-      "locked": false,
-      "holder": null,
+      "locked": true,
+      "holder": {
+        "pid": 35004,
+        "session": "opus-20260727-hibana",
+        "job": "appmv_kv_sc02",
+        "started_at": "2026-07-30T10:43:01+0900",
+        "age_sec": 4,
+        "alive": true,
+        "est_minutes": 2
+      },
       "stale": false
     }
   },
@@ -19,7 +27,7 @@
     },
     {
       "name": "生成 (ComfyUI)",
-      "up": false
+      "up": true
     },
     {
       "name": "チャットUI (Open WebUI)",
@@ -41,7 +49,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-30 10:36",
+    "updated": "2026-07-30 10:42",
     "current": null
   },
   "queue": [
@@ -128,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 42
+    "push_today": 43
   },
   "ai_works": [
     {
@@ -205,8 +213,8 @@
     }
   ],
   "resources": {
-    "cpu_pct": 15,
-    "mem_pct": 38,
+    "cpu_pct": 22,
+    "mem_pct": 46,
     "mem_total_gb": 31.7,
     "disk_used_gb": 365.6,
     "disk_free_gb": 1496.2
