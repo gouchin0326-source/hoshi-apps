@@ -1,19 +1,19 @@
 {
-  "generated_at": "2026-07-31 15:55:05",
+  "generated_at": "2026-07-31 16:01:05",
   "gpu": {
-    "occupant": "appmv_audio_2026-07_kakedasu（opus-20260727-hibana）",
-    "note": "経過9s / 目安あと約5分",
+    "occupant": "appmv_audio_2026-07_yofuke（opus-20260727-hibana）",
+    "note": "経過5s / 目安あと約5分",
     "vram_used_gb": 6.2,
     "vram_total_gb": 15.9,
-    "util": 28,
+    "util": 31,
     "lock": {
       "locked": true,
       "holder": {
-        "pid": 36848,
+        "pid": 30540,
         "session": "opus-20260727-hibana",
-        "job": "appmv_audio_2026-07_kakedasu",
-        "started_at": "2026-07-31T15:54:55+0900",
-        "age_sec": 9,
+        "job": "appmv_audio_2026-07_yofuke",
+        "started_at": "2026-07-31T16:00:59+0900",
+        "age_sec": 5,
         "alive": true,
         "est_minutes": 6
       },
@@ -49,7 +49,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-07-31 15:52",
+    "updated": "2026-07-31 15:58",
     "current": null
   },
   "queue": [
@@ -136,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 102
+    "push_today": 103
   },
   "ai_works": [
     {
@@ -213,10 +213,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 11,
-    "mem_pct": 50,
+    "cpu_pct": 18,
+    "mem_pct": 64,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 361.7,
-    "disk_free_gb": 1500.0
+    "disk_used_gb": 362.0,
+    "disk_free_gb": 1499.7
   }
 }
