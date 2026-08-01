@@ -190,6 +190,8 @@
   <div class="chk"><input type="checkbox" id="s-streaks" checked><label for="s-streaks" style="margin:0">流線をみせる</label></div>
   <div class="chk"><input type="checkbox" id="s-dynfov" checked><label for="s-dynfov" style="margin:0">スピードで視界がひろがる</label></div>
   <div class="chk"><input type="checkbox" id="s-bank" checked><label for="s-bank" style="margin:0">旋回でかたむく</label></div>
+  <!-- 弾10 §R8: めじるし（星座の目印）。既定ON・OFF時は専用ドローコールをスキップ（v0.3の佇まいに戻せる=不変条件5） -->
+  <div class="chk"><input type="checkbox" id="s-landmarks" checked><label for="s-landmarks" style="margin:0">🏛️ めじるしをみせる</label></div>
   <!-- 弾8: オートクルーズ（既定OFF＝Q12裁定待ち）。右上🛩️ボタン／Cキーでも同じON/OFFに切り替わる -->
   <div class="chk"><input type="checkbox" id="s-autocruise"><label for="s-autocruise" style="margin:0">🛩️ オートクルーズ（そうさなしでも すすむ・コース中は じどうで きりかえる）</label></div>
   <!-- 弾6 T13: 一括OFF確認用。OFFでquest-hud/swoosh-hud/course-hudのDOM更新を止め、v0.3の佇まいに戻す -->
@@ -296,7 +298,8 @@
   var _hadSavedCfg = (function(){ try{ return !!localStorage.getItem(CFG_KEY); }catch(e){ return false; } })();
   var cfg = Object.assign({ count:8000, sens:1.0, inertia:0.5, reduce:false, lines:true, map:true, invertY:false, lookSpeed:1.0, lookMode:"lock",
       comfort:false, streaks:true, dynfov:true, bank:true, speedScale:1.0, env:"space", showHud:true,
-      autocruise:false },   // 弾8: Q12裁定待ちにつき既定OFF（安全側＝起動直後に勝手に進まない）
+      autocruise:false,   // 弾8: Q12裁定待ちにつき既定OFF（安全側＝起動直後に勝手に進まない）
+      showLandmarks:true },   // 弾10 §R8: めじるし（星座の目印）既定ON
     (function(){ try{ return JSON.parse(localStorage.getItem(CFG_KEY))||{}; }catch(e){ return {}; } })());
   var freshGroundStart = !_hadSavedCfg;
   if(freshGroundStart) cfg.env = "ground";   // 初回だけ既定を「じめん」にする（保存ロジック自体はいじらない＝saveCfg()は従来通り）
@@ -461,6 +464,20 @@
     "vec3 col=mix(vec3(0.55,0.65,0.85), vec3(1.0,0.92,0.55), v_glow);"+   // 遠い環=青白／次にくぐる環=金色（高輝度）
     "o=vec4(col*a, min(a,1.0)); }");
   var gt_vp=gl.getUniformLocation(gtProg,"u_vp");
+
+  // 弾10: めじるし（星座の目印）＝gtProgと同型の点スプライト・専用1ドローコール（§B-13予算の最後の1つ＝流線・光の環に続く3番目）
+  var lmProg = prog(
+    HEAD+"layout(location=0) in vec3 a_pos; layout(location=1) in float a_hue; layout(location=2) in float a_gold; layout(location=3) in float a_seed;"+
+    "uniform mat4 u_vp; uniform float u_time; uniform float u_still; out vec3 v_col; out float v_pulse;"+HUE2RGB+
+    "void main(){ gl_Position=u_vp*vec4(a_pos,1.0); float w=max(gl_Position.w,0.001);"+
+    "float pulse = mix(1.0, 1.0+0.22*sin(u_time*0.6+a_seed), 1.0-u_still);"+   // 快適/reduced時はu_still=1でパルス振幅0（静止表示）
+    "v_pulse=pulse; v_col=mix(hue2rgb(a_hue), vec3(1.0,0.92,0.55), a_gold);"+   // 色=クラスタ平均hue／コンプ済みは金色
+    "gl_PointSize=clamp((900.0/w)*pulse, 10.0, 40.0); }",                     // 通常の星より大きく・遠距離減衰を弱める
+    HEAD+"precision highp float; in vec3 v_col; in float v_pulse; out vec4 o;"+
+    "void main(){ vec2 c=gl_PointCoord-0.5; float d=length(c); float a=exp(-d*d*16.0)*0.8; if(a<0.01) discard;"+
+    "o=vec4(v_col*a*v_pulse, min(a,1.0)); }");
+  var lm_vp=gl.getUniformLocation(lmProg,"u_vp"), lm_time=gl.getUniformLocation(lmProg,"u_time"),
+      lm_still=gl.getUniformLocation(lmProg,"u_still");
 
   function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
   function hashStr(s){ var h=2166136261>>>0; for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
@@ -642,6 +659,7 @@
     gl.bindVertexArray(null);
     buildLines();
     syncVisitedBuffer();
+    buildLandmarks();
   }
   // 弾5: 訪問済み星のaVisitedを一括同期（buildWorksでバッファが作り直された直後専用。個別更新はupdateVisitedOne）
   function syncVisitedBuffer(){
@@ -685,6 +703,51 @@
     var gb=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,gb); gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(golds),gl.STATIC_DRAW);
     gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2,1,gl.FLOAT,false,0,0);
     gl.bindVertexArray(null); lnBufs.push(pb,hb,gb);
+  }
+  // 弾10 §R8: めじるし（星座の目印）＝buildLinesと同じconstellationグルーピング（メンバー2件未満は対象外）。
+  // pos=メンバーのwkPos(現在の環境写像後の座標)の重心。純関数（同一入力→同一出力・§G T19a）。
+  // doneCount=save.visited参照（既存buildLinesのisGoldと同じ「saveは閉包で読む」慣習・関数の引数は仕様通りworks/wkPosの2つのみ）。
+  var landmarks=[];
+  function landmarksFor(works, wkPosArr){
+    var groups={};
+    for(var i=0;i<works.length;i++){ var key=works[i].constellation||"?"; (groups[key]||(groups[key]=[])).push(i); }
+    var out=[], keys=Object.keys(groups).sort();
+    for(var k=0;k<keys.length;k++){
+      var key=keys[k], idxs=groups[key];
+      if(idxs.length<2) continue;   // §G T19b: 星座線と同じ閾値
+      var cx=0,cy=0,cz=0,hueSum=0,doneCount=0,n=idxs.length;
+      for(var j=0;j<n;j++){ var p=wkPosArr[idxs[j]]; cx+=p[0]; cy+=p[1]; cz+=p[2];
+        hueSum += ((works[idxs[j]].hue||0)%360);
+        if(typeof save!=="undefined" && save && save.visited && save.visited[works[idxs[j]].id]) doneCount++; }
+      out.push({ key:key, pos:[cx/n, cy/n, cz/n], memberCount:n, doneCount:doneCount, hue:(hueSum/n)%360 });
+    }
+    return out;
+  }
+  // めじるしVAO作り直し＝buildWorks()内(wkPos確定後)から毎回呼ぶ。環境切替/星数変更で目印位置も追従（作品が主役の不変条件どおり）。
+  var lmVAO=null, lmBufs=[], lmCount=0;
+  function buildLandmarks(){
+    landmarks = landmarksFor(WORKS, wkPos);
+    if(lmVAO){ gl.deleteVertexArray(lmVAO); delBufs(lmBufs); }
+    var n=landmarks.length;
+    if(n===0){ lmVAO=null; lmCount=0; return; }
+    var pos=new Float32Array(n*3), hue=new Float32Array(n), gold=new Float32Array(n), seed=new Float32Array(n);
+    for(var i=0;i<n;i++){ var lm=landmarks[i], p=lm.pos;
+      pos[i*3]=p[0]; pos[i*3+1]=p[1]; pos[i*3+2]=p[2];
+      hue[i]=((lm.hue||0)%360)/360;
+      gold[i] = (typeof save!=="undefined" && save && constellationComplete(lm.key)) ? 1 : 0;
+      seed[i] = (hashStr(lm.key)%1000)/1000 * Math.PI*2;
+    }
+    lmVAO=gl.createVertexArray(); gl.bindVertexArray(lmVAO);
+    var pb=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,pb); gl.bufferData(gl.ARRAY_BUFFER,pos,gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,3,gl.FLOAT,false,0,0);
+    var hb=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,hb); gl.bufferData(gl.ARRAY_BUFFER,hue,gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1,1,gl.FLOAT,false,0,0);
+    var gb=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,gb); gl.bufferData(gl.ARRAY_BUFFER,gold,gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2,1,gl.FLOAT,false,0,0);
+    var sb=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,sb); gl.bufferData(gl.ARRAY_BUFFER,seed,gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(3); gl.vertexAttribPointer(3,1,gl.FLOAT,false,0,0);
+    gl.bindVertexArray(null);
+    lmCount=n; lmBufs=[pb,hb,gb,sb];
   }
   function buildNebula(n){
     if(nbVAO){ gl.deleteVertexArray(nbVAO); delBufs(nbBufs); }
@@ -781,7 +844,7 @@
   // 高度の相場は既存の「床のある世界の安全高度」floorY+14（1373行目付近）をそのまま流用＝離陸判定の閾値としても違和感がない値。
   var takeoffKick=0, takenOff=!freshGroundStart;
   var TAKEOFF_START_Y=((ENV.floorY!=null?ENV.floorY:GND_FLOOR)+2), TAKEOFF_ALT=((ENV.floorY!=null?ENV.floorY:GND_FLOOR)+14);
-  var lastWTap=-9, lastDrawCalls=0, lastStreakCount=0, logicMs=0;
+  var lastWTap=-9, lastDrawCalls=0, lastStreakCount=0, logicMs=0, lastLmStill=0;
   function speedCap(){ return PHYS.V_MAX * (+cfg.speedScale||1); }
   var keys={}, upHold=false, downHold=false, moveVec={f:0,s:0};
   var pointers={}, lastX=0, lastY=0, moveStart=null;
@@ -1453,6 +1516,13 @@
       gl.useProgram(gtProg); gl.uniformMatrix4fv(gt_vp,false,VPfull);
       gl.bindVertexArray(gtVAO); gl.drawArrays(gl.POINTS,0,gtCount); dc++;
     }
+    // 弾10 §R8: めじるし（星座の目印）＝コース中に限らず常時（§B-13予算の最後の1つ）。⚙OFF時はスキップ(v0.3の佇まいに戻せる)。
+    lastLmStill = (comfortActive||reduceActive) ? 1 : 0;   // 快適/reduced時はパルス振幅0（静止表示・§G T19d）
+    if(cfg.showLandmarks && lmVAO && lmCount>0){
+      gl.useProgram(lmProg); gl.uniformMatrix4fv(lm_vp,false,VPfull);
+      gl.uniform1f(lm_time,tsec); gl.uniform1f(lm_still,lastLmStill);
+      gl.bindVertexArray(lmVAO); gl.drawArrays(gl.POINTS,0,lmCount); dc++;
+    }
     gl.bindVertexArray(null); lastDrawCalls=dc;
   }
   window.__tenkyu={ draw:function(t){ drawScene(t||0,0); },
@@ -1553,7 +1623,12 @@
     importSave:function(jsonStr){ var m=null; try{ m=mergeImportedSave(JSON.parse(jsonStr)); }catch(e){ m=null; }
       if(!m) return false; save=m; persistSave(); syncVisitedBuffer(); completedConstellations=recomputeCompletedConstellations(); buildLines();
       ensureQuestDay(); updateQuestHud(); return true; },
-    renderLogbook:function(){ renderLogbook(); }
+    renderLogbook:function(){ renderLogbook(); },
+    // 弾10 §R8のテスト用フック（めじるし＝星座の目印）
+    landmarksFor:landmarksFor,
+    landmarksNow:function(){ return landmarks.map(function(l){ return Object.assign({},l,{pos:l.pos.slice()}); }); },
+    lmCount:function(){ return lmCount; },
+    landmarkStill:function(){ return lastLmStill; }
   };
 
   // ---------- 近接サムネ（DOMオーバーレイ） ----------
@@ -1591,6 +1666,12 @@
       var mx=(p[0]-camPos[0])*SC, mz=(p[2]-camPos[2])*SC; if(Math.hypot(mx,mz)>R) continue;
       g.fillStyle= (i===selIndex)?"#fff":"hsl("+(WORKS[i].hue||0)+",70%,62%)";
       var rr=(i===selIndex)?3.2:2; g.beginPath(); g.arc(cx+mx,cy+mz,rr,0,Math.PI*2); g.fill(); }
+    // 弾10 §R8: めじるし（星座の目印）＝小さな菱形マーカー（既存の環マーカーと同じ座標変換を流用）
+    if(cfg.showLandmarks){ g.fillStyle="rgba(255,225,140,.9)";
+      for(var li=0; li<landmarks.length; li++){ var lp=landmarks[li].pos;
+        var lx=(lp[0]-camPos[0])*SC, lz=(lp[2]-camPos[2])*SC; if(Math.hypot(lx,lz)>R) continue;
+        var dx=cx+lx, dz=cy+lz, sd=4;
+        g.beginPath(); g.moveTo(dx,dz-sd); g.lineTo(dx+sd,dz); g.lineTo(dx,dz+sd); g.lineTo(dx-sd,dz); g.closePath(); g.fill(); } }
     // カメラ（中心）と向き
     g.fillStyle="#8fb8ff"; g.beginPath(); g.arc(cx,cy,3,0,Math.PI*2); g.fill();
     var hx=Math.sin(yaw), hz=-Math.cos(yaw);
@@ -1894,6 +1975,10 @@
   sStreaks.onchange=function(){ cfg.streaks=sStreaks.checked; saveCfg(); };
   sDynfov.onchange =function(){ cfg.dynfov =sDynfov.checked;  saveCfg(); };
   sBank.onchange   =function(){ cfg.bank   =sBank.checked;    saveCfg(); };
+  // 弾10 §R8: めじるし（星座の目印）ON/OFF
+  var sLandmarks=document.getElementById("s-landmarks");
+  sLandmarks.checked=!!cfg.showLandmarks;
+  sLandmarks.onchange=function(){ cfg.showLandmarks=sLandmarks.checked; saveCfg(); };
   // 弾8: オートクルーズ（⚙チェックボックス／右上🛩️ボタン／Cキーの3つが同じcfg.autocruiseを共有）
   function syncCruiseUI(){
     var b=document.getElementById("btn-cruise"); if(b) b.classList.toggle("on", !!cfg.autocruise);
@@ -2178,8 +2263,9 @@
       var st=window.__tenkyu.getState();
       abandonCourse(); camVel=[0,0,0];
       cfg=savedCfg; updateComfort();
-      var logicOk=st.logicMs<1.0, dcOk=st.drawCalls<=6;   // v0.3基準4(星雲+背景/ドーム+星座線+作品)+2(流線+光の環)まで
-      return {pass:logicOk&&dcOk, detail:"logicMs="+st.logicMs.toFixed(3)+"ms drawCalls="+st.drawCalls+"（基準4+2以内）"};
+      // v0.3基準4(星雲+背景/ドーム+星座線+作品)+3(流線+光の環+弾10めじるし)まで＝§B-13予算の上限ちょうど
+      var logicOk=st.logicMs<1.0, dcOk=st.drawCalls<=7;
+      return {pass:logicOk&&dcOk, detail:"logicMs="+st.logicMs.toFixed(3)+"ms drawCalls="+st.drawCalls+"（基準4+3以内）"};
     }
     function t_T15(){
       var gate={pos:[0,0,-50],r:6}, normal=[0,0,1];
@@ -2297,6 +2383,59 @@
       return {pass:restOk&&speedOk&&boundOk&&sawNonzero&&gateOk&&peakOk&&decayOk, detail:d.join(" / ")};
     }
 
+    // 弾10 §R8: めじるし（星座の目印）の検証
+    function t_T19a(){
+      // 決定論: 同一入力2回→座標完全一致
+      var a=JSON.stringify(landmarksFor(WORKS, wkPos));
+      var b=JSON.stringify(landmarksFor(WORKS, wkPos));
+      var eq=(a===b);
+      // 環境切替→重心が変化(4環境で座標が異なる)。buildWorks()経由でwkPos/landmarksが実際に作り直される値を比較する。
+      var savedEnv=ENVID;
+      setEnv("space"); var lmSpace=JSON.stringify(landmarks);
+      setEnv("sky");   var lmSky=JSON.stringify(landmarks);
+      setEnv("ground");var lmGround=JSON.stringify(landmarks);
+      setEnv("cave");  var lmCave=JSON.stringify(landmarks);
+      setEnv(savedEnv);
+      var vals=[lmSpace,lmSky,lmGround,lmCave], allDistinct=true;
+      for(var i=0;i<vals.length;i++) for(var j=i+1;j<vals.length;j++) if(vals[i]===vals[j]) allDistinct=false;
+      return {pass:eq&&allDistinct, detail:"eq="+eq+" allDistinct(4env)="+allDistinct};
+    }
+    function t_T19b(){
+      var works=[
+        {id:"t19-lone", constellation:"9999-01", hue:10, date:"9999-01-01"},
+        {id:"t19-pair1", constellation:"9999-02", hue:20, date:"9999-02-01"},
+        {id:"t19-pair2", constellation:"9999-02", hue:30, date:"9999-02-02"}
+      ];
+      var pos=[[0,0,0],[10,0,0],[20,0,0]];
+      var lm=landmarksFor(works, pos);
+      var soloExcluded = !lm.some(function(x){ return x.key==="9999-01"; });
+      var pairIncluded = lm.some(function(x){ return x.key==="9999-02" && x.memberCount===2; });
+      return {pass:soloExcluded&&pairIncluded, detail:"lm="+JSON.stringify(lm)};
+    }
+    function t_T19c(){
+      var savedCfg=JSON.parse(JSON.stringify(cfg));
+      cfg.showLandmarks=true; stepFrames(1);
+      var dcOn=window.__tenkyu.getState().drawCalls, lmN=lmCount;
+      cfg.showLandmarks=false; stepFrames(1);
+      var dcOff=window.__tenkyu.getState().drawCalls;
+      var baseOk = dcOff>=3;   // 弾10OFF時でも星雲+背景/ドーム+作品の基本ドローコールは無傷（既存回帰無影響）
+      var diffOk = (lmN>0) ? (dcOn-dcOff===1) : (dcOn===dcOff);
+      cfg=savedCfg; stepFrames(1);
+      return {pass:baseOk&&diffOk, detail:"dcOn="+dcOn+" dcOff="+dcOff+" lmCount="+lmN+" baseOk="+baseOk};
+    }
+    function t_T19d(){
+      var savedCfg=JSON.parse(JSON.stringify(cfg));
+      cfg.comfort=false; cfg.reduce=false; updateComfort(); stepFrames(1);
+      var normalStill=lastLmStill;
+      cfg.comfort=true; updateComfort(); stepFrames(1);
+      var comfortStill=lastLmStill;
+      cfg.comfort=false; cfg.reduce=true; updateComfort(); stepFrames(1);
+      var reduceStill=lastLmStill;
+      cfg=savedCfg; updateComfort();
+      var pass=(normalStill===0)&&(comfortStill===1)&&(reduceStill===1);
+      return {pass:pass, detail:"normal="+normalStill+" comfort="+comfortStill+" reduce="+reduceStill};
+    }
+
     window.__tenkyu.runAll = async function(){
       if(!window.__testErrCount){ window.__testErrCount=0;
         var _ce=console.error.bind(console);
@@ -2315,6 +2454,7 @@
       await run("T6",t_T6); await run("T7",t_T7); await run("T8",t_T8); await run("T9",t_T9);
       await run("T10",t_T10); await run("T11",t_T11); await run("T12",t_T12); await run("T13",t_T13);
       await run("T14",t_T14); await run("T15",t_T15); await run("T16",t_T16); await run("T17",t_T17); await run("T18",t_T18);
+      await run("T19a",t_T19a); await run("T19b",t_T19b); await run("T19c",t_T19c); await run("T19d",t_T19d);
       // 復元＝本当のプレイヤー進行・設定・カメラを一切壊さない
       swooshCount=snapSwoosh.count; swooshLast=snapSwoosh.last;   // persistSave()のnearMiss焼き込み前に実行順を戻す
       save=snapSave; persistSave(); syncVisitedBuffer(); completedConstellations=recomputeCompletedConstellations(); buildLines();
