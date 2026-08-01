@@ -51,16 +51,23 @@
   #btn-cruise{ right:14px; top:326px; }
   .toolbtn:focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }
   .toolbtn.on{ background:rgba(143,184,255,.30); }
-  #move{ position:fixed; right:14px; top:46%; z-index:6; display:flex; flex-direction:column; gap:12px; }
+  /* 干場要望「コントローラーのような操作盤」＝#stick(左下・常時表示のスティック)と#move(右下・上下パッド)を
+     左右対で常設し、同じパネル調(--panel/--line)で囲って「操縦桿を触っている」見た目にする。
+     PCではpointer:fineを主入力とみなし、既存のマウス操作の邪魔にならないよう#stickだけ非表示にする（#moveは従来通りPCでも操作可）。 */
+  #move{ position:fixed; right:20px; bottom:104px; z-index:6; display:flex; flex-direction:column; gap:10px;
+    padding:10px; background:var(--panel); border:1px solid var(--line); border-radius:18px; backdrop-filter:blur(4px); }
   #move button{ width:56px; height:56px; border-radius:50%; font-size:14px; line-height:1.15;
-    background:var(--panel); border:1px solid var(--line); color:var(--fg); cursor:pointer; }
+    background:rgba(143,184,255,.10); border:1px solid var(--line); color:var(--fg); cursor:pointer; }
   #move button:active{ background:rgba(143,184,255,.28); }
   #move button:focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }
-  #stick{ position:fixed; z-index:6; width:120px; height:120px; margin:-60px 0 0 -60px; border-radius:50%;
-    border:2px solid var(--line); background:rgba(143,184,255,.06); display:none; pointer-events:none; }
-  #stick.show{ display:block; }
-  #stick-knob{ position:absolute; left:50%; top:50%; width:52px; height:52px; margin:-26px 0 0 -26px;
-    border-radius:50%; background:rgba(143,184,255,.32); border:1px solid var(--line); }
+  #stick{ position:fixed; left:22px; bottom:96px; z-index:6; width:132px; height:132px; border-radius:50%;
+    border:2px solid var(--line); background:var(--panel); backdrop-filter:blur(4px);
+    opacity:.62; transition:opacity .25s; pointer-events:none; }
+  #stick.active{ opacity:1; }
+  #stick-knob{ position:absolute; left:50%; top:50%; width:56px; height:56px; margin:-28px 0 0 -28px;
+    border-radius:50%; background:rgba(143,184,255,.32); border:1px solid var(--line); transition:transform .18s ease-out; }
+  #stick.active #stick-knob{ transition:none; }
+  @media (pointer: fine){ #stick{ display:none; } }  /* PC＝マウス操作の邪魔にならないよう常設スティックは出さない（既存hasMouse判定と同じpointer:fine基準） */
   /* 近接サムネ（DOMオーバーレイ＝file://安全） */
   #thumbs{ position:fixed; inset:0; z-index:4; pointer-events:none; }
   .thumb{ position:absolute; border-radius:8px; border:1px solid var(--line); object-fit:cover;
@@ -175,6 +182,7 @@
     <option value="space">🌌 うちゅう（星の海）</option>
     <option value="sky">☁️ そら（くもの海）</option>
     <option value="ground">🏞️ じめん（ひかりの塔）</option>
+    <option value="cave">🕳️ どうくつ（光る結晶）</option>
   </select>
   <label for="s-speed">とぶ速さ：<span id="s-speed-v">1.0</span></label>
   <input type="range" id="s-speed" min="0.5" max="3" step="0.25" value="1">
@@ -283,10 +291,15 @@
 "use strict";
 (function(){
   var CFG_KEY = "tenkyu_cfg_v1";
+  // 干場要望「地上から飛べるように」＝セーブが一度も無い初回起動の時だけ、じめん世界の低空スタートにする。
+  // 既にセーブがある（＝env選択を含む前回設定がある）場合はこの判定より前に読み込み/保存ロジックへ触れず従来通り。
+  var _hadSavedCfg = (function(){ try{ return !!localStorage.getItem(CFG_KEY); }catch(e){ return false; } })();
   var cfg = Object.assign({ count:8000, sens:1.0, inertia:0.5, reduce:false, lines:true, map:true, invertY:false, lookSpeed:1.0, lookMode:"lock",
       comfort:false, streaks:true, dynfov:true, bank:true, speedScale:1.0, env:"space", showHud:true,
       autocruise:false },   // 弾8: Q12裁定待ちにつき既定OFF（安全側＝起動直後に勝手に進まない）
     (function(){ try{ return JSON.parse(localStorage.getItem(CFG_KEY))||{}; }catch(e){ return {}; } })());
+  var freshGroundStart = !_hadSavedCfg;
+  if(freshGroundStart) cfg.env = "ground";   // 初回だけ既定を「じめん」にする（保存ロジック自体はいじらない＝saveCfg()は従来通り）
   var prefersReduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   function saveCfg(){ try{ localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); }catch(e){} }
   var params = new URLSearchParams(location.search);
@@ -464,6 +477,37 @@
   var SKY_MIN=110, SKY_SPAN=380, SKY_Y0=20, SKY_YSPAN=40, SKY_CLOUD_R=820, SKY_FLOOR=8;
   // ✎じめんの世界の寸法（作品＝地表に立つ光の塔の頂点／高さ2〜30の帯・水平距離100〜450）。地面グリッドは間隔26で敷き詰め＝雲海と同じ点数で床の柄を作る。
   var GND_MIN=100, GND_SPAN=350, GND_Y0=2, GND_YSPAN=28, GND_FLOOR=1, GND_GRID=26;
+  // ✎どうくつの世界の寸法（作品星の月順折れ線＝buildLines()と同じ並び順をチューブの奥行きtへ写像し、半径R=40の内壁上へ置く）
+  var CAVE_MIN=100, CAVE_SPAN=350, CAVE_R=40, CAVE_TURNS=1.1, CAVE_AMPL_X=70, CAVE_AMPL_Y=35;
+  // buildLines()と全く同じグルーピング＋日付ソート（同じ月=constellationを日付順に結ぶ）で、
+  // 各作品に「チューブの奥行きt(0〜1・入口→奥)」を割り当てる。works配列の参照が変わったら作り直す。
+  var _caveT=null, _caveWorksRef=null;
+  function buildCaveOrder(works){
+    var groups={}, order=[];
+    for(var idx=0; idx<works.length; idx++){
+      var key=works[idx].constellation||"?";
+      if(!groups[key]){ groups[key]=[]; order.push(key); }
+      groups[key].push(idx);
+    }
+    for(var k=0;k<order.length;k++){
+      var g=groups[order[k]];
+      g.sort(function(a,b){ return (""+(works[a].date||"")).localeCompare(""+(works[b].date||"")); });
+    }
+    var total=works.length||1, cum=0, tOf={};
+    for(var k2=0;k2<order.length;k2++){
+      var g2=groups[order[k2]];
+      for(var j=0;j<g2.length;j++){ tOf[g2[j]] = total>1 ? (cum+j)/(total-1) : 0; }
+      cum+=g2.length;
+    }
+    return tOf;
+  }
+  // トンネルの中心線（ゆるく蛇行する筒の軸）。t=0が入口(原点近く)・t=1が最奥。
+  function caveCenter(t){
+    var ang=t*Math.PI*2*CAVE_TURNS;
+    var cx=Math.sin(ang)*CAVE_AMPL_X, cy=Math.sin(ang*0.62+1.7)*CAVE_AMPL_Y;
+    var cz=-(CAVE_MIN + t*CAVE_SPAN);
+    return [cx,cy,cz];
+  }
   function h01(id,salt){ return (hashStr(id+salt)%1000)/1000; }   // 0〜1の決定論ハッシュ
   var ENVS = {
     space:{
@@ -513,6 +557,31 @@
              sun:[0.55,0.05,-0.83], sunc:[1.0,0.65,0.35] },
       physics:        { name:"jet-weak",         DAMP_MAX:5.5, DAMP_MIN:2.0, BANK_GAIN:0.40, BANK_MAX:10*Math.PI/180, BOOST_EASE:2.6 },
       physicsComfort: { name:"jet-weak-comfort", DAMP_MAX:7.5, DAMP_MIN:4.0, BANK_GAIN:0,     BANK_MAX:0,              BOOST_EASE:1.3 }
+    },
+    cave:{
+      name:"どうくつ（光る結晶）",
+      // 作品＝壁に埋まる結晶。buildLines()と同じ月順折れ線の並びを筒の奥行きtへ写像し、内壁(半径R=40)のすぐ内側に置く＝壁に沿って結晶の列が続く。
+      mapPos:function(star,i,works){
+        if(works!==_caveWorksRef){ _caveT=buildCaveOrder(works); _caveWorksRef=works; }
+        var id=star.id||("w"+i); var t=(_caveT&&_caveT[i]!=null)?_caveT[i]:0;
+        var th=h01(id,"#a")*Math.PI*2, rr=CAVE_R-3-h01(id,"#j")*4;
+        var C=caveCenter(t);
+        return [C[0]+Math.cos(th)*rr, C[1]+Math.sin(th)*rr, C[2]];
+      },
+      // 壁＝同じ筒の中心線をなぞる点群殻（半径R=40±ジター）。星雲レイヤーの点数は増やさない（既存パターン踏襲）。
+      nebula:function(i,n,rnd){
+        var t=i/n, th=rnd()*Math.PI*2, rr=CAVE_R+(rnd()-0.5)*10;
+        var C=caveCenter(t);
+        return [C[0]+Math.cos(th)*rr, C[1]+Math.sin(th)*rr, C[2]];
+      },
+      // 閉所らしい暗く濃い空気（結晶の発光とコントラストが出るよう青紫寄り）。dome=壁の外に宇宙の星が透けて見えないための不透明な天蓋（宇宙的な明るい点は無し＝閉塞感）。
+      clear:[0.02,0.015,0.03], fog:[0.55,0.45,0.80,0.0032], white:1, floorY:null,
+      dome:{ zen:[0.03,0.02,0.045], hor:[0.05,0.035,0.06], low:[0.02,0.015,0.03],
+             sun:[0,1,0], sunc:[0,0,0] },
+      // ③アーケード型（SPEC §R3增3=慣性ほぼ無し・即応・加速60/s²・減衰8/s・ロール無）。壁密集の洞窟では慣性の滑りが衝突不安=酔いと恐怖を生むため、
+      // 既存3環境(DAMP_MAX3.5〜5.5)の相場より明確に高いDAMP=即止まる即応にし、ロールは既定から0（他3環境は快適モードのみ0）。
+      physics:        { name:"arcade",         DAMP_MAX:8.0, DAMP_MIN:3.0, BANK_GAIN:0, BANK_MAX:0, BOOST_EASE:3.6 },
+      physicsComfort: { name:"arcade-comfort", DAMP_MAX:10.0, DAMP_MIN:5.0, BANK_GAIN:0, BANK_MAX:0, BOOST_EASE:1.8 }
     }
   };
   var ENVID = ENVS[cfg.env] ? cfg.env : "space", ENV = ENVS[ENVID];
@@ -665,6 +734,18 @@
     WANDER_PITCH: 0.012,  // ✎ 揺蕩いの上下ふれ幅
     WANDER_ROLL:  0.015   // ✎ 揺蕩いのかたむきふれ幅
   };
+  // ---------- 干場要望「空を飛ぶ感覚をもっと実感」対応の定数（✎見込み値＝実機で干場が較正）----------
+  // 1) 巡航中の速度連動マイクロタービュランス＝描画のみ・camPos/yaw/pitch/rollの本体には触れない（弾8の揺蕩いと同じ設計）
+  // 2) ブースト起動の一瞬だけFOVがオーバーシュートしてから戻る＝「押し出される」感覚。fovの追従イーズ(FOV_EASE)と
+  //    合わせて二重にイーズがかかるので、段差なく自然に収まる。
+  var FEEL = {
+    TURB_YAW:        0.0035,        // ✎ 微振動の左右ふれ幅の上限（ラジアン・最高速時。WANDER_YAWの約1/6＝揺蕩いより控えめ）
+    TURB_PITCH:      0.0040,        // ✎ 微振動の上下ふれ幅の上限
+    TURB_ROLL:       0.0030,        // ✎ 微振動のかたむきふれ幅の上限
+    BOOST_FOV_KICK:  8*Math.PI/180, // ✎ ブースト起動の一瞬だけ足す追加視界（8°・動的FOVの+15°の半分程度）
+    BOOST_KICK_EASE: 5,             // ✎ 押し出し感がおさまる速さ（1秒あたりの減衰割合。fovのFOV_EASEと合成され≈0.3〜0.4秒で収束）
+    TAKEOFF_FOV_KICK: 6*Math.PI/180 // ✎ 干場要望「地上から飛べるように」＝離陸の瞬間だけ足す追加視界（6°・ブーストキックの8°よりやや控えめ・BOOST_KICK_EASEで同じ速さに収束）
+  };
   // 飛びごこちの実効値＝PHYSを土台に「環境の物理プリセット」で上書き（快適モードは comfort 版へ丸ごと差し替え）。
   // ✎プリセットの中身は ENVS の physics / physicsComfort。ここを直接いじるのではなく、そちらを直す。
   var PHZ = { name:"jet", DAMP_MAX:PHYS.DAMP_MAX, DAMP_MIN:PHYS.DAMP_MIN,
@@ -694,6 +775,12 @@
   var boost=0, boostOn=false, roll=0, speedN=0, prevYaw=0, velDir=[0,0,-1];
   // 弾8: 揺蕩い(見た目のみ・yaw/pitch/roll本体には触れない)＋無操作時間の計測
   var wanderYaw=0, wanderPitch=0, wanderRoll=0, idleSec=0, lastLookTsec=-999;
+  // 「飛んでいる感」強化: 微振動(描画のみ・本体不変)＋ブースト起動の押し出しFOVオーバーシュート量(0〜1)
+  var turbYaw=0, turbPitch=0, turbRoll=0, boostKick=0, prevBoostOn=false;
+  // 干場要望「地上から飛べるように」＝離陸演出の状態（1回だけ発火・以後は無効のまま）。
+  // 高度の相場は既存の「床のある世界の安全高度」floorY+14（1373行目付近）をそのまま流用＝離陸判定の閾値としても違和感がない値。
+  var takeoffKick=0, takenOff=!freshGroundStart;
+  var TAKEOFF_START_Y=((ENV.floorY!=null?ENV.floorY:GND_FLOOR)+2), TAKEOFF_ALT=((ENV.floorY!=null?ENV.floorY:GND_FLOOR)+14);
   var lastWTap=-9, lastDrawCalls=0, lastStreakCount=0, logicMs=0;
   function speedCap(){ return PHYS.V_MAX * (+cfg.speedScale||1); }
   var keys={}, upHold=false, downHold=false, moveVec={f:0,s:0};
@@ -705,9 +792,11 @@
   window.addEventListener("resize",resize); resize();
 
   var stickEl=document.getElementById("stick"), knobEl=document.getElementById("stick-knob");
-  function showStick(x,y){ stickEl.style.left=x+"px"; stickEl.style.top=y+"px"; knobEl.style.transform="translate(0,0)"; stickEl.classList.add("show"); }
+  // 干場要望「コントローラーのような操作盤」＝#stickは常時固定位置に表示済み(CSS)。タッチ中は"active"で強調表示するだけ＝
+  // 当たり判定/移動ロジック(moveStart起点のjx,jy計算)はいっさい変更しない（どこでもタッチで動く操作性を維持）。
+  function showStick(){ knobEl.style.transform="translate(0,0)"; stickEl.classList.add("active"); }
   function moveKnob(jx,jy,maxr){ var m=Math.hypot(jx,jy); if(m>maxr){ jx=jx/m*maxr; jy=jy/m*maxr; } knobEl.style.transform="translate("+jx+"px,"+jy+"px)"; }
-  function hideStick(){ stickEl.classList.remove("show"); moveVec.f=0; moveVec.s=0; boostOn=false; }
+  function hideStick(){ stickEl.classList.remove("active"); knobEl.style.transform="translate(0,0)"; moveVec.f=0; moveVec.s=0; boostOn=false; }
 
   var mouseDown=null, hasMouse=(window.matchMedia && matchMedia("(pointer: fine)").matches);
   var mouseX=0, mouseY=0, overCanvas=false;
@@ -719,7 +808,7 @@
       var role=(e.clientX < window.innerWidth/2) ? "move" : "look";
       pointers[e.pointerId]={role:role, downX:e.clientX, downY:e.clientY, t:e.timeStamp, moved:false};
       if(role==="look"){ lastX=e.clientX; lastY=e.clientY; yawV=pitchV=0; }
-      else { moveStart=[e.clientX,e.clientY]; showStick(e.clientX,e.clientY); }
+      else { moveStart=[e.clientX,e.clientY]; showStick(); }
     } else { mouseDown={downX:e.clientX, downY:e.clientY, t:e.timeStamp, moved:false}; }
   });
   canvas.addEventListener("pointermove",function(e){
@@ -1300,7 +1389,11 @@
     if(ENV.floorY!=null && camPos[1] < ENV.floorY+10) camPos[1]=ENV.floorY+14;  // 雲の下に埋まって始まらない
     camVel=[0,0,0]; boost=0; boostOn=false; speedN=0;
   }
-  if(ENV.floorY!=null && camPos[1]<ENV.floorY+10) camPos[1]=ENV.floorY+14;  // 起動時（前回そらを選んでいた時）
+  if(freshGroundStart){
+    camPos=[0, TAKEOFF_START_Y, 0];  // 干場要望「地上から飛べるように」＝地表すれすれから開始（初回起動のみ・既存floorY起動仕様には触れない）
+  } else if(ENV.floorY!=null && camPos[1]<ENV.floorY+10){
+    camPos[1]=ENV.floorY+14;  // 起動時（前回そらorじめんを選んでいた時＝従来通り）
+  }
 
   gl.clearColor(ENV.clear[0], ENV.clear[1], ENV.clear[2], 1);
   gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
@@ -1310,8 +1403,8 @@
   function drawScene(tsec, uAudio){
     var aspect=canvas.width/canvas.height;
     var P=perspective(fov,aspect,0.1,8000);
-    // 弾8: 揺蕩いは描画だけに乗せる（roll/pitch/yaw本体は変えない＝物理・判定・他テストに影響させない）
-    var Vrot=mul(rotZ(roll+wanderRoll),mul(rotX(pitch+wanderPitch),rotY(yaw+wanderYaw)));
+    // 弾8の揺蕩い＋微振動(タービュランス)は描画だけに乗せる（roll/pitch/yaw本体は変えない＝物理・判定・他テストに影響させない）
+    var Vrot=mul(rotZ(roll+wanderRoll+turbRoll),mul(rotX(pitch+wanderPitch+turbPitch),rotY(yaw+wanderYaw+turbYaw)));
     var Vfull=mul(Vrot, transl(-camPos[0],-camPos[1],-camPos[2]));
     var VProt=mul(P,Vrot), VPfull=mul(P,Vfull); lastVPfull=VPfull;
     var uReduce=reduceActive?1:0; var dc=0; var F=ENV.fog;
@@ -1375,6 +1468,15 @@
     setAutocruise:function(v){ cfg.autocruise=!!v; saveCfg(); syncCruiseUI(); },
     getAutocruise:function(){ return !!cfg.autocruise; },
     wanderNow:function(){ return {yaw:wanderYaw, pitch:wanderPitch, roll:wanderRoll, idleSec:idleSec}; },
+    // 「飛んでいる感」強化のテスト用フック（微振動＋ブースト押し出しFOV）
+    feel:FEEL,
+    turbNow:function(){ return {yaw:turbYaw, pitch:turbPitch, roll:turbRoll, boostKick:boostKick}; },
+    // 干場要望「地上から飛べるように」のテスト用フック
+    takeoffNow:function(){ return {takenOff:takenOff, kick:takeoffKick, freshGroundStart:freshGroundStart, startY:TAKEOFF_START_Y, altY:TAKEOFF_ALT}; },
+    resetTakeoff:function(){ takenOff=false; takeoffKick=0; },
+    // テスト用: 実際のリロード無しに「セーブが無い初回起動」の分岐(freshGroundStart)を検証するためのシミュレータ
+    simulateFreshGroundStart:function(){ freshGroundStart=true; takenOff=false; takeoffKick=0; setEnv("ground");
+      camPos=[0, TAKEOFF_START_Y, 0]; yaw=0; pitch=0; camVel=[0,0,0]; return {env:ENVID, cam:camPos.slice()}; },
     // 弾7のテスト用フック（環境）
     envList:function(){ return Object.keys(ENVS); },
     getEnv:function(){ return ENVID; },
@@ -1404,7 +1506,7 @@
         seed:course.seed, anchor:course.anchor } : { active:false }; },
     getState:function(){ var sp=Math.hypot(camVel[0],camVel[1],camVel[2]);
       return { speed:sp, speedN:speedN, fov:fov, fovDeg:fov*180/Math.PI, roll:roll, rollDeg:roll*180/Math.PI,
-        boost:boost, boostOn:boostOn, streakCount:lastStreakCount, drawCalls:lastDrawCalls,
+        boost:boost, boostOn:boostOn, boostKick:boostKick, streakCount:lastStreakCount, drawCalls:lastDrawCalls,
         logicMs:logicMs, fps:fps, comfort:comfortActive, reduce:reduceActive, vmaxNow:speedCap()*(1+(PHYS.BOOST_MULT-1)*boost),
         env:ENVID, physics:PHZ.name, damp:(PHZ.DAMP_MAX-(PHZ.DAMP_MAX-PHZ.DAMP_MIN)*(+cfg.inertia)),
         floorY:ENV.floorY, works:WORKS.length, nebula:nbCount, bg:bgCount }; },
@@ -1550,8 +1652,13 @@
       var Vr2=mul(rotX(pitch),rotY(yaw));
       // ---- 速度モデル（dt基準・fps非依存）----
       var bOn = boostOn && !anySheet();
+      // 押し出し感: ブーストOFF→ONの立上り瞬間だけキックを満タンにし、以後は自然減衰（comfort/reduced/dynfovオフでは発火させない）
+      if(bOn && !prevBoostOn && cfg.dynfov && !comfortActive && !reduceActive){ boostKick=1; }
+      prevBoostOn=bOn;
       var bEase = PHZ.BOOST_EASE;                       // 環境×快適モードのプリセット由来
       boost += ((bOn?1:0) - boost) * Math.min(1, dt*bEase);
+      if(comfortActive || reduceActive){ boostKick=0; }  // 快適/reduced時は即無効化（残り滓を残さない）
+      else { boostKick += (0-boostKick) * Math.min(1, dt*FEEL.BOOST_KICK_EASE); }
       var bf   = 1 + (PHYS.BOOST_MULT-1)*boost;
       var damp = PHZ.DAMP_MAX - (PHZ.DAMP_MAX-PHZ.DAMP_MIN)*(+cfg.inertia);
       var vmax = speedCap() * bf;
@@ -1576,6 +1683,12 @@
       if(rr>700){ var kk=700/rr; camPos[0]*=kk; camPos[1]*=kk; camPos[2]*=kk; camVel[0]*=0.4; camVel[1]*=0.4; camVel[2]*=0.4; }
       // 床のある世界（そら＝雲の上）では、雲の下へ沈まない
       if(ENV.floorY!=null && camPos[1]<ENV.floorY){ camPos[1]=ENV.floorY; if(camVel[1]<0) camVel[1]*=-0.15; }
+      // 干場要望「地上から飛べるように」＝離陸判定（初回のみ・1回だけ発火。毎フレームやるのは閾値比較だけ＝軽量）
+      if(!takenOff && freshGroundStart && ENVID==="ground" && camPos[1]>TAKEOFF_ALT){
+        takenOff=true; takeoffKick=1; showAchieveToast("🛫 りりく！");
+      }
+      if(comfortActive || reduceActive){ takeoffKick=0; }  // 快適/reduced時は即無効化（弾8のboostKickと同じ扱い）
+      else { takeoffKick += (0-takeoffKick) * Math.min(1, dt*FEEL.BOOST_KICK_EASE); }
     }
     // 弾3: 環の通過判定（前フレーム位置→今フレーム位置の線分・低fpsでも取りこぼさない＝§G T15）
     if(_prevCamCourse) courseCheckPass(_prevCamCourse, camPos);
@@ -1585,8 +1698,16 @@
     var rollTgt = (cfg.bank && !comfortActive && !flying)
       ? Math.max(-PHZ.BANK_MAX, Math.min(PHZ.BANK_MAX, -yawRate*PHZ.BANK_GAIN)) : 0;
     roll += (rollTgt-roll)*Math.min(1, dt*PHYS.ROLL_SPRING);
-    var fovTgt = PHYS.FOV_BASE + ((cfg.dynfov && !comfortActive) ? PHYS.FOV_ADD*speedN : 0);
+    var fovTgt = PHYS.FOV_BASE + ((cfg.dynfov && !comfortActive) ? PHYS.FOV_ADD*speedN : 0)
+                                + ((cfg.dynfov && !comfortActive && !reduceActive) ? FEEL.BOOST_FOV_KICK*boostKick : 0)
+                                + ((cfg.dynfov && !comfortActive && !reduceActive) ? FEEL.TAKEOFF_FOV_KICK*takeoffKick : 0);
     fov += (fovTgt-fov)*Math.min(1, dt*PHYS.FOV_EASE);
+    // 干場要望: 速度連動マイクロタービュランス（描画のみ・複数の非整数比の周波数を足して不規則な揺れに見せる）
+    var turbOn = !comfortActive && !reduceActive;
+    var turbAmt = turbOn ? speedN : 0;
+    turbYaw   = turbAmt*(Math.sin(tsec*2.3)*0.6      + Math.sin(tsec*5.1+1.7)*0.4)      * FEEL.TURB_YAW;
+    turbPitch = turbAmt*(Math.sin(tsec*2.9+0.8)*0.6  + Math.sin(tsec*4.3+2.6)*0.4)      * FEEL.TURB_PITCH;
+    turbRoll  = turbAmt*(Math.sin(tsec*3.4+2.1)*0.6  + Math.sin(tsec*1.9+0.3)*0.4)      * FEEL.TURB_ROLL;
     // 弾2: 風切り音の追従とすれ星判定（0.25s間隔）
     updateWindAudio(dt);
     swooshTimer += dt; if(swooshTimer>=SWOOSH.CHECK_HZ){ swooshTimer=0; checkSwoosh(); }
@@ -2131,6 +2252,51 @@
       return {pass:forwardOk&&offOk&&courseOk&&wanderOffOk&&wanderOnOk, detail:d.join(" / ")};
     }
 
+    // 干場要望「飛んでいる感」強化の検証: 速度連動マイクロタービュランス＋ブースト押し出しFOV
+    function t_T18(){
+      var d=[];
+      cfg.comfort=false; cfg.reduce=false; cfg.dynfov=true; cfg.autocruise=false; updateComfort();
+      // (a) 静止時＝タービュランスはほぼ0
+      tourOn=false; flying=false;
+      camPos=[0,0,0]; camVel=[0,0,0]; yaw=0; pitch=0; roll=0; keys={}; moveVec={f:0,s:0}; boostOn=false; boost=0; boostKick=0; prevBoostOn=false;
+      stepFrames(30);
+      var tRest=Math.abs(turbYaw)+Math.abs(turbPitch)+Math.abs(turbRoll);
+      var restOk = tRest<1e-6;
+      d.push("tRest="+tRest.toFixed(6));
+      // (b) ブースト込みで最高速まで加速＝タービュランスが上限内で非ゼロに揺れる
+      // （speedNは「ブースト込みの絶対最高速」を基準に正規化される＝弾1の仕様どおり。w単独では0.33程度で頭打ちなのでboostOnも足す）
+      keys["w"]=true; boostOn=true; stepFrames(360);   // ≈6s＝ブースト立上り＋最高速へ収束
+      var maxAbs=0, sawNonzero=false, minSpeedN=1, maxSpeedN=0;
+      for(var i=0;i<60;i++){ stepFrames(1);
+        if(speedN<minSpeedN) minSpeedN=speedN; if(speedN>maxSpeedN) maxSpeedN=speedN;
+        var m=Math.max(Math.abs(turbYaw)/FEEL.TURB_YAW, Math.abs(turbPitch)/FEEL.TURB_PITCH, Math.abs(turbRoll)/FEEL.TURB_ROLL);
+        if(m>maxAbs) maxAbs=m; if(m>0.05) sawNonzero=true; }
+      keys={}; boostOn=false;
+      var speedOk = minSpeedN>0.85;
+      var boundOk = maxAbs<=1.01;   // 各成分は上限(FEEL.TURB_*)を超えない
+      d.push("speedN["+minSpeedN.toFixed(2)+".."+maxSpeedN.toFixed(2)+"] maxAbsRatio="+maxAbs.toFixed(2)+" sawNonzero="+sawNonzero);
+      // (c) 高速のまま快適/reducedへ切替＝タービュランスは即0
+      cfg.comfort=true; updateComfort(); stepFrames(1);
+      var tComfort=Math.abs(turbYaw)+Math.abs(turbPitch)+Math.abs(turbRoll);
+      cfg.comfort=false; cfg.reduce=true; updateComfort(); stepFrames(1);
+      var tReduce=Math.abs(turbYaw)+Math.abs(turbPitch)+Math.abs(turbRoll);
+      var gateOk = (tComfort<1e-9) && (tReduce<1e-9);
+      d.push("tComfort="+tComfort.toFixed(6)+" tReduce="+tReduce.toFixed(6));
+      cfg.comfort=false; cfg.reduce=false; updateComfort();
+      // (d) ブースト起動の一瞬だけpushしてからイーズで収まる（押し出し感）
+      camVel=[0,0,0]; camPos=[0,0,0]; speedN=0; boost=0; boostOn=false; boostKick=0; prevBoostOn=false; fov=PHYS.FOV_BASE;
+      stepFrames(1);   // boostOn=false状態で1フレーム流し、立上りエッジの前提を確定させる
+      boostOn=true; stepFrames(1);
+      var kickPeak=boostKick;
+      var peakOk = kickPeak>0.5;
+      stepFrames(60);  // ≈1s後には十分減衰している
+      var kickAfter=boostKick;
+      var decayOk = kickAfter<0.05;
+      d.push("kickPeak="+kickPeak.toFixed(3)+" kickAfter="+kickAfter.toFixed(4));
+      boostOn=false; boost=0; boostKick=0; prevBoostOn=false; camVel=[0,0,0]; camPos=[0,0,0]; speedN=0;
+      return {pass:restOk&&speedOk&&boundOk&&sawNonzero&&gateOk&&peakOk&&decayOk, detail:d.join(" / ")};
+    }
+
     window.__tenkyu.runAll = async function(){
       if(!window.__testErrCount){ window.__testErrCount=0;
         var _ce=console.error.bind(console);
@@ -2148,7 +2314,7 @@
       await run("T3",t_T3); await run("T3c",t_T3c); await run("T4",t_T4); await run("T5",t_T5);
       await run("T6",t_T6); await run("T7",t_T7); await run("T8",t_T8); await run("T9",t_T9);
       await run("T10",t_T10); await run("T11",t_T11); await run("T12",t_T12); await run("T13",t_T13);
-      await run("T14",t_T14); await run("T15",t_T15); await run("T16",t_T16); await run("T17",t_T17);
+      await run("T14",t_T14); await run("T15",t_T15); await run("T16",t_T16); await run("T17",t_T17); await run("T18",t_T18);
       // 復元＝本当のプレイヤー進行・設定・カメラを一切壊さない
       swooshCount=snapSwoosh.count; swooshLast=snapSwoosh.last;   // persistSave()のnearMiss焼き込み前に実行順を戻す
       save=snapSave; persistSave(); syncVisitedBuffer(); completedConstellations=recomputeCompletedConstellations(); buildLines();
