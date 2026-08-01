@@ -1,21 +1,21 @@
 {
-  "generated_at": "2026-08-01 18:25:05",
+  "generated_at": "2026-08-01 18:31:05",
   "gpu": {
-    "occupant": "appmv_audio_2026-08_genki-kibou（opus-20260727-hibana）",
-    "note": "経過24s / 目安あと約5分",
-    "vram_used_gb": 11.1,
+    "occupant": "appmv_i2i_sc01（run_img2img_cli）",
+    "note": "経過5s / 目安あと約1分",
+    "vram_used_gb": 12.4,
     "vram_total_gb": 15.9,
-    "util": 27,
+    "util": 98,
     "lock": {
       "locked": true,
       "holder": {
-        "pid": 39288,
-        "session": "opus-20260727-hibana",
-        "job": "appmv_audio_2026-08_genki-kibou",
-        "started_at": "2026-08-01T18:24:40+0900",
-        "age_sec": 24,
+        "pid": 27540,
+        "session": "run_img2img_cli",
+        "job": "appmv_i2i_sc01",
+        "started_at": "2026-08-01T18:30:59+0900",
+        "age_sec": 5,
         "alive": true,
-        "est_minutes": 6
+        "est_minutes": 2
       },
       "stale": false
     }
@@ -49,7 +49,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-01 18:22",
+    "updated": "2026-08-01 18:28",
     "current": null
   },
   "queue": [
@@ -136,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 122
+    "push_today": 123
   },
   "ai_works": [
     {
@@ -213,10 +213,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 15,
-    "mem_pct": 76,
+    "cpu_pct": 29,
+    "mem_pct": 52,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 373.0,
+    "disk_used_gb": 373.1,
     "disk_free_gb": 1488.7
   }
 }
