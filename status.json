@@ -1,22 +1,14 @@
 {
-  "generated_at": "2026-08-01 18:31:05",
+  "generated_at": "2026-08-01 18:37:05",
   "gpu": {
-    "occupant": "appmv_i2i_sc01（run_img2img_cli）",
-    "note": "経過5s / 目安あと約1分",
-    "vram_used_gb": 12.4,
+    "occupant": "モデル待機中（アイドル）",
+    "note": "生成は完了済み・モデルがVRAMに残っています",
+    "vram_used_gb": 11.3,
     "vram_total_gb": 15.9,
-    "util": 98,
+    "util": 0,
     "lock": {
-      "locked": true,
-      "holder": {
-        "pid": 27540,
-        "session": "run_img2img_cli",
-        "job": "appmv_i2i_sc01",
-        "started_at": "2026-08-01T18:30:59+0900",
-        "age_sec": 5,
-        "alive": true,
-        "est_minutes": 2
-      },
+      "locked": false,
+      "holder": null,
       "stale": false
     }
   },
@@ -49,7 +41,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-01 18:28",
+    "updated": "2026-08-01 18:34",
     "current": null
   },
   "queue": [
@@ -136,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 123
+    "push_today": 124
   },
   "ai_works": [
     {
@@ -213,10 +205,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 29,
+    "cpu_pct": 1,
     "mem_pct": 52,
     "mem_total_gb": 31.7,
     "disk_used_gb": 373.1,
-    "disk_free_gb": 1488.7
+    "disk_free_gb": 1488.6
   }
 }
