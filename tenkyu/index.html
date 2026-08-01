@@ -19,6 +19,26 @@
   #brand{ position:fixed; left:16px; top:14px; z-index:5; pointer-events:none; }
   #brand b{ font-size:19px; letter-spacing:.04em; }
   #brand span{ display:block; font-size:12px; color:var(--dim); margin-top:2px; }
+  /* 弾2: すれ星カウンタ（メモリ内のみ・永続化は弾4） */
+  #swoosh-hud{ position:fixed; left:16px; top:62px; z-index:5; pointer-events:none;
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:5px 10px; font-size:12.5px; color:var(--dim); }
+  #swoosh-hud b{ color:var(--fg); font-weight:600; }
+  /* 弾3: 光の環コースのHUD（残数/距離＝更新が頻繁なので読み上げはしない・#fpsと同じ扱い） */
+  #course-hud{ position:fixed; left:16px; top:96px; z-index:5; pointer-events:none; display:none;
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:5px 10px; font-size:12.5px; color:var(--fg); }
+  /* 弾4: 今日のお題3件（達成状態つき） */
+  #quest-hud{ position:fixed; left:16px; top:130px; z-index:5; pointer-events:none;
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:6px 12px; font-size:12.5px; color:var(--dim); max-width:72vw; }
+  #quest-hud .q{ margin:3px 0; }
+  #quest-hud .q.done{ color:var(--fg); }
+  /* 弾4: 達成トースト（3秒で消える） */
+  #achieve-toast{ position:fixed; left:50%; top:70px; transform:translateX(-50%) translateY(-6px); z-index:7;
+    background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:8px 18px;
+    font-size:14px; color:var(--fg); opacity:0; pointer-events:none; transition:opacity .3s, transform .3s; }
+  #achieve-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
   .toolbtn{ position:fixed; z-index:6; width:44px; height:44px; border-radius:12px;
     background:var(--panel); border:1px solid var(--line); color:var(--fg);
     font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
@@ -26,6 +46,9 @@
   #btn-help{ right:14px; top:66px; }
   #btn-search{ right:14px; top:118px; }
   #btn-tour{ right:14px; top:170px; }
+  #btn-course{ right:14px; top:222px; }
+  #btn-log{ right:14px; top:274px; }
+  #btn-cruise{ right:14px; top:326px; }
   .toolbtn:focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }
   .toolbtn.on{ background:rgba(143,184,255,.30); }
   #move{ position:fixed; right:14px; top:46%; z-index:6; display:flex; flex-direction:column; gap:12px; }
@@ -42,6 +65,12 @@
   #thumbs{ position:fixed; inset:0; z-index:4; pointer-events:none; }
   .thumb{ position:absolute; border-radius:8px; border:1px solid var(--line); object-fit:cover;
     box-shadow:0 4px 20px rgba(0,0,0,.5); transition:opacity .2s; }
+  /* 弾2: すれ星のきらめき（DOMオーバーレイ＝#thumbsと同じ安全な作り。reduced時は生成しない） */
+  #sparkles{ position:fixed; inset:0; z-index:6; pointer-events:none; }
+  .sparkle{ position:absolute; width:26px; height:26px; margin:-13px 0 0 -13px; border-radius:50%;
+    background:radial-gradient(circle, rgba(255,255,255,.95) 0%, rgba(200,220,255,.65) 42%, rgba(200,220,255,0) 72%);
+    animation:sparkle-pop .62s ease-out forwards; }
+  @keyframes sparkle-pop{ 0%{ transform:scale(.3); opacity:0; } 25%{ opacity:1; } 100%{ transform:scale(1.6); opacity:0; } }
   /* ミニマップ */
   #map{ position:fixed; right:14px; bottom:14px; z-index:6; border-radius:10px;
     border:1px solid var(--line); background:rgba(6,9,20,.7); display:none; }
@@ -78,9 +107,18 @@
   .sheet .chk{ display:flex; align-items:center; gap:10px; margin-top:16px; font-size:14px; }
   .sheet .chk input{ width:22px; height:22px; }
   .sheet .foot{ display:flex; gap:10px; margin-top:18px; }
-  .sheet .foot button{ flex:1; min-height:42px; border-radius:11px; border:1px solid var(--line);
+  .sheet .foot button{ flex:1; min-height:44px; border-radius:11px; border:1px solid var(--line);
     background:rgba(143,184,255,.14); color:var(--fg); font-size:14px; cursor:pointer; }
   .sheet p.hint{ color:var(--dim); font-size:12.5px; line-height:1.7; margin:12px 0 0; }
+  /* 弾5: 図鑑（達成率・称号・訪問一覧・自己ベスト） */
+  #log-body .log-visit-btn{ display:block; width:100%; text-align:left; margin:6px 0; min-height:44px;
+    border-radius:10px; border:1px solid var(--line); background:rgba(143,184,255,.10);
+    color:var(--fg); font-size:14px; padding:8px 12px; cursor:pointer; }
+  #log-body .log-visit-btn small{ color:var(--dim); margin-left:8px; }
+  #log-body .log-unvisited{ margin:6px 0; padding:8px 12px; color:var(--dim); font-size:14px; }
+  #log-body .log-best{ margin:4px 0; font-size:13.5px; color:var(--fg); }
+  #log-body h4{ font-size:14px; margin:14px 0 6px; color:var(--fg); }
+  #log-body .log-rate{ font-size:14px; color:var(--fg); margin:0 0 10px; line-height:1.8; }
   #results{ margin-top:10px; }
   #results button{ display:block; width:100%; text-align:left; margin:6px 0; min-height:44px;
     border-radius:10px; border:1px solid var(--line); background:rgba(143,184,255,.10);
@@ -106,6 +144,10 @@
 <canvas id="gl" aria-label="星の海。左半分で うごき、右半分で 見まわし、星にふれると 作品がひらきます。"></canvas>
 
 <div id="brand" aria-hidden="true"><b>🌌 星天球</b><span>つくった作品の海を、飛ぶ</span></div>
+<div id="swoosh-hud" role="status" aria-live="polite">✨ すれ星 <b id="swoosh-count">0</b></div>
+<div id="course-hud" aria-hidden="true"></div>
+<div id="quest-hud" role="status" aria-live="polite"></div>
+<div id="achieve-toast" aria-live="polite"></div>
 
 <div id="intro">スマホ：<b>左半分</b>で うごく／<b>右半分</b>で 見まわす。　パソコン：<b>画面をクリック</b>→マウスで 見まわす（Escで解除）・<b>W A S D</b> で うごく <small>（見まわし方は ⚙で かえられます）</small></div>
 
@@ -113,6 +155,9 @@
 <button id="btn-help" class="toolbtn" aria-label="つかいかたをみる" title="つかいかた">？</button>
 <button id="btn-search" class="toolbtn" aria-label="作品をさがす" title="さがす">🔍</button>
 <button id="btn-tour" class="toolbtn" aria-label="じどうで めぐる" title="めぐる">🎬</button>
+<button id="btn-course" class="toolbtn" aria-label="ひかりの輪コースを はじめる・おわる" title="ひかりの輪コース">🔆</button>
+<button id="btn-log" class="toolbtn" aria-label="ずかんをひらく" title="ずかん">📖</button>
+<button id="btn-cruise" class="toolbtn" aria-label="オートクルーズを切り替える（操作しなくても前に進みます）" title="オートクルーズ">🛩️</button>
 
 <div id="move">
   <button id="btn-up" aria-label="上へあがる">▲<br>うえ</button>
@@ -120,10 +165,27 @@
 </div>
 <div id="stick" aria-hidden="true"><div id="stick-knob"></div></div>
 <div id="thumbs" aria-hidden="true"></div>
+<div id="sparkles" aria-hidden="true"></div>
 <canvas id="map" width="140" height="140" aria-hidden="true"></canvas>
 
 <section id="settings" class="sheet" role="dialog" aria-label="設定" aria-modal="false">
   <h3>⚙ 設定</h3>
+  <label for="s-env">🌍 せかいを えらぶ</label>
+  <select id="s-env">
+    <option value="space">🌌 うちゅう（星の海）</option>
+    <option value="sky">☁️ そら（くもの海）</option>
+    <option value="ground">🏞️ じめん（ひかりの塔）</option>
+  </select>
+  <label for="s-speed">とぶ速さ：<span id="s-speed-v">1.0</span></label>
+  <input type="range" id="s-speed" min="0.5" max="3" step="0.25" value="1">
+  <div class="chk"><input type="checkbox" id="s-comfort"><label for="s-comfort" style="margin:0">🍃 快適モード（ゆれ・ひろがりをおさえる）</label></div>
+  <div class="chk"><input type="checkbox" id="s-streaks" checked><label for="s-streaks" style="margin:0">流線をみせる</label></div>
+  <div class="chk"><input type="checkbox" id="s-dynfov" checked><label for="s-dynfov" style="margin:0">スピードで視界がひろがる</label></div>
+  <div class="chk"><input type="checkbox" id="s-bank" checked><label for="s-bank" style="margin:0">旋回でかたむく</label></div>
+  <!-- 弾8: オートクルーズ（既定OFF＝Q12裁定待ち）。右上🛩️ボタン／Cキーでも同じON/OFFに切り替わる -->
+  <div class="chk"><input type="checkbox" id="s-autocruise"><label for="s-autocruise" style="margin:0">🛩️ オートクルーズ（そうさなしでも すすむ・コース中は じどうで きりかえる）</label></div>
+  <!-- 弾6 T13: 一括OFF確認用。OFFでquest-hud/swoosh-hud/course-hudのDOM更新を止め、v0.3の佇まいに戻す -->
+  <div class="chk"><input type="checkbox" id="s-hud" checked><label for="s-hud" style="margin:0">🧭 今日の航路をみせる（お題・すれ星のHUD）</label></div>
   <label for="s-count">星のかず</label>
   <select id="s-count">
     <option value="3000">すくなめ（軽い）</option>
@@ -164,7 +226,12 @@
     ・<b>クリックなし</b>→ マウスを 動かすと 見まわす（カーソルは 自由に動きます）<br>
     ・感度は ⚙「マウス感度」／上下が逆なら ⚙「上下の向きを 反転する」<br>
     ・<b>W A S D</b>（矢印キー）→ 前後左右、<b>Space／Shift</b> → 上下、ホイール → 前後<br>
-    <b>共通</b>：🔍さがす→星まで とぶ／🎬めぐる→じどうで 作品を まわる／星にふれる → 作品がひらいて 曲がながれます
+    ・<b>W を 2回つづけて押して、2回目を おしっぱなし</b> → <b>ぐんと 速くなります</b>（はなすと もどります）<br>
+    ・スマホは <b>左半分の まるを いちばん外まで 倒す</b> → 速くなります<br>
+    ・速さ・ゆれ・かたむきは <b>⚙</b>で かえられます（酔いやすい方は「🍃 快適モード」）<br>
+    ・<b>🛩️オートクルーズ</b>（右上のボタン、または <b>C</b> キーで切り替え）→ そうさしなくても ゆっくり前へ すすみます。<b>ひかりの輪コース中</b>は 次の輪へ 針路を自動でととのえます。とめたい時は <b>S／↓</b>（うしろ）でブレーキ、そうさすれば いつでも自分の操作にもどります<br>
+    <b>共通</b>：🔍さがす→星まで とぶ／🎬めぐる→じどうで 作品を まわる／星にふれる → 作品がひらいて 曲がながれます<br>
+    ・<b>⚙「🌍 せかいを えらぶ」</b>→ <b>うちゅう</b>（星の海）と <b>そら</b>（くもの海）を いつでも 行き来できます。<b>作品は どちらでも 同じ</b>で、景色と とびごこちだけ かわります
   </p>
   <div class="foot"><button id="h-close">とじる</button></div>
 </section>
@@ -174,6 +241,18 @@
   <input type="text" id="q" placeholder="なまえで さがす" aria-label="作品名で さがす">
   <div id="results"></div>
   <div class="foot"><button id="q-close">とじる</button></div>
+</section>
+
+<section id="logbook" class="sheet" role="dialog" aria-label="ずかん" aria-modal="false">
+  <h3>📖 ずかん</h3>
+  <div id="log-body"></div>
+  <div class="foot">
+    <button id="log-export" title="きろくをファイルに書き出す">📤 きろくを書き出す</button>
+    <button id="log-import" title="きろくのファイルをよみこむ">📥 よみこむ</button>
+  </div>
+  <input type="file" id="log-import-file" accept="application/json,.json" style="display:none">
+  <div class="foot"><button id="log-close">とじる</button></div>
+  <p class="hint">📤で ほかの機械へ うつせます。📥で うつした きろくを、いまの きろくと あわせられます（わるいファイルは うけつけません）。</p>
 </section>
 
 <div id="card" role="dialog" aria-label="作品" aria-modal="false">
@@ -193,7 +272,7 @@
 <div id="fallback" role="alert">
   <h1>この端末では星空を映せませんでした</h1>
   <p>お使いのブラウザや端末が 3Dの夜空（WebGL2）に対応していないようです。2Dの美術館なら ごらんになれます。</p>
-  <a id="fb-link" href="../">2Dの美術館へどうぞ →</a>
+  <a id="fb-link" href="../../hoshi_museum/site/index.html">2Dの美術館へどうぞ →</a>
 </div>
 
 <div id="cross" aria-hidden="true">＋</div>
@@ -204,7 +283,9 @@
 "use strict";
 (function(){
   var CFG_KEY = "tenkyu_cfg_v1";
-  var cfg = Object.assign({ count:8000, sens:1.0, inertia:0.5, reduce:false, lines:true, map:true, invertY:false, lookSpeed:1.0, lookMode:"lock" },
+  var cfg = Object.assign({ count:8000, sens:1.0, inertia:0.5, reduce:false, lines:true, map:true, invertY:false, lookSpeed:1.0, lookMode:"lock",
+      comfort:false, streaks:true, dynfov:true, bank:true, speedScale:1.0, env:"space", showHud:true,
+      autocruise:false },   // 弾8: Q12裁定待ちにつき既定OFF（安全側＝起動直後に勝手に進まない）
     (function(){ try{ return JSON.parse(localStorage.getItem(CFG_KEY))||{}; }catch(e){ return {}; } })());
   var prefersReduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   function saveCfg(){ try{ localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); }catch(e){} }
@@ -227,7 +308,7 @@
     {id:"e12",title:"金木犀の記憶",type:"song",image:null,audio:null,date:"2026-04-14",hue:38,constellation:"2026-04"}
   ]};
   var DATA = (window.STARS && window.STARS.stars && window.STARS.stars.length) ? window.STARS : EMBED;
-  var WORKS = DATA.stars.slice(0, 200);
+  var WORKS = DATA.stars.slice(0, 512);
 
   var canvas = document.getElementById("gl");
   var gl = forceNoGL ? null : (canvas.getContext("webgl2", {antialias:true, alpha:false, premultipliedAlpha:false, preserveDrawingBuffer:true}) || null);
@@ -239,6 +320,7 @@
   }
   function rotX(a){ var c=Math.cos(a),s=Math.sin(a); return [1,0,0,0, 0,c,s,0, 0,-s,c,0, 0,0,0,1]; }
   function rotY(a){ var c=Math.cos(a),s=Math.sin(a); return [c,0,-s,0, 0,1,0,0, s,0,c,0, 0,0,0,1]; }
+  function rotZ(a){ var c=Math.cos(a),s=Math.sin(a); return [c,s,0,0, -s,c,0,0, 0,0,1,0, 0,0,0,1]; }
   function transl(x,y,z){ return [1,0,0,0, 0,1,0,0, 0,0,1,0, x,y,z,1]; }
   function mul(a,b){ var o=new Array(16);
     for(var c=0;c<4;c++)for(var r=0;r<4;r++){ o[c*4+r]=a[r]*b[c*4]+a[4+r]*b[c*4+1]+a[8+r]*b[c*4+2]+a[12+r]*b[c*4+3]; }
@@ -265,48 +347,107 @@
     "if(a<0.02) discard; o=vec4(vec3(0.85,0.9,1.0)*a, a); }");
   var bg_vp=gl.getUniformLocation(bgProg,"u_vp"), bg_time=gl.getUniformLocation(bgProg,"u_time"), bg_reduce=gl.getUniformLocation(bgProg,"u_reduce");
 
+  // u_fog = vec4(空気の色rgb, かすみの濃さa)。宇宙は (1,1,1,0)＝素通し＝v0.3/弾1と1ビットも変わらない。
   var wkProg = prog(
-    HEAD+"layout(location=0) in vec3 a_pos; layout(location=1) in float a_hue; layout(location=2) in float a_sel;"+
-    "uniform mat4 u_vp; uniform float u_time; uniform float u_audio; uniform float u_reduce;"+
-    "out vec3 v_col; out float v_glow;"+HUE2RGB+
+    HEAD+"layout(location=0) in vec3 a_pos; layout(location=1) in float a_hue; layout(location=2) in float a_sel; layout(location=3) in float a_visited;"+
+    "uniform mat4 u_vp; uniform float u_time; uniform float u_audio; uniform float u_reduce; uniform vec4 u_fog;"+
+    "out vec3 v_col; out float v_glow; out float v_fog;"+HUE2RGB+
     "void main(){ gl_Position=u_vp*vec4(a_pos,1.0); float w=max(gl_Position.w,0.001);"+
     "float puls = mix(1.0, 1.0+0.35*sin(u_time*2.2+a_hue*10.0), 1.0-u_reduce);"+
     "float sel = a_sel*(1.0+u_audio*1.6);"+
+    // 作品星は主役＝色あい(hue)には触れない。距離のかすみだけ弱め(0.55倍)にかける。
+    "v_fog = exp(-pow(w*u_fog.a*0.55, 2.0));"+
     "v_col = mix(hue2rgb(a_hue), hue2rgb(a_hue)*1.2+0.25, sel*0.6);"+
-    "v_glow = (1.35+sel*1.6);"+
+    // 弾5: 訪問済みの星はほんのり ともる（a_visited=0なら従来と1ビットも変わらない）
+    "v_col = mix(v_col, v_col*1.2+0.12, a_visited*0.5);"+
+    "v_glow = (1.35+sel*1.6) * (1.0+a_visited*0.18);"+
     "gl_PointSize=clamp((1400.0/w)*puls*(1.0+sel*0.8),7.0,120.0); }",
-    HEAD+"precision highp float; in vec3 v_col; in float v_glow; out vec4 o;"+
+    HEAD+"precision highp float; in vec3 v_col; in float v_glow; in float v_fog; out vec4 o;"+
     "void main(){ vec2 c=gl_PointCoord-0.5; float d=length(c);"+
     "float core=exp(-d*d*36.0); float halo=exp(-d*d*6.0)*0.7;"+
     "float a=(core+halo)*v_glow; if(a<0.01) discard;"+
-    "o=vec4(v_col*a, min(a,1.0)); }");
+    "o=vec4(v_col*a*v_fog, min(a,1.0)); }");
   var wk_vp=gl.getUniformLocation(wkProg,"u_vp"), wk_time=gl.getUniformLocation(wkProg,"u_time"),
-      wk_audio=gl.getUniformLocation(wkProg,"u_audio"), wk_reduce=gl.getUniformLocation(wkProg,"u_reduce");
+      wk_audio=gl.getUniformLocation(wkProg,"u_audio"), wk_reduce=gl.getUniformLocation(wkProg,"u_reduce"),
+      wk_fog=gl.getUniformLocation(wkProg,"u_fog");
 
+  // 星雲レイヤー＝環境で「雲海」にもなる（u_white=1で白く・大きく・濃く。宇宙は u_white=0＝現行のまま）
   var nbProg = prog(
     HEAD+"layout(location=0) in vec3 a_pos; layout(location=1) in float a_seed;"+
     "uniform mat4 u_vp; uniform float u_time; uniform float u_audio; uniform float u_reduce; uniform float u_hue;"+
+    "uniform vec4 u_fog; uniform float u_white;"+
     "out float v_a; out vec3 v_col;"+HUE2RGB+
     "void main(){ float t=u_time*(1.0-u_reduce);"+
     "vec3 p=a_pos; p.x+=sin(t*0.3+a_seed*6.0)*2.0; p.y+=cos(t*0.24+a_seed*5.0)*2.0;"+
     "gl_Position=u_vp*vec4(p,1.0); float w=max(gl_Position.w,0.001);"+
-    "float pulse=0.4+u_audio*1.4; v_a=(0.09+u_audio*0.26); v_col=hue2rgb(u_hue+a_seed*0.06);"+
-    "gl_PointSize=clamp((1000.0/w)*pulse*(0.6+a_seed*0.8),1.0,60.0); }",
+    "float fog=exp(-pow(w*u_fog.a, 2.0));"+
+    "float pulse=0.4+u_audio*1.4; v_a=(0.09+u_audio*0.26)*(1.0+u_white*2.4)*fog;"+
+    "v_col=mix(hue2rgb(u_hue+a_seed*0.06), vec3(1.0), u_white*0.86)*u_fog.rgb;"+
+    "gl_PointSize=clamp((1000.0/w)*pulse*(0.6+a_seed*0.8)*(1.0+u_white*4.0),1.0,60.0+u_white*90.0); }",
     HEAD+"precision highp float; in float v_a; in vec3 v_col; out vec4 o;"+
     "void main(){ vec2 c=gl_PointCoord-0.5; float d=dot(c,c); float a=exp(-d*10.0)*v_a;"+
     "if(a<0.005) discard; o=vec4(v_col*a, a); }");
   var nb_vp=gl.getUniformLocation(nbProg,"u_vp"), nb_time=gl.getUniformLocation(nbProg,"u_time"),
       nb_audio=gl.getUniformLocation(nbProg,"u_audio"), nb_reduce=gl.getUniformLocation(nbProg,"u_reduce"),
-      nb_hue=gl.getUniformLocation(nbProg,"u_hue");
+      nb_hue=gl.getUniformLocation(nbProg,"u_hue"), nb_fog=gl.getUniformLocation(nbProg,"u_fog"),
+      nb_white=gl.getUniformLocation(nbProg,"u_white");
+
+  // 空のグラデーション（地平線）＝全画面三角形1枚。背景星レイヤーと「置き換え」で描くのでドローコール増0。
+  var dmProg = prog(
+    HEAD+"uniform vec3 u_r; uniform vec3 u_u; uniform vec3 u_f; out vec3 v_dir;"+
+    "void main(){ vec2 q=vec2(float((gl_VertexID<<1)&2), float(gl_VertexID&2));"+
+    "vec2 ndc=q*2.0-1.0; v_dir=u_f+u_r*ndc.x+u_u*ndc.y; gl_Position=vec4(ndc,0.9999,1.0); }",
+    HEAD+"precision highp float; in vec3 v_dir; out vec4 o;"+
+    "uniform vec3 u_zen; uniform vec3 u_hor; uniform vec3 u_low; uniform vec3 u_sun; uniform vec3 u_sunc;"+
+    "void main(){ vec3 d=normalize(v_dir); float t=d.y;"+
+    "vec3 c = (t>=0.0) ? mix(u_hor,u_zen, pow(min(t*1.7,1.0),0.65))"+
+    "                  : mix(u_hor,u_low, pow(min(-t*2.4,1.0),0.8));"+
+    "float s=max(dot(d,normalize(u_sun)),0.0);"+
+    "c += u_sunc*pow(s,260.0)*0.85 + u_sunc*pow(s,10.0)*0.11;"+
+    "c += u_hor*0.15*exp(-abs(t)*30.0);"+   // 地平線の帯＝速さの手がかり
+    "o=vec4(c,1.0); }");
+  var dm_r=gl.getUniformLocation(dmProg,"u_r"), dm_u=gl.getUniformLocation(dmProg,"u_u"),
+      dm_f=gl.getUniformLocation(dmProg,"u_f"), dm_zen=gl.getUniformLocation(dmProg,"u_zen"),
+      dm_hor=gl.getUniformLocation(dmProg,"u_hor"), dm_low=gl.getUniformLocation(dmProg,"u_low"),
+      dm_sun=gl.getUniformLocation(dmProg,"u_sun"), dm_sunc=gl.getUniformLocation(dmProg,"u_sunc");
+  var dmVAO=gl.createVertexArray();  // 属性なし（gl_VertexIDだけ）＝頂点3個
 
   // 星座線
   var lnProg = prog(
-    HEAD+"layout(location=0) in vec3 a_pos; layout(location=1) in float a_hue;"+
-    "uniform mat4 u_vp; out vec3 v_col;"+HUE2RGB+
-    "void main(){ gl_Position=u_vp*vec4(a_pos,1.0); v_col=hue2rgb(a_hue); }",
-    HEAD+"precision highp float; in vec3 v_col; out vec4 o;"+
-    "void main(){ o=vec4(v_col*0.5, 0.28); }");
-  var ln_vp=gl.getUniformLocation(lnProg,"u_vp");
+    HEAD+"layout(location=0) in vec3 a_pos; layout(location=1) in float a_hue; layout(location=2) in float a_gold;"+
+    "uniform mat4 u_vp; uniform vec4 u_fog; out vec3 v_col; out float v_fog; out float v_gold;"+HUE2RGB+
+    "void main(){ gl_Position=u_vp*vec4(a_pos,1.0);"+
+    "v_fog=exp(-pow(max(gl_Position.w,0.0)*u_fog.a*0.55, 2.0)); v_col=hue2rgb(a_hue); v_gold=a_gold; }",
+    // 弾5: コンプした星座は金色の線（a_gold=0なら従来と1ビットも変わらない）
+    HEAD+"precision highp float; in vec3 v_col; in float v_fog; in float v_gold; out vec4 o;"+
+    "void main(){ vec3 col=mix(v_col*0.5, vec3(1.0,0.92,0.55), v_gold); float al=mix(0.28,0.65,v_gold);"+
+    "o=vec4(col*v_fog, al); }");
+  var ln_vp=gl.getUniformLocation(lnProg,"u_vp"), ln_fog=gl.getUniformLocation(lnProg,"u_fog");
+
+  // 流線（モーションストリーク）＝背景星を2頂点ずつ複製し、尾を速度ベクトル方向へ伸ばすLINESレイヤー。
+  // 背景星と同じ VProt（回転のみ・平行移動なし）空間で描く＝方向ベクトルのみで正しく出る。
+  var stProg = prog(
+    HEAD+"layout(location=0) in vec3 a_pos; layout(location=1) in float a_seed; layout(location=2) in float a_side;"+
+    "uniform mat4 u_vp; uniform vec3 u_velDir; uniform float u_len; out float v_side; out float v_seed;"+
+    "void main(){ vec3 p = a_pos + u_velDir * (u_len * (0.5 + a_seed*0.5) * a_side);"+
+    "gl_Position=u_vp*vec4(p,1.0); v_side=a_side; v_seed=a_seed; }",
+    HEAD+"precision highp float; uniform vec4 u_fog; in float v_side; in float v_seed; out vec4 o;"+
+    "void main(){ float a=(1.0-v_side)*0.34*(0.35+v_seed*0.65); if(a<0.01) discard;"+
+    "o=vec4(vec3(0.80,0.88,1.0)*u_fog.rgb*a, a); }");
+  var st_vp=gl.getUniformLocation(stProg,"u_vp"), st_dir=gl.getUniformLocation(stProg,"u_velDir"),
+      st_len=gl.getUniformLocation(stProg,"u_len"), st_fog=gl.getUniformLocation(stProg,"u_fog");
+
+  // 弾3: 光の環（既存の点スプライト描画パターンを流用＝1環48点・+1ドローコールのみ）
+  var gtProg = prog(
+    HEAD+"layout(location=0) in vec3 a_pos; layout(location=1) in float a_glow;"+
+    "uniform mat4 u_vp; out float v_glow;"+
+    "void main(){ gl_Position=u_vp*vec4(a_pos,1.0); float w=max(gl_Position.w,0.001); v_glow=a_glow;"+
+    "gl_PointSize=clamp((260.0/w)*(0.6+a_glow*0.8),2.0,26.0); }",
+    HEAD+"precision highp float; in float v_glow; out vec4 o;"+
+    "void main(){ vec2 c=gl_PointCoord-0.5; float d=length(c); float a=exp(-d*d*30.0)*v_glow; if(a<0.01) discard;"+
+    "vec3 col=mix(vec3(0.55,0.65,0.85), vec3(1.0,0.92,0.55), v_glow);"+   // 遠い環=青白／次にくぐる環=金色（高輝度）
+    "o=vec4(col*a, min(a,1.0)); }");
+  var gt_vp=gl.getUniformLocation(gtProg,"u_vp");
 
   function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
   function hashStr(s){ var h=2166136261>>>0; for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
@@ -315,9 +456,71 @@
     return [Math.cos(theta)*sp, Math.cos(phi), Math.sin(theta)*sp]; }
 
   var R_BG=100, WK_MIN=90, WK_SPAN=320, NB_R=340;
-  var bgVAO, bgCount, wkVAO, wkPosBuf, wkSelBuf, nbVAO, nbCount, wkPos=[], lnVAO, lnCount=0;
+
+  // ---------- 環境レジストリ（★1エントリ足すと1つ世界が増える。新しい絵の素材は作らない＝stars.jsから決定論生成） ----------
+  // 環境で変わるのは「①座標の写像 mapPos ②星雲レイヤーの形 nebula ③空気の色/かすみ fog ④空のグラデ dome ⑤物理プリセット ⑥床の高さ floorY」だけ。
+  // 作品星は どの世界でも ピッキング／サムネ／カード／訪問記録の対象のまま＝「星＝作品が主役」を環境横断で保つ不変条件。
+  // ✎そらの世界の寸法（作品は 水平距離110〜490・高さ20〜60の帯／雲海は半径820の水平な層／床は高さ8）
+  var SKY_MIN=110, SKY_SPAN=380, SKY_Y0=20, SKY_YSPAN=40, SKY_CLOUD_R=820, SKY_FLOOR=8;
+  // ✎じめんの世界の寸法（作品＝地表に立つ光の塔の頂点／高さ2〜30の帯・水平距離100〜450）。地面グリッドは間隔26で敷き詰め＝雲海と同じ点数で床の柄を作る。
+  var GND_MIN=100, GND_SPAN=350, GND_Y0=2, GND_YSPAN=28, GND_FLOOR=1, GND_GRID=26;
+  function h01(id,salt){ return (hashStr(id+salt)%1000)/1000; }   // 0〜1の決定論ハッシュ
+  var ENVS = {
+    space:{
+      name:"うちゅう",
+      mapPos:function(star,i){ var id=star.id||("w"+i); var d=dirFromHash(hashStr(id));
+        var r=WK_MIN + h01(id,"#r")*WK_SPAN; return [d[0]*r, d[1]*r, d[2]*r]; },
+      nebula:function(i,n,rnd){ var u=rnd(), v=rnd(); var th=u*Math.PI*2, ph=Math.acos(2*v-1), sp=Math.sin(ph);
+        var r=NB_R*Math.cbrt(rnd()); return [Math.cos(th)*sp*r, Math.cos(ph)*r*0.7, Math.sin(th)*sp*r]; },
+      clear:[0.012,0.02,0.05], fog:[1,1,1,0], white:0, dome:null, floorY:null,
+      physics:        { name:"jet",         DAMP_MAX:4.5, DAMP_MIN:1.5, BANK_GAIN:0.50, BANK_MAX:12*Math.PI/180, BOOST_EASE:3.0 },
+      physicsComfort: { name:"jet-comfort", DAMP_MAX:6.5, DAMP_MIN:3.5, BANK_GAIN:0,    BANK_MAX:0,              BOOST_EASE:1.5 }
+    },
+    sky:{
+      name:"そら（くもの海）",
+      // 作品＝雲の上に浮かぶ灯籠。水平にひろく散らし、高さは20〜60の帯に入れる（地平線が見えるように）。
+      mapPos:function(star,i){ var id=star.id||("w"+i); var d=dirFromHash(hashStr(id));
+        var a=Math.atan2(d[2],d[0]), r=SKY_MIN + h01(id,"#r")*SKY_SPAN, y=SKY_Y0 + h01(id,"#y")*SKY_YSPAN;
+        return [Math.cos(a)*r, y, Math.sin(a)*r]; },
+      // 雲海＝同じ星雲の点を「かたまり(puff)」にして水平な層へ置き直す＝点の数は増やさない。
+      nebula:function(i,n,rnd){
+        var PPC=30, c=(i/PPC)|0, cr=mulberry32(90210+c);
+        var ca=cr()*Math.PI*2, crr=SKY_CLOUD_R*Math.sqrt(cr());
+        var cx=Math.cos(ca)*crr, cz=Math.sin(ca)*crr, cy=(cr()-0.5)*8, w=24+cr()*44;
+        var u=rnd()*Math.PI*2, v=Math.sqrt(rnd());
+        return [cx+Math.cos(u)*v*w, cy+(rnd()-0.5)*8, cz+Math.sin(u)*v*w*1.35]; },
+      clear:[0.42,0.55,0.74], fog:[0.86,0.91,1.0,0.00165], white:1, floorY:SKY_FLOOR,
+      dome:{ zen:[0.13,0.31,0.66], hor:[0.74,0.82,0.92], low:[0.30,0.40,0.55],
+             sun:[0.62,0.13,-0.77], sunc:[1.0,0.80,0.52] },
+      physics:        { name:"balloon",         DAMP_MAX:3.5, DAMP_MIN:1.5, BANK_GAIN:0.34, BANK_MAX:9*Math.PI/180, BOOST_EASE:2.2 },
+      physicsComfort: { name:"balloon-comfort", DAMP_MAX:5.5, DAMP_MIN:3.5, BANK_GAIN:0,    BANK_MAX:0,             BOOST_EASE:1.1 }
+    },
+    ground:{
+      name:"じめん（ひかりの塔）",
+      // 作品＝地表に立つ光の塔のてっぺん。水平にひろく散らし、高さは2〜30の帯に入れる（低空飛行＝地平線が近い）。
+      mapPos:function(star,i){ var id=star.id||("w"+i); var d=dirFromHash(hashStr(id));
+        var a=Math.atan2(d[2],d[0]), r=GND_MIN + h01(id,"#r")*GND_SPAN, y=GND_Y0 + h01(id,"#y")*GND_YSPAN;
+        return [Math.cos(a)*r, y, Math.sin(a)*r]; },
+      // 地面＝y=0近くのグリッド点群（星雲レイヤーを間引き格子へ再配置。点の数は増やさない）。
+      nebula:function(i,n,rnd){
+        var side=Math.ceil(Math.sqrt(n))||1, half=side/2, jit=GND_GRID*0.18;
+        var gx=i%side, gz=(i/side)|0;
+        var x=(gx-half+0.5)*GND_GRID + (rnd()-0.5)*jit, z=(gz-half+0.5)*GND_GRID + (rnd()-0.5)*jit;
+        var y=rnd()*2.2;
+        return [x,y,z]; },
+      clear:[0.05,0.05,0.07], fog:[0.72,0.55,0.42,0.0020], white:1, floorY:GND_FLOOR,
+      dome:{ zen:[0.10,0.10,0.22], hor:[0.85,0.55,0.35], low:[0.10,0.16,0.08],
+             sun:[0.55,0.05,-0.83], sunc:[1.0,0.65,0.35] },
+      physics:        { name:"jet-weak",         DAMP_MAX:5.5, DAMP_MIN:2.0, BANK_GAIN:0.40, BANK_MAX:10*Math.PI/180, BOOST_EASE:2.6 },
+      physicsComfort: { name:"jet-weak-comfort", DAMP_MAX:7.5, DAMP_MIN:4.0, BANK_GAIN:0,     BANK_MAX:0,              BOOST_EASE:1.3 }
+    }
+  };
+  var ENVID = ENVS[cfg.env] ? cfg.env : "space", ENV = ENVS[ENVID];
+  var bgVAO, bgCount, wkVAO, wkPosBuf, wkSelBuf, wkHueBuf, wkVisBuf, wkVisArr=[], nbVAO, nbCount, wkPos=[], lnVAO, lnCount=0;
+  var stVAO=null, stCount=0, bgBufs=[], stBufs=[], nbBufs=[], lnBufs=[];
+  function delBufs(a){ for(var i=0;i<a.length;i++) gl.deleteBuffer(a[i]); a.length=0; }
   function buildBg(n){
-    if(bgVAO) gl.deleteVertexArray(bgVAO);
+    if(bgVAO){ gl.deleteVertexArray(bgVAO); delBufs(bgBufs); }
     var rnd=mulberry32(1234567); var pos=new Float32Array(n*3), seed=new Float32Array(n);
     for(var i=0;i<n;i++){ var u=rnd(), v=rnd(); var th=u*Math.PI*2, ph=Math.acos(2*v-1), sp=Math.sin(ph);
       pos[i*3]=Math.cos(th)*sp*R_BG; pos[i*3+1]=Math.cos(ph)*R_BG; pos[i*3+2]=Math.sin(th)*sp*R_BG; seed[i]=rnd(); }
@@ -326,62 +529,173 @@
     gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,3,gl.FLOAT,false,0,0);
     var sb=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,sb); gl.bufferData(gl.ARRAY_BUFFER,seed,gl.STATIC_DRAW);
     gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1,1,gl.FLOAT,false,0,0);
-    gl.bindVertexArray(null); bgCount=n;
+    gl.bindVertexArray(null); bgCount=n; bgBufs.push(pb,sb);
+    buildStreaks(pos, seed, n);
+  }
+  // 流線バッファ＝背景星と必ず同時に作り直す（⚙星のかず変更・自動縮退で星数が変わるため）
+  function buildStreaks(pos, seed, n){
+    if(stVAO){ gl.deleteVertexArray(stVAO); delBufs(stBufs); }
+    var sp=new Float32Array(n*6), ss=new Float32Array(n*2), sd=new Float32Array(n*2);
+    for(var i=0;i<n;i++){
+      var x=pos[i*3], y=pos[i*3+1], z=pos[i*3+2];
+      sp[i*6]=x;   sp[i*6+1]=y; sp[i*6+2]=z;   // 頭（星そのもの）
+      sp[i*6+3]=x; sp[i*6+4]=y; sp[i*6+5]=z;   // 尾（頂点シェーダーで後方へ伸ばす）
+      ss[i*2]=seed[i]; ss[i*2+1]=seed[i];
+      sd[i*2]=0; sd[i*2+1]=1;
+    }
+    stVAO=gl.createVertexArray(); gl.bindVertexArray(stVAO);
+    var b0=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,b0); gl.bufferData(gl.ARRAY_BUFFER,sp,gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,3,gl.FLOAT,false,0,0);
+    var b1=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,b1); gl.bufferData(gl.ARRAY_BUFFER,ss,gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1,1,gl.FLOAT,false,0,0);
+    var b2=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,b2); gl.bufferData(gl.ARRAY_BUFFER,sd,gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2,1,gl.FLOAT,false,0,0);
+    gl.bindVertexArray(null); stCount=n*2; stBufs.push(b0,b1,b2);
   }
   function buildWorks(){
     var n=WORKS.length; var pos=new Float32Array(n*3), hue=new Float32Array(n); wkPos=[];
-    for(var i=0;i<n;i++){ var id=WORKS[i].id||("w"+i); var h=hashStr(id); var d=dirFromHash(h);
-      var r=WK_MIN + (hashStr(id+"#r")%1000)/1000*WK_SPAN;
-      var p=[d[0]*r, d[1]*r, d[2]*r]; wkPos.push(p);
+    // 座標は環境の写像にまかせる（作品そのもの＝id/題/日付/hue は環境で一切変わらない）
+    for(var i=0;i<n;i++){ var p=ENV.mapPos(WORKS[i], i, WORKS); wkPos.push(p);
       pos[i*3]=p[0]; pos[i*3+1]=p[1]; pos[i*3+2]=p[2]; hue[i]=((WORKS[i].hue||0)%360)/360; }
+    if(wkVAO){ gl.deleteVertexArray(wkVAO); if(wkPosBuf) gl.deleteBuffer(wkPosBuf); if(wkSelBuf) gl.deleteBuffer(wkSelBuf); if(wkHueBuf) gl.deleteBuffer(wkHueBuf); if(wkVisBuf) gl.deleteBuffer(wkVisBuf); }
     wkVAO=gl.createVertexArray(); gl.bindVertexArray(wkVAO);
     wkPosBuf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,wkPosBuf); gl.bufferData(gl.ARRAY_BUFFER,pos,gl.STATIC_DRAW);
     gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,3,gl.FLOAT,false,0,0);
-    var hb=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,hb); gl.bufferData(gl.ARRAY_BUFFER,hue,gl.STATIC_DRAW);
+    wkHueBuf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,wkHueBuf); gl.bufferData(gl.ARRAY_BUFFER,hue,gl.STATIC_DRAW);
     gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1,1,gl.FLOAT,false,0,0);
     wkSelBuf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,wkSelBuf);
     gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(n),gl.DYNAMIC_DRAW);
     gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2,1,gl.FLOAT,false,0,0);
+    // 弾5: aVisited（ともり）＝該当星だけ後からbufferSubDataで書き換えられるようDYNAMIC_DRAWで確保
+    wkVisBuf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,wkVisBuf);
+    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(n),gl.DYNAMIC_DRAW);
+    gl.enableVertexAttribArray(3); gl.vertexAttribPointer(3,1,gl.FLOAT,false,0,0);
     gl.bindVertexArray(null);
     buildLines();
+    syncVisitedBuffer();
+  }
+  // 弾5: 訪問済み星のaVisitedを一括同期（buildWorksでバッファが作り直された直後専用。個別更新はupdateVisitedOne）
+  function syncVisitedBuffer(){
+    if(!wkVisBuf) return;
+    var n=WORKS.length, arr=new Float32Array(n);
+    if(typeof save!=="undefined" && save && save.visited){
+      for(var i=0;i<n;i++){ if(save.visited[WORKS[i].id]) arr[i]=1; }
+    }
+    wkVisArr=Array.prototype.slice.call(arr);
+    gl.bindVertexArray(wkVAO); gl.bindBuffer(gl.ARRAY_BUFFER,wkVisBuf);
+    gl.bufferData(gl.ARRAY_BUFFER,arr,gl.DYNAMIC_DRAW); gl.bindVertexArray(null);
+  }
+  // 弾5 §G T2: 該当星のaVisitedだけをbufferSubDataで1に立てる（全バッファ書き換えをしない）
+  function updateVisitedOne(idx){
+    if(idx<0 || idx>=WORKS.length || !wkVisBuf) return;
+    wkVisArr[idx]=1;
+    gl.bindVertexArray(wkVAO); gl.bindBuffer(gl.ARRAY_BUFFER,wkVisBuf);
+    gl.bufferSubData(gl.ARRAY_BUFFER, idx*4, new Float32Array([1]));
+    gl.bindVertexArray(null);
   }
   function buildLines(){
     // 同じ月(constellation)の作品を、日付順に結ぶ「制作の星座」
     var groups={};
     for(var i=0;i<WORKS.length;i++){ var key=WORKS[i].constellation||"?"; (groups[key]||(groups[key]=[])).push(i); }
-    var verts=[], hues=[];
+    var verts=[], hues=[], golds=[];
     for(var k in groups){ var g=groups[k]; if(g.length<2) continue;
       g.sort(function(a,b){ return (""+(WORKS[a].date||"")).localeCompare(""+(WORKS[b].date||"")); });
+      // 弾5: この星座をぜんぶ訪問済みなら金色線（saveがまだ無い最初の1回はfalse＝後でsyncされる）
+      var isGold = (typeof save!=="undefined" && save) ? constellationComplete(k) : false;
       for(var j=0;j<g.length-1;j++){ var A=wkPos[g[j]], B=wkPos[g[j+1]];
         var hu=((WORKS[g[j]].hue||0)%360)/360;
-        verts.push(A[0],A[1],A[2]); hues.push(hu);
-        verts.push(B[0],B[1],B[2]); hues.push(hu); } }
+        verts.push(A[0],A[1],A[2]); hues.push(hu); golds.push(isGold?1:0);
+        verts.push(B[0],B[1],B[2]); hues.push(hu); golds.push(isGold?1:0); } }
     lnCount=hues.length;
-    if(lnVAO) gl.deleteVertexArray(lnVAO);
+    if(lnVAO){ gl.deleteVertexArray(lnVAO); delBufs(lnBufs); }
     lnVAO=gl.createVertexArray(); gl.bindVertexArray(lnVAO);
     var pb=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,pb); gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(verts),gl.STATIC_DRAW);
     gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,3,gl.FLOAT,false,0,0);
     var hb=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,hb); gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(hues),gl.STATIC_DRAW);
     gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1,1,gl.FLOAT,false,0,0);
-    gl.bindVertexArray(null);
+    var gb=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,gb); gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(golds),gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2,1,gl.FLOAT,false,0,0);
+    gl.bindVertexArray(null); lnBufs.push(pb,hb,gb);
   }
   function buildNebula(n){
-    if(nbVAO) gl.deleteVertexArray(nbVAO);
+    if(nbVAO){ gl.deleteVertexArray(nbVAO); delBufs(nbBufs); }
     var rnd=mulberry32(99001); var pos=new Float32Array(n*3), seed=new Float32Array(n);
-    for(var i=0;i<n;i++){ var u=rnd(), v=rnd(); var th=u*Math.PI*2, ph=Math.acos(2*v-1), sp=Math.sin(ph);
-      var r=NB_R*Math.cbrt(rnd());
-      pos[i*3]=Math.cos(th)*sp*r; pos[i*3+1]=Math.cos(ph)*r*0.7; pos[i*3+2]=Math.sin(th)*sp*r; seed[i]=rnd(); }
+    // 点の置き場所は環境まかせ（宇宙＝球の体積／そら＝水平な雲の層）。点の数は環境で増やさない。
+    for(var i=0;i<n;i++){ var p=ENV.nebula(i,n,rnd);
+      pos[i*3]=p[0]; pos[i*3+1]=p[1]; pos[i*3+2]=p[2]; seed[i]=rnd(); }
     nbVAO=gl.createVertexArray(); gl.bindVertexArray(nbVAO);
     var pb=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,pb); gl.bufferData(gl.ARRAY_BUFFER,pos,gl.STATIC_DRAW);
     gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,3,gl.FLOAT,false,0,0);
     var sb=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,sb); gl.bufferData(gl.ARRAY_BUFFER,seed,gl.STATIC_DRAW);
     gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1,1,gl.FLOAT,false,0,0);
-    gl.bindVertexArray(null); nbCount=n;
+    gl.bindVertexArray(null); nbCount=n; nbBufs.push(pb,sb);
   }
   buildBg(cfg.count); buildWorks(); buildNebula(4000);
 
+  // ---------- 飛行の物理定数（✎ここだけ直せば体感が変わる。すべて★見込み値＝実機で干場が較正） ----------
+  var PHYS = {
+    V_MAX:       24,            // ✎ 基準の最高速（ワールド単位/秒。世界半径700・作品星は半径90〜410）
+    BOOST_MULT:  3.0,           // ✎ ブースト倍率（既定で最高速72/s）
+    ACCEL_GAIN:  1.0,           // ✎ 加速のつよさ（1.0＝減衰と釣り合って最高速へちょうど収束）
+    DAMP_MAX:    4.5,           // ✎ 減衰/秒（⚙動きのなめらかさ 0 のとき）
+    DAMP_MIN:    1.5,           // ✎ 減衰/秒（⚙動きのなめらかさ 1 のとき）＝既定0.5で3.0/s
+    BOOST_EASE:  3.0,           // ✎ ブーストの立上り（≈0.3s。快適モードでは半分＝2倍ゆるやか）
+    BOOST_DBL:   0.35,          // ✎ Wダブルタップの判定間隔（秒）
+    BOOST_STICK: 0.90,          // ✎ スマホ＝左スティックをこの割合より外へ倒すとブースト
+    FOV_BASE:    Math.PI/3,     // 60°（v0.3の初期値。変えない）
+    FOV_ADD:     15*Math.PI/180,// ✎ 最高速での視界のひろがり（+15°）
+    FOV_EASE:    6,             // ✎ FOV追従の速さ
+    BANK_GAIN:   0.5,           // ✎ ロール角＝ヨー角速度×これ
+    BANK_MAX:    12*Math.PI/180,// ✎ かたむきの上限（12°）
+    ROLL_SPRING: 8,             // ✎ かたむきのばね復帰
+    ST_LEN:      12,            // ✎ 流線の長さ（最高速時・背景星半径100に対して）
+    ST_MIN_N:    0.02,          // ✎ この速度比より遅いと流線を描かない（静止時ドローコール増0）
+    COMFORT_THRUST: 0.6,        // ✎ 快適モードの加速ひかえめ係数
+    COMFORT_STREAK: 0.3,        // ✎ 快適モードの流線の割合
+    WHEEL_KICK:  0.5,           // ✎ ホイール1段で基準最高速のこの割合ぶん加速
+    BRAKE_DAMP:  10             // ✎ 弾8: オートクルーズ中のブレーキ減衰/秒（強めに効かせて素早く静止）
+  };
+  // ---------- 弾8: オートクルーズ・コースのオートラン・揺蕩いの定数（✎見込み値＝実機で干場が較正） ----------
+  var CRUISE = {
+    FORWARD:      0.5,    // ✎ 巡航前進の強さ（1.0未満＝ブースト無しの最高速に届かないゆるやかな定常速度）
+    STEER_GAIN:   3.0,    // ✎ コース中の針路微調整の追従速さ（1秒あたりの補正割合）
+    WANDER_DELAY: 2.5,    // ✎ 完全無操作の状態が これだけ続いたら揺蕩いが始まる（秒）
+    WANDER_EASE:  2.0,    // ✎ 揺蕩いの強さが0→最大に立ち上がるまでの秒数
+    WANDER_YAW:   0.020,  // ✎ 揺蕩いの左右ふれ幅（ラジアン・見た目のみ＝機体の実状態は変えない）
+    WANDER_PITCH: 0.012,  // ✎ 揺蕩いの上下ふれ幅
+    WANDER_ROLL:  0.015   // ✎ 揺蕩いのかたむきふれ幅
+  };
+  // 飛びごこちの実効値＝PHYSを土台に「環境の物理プリセット」で上書き（快適モードは comfort 版へ丸ごと差し替え）。
+  // ✎プリセットの中身は ENVS の physics / physicsComfort。ここを直接いじるのではなく、そちらを直す。
+  var PHZ = { name:"jet", DAMP_MAX:PHYS.DAMP_MAX, DAMP_MIN:PHYS.DAMP_MIN,
+              BANK_GAIN:PHYS.BANK_GAIN, BANK_MAX:PHYS.BANK_MAX, BOOST_EASE:PHYS.BOOST_EASE };
+  function applyPhys(){
+    var p=(comfortActive ? ENV.physicsComfort : ENV.physics) || {};
+    PHZ.name = p.name || "?";
+    var K=["DAMP_MAX","DAMP_MIN","BANK_GAIN","BANK_MAX","BOOST_EASE"];
+    for(var i=0;i<K.length;i++) PHZ[K[i]] = (p[K[i]]!=null) ? p[K[i]] : PHYS[K[i]];
+  }
+
+  // ---------- 弾2: 風切り音・すれ星の定数（✎見込み値＝実機で干場が較正／間隔10s・0.25sは§G T2n固定） ----------
+  var SWOOSH = {
+    DIST:      45,            // ✎ この距離未満を「近接」とみなす（世界単位。作品星は半径90〜410）
+    SPEED_MIN: PHYS.V_MAX*0.35, // ✎ この速さ以上を「高速通過」とみなす（基準最高速の35%）
+    COOLDOWN:  10,             // 同一星の再カウント抑制秒数（§G T2n固定）
+    CHECK_HZ:  0.25            // 判定間隔・秒（§G T2n固定）
+  };
+  var WIND = {
+    GAIN_MAX: 0.12,   // ✎ 風切り音の最大ゲイン（耳障りにならない上限）
+    FREQ_MIN: 300, FREQ_MAX: 2600, // ✎ 速度でフィルタ周波数を変える範囲（Hz）
+    SMOOTH:   0.12    // ✎ ゲイン/周波数の追従の時定数（秒）＝カクつき防止
+  };
+
   // ---------- カメラ・入力 ----------
   var camPos=[0,0,0], yaw=0, pitch=0, fov=Math.PI/3, yawV=0, pitchV=0, camVel=[0,0,0];
+  var boost=0, boostOn=false, roll=0, speedN=0, prevYaw=0, velDir=[0,0,-1];
+  // 弾8: 揺蕩い(見た目のみ・yaw/pitch/roll本体には触れない)＋無操作時間の計測
+  var wanderYaw=0, wanderPitch=0, wanderRoll=0, idleSec=0, lastLookTsec=-999;
+  var lastWTap=-9, lastDrawCalls=0, lastStreakCount=0, logicMs=0;
+  function speedCap(){ return PHYS.V_MAX * (+cfg.speedScale||1); }
   var keys={}, upHold=false, downHold=false, moveVec={f:0,s:0};
   var pointers={}, lastX=0, lastY=0, moveStart=null;
   var DPR=Math.min(window.devicePixelRatio||1,2);
@@ -393,7 +707,7 @@
   var stickEl=document.getElementById("stick"), knobEl=document.getElementById("stick-knob");
   function showStick(x,y){ stickEl.style.left=x+"px"; stickEl.style.top=y+"px"; knobEl.style.transform="translate(0,0)"; stickEl.classList.add("show"); }
   function moveKnob(jx,jy,maxr){ var m=Math.hypot(jx,jy); if(m>maxr){ jx=jx/m*maxr; jy=jy/m*maxr; } knobEl.style.transform="translate("+jx+"px,"+jy+"px)"; }
-  function hideStick(){ stickEl.classList.remove("show"); moveVec.f=0; moveVec.s=0; }
+  function hideStick(){ stickEl.classList.remove("show"); moveVec.f=0; moveVec.s=0; boostOn=false; }
 
   var mouseDown=null, hasMouse=(window.matchMedia && matchMedia("(pointer: fine)").matches);
   var mouseX=0, mouseY=0, overCanvas=false;
@@ -412,9 +726,11 @@
     if(e.pointerType==="touch"){ var p=pointers[e.pointerId]; if(!p) return;
       if(Math.abs(e.clientX-p.downX)+Math.abs(e.clientY-p.downY)>8) p.moved=true;
       if(p.role==="look"){ var dx=e.clientX-lastX, dy=e.clientY-lastY; lastX=e.clientX; lastY=e.clientY;
-        var k=fov/canvas.clientHeight; yaw-=dx*k; pitch=clampPitch(pitch-dy*k); yawV=-dx*k; pitchV=-dy*k; if(p.moved) stopAuto(); }
+        var k=fov/canvas.clientHeight; yaw-=dx*k; pitch=clampPitch(pitch-dy*k); yawV=-dx*k; pitchV=-dy*k; if(p.moved) stopAuto();
+        lastLookTsec=lastTsec; }   // 弾8: 見まわし操作は「無操作」ではない＝揺蕩いの起点をリセット
       else { var jx=e.clientX-moveStart[0], jy=e.clientY-moveStart[1], maxr=90, m=Math.hypot(jx,jy);
-        if(m<8){ moveVec.f=0; moveVec.s=0; } else { var cl=Math.min(m,maxr)/maxr; moveVec.s=jx/m*cl; moveVec.f=-jy/m*cl; if(cl>0.15) stopAuto(); }
+        if(m<8){ moveVec.f=0; moveVec.s=0; boostOn=false; } else { var cl=Math.min(m,maxr)/maxr; moveVec.s=jx/m*cl; moveVec.f=-jy/m*cl; if(cl>0.15) stopAuto();
+          boostOn = (cl > PHYS.BOOST_STICK); }
         moveKnob(jx,jy,maxr); }
     } else if(mouseDown){ if(Math.abs(e.clientX-mouseDown.downX)+Math.abs(e.clientY-mouseDown.downY)>6) mouseDown.moved=true; }
   });
@@ -439,20 +755,32 @@
     if(anySheet()) return;
     var sens=0.003*cfg.lookSpeed;
     yaw += e.movementX*sens; pitch = clampPitch(pitch + (cfg.invertY?-1:1)*e.movementY*sens);
+    lastLookTsec=lastTsec;   // 弾8: 見まわし操作は「無操作」ではない＝揺蕩いの起点をリセット
   });
   document.addEventListener("pointerlockchange",function(){ var isLocked=(document.pointerLockElement===canvas);
     var cx=document.getElementById("cross"); if(cx) cx.classList.toggle("show", isLocked || cfg.lookMode==="free" || hasMouse);
     if(isLocked) hideIntro(); });
   canvas.addEventListener("wheel",function(e){ e.preventDefault(); stopAuto();
-    var Vr=mul(rotX(pitch),rotY(yaw)); var fw=tDir(Vr,0,0,-1); var s=-Math.sign(e.deltaY)*6;
+    var Vr=mul(rotX(pitch),rotY(yaw)); var fw=tDir(Vr,0,0,-1); var s=-Math.sign(e.deltaY)*speedCap()*PHYS.WHEEL_KICK;
     camVel[0]+=fw[0]*s; camVel[1]+=fw[1]*s; camVel[2]+=fw[2]*s; },{passive:false});
 
   window.addEventListener("keydown",function(e){ var k=e.key.toLowerCase();
     if([" ","arrowup","arrowdown","arrowleft","arrowright"].indexOf(k)>=0 &&
        ["input","textarea","select"].indexOf((e.target.tagName||"").toLowerCase())<0) e.preventDefault();
     if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"," ","shift","q","e"].indexOf(k)>=0) stopAuto();
+    // ブースト＝Wを2回つづけて押して、2回目を押しっぱなし（設定パネルを開いている間は無効）
+    if(k==="w" && !keys[k]){ var tn=e.timeStamp/1000;
+      if(tn-lastWTap < PHYS.BOOST_DBL && !anySheet()) boostOn=true;
+      lastWTap=tn; }
+    // 弾8: Cキー1回＝オートクルーズON/OFF切り替え（右上🛩️ボタンと同じ1操作トグル）
+    if(k==="c" && !keys[k] && !anySheet()){ cfg.autocruise=!cfg.autocruise; saveCfg(); syncCruiseUI(); }
     keys[k]=true; });
-  window.addEventListener("keyup",function(e){ keys[e.key.toLowerCase()]=false; });
+  window.addEventListener("keyup",function(e){ var k=e.key.toLowerCase();
+    keys[k]=false; if(k==="w") boostOn=false; });
+  // タブを離れた／ウィンドウがぼけた時に押しっぱなし状態を残さない
+  function clearHeld(){ keys={}; boostOn=false; upHold=false; downHold=false; }
+  window.addEventListener("blur", clearHeld);
+  document.addEventListener("visibilitychange", function(){ if(document.hidden) clearHeld(); });
   function holdBtn(id,setter){ var b=document.getElementById(id);
     var on=function(e){ e.preventDefault(); setter(true); stopAuto(); }, off=function(){ setter(false); };
     b.addEventListener("pointerdown",on); b.addEventListener("pointerup",off);
@@ -465,7 +793,7 @@
     var ndcx=(px-rect.left)/rect.width*2-1, ndcy=1-(py-rect.top)/rect.height*2;
     var aspect=canvas.width/canvas.height, t=Math.tan(fov/2);
     var vx=ndcx*t*aspect, vy=ndcy*t, vz=-1;
-    var Vr=mul(rotX(pitch),rotY(yaw));
+    var Vr=mul(rotZ(roll),mul(rotX(pitch),rotY(yaw)));  // 描画と同じ姿勢（かたむき込み）で当てる
     var wr=tDir(Vr,vx,vy,vz); var wl=Math.hypot(wr[0],wr[1],wr[2]); wr[0]/=wl; wr[1]/=wl; wr[2]/=wl;
     var best=-1, bestDot=Math.cos(0.09);
     for(var i=0;i<wkPos.length;i++){ var p=wkPos[i];
@@ -479,8 +807,14 @@
   // ---------- 作品カード・音（空間オーディオ） ----------
   var audioCtx=null, analyser=null, freqData=null, mediaSrc=null, panner=null, curAudioEl=document.getElementById("card-audio");
   var audioLevel=0, curHue=0.6, selIndex=-1;
+  // 弾2: 風切り音（ノイズ→filter→gain・既存audioCtxへ接続）とすれ星
+  var windNoise=null, windFilter=null, windGain=null, windGainNow=0, audioArmed=false;
+  var swooshCount=0, swooshLast={}, swooshTimer=0, lastTsec=0;
+  var sparkleBox=document.getElementById("sparkles"), swooshCountEl=document.getElementById("swoosh-count");
   var card=document.getElementById("card");
   function selectWork(i){ selIndex=i; var wobj=WORKS[i]; curHue=((wobj.hue||0)%360)/360;
+    // 弾4: 訪問記録+お題結線（星idごとの初訪問日のみ記録・達成判定はmarkVisitedの後）
+    ensureQuestDay(); markVisited(wobj.id); checkVisitTypeQuests(wobj.id);
     document.getElementById("card-title").textContent=wobj.title||"（無題）";
     document.getElementById("card-born").textContent=bornText(wobj.date);
     document.getElementById("card-swatch").style.background="hsl("+(wobj.hue||0)+",70%,60%)";
@@ -489,15 +823,16 @@
     curAudioEl.style.display="none";
     if(wobj.audio){ curAudioEl.src=wobj.audio; } else { curAudioEl.removeAttribute("src"); }
     card.classList.add("show");
-    var arr=new Float32Array(WORKS.length); arr[i]=1; gl.bindVertexArray(wkVAO);
-    gl.bindBuffer(gl.ARRAY_BUFFER,wkSelBuf); gl.bufferData(gl.ARRAY_BUFFER,arr,gl.DYNAMIC_DRAW); gl.bindVertexArray(null);
+    markSel(i);
     setPannerPos(wkPos[i]); hideIntro();
   }
+  // ともっている星を1つだけ立てる（環境を変えたあとも同じ星がともったまま）
+  function markSel(i){ var arr=new Float32Array(WORKS.length); if(i>=0) arr[i]=1;
+    gl.bindVertexArray(wkVAO); gl.bindBuffer(gl.ARRAY_BUFFER,wkSelBuf);
+    gl.bufferData(gl.ARRAY_BUFFER,arr,gl.DYNAMIC_DRAW); gl.bindVertexArray(null); }
   function bornText(d){ if(!d) return ""; var m=(""+d).split("-"); if(m.length<3) return "この星が生まれました";
     return "この星は "+m[0]+"年"+(+m[1])+"月"+(+m[2])+"日 に生まれました"; }
-  function closeCard(){ card.classList.remove("show"); selIndex=-1; stopAudio();
-    gl.bindVertexArray(wkVAO); gl.bindBuffer(gl.ARRAY_BUFFER,wkSelBuf);
-    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(WORKS.length),gl.DYNAMIC_DRAW); gl.bindVertexArray(null); }
+  function closeCard(){ card.classList.remove("show"); selIndex=-1; stopAudio(); markSel(-1); }
   document.getElementById("card-close").onclick=closeCard;
   document.getElementById("card-play").onclick=function(){ playAudio(); };
   document.getElementById("card-img").onclick=function(){ var w=WORKS[selIndex]; if(w&&w.image){
@@ -524,24 +859,450 @@
     curAudioEl.style.display="block"; curAudioEl.play().catch(function(e){ console.warn("play blocked",e); }); }
   function stopAudio(){ try{ curAudioEl.pause(); }catch(e){} audioLevel=0; }
 
+  // 弾4: listenお題（歌のある星で合計30秒きく）＝currentTimeの進み幅を積算。曲をまたいでも合計でよい。
+  var listenSegStart=null;
+  curAudioEl.addEventListener("play", function(){ listenSegStart=curAudioEl.currentTime; });
+  curAudioEl.addEventListener("timeupdate", function(){
+    if(listenSegStart==null) return; var cur=curAudioEl.currentTime;
+    if(cur>=listenSegStart) listenAccumSec += (cur-listenSegStart);
+    listenSegStart=cur; checkListenQuest();
+  });
+  curAudioEl.addEventListener("pause", function(){ listenSegStart=null; });
+  curAudioEl.addEventListener("ended", function(){ listenSegStart=null; });
+
+  // ---------- 弾2: 風切り音（ノイズ→filter→gain・既存audioCtxへ接続） ----------
+  function ensureWindAudio(){ if(!audioCtx || windNoise) return; try{
+    var dur=2, sr=audioCtx.sampleRate, buf=audioCtx.createBuffer(1, Math.round(sr*dur), sr);
+    var d=buf.getChannelData(0); for(var i=0;i<d.length;i++) d[i]=Math.random()*2-1;   // ノイズ生成（お題/コース生成経路ではない＝§E対象外）
+    windNoise=audioCtx.createBufferSource(); windNoise.buffer=buf; windNoise.loop=true;
+    windFilter=audioCtx.createBiquadFilter(); windFilter.type="lowpass"; windFilter.frequency.value=WIND.FREQ_MIN; windFilter.Q.value=0.7;
+    windGain=audioCtx.createGain(); windGain.gain.value=0;
+    windNoise.connect(windFilter); windFilter.connect(windGain); windGain.connect(audioCtx.destination);
+    windNoise.start();
+  }catch(e){ console.warn("wind audio init failed", e); } }
+  // 風切りゲインの「あるべき値」＝速度から決定論的に出す（音が鳴らせない環境でもテストできるように、実際のaudioノードの値とは分けて持つ）
+  function windGainTarget(){ return Math.max(0,Math.min(1,speedN)) * WIND.GAIN_MAX; }
+  function updateWindAudio(dt){
+    var tgt=windGainTarget(); windGainNow += (tgt-windGainNow)*Math.min(1, dt/WIND.SMOOTH);
+    if(windGain && audioCtx){ try{
+      windGain.gain.setTargetAtTime(windGainNow, audioCtx.currentTime, WIND.SMOOTH);
+      windFilter.frequency.setTargetAtTime(WIND.FREQ_MIN+(WIND.FREQ_MAX-WIND.FREQ_MIN)*speedN, audioCtx.currentTime, WIND.SMOOTH);
+    }catch(e){} }
+  }
+  // ブラウザの自動再生制約＝最初のユーザー操作（タップ/クリック/キー）でだけ音を起こす
+  function armAudio(){ if(audioArmed) return; audioArmed=true;
+    ensureAudio(); if(audioCtx && audioCtx.state==="suspended") audioCtx.resume();
+    ensureWindAudio(); }
+  canvas.addEventListener("pointerdown", armAudio, {once:true});
+  window.addEventListener("keydown", armAudio, {once:true});
+  canvas.addEventListener("wheel", armAudio, {once:true, passive:true});
+
+  // ---------- 弾2: すれ星（0.25s間隔・閾値内高速通過+1・同一星10s再判定なし） ----------
+  function playChime(){ if(!audioCtx) return; try{
+    var t=audioCtx.currentTime;
+    var osc=audioCtx.createOscillator(); osc.type="sine";
+    osc.frequency.setValueAtTime(1046.5,t); osc.frequency.exponentialRampToValueAtTime(1568,t+0.12);
+    var g=audioCtx.createGain(); g.gain.setValueAtTime(0.0001,t);
+    g.gain.linearRampToValueAtTime(0.22,t+0.015); g.gain.exponentialRampToValueAtTime(0.0001,t+0.28);
+    osc.connect(g); g.connect(audioCtx.destination); osc.start(t); osc.stop(t+0.3);
+  }catch(e){ console.warn("chime failed", e); } }
+  function spawnSparkle(i){ if(reduceActive || !sparkleBox) return;   // T9: reduced時はきらめき無し
+    if(!lastVPfull) return; var pr=project(wkPos[i], lastVPfull); if(!pr) return;
+    var el=document.createElement("div"); el.className="sparkle"; el.style.left=pr.x+"px"; el.style.top=pr.y+"px";
+    sparkleBox.appendChild(el); setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, 650); }
+  function triggerSwoosh(i, key){ swooshCount++; swooshLast[key]=lastTsec;
+    playChime(); spawnSparkle(i);
+    // 弾6 T13: 「航路をみせる」OFF時はHUDのDOM更新をしない（判定・音・カウント自体はv0.3拡張のまま鳴らす）
+    if(cfg.showHud && swooshCountEl) swooshCountEl.textContent=String(swooshCount);
+    // 弾4: すれ星10回ごとにrankXp+1（永続化そのものは次の保存タイミング＝訪問/お題/ベスト/📥で反映＝毎フレーム書込み禁止を守る）
+    if(typeof save!=="undefined" && swooshCount%10===0){ save.rankXp=(+save.rankXp||0)+1; } }
+  // 判定そのもの＝コード側の数値条件のみ（distance/speed/cooldown）。flying中はcamVelが動かないため自然に速度閾値を満たさない
+  function checkSwoosh(){
+    var sp=Math.hypot(camVel[0],camVel[1],camVel[2]); if(sp < SWOOSH.SPEED_MIN) return;   // 低速通過→+0
+    for(var i=0;i<WORKS.length;i++){ var p=wkPos[i]; if(!p) continue;
+      var dist=Math.hypot(p[0]-camPos[0],p[1]-camPos[1],p[2]-camPos[2]); if(dist>SWOOSH.DIST) continue;
+      var key=WORKS[i].id||("i"+i); var last=swooshLast[key];
+      if(last!=null && (lastTsec-last)<SWOOSH.COOLDOWN) continue;   // 同一星10s内再通過→+0
+      triggerSwoosh(i, key); }
+  }
+
+  // ---------- 弾3: 光の環コース（courseFor純関数+環描画+順序通過判定+タイム計測・メモリ内） ----------
+  // 環の配置＝seedで星座(同月クラスタ)を1つ選び、メンバー星の並び(space環境の座標=環境非依存)を縫うように環を置く。
+  var COURSE = {
+    GATE_R:    6,   // ✎ 環の半径（設計書C-5固定値）
+    MIN_GATES: 5, MAX_GATES: 8,   // 環の数の範囲（§G T3c）
+    WEAVE_AMT: 26,  // ✎ 環の横ぶれ幅（密集地帯スラロームを作る・世界単位）
+    RES:       48   // 1環を描く点の数（設計書C-5固定値）
+  };
+  // courseFor＝純関数。同じ(courseSeed,works)なら何回呼んでも同じ座標列を返す（§E・§G T3c）。
+  function courseFor(courseSeed, works){
+    var seedNum = (typeof courseSeed==="number") ? (courseSeed>>>0) : hashStr(String(courseSeed));
+    var rnd = mulberry32(seedNum);
+    var groups={};
+    for(var i=0;i<works.length;i++){ var key=works[i].constellation||"?"; (groups[key]||(groups[key]=[])).push(i); }
+    var keys=Object.keys(groups).sort();
+    if(keys.length===0){
+      // 台帳0件でも例外を出さない（§G T11）＝原点近くにダミーの環を1つだけ置く
+      return { gates:[{pos:[0,-4,-60],r:COURSE.GATE_R}], anchor:"?", center:[0,-4,-60], clusterR:0 };
+    }
+    var gkey = keys[Math.floor(rnd()*keys.length) % keys.length];
+    var members = groups[gkey].slice();
+    members.sort(function(a,b){ return (""+(works[a].date||"")).localeCompare(""+(works[b].date||"")); });
+    var waypoints=[];
+    for(var m=0;m<members.length;m++) waypoints.push(ENVS.space.mapPos(works[members[m]], members[m]));
+    if(waypoints.length===0) waypoints.push([0,-4,-60]);
+    if(waypoints.length===1) waypoints.push([waypoints[0][0]+2, waypoints[0][1]+1, waypoints[0][2]+2]);
+    var cx=0,cy=0,cz=0;
+    for(var w=0;w<waypoints.length;w++){ cx+=waypoints[w][0]; cy+=waypoints[w][1]; cz+=waypoints[w][2]; }
+    cx/=waypoints.length; cy/=waypoints.length; cz/=waypoints.length;
+    var clusterR=0;
+    for(var w2=0;w2<waypoints.length;w2++){ var dd=Math.hypot(waypoints[w2][0]-cx,waypoints[w2][1]-cy,waypoints[w2][2]-cz); if(dd>clusterR) clusterR=dd; }
+    var gateCount = COURSE.MIN_GATES + Math.floor(rnd()*(COURSE.MAX_GATES-COURSE.MIN_GATES+1));
+    var gates=[];
+    for(var g=0; g<gateCount; g++){
+      var u=(gateCount>1) ? g/(gateCount-1) : 0;
+      var segF=u*(waypoints.length-1), wa=Math.floor(segF), wb=Math.min(wa+1, waypoints.length-1), frac=segF-wa;
+      var bx=waypoints[wa][0]+(waypoints[wb][0]-waypoints[wa][0])*frac;
+      var by=waypoints[wa][1]+(waypoints[wb][1]-waypoints[wa][1])*frac;
+      var bz=waypoints[wa][2]+(waypoints[wb][2]-waypoints[wa][2])*frac;
+      var ang=rnd()*Math.PI*2, amt=(rnd()*2-1)*COURSE.WEAVE_AMT, oy=(rnd()-0.5)*COURSE.WEAVE_AMT*0.4;
+      gates.push({ pos:[bx+Math.cos(ang)*amt, by+oy, bz+Math.sin(ang)*amt], r:COURSE.GATE_R });
+    }
+    return { gates:gates, anchor:gkey, center:[cx,cy,cz], clusterR:clusterR };
+  }
+  // 環の向き（法線）＝前後の環を結ぶ方向。くぐる時の「面」を決めるだけで courseFor 自体は変えない。
+  function gateNormal(gates, idx){
+    var pa=gates[Math.max(0,idx-1)].pos, pb=gates[Math.min(gates.length-1,idx+1)].pos;
+    var nx=pb[0]-pa[0], ny=pb[1]-pa[1], nz=pb[2]-pa[2], nl=Math.hypot(nx,ny,nz)||1;
+    return [nx/nl, ny/nl, nz/nl];
+  }
+  // 線分(p0→p1)と環の円板(中心gate.pos・法線normal・半径gate.r)の交差＝フレームレート非依存（§G T15）。
+  // 単純な「毎フレーム現在位置が輪の中か」だと高速移動時に間の1フレームで通り抜けてしまう＝取りこぼしの原因。
+  function segDiscHit(p0, p1, gate, normal){
+    var cx=gate.pos[0], cy=gate.pos[1], cz=gate.pos[2];
+    var dx=p1[0]-p0[0], dy=p1[1]-p0[1], dz=p1[2]-p0[2];
+    var denom=dx*normal[0]+dy*normal[1]+dz*normal[2];
+    if(Math.abs(denom)<1e-8) return false;         // 移動が環の面と平行＝この一手では交わらない
+    var t=((cx-p0[0])*normal[0]+(cy-p0[1])*normal[1]+(cz-p0[2])*normal[2])/denom;
+    if(t<0 || t>1) return false;                    // 交点が線分の外側
+    var ix=p0[0]+dx*t, iy=p0[1]+dy*t, iz=p0[2]+dz*t;
+    return Math.hypot(ix-cx, iy-cy, iz-cz) <= gate.r;
+  }
+  // 環のジオメトリ（48点×環数・POINTS）＝コース開始時に1度だけ作る。毎フレームは輝度だけ差し替える。
+  var gtVAO=null, gtBufs=[], gtGlowBuf=null, gtCount=0;
+  function buildGateRing(gates, normals){
+    if(gtVAO){ gl.deleteVertexArray(gtVAO); delBufs(gtBufs); }
+    var RES=COURSE.RES, n=gates.length;
+    var pos=new Float32Array(n*RES*3), glow=new Float32Array(n*RES);
+    for(var gi=0; gi<n; gi++){
+      var c=gates[gi].pos, r=gates[gi].r, nrm=normals[gi];
+      var up=(Math.abs(nrm[1])<0.9) ? [0,1,0] : [1,0,0];
+      var tx=nrm[1]*up[2]-nrm[2]*up[1], ty=nrm[2]*up[0]-nrm[0]*up[2], tz=nrm[0]*up[1]-nrm[1]*up[0];
+      var tl=Math.hypot(tx,ty,tz)||1; tx/=tl; ty/=tl; tz/=tl;
+      var bx=nrm[1]*tz-nrm[2]*ty, by=nrm[2]*tx-nrm[0]*tz, bz=nrm[0]*ty-nrm[1]*tx;
+      for(var k=0;k<RES;k++){ var a=(k/RES)*Math.PI*2, ca=Math.cos(a), sa=Math.sin(a), idx=gi*RES+k;
+        pos[idx*3]  = c[0]+(tx*ca+bx*sa)*r;
+        pos[idx*3+1]= c[1]+(ty*ca+by*sa)*r;
+        pos[idx*3+2]= c[2]+(tz*ca+bz*sa)*r;
+        glow[idx]=0.4;
+      }
+    }
+    gtVAO=gl.createVertexArray(); gl.bindVertexArray(gtVAO);
+    var pb=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,pb); gl.bufferData(gl.ARRAY_BUFFER,pos,gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,3,gl.FLOAT,false,0,0);
+    gtGlowBuf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,gtGlowBuf); gl.bufferData(gl.ARRAY_BUFFER,glow,gl.DYNAMIC_DRAW);
+    gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1,1,gl.FLOAT,false,0,0);
+    gl.bindVertexArray(null);
+    gtCount=n*RES; gtBufs=[pb,gtGlowBuf];
+  }
+  // 次にくぐる環だけ高輝度(金)・通過済みは減光・その他は中間（「次の環が明るく光る」§C-5）
+  function updateGateGlow(){
+    if(!gtVAO || !course) return;
+    var RES=COURSE.RES, n=course.gates.length, glow=new Float32Array(n*RES);
+    for(var gi=0; gi<n; gi++){ var v=(gi<courseIdx)?0.12:(gi===courseIdx?1.0:0.42);
+      for(var k=0;k<RES;k++) glow[gi*RES+k]=v; }
+    gl.bindVertexArray(gtVAO); gl.bindBuffer(gl.ARRAY_BUFFER,gtGlowBuf);
+    gl.bufferData(gl.ARRAY_BUFFER,glow,gl.DYNAMIC_DRAW); gl.bindVertexArray(null);
+  }
+  var course=null, courseIdx=0, courseActive=false, courseFinished=false,
+      courseStartT=0, courseElapsed=0, courseTimerRunning=false, courseBests={};
+  function startCourse(seedInput){
+    var seedNum=(typeof seedInput==="number") ? seedInput : hashStr(String(seedInput));
+    course=courseFor(seedNum, WORKS); course.seed=seedNum;
+    course.normals=course.gates.map(function(g,i){ return gateNormal(course.gates,i); });
+    courseIdx=0; courseActive=true; courseFinished=false; courseTimerRunning=false; courseStartT=0; courseElapsed=0;
+    buildGateRing(course.gates, course.normals); updateGateGlow(); updateCourseHud();
+    return course;
+  }
+  // §G T16: 途中放棄→無罰・いつでも再挑戦可（ペナルティに相当する状態を一切残さない）
+  function abandonCourse(){
+    courseActive=false; course=null; courseIdx=0; courseFinished=false; courseTimerRunning=false; gtCount=0;
+    updateCourseHud();
+  }
+  // 通過判定の本体＝frame()から前フレーム位置/今フレーム位置を渡して呼ぶ（§G T15のテストもここを直接叩く）
+  function courseCheckPass(prevPos, curPos){
+    if(!courseActive || !course || courseFinished) return false;
+    var gi=courseIdx, gate=course.gates[gi]; if(!gate) return false;
+    if(!segDiscHit(prevPos, curPos, gate, course.normals[gi])) return false;   // 順序違いはノーカウント（次の環しか見ない）
+    courseIdx++;
+    if(gi===0){ courseStartT=lastTsec; courseTimerRunning=true; }   // タイムは第1環通過で計時開始
+    if(courseIdx>=course.gates.length){
+      courseElapsed=lastTsec-courseStartT; courseTimerRunning=false; courseFinished=true;
+      var key=String(course.seed);
+      if(courseBests[key]==null || courseElapsed<courseBests[key]){
+        courseBests[key]=courseElapsed;   // §G T16: 速い時だけ更新
+        // 弾4: ベスト更新→永続化（このタイミングだけがbestsの書込みトリガー）
+        save.bests[key]=Math.round(courseElapsed*10)/10;
+        persistSave();
+      }
+      // 弾4: 今日のお題「course」枠は既存のコース完走判定をそのまま流用（同じcourseSeedで完走した時だけ達成）
+      ensureQuestDay();
+      for(var qi2=0; qi2<todaysQuests.length; qi2++){
+        if(!save.questDone[qi2] && courseSeedMatches(todaysQuests[qi2], course.seed)){ completeQuest(qi2); }
+      }
+    }
+    updateGateGlow(); updateCourseHud();
+    return true;
+  }
+  var _hudCourseVisible=null;   // 弾6 T13: display書換えは変化時のみ＝OFF中は完全にDOM静止（同値の再代入も避ける）
+  function updateCourseHud(){
+    var el=document.getElementById("course-hud"); if(!el) return;
+    var want = !!cfg.showHud && courseActive;
+    if(_hudCourseVisible!==want){ el.style.display = want ? "" : "none"; _hudCourseVisible=want; }
+    if(!want) return;
+    if(courseFinished){
+      var key=String(course.seed), best=courseBests[key];
+      el.textContent="🔆 かんそう！ "+courseElapsed.toFixed(1)+"秒（じこベスト "+(best!=null?best.toFixed(1):"—")+"秒）";
+    } else {
+      var remain=course.gates.length-courseIdx, gate=course.gates[courseIdx];
+      var d=gate ? Math.hypot(gate.pos[0]-camPos[0],gate.pos[1]-camPos[1],gate.pos[2]-camPos[2]) : 0;
+      var tnow=courseTimerRunning ? (lastTsec-courseStartT) : 0;
+      el.textContent="🔆 のこりの環: "+remain+"／つぎまで "+Math.round(d)+"m"+(courseTimerRunning?"・いま "+tnow.toFixed(1)+"秒":"");
+    }
+  }
+
+  // ---------- 弾4: セーブ基盤+今日の航路（§C-3/§C-4） ----------
+  var SAVE_KEY = "tenkyu_save_v1";
+  function defaultSave(){ return { v:1, visited:{}, questDay:null, questDone:[false,false,false], questTotal:0, rankXp:0, nearMiss:0, bests:{} }; }
+  function loadSave(){
+    try{
+      var raw = localStorage.getItem(SAVE_KEY); if(!raw) return defaultSave();
+      var obj = JSON.parse(raw); if(!obj || typeof obj!=="object") return defaultSave();
+      var d = defaultSave();
+      return {
+        v:1,
+        visited: (obj.visited && typeof obj.visited==="object") ? obj.visited : {},
+        questDay: (typeof obj.questDay==="string") ? obj.questDay : null,
+        questDone: (Array.isArray(obj.questDone) && obj.questDone.length===3) ? obj.questDone.map(function(x){return !!x;}) : d.questDone.slice(),
+        questTotal: (+obj.questTotal)||0,
+        rankXp: (+obj.rankXp)||0,
+        nearMiss: (+obj.nearMiss)||0,
+        bests: (obj.bests && typeof obj.bests==="object") ? obj.bests : {}
+      };
+    }catch(e){ console.warn("tenkyu save: 読み込みに失敗（fail-open・初期値でつづける）", e); return defaultSave(); }
+  }
+  var save = loadSave();
+  // 書き込みは 訪問確定/お題達成/ベスト更新/📥時のみ（毎フレーム禁止）。setItemが例外を投げても握って続行＝T8。
+  function persistSave(){
+    save.nearMiss = swooshCount;
+    try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }
+    catch(e){ console.warn("tenkyu save: 書き込みに失敗（fail-open・メモリ内でつづける）", e); }
+  }
+  // 弾5: 起動時点ですでに全訪問済みの星座があれば、金色線とaVisitedを最初から正しく出す
+  var completedConstellations = recomputeCompletedConstellations();
+  syncVisitedBuffer(); buildLines();
+  function todayDateStr(){ var d=new Date(); return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2); }
+  function monthOfKey(key, fallbackMonth){ var m=/-(\d{1,2})$/.exec(""+key); return m ? (+m[1]) : fallbackMonth; }
+
+  // 色名変換（hueから決定論・最も近い中心色を選ぶ＝±30度域の実装）
+  var HUE_NAMES = [ {n:"赤",h:0}, {n:"だいだい",h:30}, {n:"黄",h:60}, {n:"緑",h:120}, {n:"青",h:210}, {n:"あい",h:240}, {n:"むらさき",h:280} ];
+  function colorNameFromHue(hue){
+    hue = ((+hue||0)%360+360)%360; var best=HUE_NAMES[0], bd=999;
+    for(var i=0;i<HUE_NAMES.length;i++){ var d=Math.abs(hue-HUE_NAMES[i].h); d=Math.min(d,360-d); if(d<bd){ bd=d; best=HUE_NAMES[i]; } }
+    return best.n;
+  }
+  function farthestWorkIndex(works){
+    var bi=-1, br=-1;
+    for(var i=0;i<works.length;i++){ var id=works[i].id||("w"+i); var r=WK_MIN+h01(id,"#r")*WK_SPAN; if(r>br){ br=r; bi=i; } }
+    return bi;
+  }
+  function questText(kind, w){
+    if(kind==="visit") return "『"+(w.title||"（無題）")+"』の星を たずねよう";
+    if(kind==="hint"){ var mo=w.date ? (+(""+w.date).split("-")[1]) : 1; return mo+"月生まれの "+colorNameFromHue(w.hue||0)+"の星を さがそう"; }
+    if(kind==="far") return "いちばん遠くの まだ見ぬ星へ 行ってみよう";
+    if(kind==="listen") return "歌のある星で 合計30秒 きいてみよう";
+    return "";
+  }
+  // 枠2＝visit/hint/far/(音のある台帳のみ)listen から1つ。台帳0件でも例外を出さない。
+  function buildSlot2(kind, works, rnd){
+    if(works.length===0) return { type:kind, targetId:null, targetConstellation:null, courseSeed:null, text:questText(kind,{}), done:false };
+    if(kind==="far"){ var fi=farthestWorkIndex(works), fw=works[fi];
+      return { type:"far", targetId:fw.id, targetConstellation:null, courseSeed:null, text:questText("far",fw), done:false }; }
+    if(kind==="listen") return { type:"listen", targetId:null, targetConstellation:null, courseSeed:null, text:questText("listen",{}), done:false };
+    var idx=Math.floor(rnd()*works.length), w=works[idx];
+    return { type:kind, targetId:w.id, targetConstellation:null, courseSeed:null, text:questText(kind,w), done:false };
+  }
+  // questsFor＝純関数（副作用なし）。同じ(dateStr,works)なら常に同じ3件を返す（§G T3）。
+  function questsFor(dateStr, works){
+    works = works || [];
+    var seed = hashStr(dateStr+":"+works.length+":"+(works[0]?works[0].id:"")+":"+(works[works.length-1]?works[works.length-1].id:""));
+    var rnd = mulberry32(seed);
+    var month = (function(){ var m=(""+dateStr).split("-")[1]; return m ? +m : 1; })();
+    var groups={};
+    for(var i=0;i<works.length;i++){ var key=works[i].constellation||"?"; (groups[key]||(groups[key]=[])).push(i); }
+    var gkeys=Object.keys(groups).sort();
+
+    // 枠1: course固定（🔆ボタンと同じseed式＝完走がそのままお題1件目の達成になる）
+    var courseSeed = hashStr(dateStr+":course3");
+    var courseAnchor = courseFor(courseSeed, works).anchor;
+    var q1 = { type:"course", targetId:null, targetConstellation:null, courseSeed:courseSeed,
+      text: monthOfKey(courseAnchor, month)+"月の星座の 光の環を ぜんぶくぐろう", done:false };
+
+    // 枠2
+    var hasAudio=false; for(var a=0;a<works.length;a++){ if(works[a].audio){ hasAudio=true; break; } }
+    var opts2=["visit","hint","far"]; if(hasAudio) opts2.push("listen");
+    var pick2 = works.length>0 ? opts2[Math.floor(rnd()*opts2.length)] : "visit";
+    var q2 = buildSlot2(pick2, works, rnd);
+
+    // 枠3: trace固定
+    var traceKey = gkeys.length>0 ? gkeys[Math.floor(rnd()*gkeys.length)] : null;
+    var q3 = { type:"trace", targetId:null, targetConstellation:traceKey, courseSeed:null,
+      text: monthOfKey(traceKey, month)+"月の星座を ぜんぶ たずねよう", done:false };
+
+    return [q1,q2,q3];
+  }
+  function constellationIds(key){
+    var ids=[]; for(var i=0;i<WORKS.length;i++){ if((WORKS[i].constellation||"?")===key) ids.push(WORKS[i].id); } return ids;
+  }
+  // 達成判定＝型ごとに独立した1関数（§G T4の変異注入テスト＝1つだけ常時falseにして検知できるように混ぜない）
+  function courseSeedMatches(q, finishedSeed){ return !!q && q.type==="course" && q.courseSeed===finishedSeed; }
+  function visitTargetMatches(q, id){ return !!q && q.type==="visit" && q.targetId===id; }
+  function hintTargetMatches(q, id){ return !!q && q.type==="hint" && q.targetId===id; }
+  function farTargetMatches(q, id){ return !!q && q.type==="far" && q.targetId===id; }
+  function listenComplete(q){ return !!q && q.type==="listen" && listenAccumSec>=30; }
+  function traceComplete(q){
+    if(!q || q.type!=="trace" || !q.targetConstellation) return false;
+    var ids=constellationIds(q.targetConstellation); if(ids.length===0) return false;
+    for(var i=0;i<ids.length;i++){ if(!save.visited[ids[i]]) return false; }
+    return true;
+  }
+
+  var todaysQuests = [];
+  function ensureQuestDay(){
+    var t=todayDateStr();
+    if(save.questDay!==t){ save.questDay=t; save.questDone=[false,false,false]; todaysQuests=questsFor(t, WORKS); listenAccumSec=0; updateQuestHud(); }
+    else if(todaysQuests.length===0){ todaysQuests=questsFor(t, WORKS); }
+  }
+  var achieveToastEl=null, achieveTimer=null;
+  function showAchieveToast(msg){ if(!achieveToastEl) achieveToastEl=document.getElementById("achieve-toast"); if(!achieveToastEl) return;
+    achieveToastEl.textContent=msg; achieveToastEl.classList.add("show");
+    if(achieveTimer) clearTimeout(achieveTimer);
+    achieveTimer=setTimeout(function(){ achieveToastEl.classList.remove("show"); },3000); }
+  function updateQuestHud(){ if(!cfg.showHud) return;   // 弾6 T13: OFF中はHUD由来のDOM更新をしない
+    var el=document.getElementById("quest-hud"); if(!el) return;
+    var html=""; for(var i=0;i<todaysQuests.length;i++){ var q=todaysQuests[i], done=!!save.questDone[i];
+      html += '<div class="q'+(done?' done':'')+'">'+(done?"✅":"・")+" "+esc(q.text)+"</div>"; }
+    el.innerHTML=html; }
+  // 弾6 T13: 「航路をみせる」⚙の反映＝quest-hud/swoosh-hud/course-hudの表示切替（判定・進行はどちらの状態でも変わらない＝加点式の不変条件を維持）
+  function applyHudVisibility(){
+    var show=!!cfg.showHud;
+    var q=document.getElementById("quest-hud"); if(q) q.style.display = show ? "" : "none";
+    var s=document.getElementById("swoosh-hud"); if(s) s.style.display = show ? "" : "none";
+    if(!show){ var c=document.getElementById("course-hud"); if(c){ c.style.display="none"; _hudCourseVisible=false; } }
+    else { _hudCourseVisible=null; updateCourseHud(); }   // ONに戻したら現状に合わせて再評価
+    if(show) updateQuestHud();
+  }
+  // お題達成＝1箇所に集約（rankXp/questTotal加算・永続化・トースト表示をここだけで行う）
+  function completeQuest(qi){
+    if(save.questDone[qi]) return;
+    save.questDone[qi]=true; save.questTotal=(+save.questTotal||0)+1; save.rankXp=(+save.rankXp||0)+1;
+    var q=todaysQuests[qi]; var msg="たどりつきました！";
+    if(q && q.type==="trace"){ save.rankXp+=5; var mo=monthOfKey(q.targetConstellation,null); msg="⭐ "+(mo!=null?mo:"?")+"月の星座が そろいました"; }
+    persistSave(); updateQuestHud(); showAchieveToast(msg);
+  }
+  // 弾5: idからWORKSの添字を引く（見つからなければ-1）
+  function workIndexById(id){ for(var k=0;k<WORKS.length;k++){ if(WORKS[k].id===id) return k; } return -1; }
+  // 弾5: その星座(key)のメンバーが全員訪問済みか（メンバー0人なら未コンプ扱い・1人なら本人が訪問済みならコンプ）
+  function constellationComplete(key){
+    var ids=constellationIds(key); if(ids.length===0) return false;
+    for(var i=0;i<ids.length;i++){ if(!save.visited[ids[i]]) return false; }
+    return true;
+  }
+  // 弾5: 全星座を洗い直してコンプ済み集合をつくる（起動時・📥読込後に使う）
+  function recomputeCompletedConstellations(){
+    var keys={}; for(var i=0;i<WORKS.length;i++){ keys[WORKS[i].constellation||"?"]=true; }
+    var out={};
+    for(var k in keys){ if(constellationComplete(k)) out[k]=true; }
+    return out;
+  }
+  // 弾5: 星座コンプの検知＝1星座につき1回だけ金色線+トーストを出す（お題(trace)とは独立の一般判定）
+  function checkConstellationCompletion(id){
+    var idx=workIndexById(id); if(idx<0) return;
+    var key=WORKS[idx].constellation||"?";
+    if(completedConstellations[key]) return;
+    if(constellationComplete(key)){
+      completedConstellations[key]=true;
+      buildLines();
+      var mo=monthOfKey(key,null);
+      showAchieveToast("⭐ "+(mo!=null?mo:"?")+"月の星座が そろいました");
+    }
+  }
+  // 星idごとの初訪問日のみ記録・以降は不変（同日/他日を問わず上書きしない＝§G T1）
+  function markVisited(id){ if(!id || save.visited[id]) return; save.visited[id]=todayDateStr(); persistSave();
+    var idx=workIndexById(id); if(idx>=0) updateVisitedOne(idx);
+    checkConstellationCompletion(id);
+  }
+  function checkVisitTypeQuests(id){ ensureQuestDay();
+    for(var qi=0; qi<todaysQuests.length; qi++){ if(save.questDone[qi]) continue; var q=todaysQuests[qi];
+      if(visitTargetMatches(q,id) || hintTargetMatches(q,id) || farTargetMatches(q,id) || traceComplete(q)){ completeQuest(qi); } } }
+  var listenAccumSec = 0;
+  function checkListenQuest(){ ensureQuestDay();
+    for(var qi=0; qi<todaysQuests.length; qi++){ if(save.questDone[qi]) continue;
+      if(listenComplete(todaysQuests[qi])){ completeQuest(qi); } } }
+  ensureQuestDay(); updateQuestHud();
+
   // ---------- 飛行（検索ジャンプ・オートツアー共通） ----------
   var flying=false, flyT=0, flyDur=1.3, flyFrom=null, flyTgt=null;
   var tourOn=false, tourIdx=-1, tourDwell=0;
   function startFlyTo(i){ var P=wkPos[i]; var pl=Math.hypot(P[0],P[1],P[2])||1; var D=Math.min(pl*0.5,70);
     var tgt=[P[0]*(1-D/pl), P[1]*(1-D/pl), P[2]*(1-D/pl)];
-    var dir=[P[0]/pl,P[1]/pl,P[2]/pl];
+    if(ENV.floorY!=null && tgt[1]<ENV.floorY+4) tgt[1]=ENV.floorY+4;   // 床のある世界では雲の下に降りない
+    // 向きは「着く場所→星」で出す（床でもち上げた時もまっすぐ星を向く。もち上げが無い時は従来と同じ値）
+    var dx=P[0]-tgt[0], dy=P[1]-tgt[1], dz=P[2]-tgt[2], dl=Math.hypot(dx,dy,dz)||1;
+    var dir=[dx/dl, dy/dl, dz/dl];
     var tyaw=Math.atan2(dir[0], -dir[2]), tpitch=clampPitch(Math.asin(-dir[1]));
     flyFrom={pos:camPos.slice(), yaw:yaw, pitch:pitch};
     flyTgt={pos:tgt, yaw:tyaw, pitch:tpitch, index:i};
-    flyT=0; flying=true; camVel=[0,0,0]; }
+    flyT=0; flying=true; camVel=[0,0,0]; boostOn=false; boost=0; speedN=0;
+    // 動きを少なくする設定のときは、飛ばずに「フェードして瞬間移動」（酔い対策）
+    flyDur = reduceActive ? 0.02 : 1.3;
+    if(reduceActive){ canvas.style.opacity="0"; setTimeout(function(){ canvas.style.opacity="1"; },220); } }
   function lerpAngle(a,b,t){ var d=b-a; while(d>Math.PI)d-=2*Math.PI; while(d<-Math.PI)d+=2*Math.PI; return a+d*t; }
 
   // ---------- fps・自動縮退 ----------
   var fps=60, degraded=false, startT=-1, measureDone=false, measAcc=0, measFrames=0;
   var fpsEl=document.getElementById("fps"); if(debugFps) fpsEl.classList.add("show");
-  var reduceActive = cfg.reduce || prefersReduce;
+  // 動きの抑制は2段: reduceActive=動きを少なくする／comfortActive=快適モード（reduceActiveを必ず含む）
+  var reduceActive=false, comfortActive=false;
+  function updateComfort(){ reduceActive = !!(cfg.reduce || prefersReduce); comfortActive = reduceActive || !!cfg.comfort; applyPhys(); }
+  updateComfort();
+  canvas.style.transition="opacity .2s";  // reduced時のフェード瞬間移動用
 
-  gl.clearColor(0.012,0.02,0.05,1);
+  // ---------- 世界のきりかえ（作品そのものは何ひとつ変わらない＝座標と空気と飛びごこちだけ） ----------
+  function setEnv(id){
+    if(!ENVS[id]) id="space";
+    ENVID=id; ENV=ENVS[id]; cfg.env=id;
+    gl.clearColor(ENV.clear[0], ENV.clear[1], ENV.clear[2], 1);
+    buildWorks();                       // 座標の写像を差し替え（星座線も一緒に張り直す）
+    buildNebula(nbCount||4000);         // 星雲レイヤーを環境の形へ（点の数は同じ）
+    applyPhys();
+    if(selIndex>=0){ markSel(selIndex); setPannerPos(wkPos[selIndex]); }   // ひらいているカードはそのまま
+    if(ENV.floorY!=null && camPos[1] < ENV.floorY+10) camPos[1]=ENV.floorY+14;  // 雲の下に埋まって始まらない
+    camVel=[0,0,0]; boost=0; boostOn=false; speedN=0;
+  }
+  if(ENV.floorY!=null && camPos[1]<ENV.floorY+10) camPos[1]=ENV.floorY+14;  // 起動時（前回そらを選んでいた時）
+
+  gl.clearColor(ENV.clear[0], ENV.clear[1], ENV.clear[2], 1);
   gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
   gl.disable(gl.DEPTH_TEST);
 
@@ -549,27 +1310,149 @@
   function drawScene(tsec, uAudio){
     var aspect=canvas.width/canvas.height;
     var P=perspective(fov,aspect,0.1,8000);
-    var Vrot=mul(rotX(pitch),rotY(yaw));
+    // 弾8: 揺蕩いは描画だけに乗せる（roll/pitch/yaw本体は変えない＝物理・判定・他テストに影響させない）
+    var Vrot=mul(rotZ(roll+wanderRoll),mul(rotX(pitch+wanderPitch),rotY(yaw+wanderYaw)));
     var Vfull=mul(Vrot, transl(-camPos[0],-camPos[1],-camPos[2]));
     var VProt=mul(P,Vrot), VPfull=mul(P,Vfull); lastVPfull=VPfull;
-    var uReduce=reduceActive?1:0;
+    var uReduce=reduceActive?1:0; var dc=0; var F=ENV.fog;
     gl.clear(gl.COLOR_BUFFER_BIT);
+    // 背景レイヤー＝環境で中身が入れ替わる（宇宙＝星野の点／そら＝空のグラデと地平線）。どちらも1ドローコール。
+    if(ENV.dome){ var D=ENV.dome, tA=Math.tan(fov/2), asp=aspect;
+      var rr=tDir(Vrot,1,0,0), uu=tDir(Vrot,0,1,0), ff=tDir(Vrot,0,0,-1);
+      gl.useProgram(dmProg);
+      gl.uniform3f(dm_r, rr[0]*tA*asp, rr[1]*tA*asp, rr[2]*tA*asp);
+      gl.uniform3f(dm_u, uu[0]*tA, uu[1]*tA, uu[2]*tA);
+      gl.uniform3f(dm_f, ff[0], ff[1], ff[2]);
+      gl.uniform3fv(dm_zen,D.zen); gl.uniform3fv(dm_hor,D.hor); gl.uniform3fv(dm_low,D.low);
+      gl.uniform3fv(dm_sun,D.sun); gl.uniform3fv(dm_sunc,D.sunc);
+      gl.blendFunc(gl.ONE, gl.ZERO);                       // 空は下地＝そのまま塗る
+      gl.bindVertexArray(dmVAO); gl.drawArrays(gl.TRIANGLES,0,3); dc++;
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE);                  // 以降は元どおりの加算合成
+    }
+    // 星雲／雲海＝速度に応じて輝度を持ち上げる（突き抜けの「ぶわっ」）
     gl.useProgram(nbProg); gl.uniformMatrix4fv(nb_vp,false,VPfull);
-    gl.uniform1f(nb_time,tsec); gl.uniform1f(nb_audio,uAudio); gl.uniform1f(nb_reduce,uReduce); gl.uniform1f(nb_hue,curHue);
-    gl.bindVertexArray(nbVAO); gl.drawArrays(gl.POINTS,0,nbCount);
-    gl.useProgram(bgProg); gl.uniformMatrix4fv(bg_vp,false,VProt);
-    gl.uniform1f(bg_time,tsec); gl.uniform1f(bg_reduce,uReduce);
-    gl.bindVertexArray(bgVAO); gl.drawArrays(gl.POINTS,0,bgCount);
+    gl.uniform1f(nb_time,tsec); gl.uniform1f(nb_audio,uAudio + (reduceActive?0:speedN*0.30));
+    gl.uniform1f(nb_reduce,uReduce); gl.uniform1f(nb_hue,curHue);
+    gl.uniform4f(nb_fog,F[0],F[1],F[2],F[3]); gl.uniform1f(nb_white,ENV.white||0);
+    gl.bindVertexArray(nbVAO); gl.drawArrays(gl.POINTS,0,nbCount); dc++;
+    if(!ENV.dome){
+      gl.useProgram(bgProg); gl.uniformMatrix4fv(bg_vp,false,VProt);
+      gl.uniform1f(bg_time,tsec); gl.uniform1f(bg_reduce,uReduce);
+      gl.bindVertexArray(bgVAO); gl.drawArrays(gl.POINTS,0,bgCount); dc++;
+    }
+    // 流線＝止まっているときは1本も描かない（ドローコール増0）
+    lastStreakCount=0;
+    if(cfg.streaks && !reduceActive && stCount>0 && speedN>PHYS.ST_MIN_N){
+      var sn = comfortActive ? (Math.floor(stCount*PHYS.COMFORT_STREAK/2)*2) : stCount;
+      if(sn>0){ gl.useProgram(stProg); gl.uniformMatrix4fv(st_vp,false,VProt);
+        gl.uniform3f(st_dir, velDir[0],velDir[1],velDir[2]);
+        gl.uniform1f(st_len, PHYS.ST_LEN*speedN); gl.uniform4f(st_fog,F[0],F[1],F[2],F[3]);
+        gl.bindVertexArray(stVAO); gl.drawArrays(gl.LINES,0,sn); dc++; lastStreakCount=sn; } }
     if(cfg.lines && lnCount>0){ gl.useProgram(lnProg); gl.uniformMatrix4fv(ln_vp,false,VPfull);
-      gl.bindVertexArray(lnVAO); gl.drawArrays(gl.LINES,0,lnCount); }
+      gl.uniform4f(ln_fog,F[0],F[1],F[2],F[3]);
+      gl.bindVertexArray(lnVAO); gl.drawArrays(gl.LINES,0,lnCount); dc++; }
     gl.useProgram(wkProg); gl.uniformMatrix4fv(wk_vp,false,VPfull);
     gl.uniform1f(wk_time,tsec); gl.uniform1f(wk_audio,uAudio); gl.uniform1f(wk_reduce,uReduce);
-    gl.bindVertexArray(wkVAO); gl.drawArrays(gl.POINTS,0,WORKS.length);
-    gl.bindVertexArray(null);
+    gl.uniform4f(wk_fog,F[0],F[1],F[2],F[3]);
+    gl.bindVertexArray(wkVAO); gl.drawArrays(gl.POINTS,0,WORKS.length); dc++;
+    // 弾3: 光の環（コース進行中のみ・+1ドローコール）
+    if(courseActive && gtVAO && gtCount>0){
+      gl.useProgram(gtProg); gl.uniformMatrix4fv(gt_vp,false,VPfull);
+      gl.bindVertexArray(gtVAO); gl.drawArrays(gl.POINTS,0,gtCount); dc++;
+    }
+    gl.bindVertexArray(null); lastDrawCalls=dc;
   }
   window.__tenkyu={ draw:function(t){ drawScene(t||0,0); },
     setCam:function(x,y,z){ camPos=[x,y,z]; }, getCam:function(){ return camPos.slice(); },
-    look:function(y,p){ yaw=y; pitch=p; }, flyTo:function(i){ startFlyTo(i); } };
+    look:function(y,p){ yaw=y; pitch=p; }, flyTo:function(i){ startFlyTo(i); },
+    // 弾1のテスト用フック
+    setVel:function(x,y,z){ camVel=[x,y,z]; },
+    setBoost:function(v){ boostOn=!!v; },
+    setClock:function(t){ lastTsec=t; },   // テスト用: 実rAFを待たずタイム計測(§G T16)を検証するための時計操作
+    phys:PHYS, physNow:PHZ, applyPhys:applyPhys,
+    // 弾8のテスト用フック（オートクルーズ・揺蕩い）
+    cruise:CRUISE,
+    setAutocruise:function(v){ cfg.autocruise=!!v; saveCfg(); syncCruiseUI(); },
+    getAutocruise:function(){ return !!cfg.autocruise; },
+    wanderNow:function(){ return {yaw:wanderYaw, pitch:wanderPitch, roll:wanderRoll, idleSec:idleSec}; },
+    // 弾7のテスト用フック（環境）
+    envList:function(){ return Object.keys(ENVS); },
+    getEnv:function(){ return ENVID; },
+    setEnv:function(id){ setEnv(id); var s=document.getElementById("s-env"); if(s) s.value=ENVID; saveCfg(); return ENVID; },
+    // envFor＝純関数：同じ入力なら いつでも同じ座標（環境を切り替えなくても外から確かめられる）
+    envFor:function(id, star, i){ var E=ENVS[id]||ENVS.space; return E.mapPos(star, i||0, WORKS); },
+    worksPos:function(){ return wkPos.map(function(p){ return p.slice(); }); },
+    worksMeta:function(){ return WORKS.map(function(w){ return { id:w.id, title:w.title, date:w.date, hue:w.hue }; }); },
+    worksRaw:function(){ return WORKS.map(function(w){ return Object.assign({},w); }); },   // 弾3テスト用: constellation込み
+    pick:function(px,py){ trySelect(px,py); return selIndex; },
+    getSel:function(){ return selIndex; },
+    // 弾2のテスト用フック（すれ星・風切り音）
+    swooshCount:function(){ return swooshCount; },
+    swooshCheck:function(){ checkSwoosh(); return swooshCount; },
+    swooshReset:function(){ swooshCount=0; swooshLast={}; if(swooshCountEl) swooshCountEl.textContent="0"; },
+    swooshConsts:function(){ return { dist:SWOOSH.DIST, speedMin:SWOOSH.SPEED_MIN, cooldown:SWOOSH.COOLDOWN, hz:SWOOSH.CHECK_HZ }; },
+    windGain:function(){ return windGainTarget(); },
+    // 弾3のテスト用フック（光の環コース）
+    courseFor:courseFor,
+    courseStart:function(seed){ return startCourse(seed); },
+    courseAbandon:function(){ abandonCourse(); },
+    courseCheckPass:function(prevPos,curPos){ return courseCheckPass(prevPos,curPos); },
+    courseBests:function(){ return Object.assign({}, courseBests); },
+    courseGates:function(){ return course ? course.gates.map(function(g){ return {pos:g.pos.slice(), r:g.r}; }) : []; },
+    courseState:function(){ return course ? { active:courseActive, idx:courseIdx, gateCount:course.gates.length,
+        finished:courseFinished, elapsed:courseFinished?courseElapsed:(courseTimerRunning?(lastTsec-courseStartT):0),
+        seed:course.seed, anchor:course.anchor } : { active:false }; },
+    getState:function(){ var sp=Math.hypot(camVel[0],camVel[1],camVel[2]);
+      return { speed:sp, speedN:speedN, fov:fov, fovDeg:fov*180/Math.PI, roll:roll, rollDeg:roll*180/Math.PI,
+        boost:boost, boostOn:boostOn, streakCount:lastStreakCount, drawCalls:lastDrawCalls,
+        logicMs:logicMs, fps:fps, comfort:comfortActive, reduce:reduceActive, vmaxNow:speedCap()*(1+(PHYS.BOOST_MULT-1)*boost),
+        env:ENVID, physics:PHZ.name, damp:(PHZ.DAMP_MAX-(PHZ.DAMP_MAX-PHZ.DAMP_MIN)*(+cfg.inertia)),
+        floorY:ENV.floorY, works:WORKS.length, nebula:nbCount, bg:bgCount }; },
+    // 弾4のテスト用フック（セーブ・今日のお題・達成判定）
+    saveKey:function(){ return SAVE_KEY; },
+    saveGet:function(){ return JSON.parse(JSON.stringify(save)); },
+    saveWrite:function(){ persistSave(); },
+    saveReload:function(){ save=loadSave(); return JSON.parse(JSON.stringify(save)); },
+    questsFor:questsFor,
+    questsToday:function(){ ensureQuestDay(); return todaysQuests.map(function(q){ return Object.assign({},q); }); },
+    ensureQuestDay:function(){ ensureQuestDay(); },
+    visitById:function(id){ var i=-1; for(var k=0;k<WORKS.length;k++){ if(WORKS[k].id===id){ i=k; break; } } if(i>=0) selectWork(i); return i; },
+    listenAccum:function(){ return listenAccumSec; },
+    listenAdd:function(sec){ listenAccumSec+=(+sec||0); checkListenQuest(); return listenAccumSec; },
+    listenReset:function(){ listenAccumSec=0; },
+    // 弾4 T4: 6種別の達成判定を型ごと独立に直接呼べるフック（変異注入の部分死テスト用）
+    questCheck:function(kind, qi, arg){ ensureQuestDay(); var q=todaysQuests[qi];
+      if(kind==="course") return courseSeedMatches(q, arg);
+      if(kind==="visit") return visitTargetMatches(q, arg);
+      if(kind==="hint") return hintTargetMatches(q, arg);
+      if(kind==="far") return farTargetMatches(q, arg);
+      if(kind==="listen") return listenComplete(q);
+      if(kind==="trace") return traceComplete(q);
+      return false; },
+    // 任意のクエストオブジェクト（今日の3件に限らない）に対して直接判定を試すフック（T4検証用）
+    questCheckRaw:function(kind, qObj){
+      if(kind==="course") return courseSeedMatches(qObj, arguments[2]);
+      if(kind==="visit") return visitTargetMatches(qObj, arguments[2]);
+      if(kind==="hint") return hintTargetMatches(qObj, arguments[2]);
+      if(kind==="far") return farTargetMatches(qObj, arguments[2]);
+      if(kind==="listen") return listenComplete(qObj);
+      if(kind==="trace") return traceComplete(qObj);
+      return false; },
+    // 弾5のテスト用フック（図鑑・ともり・星座コンプ・書き出し/読み込み）
+    visitedAttr:function(){ return wkVisArr.slice(); },   // §G T2: aVisitedのJS側ミラー（該当星だけ1のはず）
+    workIndexById:function(id){ return workIndexById(id); },
+    rankTitleNow:function(){ return rankTitle(save.rankXp); },
+    logStats:function(){ var total=WORKS.length, vc=0; for(var i=0;i<total;i++){ if(save.visited[WORKS[i].id]) vc++; }
+      return { visited:vc, total:total, rankXp:save.rankXp, questTotal:save.questTotal, nearMiss:save.nearMiss, bests:Object.assign({},save.bests) }; },
+    constellationComplete:function(key){ return constellationComplete(key); },
+    completedConstellations:function(){ return Object.keys(completedConstellations); },
+    markVisitedTest:function(id){ markVisited(id); },   // selectWork全体を経ずmarkVisitedだけ叩く（T2/T11用）
+    exportSave:function(){ return JSON.stringify(save); },
+    importSave:function(jsonStr){ var m=null; try{ m=mergeImportedSave(JSON.parse(jsonStr)); }catch(e){ m=null; }
+      if(!m) return false; save=m; persistSave(); syncVisitedBuffer(); completedConstellations=recomputeCompletedConstellations(); buildLines();
+      ensureQuestDay(); updateQuestHud(); return true; },
+    renderLogbook:function(){ renderLogbook(); }
+  };
 
   // ---------- 近接サムネ（DOMオーバーレイ） ----------
   var THUMB_DIST=150;
@@ -613,11 +1496,15 @@
   }
 
   function frame(ms){
-    var tsec=ms/1000; if(startT<0) startT=tsec; var elapsed=tsec-startT;
+    var tsec=ms/1000; if(startT<0) startT=tsec; var elapsed=tsec-startT; lastTsec=tsec;
     var now=tsec; if(!frame._last) frame._last=now; var dt=Math.min(now-frame._last,0.05); frame._last=now;
+    var _t0=performance.now();
+    var _prevCamCourse = courseActive ? camPos.slice() : null;   // 弾3: 通過判定用の前フレーム位置
     // ツアー進行
     if(tourOn && !flying && tsec>tourDwell){ tourIdx=(tourIdx+1)%WORKS.length; startFlyTo(tourIdx); }
-    if(flying){ flyT+=dt/flyDur; var e=Math.min(flyT,1); e=e*e*(3-2*e);
+    if(flying){ boostOn=false; boost=0; speedN=0;  // 自動飛行中は速度処理をバイパス＝傾いたまま飛ばない
+      wanderYaw=0; wanderPitch=0; wanderRoll=0; idleSec=0;   // 弾8: 検索ジャンプ/ツアー中は揺蕩わない
+      flyT+=dt/flyDur; var e=Math.min(flyT,1); e=e*e*(3-2*e);
       camPos=[ flyFrom.pos[0]+(flyTgt.pos[0]-flyFrom.pos[0])*e,
                flyFrom.pos[1]+(flyTgt.pos[1]-flyFrom.pos[1])*e,
                flyFrom.pos[2]+(flyTgt.pos[2]-flyFrom.pos[2])*e ];
@@ -633,15 +1520,78 @@
       if(keys["a"]||keys["arrowleft"]) s-=1;
       if(keys[" "]||keys["e"]||upHold) u+=1;
       if(keys["shift"]||keys["q"]||downHold) u-=1;
+      // 弾8: オートクルーズ（無操作ならゆるやかに前進・コース中は次の環へ針路微調整／既存の「うしろ」入力はブレーキに転用）
+      var manualInput = (f!==0 || s!==0 || u!==0);
+      var autocruiseEngaged = !!cfg.autocruise && !tourOn && !anySheet();
+      var brakeOn = autocruiseEngaged && f<0;
+      if(brakeOn) f=0;
+      if(autocruiseEngaged && !manualInput){
+        f = CRUISE.FORWARD;
+        if(courseActive && course && !courseFinished){
+          var _gt=course.gates[courseIdx];
+          if(_gt){
+            var _dx=_gt.pos[0]-camPos[0], _dy=_gt.pos[1]-camPos[1], _dz=_gt.pos[2]-camPos[2];
+            var _dl=Math.hypot(_dx,_dy,_dz)||1;
+            var _dYaw=Math.atan2(_dx/_dl, -_dz/_dl), _dPitch=clampPitch(Math.asin(-_dy/_dl));
+            yaw=lerpAngle(yaw, _dYaw, Math.min(1, dt*CRUISE.STEER_GAIN));
+            pitch=pitch+(_dPitch-pitch)*Math.min(1, dt*CRUISE.STEER_GAIN);
+          }
+        }
+      }
+      // 弾8: 無操作時の揺蕩い（見た目のみ）＝快適/reduced/オートクルーズ中は無効
+      if(autocruiseEngaged){ idleSec=0; }
+      else { var isIdleNow=!manualInput && !hasLook && !anySheet() && (tsec-lastLookTsec)>0.5;
+        idleSec = isIdleNow ? (idleSec+dt) : 0; }
+      var wanderOn = !autocruiseEngaged && !comfortActive && !reduceActive && idleSec>CRUISE.WANDER_DELAY;
+      var wAmt = wanderOn ? Math.min(1,(idleSec-CRUISE.WANDER_DELAY)/CRUISE.WANDER_EASE) : 0;
+      wanderYaw=wAmt*Math.sin(tsec*0.17)*CRUISE.WANDER_YAW;
+      wanderPitch=wAmt*Math.sin(tsec*0.23+1.3)*CRUISE.WANDER_PITCH;
+      wanderRoll=wAmt*Math.sin(tsec*0.13+0.6)*CRUISE.WANDER_ROLL;
       var Vr2=mul(rotX(pitch),rotY(yaw));
-      if(f||s||u){ var fw=tDir(Vr2,0,0,-1), rt=tDir(Vr2,1,0,0); var acc=(reduceActive?0.30:0.6);
-        camVel[0]+=(fw[0]*f+rt[0]*s)*acc; camVel[1]+=(fw[1]*f+rt[1]*s+u)*acc; camVel[2]+=(fw[2]*f+rt[2]*s)*acc; }
-      var md=0.82+cfg.inertia*0.12; camVel[0]*=md; camVel[1]*=md; camVel[2]*=md;
-      camPos[0]+=camVel[0]; camPos[1]+=camVel[1]; camPos[2]+=camVel[2];
+      // ---- 速度モデル（dt基準・fps非依存）----
+      var bOn = boostOn && !anySheet();
+      var bEase = PHZ.BOOST_EASE;                       // 環境×快適モードのプリセット由来
+      boost += ((bOn?1:0) - boost) * Math.min(1, dt*bEase);
+      var bf   = 1 + (PHYS.BOOST_MULT-1)*boost;
+      var damp = PHZ.DAMP_MAX - (PHZ.DAMP_MAX-PHZ.DAMP_MIN)*(+cfg.inertia);
+      var vmax = speedCap() * bf;
+      // 加速度＝最高速×減衰（釣り合い点がちょうど最高速になる）×快適モード係数
+      var accel = vmax * damp * PHYS.ACCEL_GAIN * (comfortActive?PHYS.COMFORT_THRUST:1);
+      if(brakeOn){
+        // 弾8: ブレーキ＝推力を加えず強めの減衰だけで静止させる
+        var kb=Math.exp(-PHYS.BRAKE_DAMP*dt); camVel[0]*=kb; camVel[1]*=kb; camVel[2]*=kb;
+      } else {
+        if(f||s||u){ var fw=tDir(Vr2,0,0,-1), rt=tDir(Vr2,1,0,0);
+          var tx=fw[0]*f+rt[0]*s, ty=fw[1]*f+rt[1]*s+u, tz=fw[2]*f+rt[2]*s;
+          var tl=Math.hypot(tx,ty,tz); if(tl>1){ tx/=tl; ty/=tl; tz/=tl; }
+          camVel[0]+=tx*accel*dt; camVel[1]+=ty*accel*dt; camVel[2]+=tz*accel*dt; }
+        var kd=Math.exp(-damp*dt); camVel[0]*=kd; camVel[1]*=kd; camVel[2]*=kd;
+      }
+      var sp=Math.hypot(camVel[0],camVel[1],camVel[2]);
+      if(sp>vmax && sp>1e-6){ var cc=vmax/sp; camVel[0]*=cc; camVel[1]*=cc; camVel[2]*=cc; sp=vmax; }
+      camPos[0]+=camVel[0]*dt; camPos[1]+=camVel[1]*dt; camPos[2]+=camVel[2]*dt;
+      speedN = Math.min(1, sp/(speedCap()*PHYS.BOOST_MULT));
+      if(sp>1e-4){ velDir=[camVel[0]/sp, camVel[1]/sp, camVel[2]/sp]; }
       var rr=Math.hypot(camPos[0],camPos[1],camPos[2]);
       if(rr>700){ var kk=700/rr; camPos[0]*=kk; camPos[1]*=kk; camPos[2]*=kk; camVel[0]*=0.4; camVel[1]*=0.4; camVel[2]*=0.4; }
+      // 床のある世界（そら＝雲の上）では、雲の下へ沈まない
+      if(ENV.floorY!=null && camPos[1]<ENV.floorY){ camPos[1]=ENV.floorY; if(camVel[1]<0) camVel[1]*=-0.15; }
     }
-    var Vrot=mul(rotX(pitch),rotY(yaw));
+    // 弾3: 環の通過判定（前フレーム位置→今フレーム位置の線分・低fpsでも取りこぼさない＝§G T15）
+    if(_prevCamCourse) courseCheckPass(_prevCamCourse, camPos);
+    // ---- かたむき（バンク）と 視界のひろがり（動的FOV）----
+    var dyaw=yaw-prevYaw; while(dyaw>Math.PI)dyaw-=2*Math.PI; while(dyaw<-Math.PI)dyaw+=2*Math.PI; prevYaw=yaw;
+    var yawRate = dt>0 ? dyaw/dt : 0;
+    var rollTgt = (cfg.bank && !comfortActive && !flying)
+      ? Math.max(-PHZ.BANK_MAX, Math.min(PHZ.BANK_MAX, -yawRate*PHZ.BANK_GAIN)) : 0;
+    roll += (rollTgt-roll)*Math.min(1, dt*PHYS.ROLL_SPRING);
+    var fovTgt = PHYS.FOV_BASE + ((cfg.dynfov && !comfortActive) ? PHYS.FOV_ADD*speedN : 0);
+    fov += (fovTgt-fov)*Math.min(1, dt*PHYS.FOV_EASE);
+    // 弾2: 風切り音の追従とすれ星判定（0.25s間隔）
+    updateWindAudio(dt);
+    swooshTimer += dt; if(swooshTimer>=SWOOSH.CHECK_HZ){ swooshTimer=0; checkSwoosh(); }
+    logicMs += (performance.now()-_t0-logicMs)*0.1;
+    var Vrot=mul(rotZ(roll),mul(rotX(pitch),rotY(yaw)));
     if(analyser && !curAudioEl.paused){ analyser.getByteFrequencyData(freqData);
       var sum=0,nb=Math.min(24,freqData.length); for(var i=0;i<nb;i++) sum+=freqData[i];
       var lvl=(sum/nb)/255*cfg.sens; audioLevel += (lvl-audioLevel)*0.25; } else { audioLevel+=(0-audioLevel)*0.1; }
@@ -650,11 +1600,14 @@
 
     drawScene(tsec, uAudio);
     updateThumbs();
-    if((mapTick++ & 1)===0) drawMap();
+    if((mapTick++ & 1)===0){ drawMap(); if(courseActive) updateCourseHud(); }
 
     if(dt>0){ fps += ((1/dt)-fps)*0.1; }
     if(debugFps){ fpsEl.textContent="fps: "+fps.toFixed(1)+"\ncam:["+camPos.map(function(v){return v.toFixed(0);}).join(",")+"]"+
-      "\nbg:"+bgCount+" work:"+WORKS.length+" neb:"+nbCount+" lines:"+(lnCount/2)+(flying?" fly":"")+(tourOn?" tour":"")+(degraded?" [deg]":""); }
+      "\nbg:"+bgCount+" work:"+WORKS.length+" neb:"+nbCount+" lines:"+(lnCount/2)+(flying?" fly":"")+(tourOn?" tour":"")+(degraded?" [deg]":"")+
+      "\nenv:"+ENVID+" phys:"+PHZ.name+
+      "\nlogic:"+logicMs.toFixed(3)+"ms draw:"+lastDrawCalls+" streak:"+lastStreakCount+
+      "\nspd:"+Math.hypot(camVel[0],camVel[1],camVel[2]).toFixed(1)+"/s fov:"+(fov*180/Math.PI).toFixed(1)+"° roll:"+(roll*180/Math.PI).toFixed(1)+"° boost:"+boost.toFixed(2); }
     if(!measureDone && elapsed>0.5){ measAcc+=fps; measFrames++;
       if(elapsed>3.0){ measureDone=true; var avg=measAcc/Math.max(measFrames,1);
         if(avg<45 && !degraded){ degraded=true; buildNebula(2000); buildBg(Math.max(3000,Math.floor(bgCount/2))); } } }
@@ -668,15 +1621,115 @@
   canvas.addEventListener("pointerdown",function(){ setTimeout(hideIntro,2200); },{once:true});
 
   // ---------- パネルUI ----------
-  var settings=document.getElementById("settings"), help=document.getElementById("help"), search=document.getElementById("search");
-  function closeSheets(){ settings.classList.remove("show"); help.classList.remove("show"); search.classList.remove("show"); }
+  var settings=document.getElementById("settings"), help=document.getElementById("help"), search=document.getElementById("search"),
+      logbookEl=document.getElementById("logbook");
+  function closeSheets(){ settings.classList.remove("show"); help.classList.remove("show"); search.classList.remove("show"); logbookEl.classList.remove("show"); }
   function toggleSheet(el){ var wasShown=el.classList.contains("show"); closeSheets(); if(!wasShown) el.classList.add("show"); }
   document.getElementById("btn-settings").onclick=function(){ toggleSheet(settings); };
   document.getElementById("btn-help").onclick=function(){ toggleSheet(help); };
   document.getElementById("btn-search").onclick=function(){ toggleSheet(search); if(search.classList.contains("show")){ renderResults(""); document.getElementById("q").focus(); } };
+  document.getElementById("btn-log").onclick=function(){ toggleSheet(logbookEl); if(logbookEl.classList.contains("show")) renderLogbook(); };
   document.getElementById("s-close").onclick=closeSheets;
   document.getElementById("h-close").onclick=closeSheets;
   document.getElementById("q-close").onclick=closeSheets;
+  document.getElementById("log-close").onclick=closeSheets;
+
+  // ---------- 弾5: 図鑑（達成率・称号・訪問一覧・自己ベスト）＋📤書き出し／📥読み込み ----------
+  function rankTitle(xp){
+    xp=+xp||0;
+    if(xp>=100) return "ほしのぬし";
+    if(xp>=60)  return "ほしよみ";
+    if(xp>=30)  return "こうかいし";
+    if(xp>=10)  return "ふなのり";
+    return "みならい";
+  }
+  function renderLogbook(){
+    var box=document.getElementById("log-body"); if(!box) return;
+    var total=WORKS.length, visitedCount=0;
+    for(var i=0;i<total;i++){ if(save.visited[WORKS[i].id]) visitedCount++; }
+    var pct = total>0 ? Math.round(visitedCount/total*100) : 0;
+    var html = "<p class='log-rate'>たっせい率 <b>"+visitedCount+" / "+total+"</b>（"+pct+"%）<br>称号：<b>"+esc(rankTitle(save.rankXp))+"</b>（xp "+esc(String(save.rankXp||0))+"）</p>";
+    html += "<h4>訪問した星</h4><div id='log-visited'></div>";
+    html += "<h4>じこベスト（光の環コース）</h4>";
+    var bestKeys=Object.keys(save.bests||{});
+    if(bestKeys.length===0){ html += "<p class='hint'>まだ ありません</p>"; }
+    else { html += "<div id='log-bests'></div>"; }
+    box.innerHTML = html;
+    var visBox=document.getElementById("log-visited");
+    for(var j=0;j<total;j++){
+      var w=WORKS[j];
+      if(save.visited[w.id]){
+        var b=document.createElement("button"); b.className="log-visit-btn";
+        b.innerHTML="<b>"+esc(w.title||"（無題）")+"</b><small>"+esc((w.date||"").replace(/-/g,"."))+"</small>";
+        b.setAttribute("aria-label", (w.title||"（無題）")+"の星へ とぶ");
+        (function(idx){ b.onclick=function(){ closeSheets(); stopAuto(); startFlyTo(idx); }; })(j);
+        visBox.appendChild(b);
+      } else {
+        var d=document.createElement("div"); d.className="log-unvisited"; d.textContent="？？？（まだ見ぬ星）";
+        visBox.appendChild(d);
+      }
+    }
+    var bestsBox=document.getElementById("log-bests");
+    if(bestsBox){ for(var bi=0;bi<bestKeys.length;bi++){ var el=document.createElement("div"); el.className="log-best";
+      el.textContent="🔆 "+String(bestKeys[bi])+"： "+String(save.bests[bestKeys[bi]])+"秒"; bestsBox.appendChild(el); } }
+  }
+  function pad2(n){ return (n<10?"0":"")+n; }
+  function fileDateStr(){ var d=new Date(); return ""+d.getFullYear()+pad2(d.getMonth()+1)+pad2(d.getDate()); }
+  // 不正なキー("__proto__"等)によるプロトタイプ汚染を避ける
+  function safeKey(k){ return k!=="__proto__" && k!=="constructor" && k!=="prototype"; }
+  function clampNum(v, lo, hi, dflt){ v=+v; if(!isFinite(v)) return dflt; return Math.max(lo, Math.min(hi, v)); }
+  // 弾5 §C-8: 📥スキーマ検証＋和集合マージ（不正なら null を返す＝呼び出し側で拒否トースト）
+  function mergeImportedSave(obj){
+    if(!obj || typeof obj!=="object" || Array.isArray(obj)) return null;
+    if(obj.v!==1) return null;
+    if(obj.visited!=null && (typeof obj.visited!=="object" || Array.isArray(obj.visited))) return null;
+    if(obj.bests!=null && (typeof obj.bests!=="object" || Array.isArray(obj.bests))) return null;
+    var out = JSON.parse(JSON.stringify(save));
+    if(obj.visited){
+      for(var id in obj.visited){
+        if(!Object.prototype.hasOwnProperty.call(obj.visited,id) || !safeKey(id)) continue;
+        var dv=obj.visited[id];
+        if(typeof dv!=="string" || !/^\d{4}-\d{2}-\d{2}$/.test(dv)) continue;   // 日付形式でなければ無視（fail-open）
+        if(!out.visited[id] || dv<out.visited[id]) out.visited[id]=dv;          // 早い日付優先
+      }
+    }
+    if(obj.bests){
+      for(var key in obj.bests){
+        if(!Object.prototype.hasOwnProperty.call(obj.bests,key) || !safeKey(key)) continue;
+        var bv=clampNum(obj.bests[key],0,100000,null); if(bv==null) continue;
+        if(out.bests[key]==null || bv<out.bests[key]) out.bests[key]=bv;        // 速い(小さい)方
+      }
+    }
+    out.questTotal = Math.max(+out.questTotal||0, clampNum(obj.questTotal,0,1000000,0));
+    out.rankXp      = Math.max(+out.rankXp||0,      clampNum(obj.rankXp,0,100000,0));
+    out.nearMiss     = Math.max(+out.nearMiss||0,    clampNum(obj.nearMiss,0,1000000,0));
+    out.v = 1;
+    return out;
+  }
+  document.getElementById("log-export").onclick=function(){
+    var blob=new Blob([JSON.stringify(save,null,2)],{type:"application/json"});
+    var a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+    a.download="tenkyu_kiroku_"+fileDateStr()+".json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); },1000);
+  };
+  document.getElementById("log-import").onclick=function(){ document.getElementById("log-import-file").click(); };
+  document.getElementById("log-import-file").addEventListener("change", function(e){
+    var f = e.target.files && e.target.files[0]; e.target.value="";
+    if(!f) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      var merged=null;
+      try{ merged = mergeImportedSave(JSON.parse(reader.result)); }catch(err){ merged=null; }
+      if(!merged){ showAchieveToast("読み込めないファイルでした"); return; }
+      save = merged; persistSave(); syncVisitedBuffer();
+      completedConstellations = recomputeCompletedConstellations(); buildLines();
+      ensureQuestDay(); updateQuestHud(); renderLogbook();
+      showAchieveToast("📥 きろくをよみこみました");
+    };
+    reader.onerror = function(){ showAchieveToast("読み込めないファイルでした"); };
+    reader.readAsText(f);
+  });
 
   // 検索
   function renderResults(q){ var box=document.getElementById("results"); box.innerHTML=""; q=(q||"").trim();
@@ -692,6 +1745,13 @@
   document.getElementById("btn-tour").onclick=function(){ var b=this;
     if(tourOn){ stopAuto(); } else { closeSheets(); tourOn=true; tourIdx=-1; tourDwell=0; b.classList.add("on"); hideIntro(); } };
 
+  // 弾3: 光の環コース（もう1回おすと いつでも やめられる＝無罰・再挑戦可）
+  document.getElementById("btn-course").onclick=function(){ var b=this;
+    if(courseActive){ abandonCourse(); b.classList.remove("on"); }
+    else { closeSheets(); ensureQuestDay();   // 弾4: 今日のお題「course」枠と同じseed＝完走がそのまま達成になる
+      startCourse(todaysQuests[0] ? todaysQuests[0].courseSeed : hashStr(todayDateStr()+":course3"));
+      b.classList.add("on"); hideIntro(); } };
+
   var sCount=document.getElementById("s-count"), sSens=document.getElementById("s-sens"),
       sInertia=document.getElementById("s-inertia"), sReduce=document.getElementById("s-reduce"),
       sLines=document.getElementById("s-lines"), sMap=document.getElementById("s-map");
@@ -702,7 +1762,34 @@
   sCount.onchange=function(){ cfg.count=+sCount.value; saveCfg(); buildBg(degraded?Math.floor(cfg.count/2):cfg.count); };
   sSens.oninput=function(){ cfg.sens=+sSens.value; document.getElementById("s-sens-v").textContent=cfg.sens.toFixed(1); saveCfg(); };
   sInertia.oninput=function(){ cfg.inertia=+sInertia.value; document.getElementById("s-inertia-v").textContent=cfg.inertia.toFixed(2); saveCfg(); };
-  sReduce.onchange=function(){ cfg.reduce=sReduce.checked; reduceActive=cfg.reduce||prefersReduce; saveCfg(); };
+  sReduce.onchange=function(){ cfg.reduce=sReduce.checked; updateComfort(); saveCfg(); };
+  // 弾1: 飛行の爽快感まわり
+  var sComfort=document.getElementById("s-comfort"), sStreaks=document.getElementById("s-streaks"),
+      sDynfov=document.getElementById("s-dynfov"), sBank=document.getElementById("s-bank"),
+      sSpeed=document.getElementById("s-speed");
+  sComfort.checked=!!cfg.comfort; sStreaks.checked=!!cfg.streaks; sDynfov.checked=!!cfg.dynfov; sBank.checked=!!cfg.bank;
+  sSpeed.value=cfg.speedScale; document.getElementById("s-speed-v").textContent=(+cfg.speedScale).toFixed(2);
+  sComfort.onchange=function(){ cfg.comfort=sComfort.checked; updateComfort(); saveCfg(); };
+  sStreaks.onchange=function(){ cfg.streaks=sStreaks.checked; saveCfg(); };
+  sDynfov.onchange =function(){ cfg.dynfov =sDynfov.checked;  saveCfg(); };
+  sBank.onchange   =function(){ cfg.bank   =sBank.checked;    saveCfg(); };
+  // 弾8: オートクルーズ（⚙チェックボックス／右上🛩️ボタン／Cキーの3つが同じcfg.autocruiseを共有）
+  function syncCruiseUI(){
+    var b=document.getElementById("btn-cruise"); if(b) b.classList.toggle("on", !!cfg.autocruise);
+    var c=document.getElementById("s-autocruise"); if(c) c.checked=!!cfg.autocruise;
+  }
+  var sAutocruise=document.getElementById("s-autocruise");
+  sAutocruise.onchange=function(){ cfg.autocruise=sAutocruise.checked; saveCfg(); syncCruiseUI(); };
+  document.getElementById("btn-cruise").onclick=function(){ cfg.autocruise=!cfg.autocruise; saveCfg(); syncCruiseUI(); };
+  syncCruiseUI();
+  sSpeed.oninput=function(){ cfg.speedScale=+sSpeed.value; document.getElementById("s-speed-v").textContent=cfg.speedScale.toFixed(2); saveCfg(); };
+  // 弾6 T13: 航路をみせる（HUD一括ON/OFF）
+  var sHud=document.getElementById("s-hud"); sHud.checked=!!cfg.showHud;
+  sHud.onchange=function(){ cfg.showHud=sHud.checked; saveCfg(); applyHudVisibility(); };
+  applyHudVisibility();
+  // 弾7: せかいをえらぶ（作品はそのまま・景色と飛びごこちが変わる）
+  var sEnv=document.getElementById("s-env"); sEnv.value=ENVID;
+  sEnv.onchange=function(){ setEnv(sEnv.value); saveCfg(); };
   var sInvert=document.getElementById("s-invert"), sLook=document.getElementById("s-lookspeed");
   sInvert.checked=!!cfg.invertY; sLook.value=cfg.lookSpeed; document.getElementById("s-lookspeed-v").textContent=(+cfg.lookSpeed).toFixed(1);
   sInvert.onchange=function(){ cfg.invertY=sInvert.checked; saveCfg(); };
@@ -718,6 +1805,362 @@
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(a.href); },1000); };
 
   if(window.__starsMissing){ console.info("stars.js が見つからないため、埋め込みの作品でひらいています。tenkyu_build.py を実行すると本物の作品になります。"); }
+
+  // ---------- 弾6: 全テスト総回し（§G T1〜T16をwindow.__tenkyu.runAll()から1回で実行） ----------
+  // 方針: 実際のsave/cfg/カメラ状態を一時的に使って判定し、終了後に必ず元の値へ復元する（プレイヤーの本当の進行を壊さない）。
+  // 手段が[J]=JS即時判定のものは同期で、時間経過が要る物理収束(T2f/T9/T13)はrAFを待つ非同期関数にしている。
+  // T10(WCAG目視)・T12(見た目の回帰)は構造チェック止まり＝完全な目視確認はP(プレビュー実ロード)が必要（§H定義どおり）。
+  (function(){
+    // rAFはタブが背面/非表示だと止まる環境がある（★既知の罠=headless rAF is fake）。
+    // そのため物理収束の待ちは実rAFに頼らず、frame(ms)を直接・同期的に連続呼び出しして進める（本物のゲームループそのものを走らせる＝挙動は実機と同一）。
+    function stepFrames(n, msStep){ var ms=(lastTsec||0)*1000; var d=(msStep!=null)?msStep:16.6667;
+      for(var i=0;i<n;i++){ ms+=d; frame(ms); } }
+    window.__tenkyu.stepFrames = stepFrames;
+
+    function t_T1(){
+      if(WORKS.length===0) return {pass:false, detail:"WORKS空"};
+      var id=WORKS[0].id;
+      delete save.visited[id];
+      markVisited(id);
+      var d1=save.visited[id], today=todayDateStr();
+      var okDate=(d1===today);
+      markVisited(id);   // 同日再訪問
+      var d2=save.visited[id];
+      var okStable=(d2===d1);
+      return {pass:okDate&&okStable, detail:"d1="+d1+" today="+today+" d2="+d2};
+    }
+    function t_T2(){
+      if(WORKS.length<2) return {pass:false, detail:"作品2件未満"};
+      var idx=1, id=WORKS[idx].id;
+      save.visited={}; syncVisitedBuffer(); markVisited(id);
+      var arr=wkVisArr, onlyTarget=true;
+      for(var i=0;i<arr.length;i++){ var exp=(i===idx)?1:0; if(arr[i]!==exp){ onlyTarget=false; break; } }
+      var mutant=arr.slice(); if(idx+1<mutant.length) mutant[idx+1]=1;   // 変異注入: 隣接indexを1に書き換え
+      var mutantOk=true;
+      for(var j=0;j<mutant.length;j++){ var exp2=(j===idx)?1:0; if(mutant[j]!==exp2){ mutantOk=false; break; } }
+      var mutationDetected=(mutantOk===false);   // 検知できていなければ落ちる
+      return {pass:onlyTarget&&mutationDetected, detail:"onlyTarget="+onlyTarget+" mutationDetected="+mutationDetected};
+    }
+    function t_T2f(){
+      var d=[];
+      flying=false; tourOn=false; keys={}; moveVec={f:0,s:0};
+      camVel=[0,0,0]; boostOn=false; boost=0; speedN=0; camPos=[0,0,0]; yaw=0; pitch=0;
+      stepFrames(20);
+      var idleStreak=lastStreakCount, idleFov=fov*180/Math.PI, idleRoll=roll*180/Math.PI;
+      var idleOk=(idleStreak===0)&&(Math.abs(idleFov-60)<1.0)&&(Math.abs(idleRoll)<0.5);
+      d.push("idle streak="+idleStreak+" fov="+idleFov.toFixed(1)+" roll="+idleRoll.toFixed(2));
+      keys["w"]=true; boostOn=true;
+      stepFrames(90);
+      var hiFov=fov*180/Math.PI, hiStreak=lastStreakCount;
+      var hiOk=(Math.abs(hiFov-75)<3.0)&&(hiStreak>0);
+      d.push("hi fov="+hiFov.toFixed(1)+" streak="+hiStreak);
+      keys={}; boostOn=false;
+      stepFrames(60);
+      var spAfter=Math.hypot(camVel[0],camVel[1],camVel[2]);
+      var releaseOk=spAfter<speedCap()*0.5;
+      d.push("spAfter="+spAfter.toFixed(2)+" cap="+speedCap().toFixed(2));
+      return {pass:idleOk&&hiOk&&releaseOk, detail:d.join(" / ")};
+    }
+    function t_T2n(){
+      if(WORKS.length===0) return {pass:false, detail:"作品0件"};
+      swooshCount=0; swooshLast={};
+      var p=wkPos[0];
+      camPos=[p[0]-5,p[1],p[2]]; camVel=[SWOOSH.SPEED_MIN*1.5,0,0]; lastTsec=100;
+      checkSwoosh(); var afterHigh=swooshCount;
+      checkSwoosh(); var afterCooldownSame=swooshCount;   // 同一星10s内→+0
+      lastTsec=100+SWOOSH.COOLDOWN+1;
+      checkSwoosh(); var afterCooldownPass=swooshCount;   // 10s経過後→+1
+      swooshCount=0; swooshLast={};
+      camVel=[SWOOSH.SPEED_MIN*0.5,0,0]; lastTsec=200;
+      checkSwoosh(); var afterLow=swooshCount;            // 低速→+0
+      speedN=0; var windAt0=windGainTarget();
+      var pass=(afterHigh===1)&&(afterCooldownSame===1)&&(afterCooldownPass===2)&&(afterLow===0)&&(windAt0===0);
+      return {pass:pass, detail:"hi="+afterHigh+" same="+afterCooldownSame+" pass2="+afterCooldownPass+" low="+afterLow+" wind0="+windAt0};
+    }
+    function t_T3(){
+      var a=JSON.stringify(questsFor("2026-07-31",WORKS));
+      var b=JSON.stringify(questsFor("2026-07-31",WORKS));
+      var c=JSON.stringify(questsFor("2026-08-01",WORKS));
+      return {pass:(a===b)&&(a!==c), detail:"a==b:"+(a===b)+" a!=c:"+(a!==c)};
+    }
+    function t_T3c(){
+      var seed=hashStr("test-course-seed");
+      var c1=courseFor(seed,WORKS), c2=courseFor(seed,WORKS);
+      var eq=JSON.stringify(c1)===JSON.stringify(c2);
+      var n=c1.gates.length, countOk=(n>=5&&n<=8);
+      var boundOk=true;
+      for(var i=0;i<c1.gates.length;i++){ var g=c1.gates[i].pos, cx=c1.center;
+        var dd=Math.hypot(g[0]-cx[0],g[1]-cx[1],g[2]-cx[2]);
+        if(dd>c1.clusterR+COURSE.WEAVE_AMT*1.6){ boundOk=false; break; } }
+      return {pass:eq&&countOk&&boundOk, detail:"eq="+eq+" n="+n+" boundOk="+boundOk};
+    }
+    function t_T4(){
+      var ok=[];
+      var qc={type:"course",courseSeed:123}; ok.push(courseSeedMatches(qc,123)===true && courseSeedMatches(qc,456)===false);
+      var qv={type:"visit",targetId:"abc"};   ok.push(visitTargetMatches(qv,"abc")===true && visitTargetMatches(qv,"xyz")===false);
+      var qh={type:"hint",targetId:"abc"};    ok.push(hintTargetMatches(qh,"abc")===true && hintTargetMatches(qh,"xyz")===false);
+      var qf={type:"far",targetId:"abc"};     ok.push(farTargetMatches(qf,"abc")===true && farTargetMatches(qf,"xyz")===false);
+      var savedAccum=listenAccumSec; listenAccumSec=31; var ql={type:"listen"}; var lt=listenComplete(ql);
+      listenAccumSec=5; var lf=listenComplete(ql); listenAccumSec=savedAccum;
+      ok.push(lt===true && lf===false);
+      var savedVisited=save.visited;
+      var key=WORKS.length?(WORKS[0].constellation||"?"):"?", ids=constellationIds(key);
+      var qt={type:"trace",targetConstellation:key}, traceTrue, traceFalse;
+      if(ids.length===0){ save.visited={}; traceTrue=(traceComplete(qt)===false); traceFalse=true; }
+      else{ save.visited={}; for(var i=0;i<ids.length;i++) save.visited[ids[i]]=todayDateStr();
+        traceTrue=traceComplete(qt); delete save.visited[ids[0]]; traceFalse=(traceComplete(qt)===false); }
+      save.visited=savedVisited;
+      ok.push(traceTrue&&traceFalse);
+      // 変異注入: visit判定を常時false化した版を作り、本来trueになるはずの操作で実装と食い違うか＝検知できることを確認
+      var mutantVisitAlwaysFalse=function(){ return false; };
+      var mutationDetected = (mutantVisitAlwaysFalse(qv,"abc") !== visitTargetMatches(qv,"abc"));
+      var allOk=ok.every(function(x){return x;}) && mutationDetected;
+      return {pass:allOk, detail:ok.join(",")+" mutationDetected="+mutationDetected};
+    }
+    function t_T5(){
+      var synth={v:1,visited:{},questDay:todayDateStr(),questDone:[true,false,false],questTotal:3,rankXp:12,nearMiss:2,bests:{s1:12.3,s2:45.6}};
+      for(var i=0;i<Math.min(3,WORKS.length);i++) synth.visited[WORKS[i].id]=todayDateStr();
+      save=JSON.parse(JSON.stringify(synth));
+      var exported=window.__tenkyu.exportSave();
+      save=defaultSave();
+      var ok=window.__tenkyu.importSave(exported);
+      var visitedCountMatch=Object.keys(save.visited).length===Object.keys(synth.visited).length;
+      var questTotalMatch=save.questTotal===synth.questTotal, rankXpMatch=save.rankXp===synth.rankXp;
+      var bestsMatch=JSON.stringify(save.bests)===JSON.stringify(synth.bests);
+      return {pass:ok&&visitedCountMatch&&questTotalMatch&&rankXpMatch&&bestsMatch,
+        detail:"ok="+ok+" visited="+visitedCountMatch+" qt="+questTotalMatch+" xp="+rankXpMatch+" bests="+bestsMatch};
+    }
+    function t_T6(){
+      var errBefore=window.__testErrCount||0;
+      var r1=window.__tenkyu.importSave("{not valid json");
+      var r2=window.__tenkyu.importSave(JSON.stringify({v:99,visited:{}}));
+      var r3thrown=false;
+      try{ window.__tenkyu.importSave(JSON.stringify({v:1,visited:{},bests:{"<script>alert(1)<\/script>":1.0}})); }
+      catch(e){ r3thrown=true; }
+      var glOk=!!gl && !gl.isContextLost();
+      var errAfter=window.__testErrCount||0;
+      var pass=(r1===false)&&(r2===false)&&!r3thrown&&glOk&&(errAfter===errBefore);
+      return {pass:pass, detail:"r1="+r1+" r2="+r2+" r3thrown="+r3thrown+" glOk="+glOk+" errDelta="+(errAfter-errBefore)};
+    }
+    function t_T7(){
+      var synth=defaultSave();
+      for(var i=0;i<WORKS.length;i++) synth.visited[WORKS[i].id]=todayDateStr();
+      for(var b=0;b<20;b++) synth.bests["seed"+b]=Math.round(Math.random()*1000)/10;
+      synth.questTotal=999; synth.rankXp=999; synth.nearMiss=999;
+      var sizeKB=new Blob([JSON.stringify(synth)]).size/1024;
+      var t0=performance.now(); save=synth; persistSave(); var t1=performance.now();
+      save=loadSave(); var t2=performance.now();
+      var writeMs=t1-t0, readMs=t2-t1;
+      var pass=(sizeKB<50)&&(writeMs<1000)&&(readMs<1000);
+      return {pass:pass, detail:"sizeKB="+sizeKB.toFixed(1)+" writeMs="+writeMs.toFixed(2)+" readMs="+readMs.toFixed(2)};
+    }
+    function t_T8(){
+      var orig=localStorage.setItem, threw=false;
+      try{
+        localStorage.setItem=function(){ throw new Error("forced fail (test)"); };
+        persistSave();
+        markVisited(WORKS.length?WORKS[0].id:"x");
+      }catch(e){ threw=true; }
+      finally{ localStorage.setItem=orig; }
+      var fallbackShown=document.getElementById("fallback").classList.contains("show");
+      return {pass:!threw&&!fallbackShown, detail:"threw="+threw+" fallbackShown="+fallbackShown};
+    }
+    function t_T9(){
+      var savedComfort=cfg.comfort;
+      cfg.comfort=true; updateComfort();
+      keys["w"]=true; boostOn=true;
+      stepFrames(90);
+      var fovNow=fov*180/Math.PI, rollNow=roll*180/Math.PI;
+      var comfortFovOk=Math.abs(fovNow-60)<1.0, comfortRollOk=Math.abs(rollNow)<0.5;
+      keys={}; boostOn=false;
+      stepFrames(30);
+      cfg.comfort=savedComfort; updateComfort();
+      var savedReduce=cfg.reduce; cfg.reduce=true; updateComfort();
+      // 直前のstepFrames中に本物のすれ星が発生しきらめきDOMが残っている場合があるため、絶対数ではなく増分で見る（T2f等との非依存性を保つ）
+      var noSparkleFn=(function(){ try{ var before=sparkleBox.children.length; spawnSparkle(0); return sparkleBox.children.length===before; }catch(e){ return true; } })();
+      cfg.reduce=savedReduce; updateComfort();
+      return {pass:comfortFovOk&&comfortRollOk&&noSparkleFn, detail:"fov="+fovNow.toFixed(1)+" roll="+rollNow.toFixed(2)+" noSparkle="+noSparkleFn};
+    }
+    function t_T10(){
+      var checkEls=["btn-log","log-export","log-import","btn-course","btn-settings"];
+      var allPresent=true;
+      for(var i=0;i<checkEls.length;i++){ if(!document.getElementById(checkEls[i])) allPresent=false; }
+      var btnLog=document.getElementById("btn-log");
+      var hasAria=!!(btnLog&&btnLog.getAttribute("aria-label"));
+      var sHudEl=document.getElementById("s-hud");
+      var hudTabbable=!!(sHudEl && sHudEl.tabIndex>=0);
+      return {pass:allPresent&&hasAria&&hudTabbable, detail:"present="+allPresent+" aria="+hasAria+" hudTabbable="+hudTabbable+"（コントラスト実測は👁P要）"};
+    }
+    function t_T11(){
+      var groups={};
+      for(var i=0;i<WORKS.length;i++){ var k=WORKS[i].constellation||"?"; (groups[k]=groups[k]||[]).push(WORKS[i].id); }
+      var savedVisited=save.visited, savedCompleted=Object.assign({},completedConstellations);
+      var anyKey=Object.keys(groups)[0], ok1=true;
+      if(anyKey){
+        save.visited={}; var ids=groups[anyKey];
+        for(var j=0;j<ids.length;j++) save.visited[ids[j]]=todayDateStr();
+        completedConstellations={};
+        var threw=false;
+        try{ checkConstellationCompletion(ids[0]); }catch(e){ threw=true; }
+        ok1=!threw&&!!completedConstellations[anyKey];
+      }
+      save.visited=savedVisited; completedConstellations=savedCompleted;
+      var threw2=false,q0=null,c0=null;
+      try{ q0=questsFor(todayDateStr(),[]); c0=courseFor(1,[]); }catch(e){ threw2=true; }
+      var ok2=!threw2&&Array.isArray(q0)&&q0.length===3&&c0&&Array.isArray(c0.gates)&&c0.gates.length>=1;
+      buildLines();
+      return {pass:ok1&&ok2, detail:"ok1(星座1個即コンプ)="+ok1+" ok2(台帳0件無例外)="+ok2};
+    }
+    function t_T12(){
+      var checks=[
+        ["startFlyTo", typeof startFlyTo==="function"],
+        ["buildLines/星座線VAO", typeof buildLines==="function" && lnVAO!=null],
+        ["検索renderResults", typeof renderResults==="function"],
+        ["近接サムネupdateThumbs", typeof updateThumbs==="function" && thumbsBox!=null],
+        ["空間音setPannerPos", typeof setPannerPos==="function"],
+        ["ミニマップdrawMap", typeof drawMap==="function" && !!document.getElementById("map")],
+        ["ツアーstopAuto", typeof stopAuto==="function" && !!document.getElementById("btn-tour")],
+        ["フォールバック要素", !!document.getElementById("fallback")]
+      ];
+      var allOk=checks.every(function(c){return c[1];});
+      return {pass:allOk, detail:checks.map(function(c){return c[0]+":"+c[1];}).join(", ")+"（実際の見た目回帰は👁P要）"};
+    }
+    function t_T13(){
+      var snapCfgLocal=JSON.parse(JSON.stringify(cfg));
+      cfg.showHud=false; cfg.comfort=false; cfg.streaks=false; cfg.dynfov=false; cfg.bank=false;
+      updateComfort(); applyHudVisibility();
+      camVel=[0,0,0]; boostOn=false; boost=0; speedN=0; yaw=0; pitch=0; roll=0;
+      stepFrames(30);
+      var fovOk=Math.abs(fov*180/Math.PI-60)<0.5;
+      var rollOk=Math.abs(roll)<1e-6;
+      var Vr=mul(rotX(pitch),rotY(yaw));
+      var VrNow=mul(rotZ(roll),mul(rotX(pitch),rotY(yaw)));
+      var viewDiff=0; for(var i=0;i<16;i++) viewDiff+=Math.abs(Vr[i]-VrNow[i]);
+      var viewOk=viewDiff<1e-6;
+      var qDisp=getComputedStyle(document.getElementById("quest-hud")).display;
+      var sDisp=getComputedStyle(document.getElementById("swoosh-hud")).display;
+      var hudHiddenOk=(qDisp==="none")&&(sDisp==="none");
+      var beforeHtml=document.getElementById("quest-hud").innerHTML;
+      ensureQuestDay(); updateQuestHud();
+      var afterHtml=document.getElementById("quest-hud").innerHTML;
+      var noDomWrite=(beforeHtml===afterHtml);
+      cfg=snapCfgLocal; updateComfort(); applyHudVisibility();
+      return {pass:fovOk&&rollOk&&viewOk&&hudHiddenOk&&noDomWrite,
+        detail:"fovOk="+fovOk+" rollOk="+rollOk+" viewOk="+viewOk+" hudHidden="+hudHiddenOk+" noDomWrite="+noDomWrite};
+    }
+    function t_T14(){
+      var savedCfg=JSON.parse(JSON.stringify(cfg));
+      cfg.streaks=true; cfg.lines=true; updateComfort();
+      camVel=[speedCap()*0.9,0,0]; boostOn=false;
+      var seed=hashStr("t14-course"); startCourse(seed);
+      stepFrames(5);
+      var st=window.__tenkyu.getState();
+      abandonCourse(); camVel=[0,0,0];
+      cfg=savedCfg; updateComfort();
+      var logicOk=st.logicMs<1.0, dcOk=st.drawCalls<=6;   // v0.3基準4(星雲+背景/ドーム+星座線+作品)+2(流線+光の環)まで
+      return {pass:logicOk&&dcOk, detail:"logicMs="+st.logicMs.toFixed(3)+"ms drawCalls="+st.drawCalls+"（基準4+2以内）"};
+    }
+    function t_T15(){
+      var gate={pos:[0,0,-50],r:6}, normal=[0,0,1];
+      var hit=segDiscHit([0,0,-100],[0,0,0],gate,normal);   // dt=100ms相当の大きな1手でも交差を検知
+      return {pass:hit===true, detail:"hit="+hit};
+    }
+    function t_T16(){
+      var savedBests=Object.assign({},courseBests), seed=999001;
+      function crossAllGates(startTsec, stepSec){
+        startCourse(seed); lastTsec=startTsec;
+        for(var g=0; g<course.gates.length; g++){
+          var gate=course.gates[courseIdx], nrm=course.normals[courseIdx];
+          var t=gate.pos;
+          var p0=[t[0]-nrm[0]*5,t[1]-nrm[1]*5,t[2]-nrm[2]*5], p1=[t[0]+nrm[0]*5,t[1]+nrm[1]*5,t[2]+nrm[2]*5];
+          lastTsec+=stepSec; courseCheckPass(p0,p1);
+        }
+      }
+      startCourse(seed); courseIdx=1; abandonCourse();
+      var okAbandon=!courseActive && course===null;
+      crossAllGates(1000, 1); var finished1=courseFinished, best1=courseBests[String(seed)];
+      crossAllGates(2000, 50); var best2=courseBests[String(seed)];   // 遅い再走→上書きされないはず
+      var notOverwrittenBySlower=(best2===best1);
+      courseBests=savedBests; abandonCourse();
+      return {pass:okAbandon&&finished1&&notOverwrittenBySlower, detail:"abandon="+okAbandon+" finished1="+finished1+" best1="+best1+" best2="+best2};
+    }
+
+    // 弾8: オートクルーズ／ブレーキ／コースのオートラン／揺蕩いの一括検証
+    function t_T17(){
+      var d=[];
+      cfg.comfort=false; cfg.reduce=false; updateComfort();
+      // (a) オートクルーズON・無操作10秒で前進が続いているか
+      cfg.autocruise=true; keys={}; moveVec={f:0,s:0}; camVel=[0,0,0]; camPos=[0,0,0]; yaw=0; pitch=0; tourOn=false; flying=false;
+      stepFrames(600);   // 600*16.6667ms≈10.0s
+      var sp10=Math.hypot(camVel[0],camVel[1],camVel[2]);
+      var forwardOk = sp10>1.0;
+      d.push("sp10="+sp10.toFixed(2));
+      // (b) オートクルーズOFF（⚙「じどうで すすまない」相当）＝v0.3同様に減速して止まる
+      cfg.autocruise=false;
+      stepFrames(90);
+      var spOff=Math.hypot(camVel[0],camVel[1],camVel[2]);
+      var offOk = spOff<1.0;
+      d.push("spOff="+spOff.toFixed(3));
+      // (c) オートクルーズのみ（無操作）で光の環コースを1つ完走できるか
+      cfg.autocruise=true; keys={}; moveVec={f:0,s:0}; camVel=[0,0,0]; camPos=[0,0,0]; yaw=0; pitch=0;
+      var seed=hashStr("t17-autoloop-course");
+      startCourse(seed);
+      // ゆるやかな巡航速度ではコース全長の走破に時間がかかる＝dtを上限0.05sいっぱいに使って必要な秒数を確保する
+      var stepped=0, chunk=500, msStep=50, maxSteps=9000;   // 最大450秒ぶんの巡航を許容
+      while(!courseFinished && stepped<maxSteps){ stepFrames(chunk, msStep); stepped+=chunk; }
+      var courseOk = courseFinished===true;
+      d.push("courseOk="+courseOk+" simSec="+(stepped*msStep/1000)+" idx="+courseIdx+"/"+(course?course.gates.length:0));
+      abandonCourse(); camVel=[0,0,0];
+      // (d) 快適/reduced時は揺蕩い無効
+      cfg.autocruise=false;
+      cfg.comfort=true; updateComfort(); keys={}; moveVec={f:0,s:0}; camVel=[0,0,0];
+      stepFrames(400);
+      var wComfort=Math.abs(wanderYaw)+Math.abs(wanderPitch)+Math.abs(wanderRoll);
+      cfg.comfort=false; cfg.reduce=true; updateComfort();
+      stepFrames(400);
+      var wReduce=Math.abs(wanderYaw)+Math.abs(wanderPitch)+Math.abs(wanderRoll);
+      var wanderOffOk = (wComfort<1e-9) && (wReduce<1e-9);
+      d.push("wComfort="+wComfort.toFixed(4)+" wReduce="+wReduce.toFixed(4));
+      // (e) 対照＝快適/reduced共にOFFで無操作が続けば揺蕩いが出る
+      cfg.comfort=false; cfg.reduce=false; updateComfort(); keys={}; moveVec={f:0,s:0}; camVel=[0,0,0];
+      stepFrames(400);
+      var wNormal=Math.abs(wanderYaw)+Math.abs(wanderPitch)+Math.abs(wanderRoll);
+      var wanderOnOk = wNormal>1e-4;
+      d.push("wNormal="+wNormal.toFixed(4));
+      wanderYaw=0; wanderPitch=0; wanderRoll=0; idleSec=0;
+      return {pass:forwardOk&&offOk&&courseOk&&wanderOffOk&&wanderOnOk, detail:d.join(" / ")};
+    }
+
+    window.__tenkyu.runAll = async function(){
+      if(!window.__testErrCount){ window.__testErrCount=0;
+        var _ce=console.error.bind(console);
+        console.error=function(){ window.__testErrCount++; return _ce.apply(console, arguments); }; }
+      var snapSave=JSON.parse(JSON.stringify(save)), snapCfg=JSON.parse(JSON.stringify(cfg));
+      cfg.autocruise=false;   // 弾8: T1〜T16は弾8登場前の前提のまま検証する（オートクルーズ自体はT17で確認）
+      var snapCam={pos:camPos.slice(),yaw:yaw,pitch:pitch,vel:camVel.slice()};
+      var snapSwoosh={count:swooshCount, last:Object.assign({},swooshLast)};   // persistSave()がnearMissへswooshCountを焼くため復元前に戻す
+      var results=[];
+      function run(id, fn){
+        return Promise.resolve().then(fn).then(function(r){ results.push({id:id, pass:!!(r&&r.pass), detail:(r&&r.detail)||""}); })
+          .catch(function(e){ results.push({id:id, pass:false, detail:"EXCEPTION: "+((e&&e.message)||e)}); });
+      }
+      await run("T1",t_T1); await run("T2",t_T2); await run("T2f",t_T2f); await run("T2n",t_T2n);
+      await run("T3",t_T3); await run("T3c",t_T3c); await run("T4",t_T4); await run("T5",t_T5);
+      await run("T6",t_T6); await run("T7",t_T7); await run("T8",t_T8); await run("T9",t_T9);
+      await run("T10",t_T10); await run("T11",t_T11); await run("T12",t_T12); await run("T13",t_T13);
+      await run("T14",t_T14); await run("T15",t_T15); await run("T16",t_T16); await run("T17",t_T17);
+      // 復元＝本当のプレイヤー進行・設定・カメラを一切壊さない
+      swooshCount=snapSwoosh.count; swooshLast=snapSwoosh.last;   // persistSave()のnearMiss焼き込み前に実行順を戻す
+      save=snapSave; persistSave(); syncVisitedBuffer(); completedConstellations=recomputeCompletedConstellations(); buildLines();
+      cfg=snapCfg; saveCfg(); updateComfort(); applyHudVisibility(); syncCruiseUI();
+      camPos=snapCam.pos; yaw=snapCam.yaw; pitch=snapCam.pitch; camVel=snapCam.vel; boost=0; boostOn=false; speedN=0;
+      if(swooshCountEl && cfg.showHud) swooshCountEl.textContent=String(swooshCount);
+      var passCount=results.filter(function(r){return r.pass;}).length;
+      var summary={ total:results.length, pass:passCount, fail:results.length-passCount, results:results };
+      console.log("[tenkyu runAll] "+passCount+"/"+results.length+" PASS", results);
+      return summary;
+    };
+  })();
 })();
 </script>
 </body>
