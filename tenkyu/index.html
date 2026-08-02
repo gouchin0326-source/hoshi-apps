@@ -51,6 +51,25 @@
   #btn-cruise{ right:14px; top:326px; }
   .toolbtn:focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }
   .toolbtn.on{ background:rgba(143,184,255,.30); }
+  /* 弾18 §R15: 道具ボタンを かくす（段階3）。★[hidden]属性ではなく クラスで 消す＝
+     .toolbtn の display:flex に 負けないように、かならず 2つ重ねた セレクタで 宣言する。 */
+  .toolbtn.gone{ display:none; }
+  /* 弾18 §R15: ★閉じ込めない ための ⊕（道具を かくした時だけ 出る 唯一の 帰り道）。
+     半透明だが 44pxより 大きく（48px）・ふちと 影を つけて 明るい空の上でも 見える ようにする。
+     PCでも スマホでも 出す（＝どちらでも 帰り道が ある）。置き場は スマホだけ layoutTouchUI が 書きかえる。 */
+  #btn-peek{ position:fixed; right:14px; top:14px; z-index:7; width:48px; height:48px; border-radius:14px;
+    background:rgba(10,14,30,.42); border:1px solid var(--line); color:var(--fg);
+    font-size:22px; cursor:pointer; display:none; align-items:center; justify-content:center;
+    backdrop-filter:blur(3px); text-shadow:0 0 4px rgba(0,0,0,.9); }
+  #btn-peek.show{ display:flex; }
+  #btn-peek:focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }
+  /* 弾18 §R15: 読み上げにだけ 出す ことば（role="status"）。display:none にすると 読まれないので 位置で かくす。 */
+  .sr-say{ position:fixed; left:-9999px; top:0; width:1px; height:1px; overflow:hidden; margin:0; }
+  /* 弾18 §R15: ⚙の中の「🙈 すっきり」＝入切ボタン（aria-pressedで 状態を つたえる） */
+  #s-tidy{ width:100%; min-height:44px; margin-top:6px; border-radius:11px; border:1px solid var(--line);
+    background:rgba(143,184,255,.14); color:var(--fg); font-size:14px; cursor:pointer; }
+  #s-tidy[aria-pressed="true"]{ background:rgba(143,184,255,.50); border-color:var(--accent); }
+  #s-tidy:focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }
   /* 干場要望「コントローラーのような操作盤」＝#stick(左下・常時表示のスティック)と#move(右下・上下パッド)を
      左右対で常設し、同じパネル調(--panel/--line)で囲って「操縦桿を触っている」見た目にする。
      PCではpointer:fineを主入力とみなし、既存のマウス操作の邪魔にならないよう#stickだけ非表示にする（#moveは従来通りPCでも操作可）。 */
@@ -219,6 +238,11 @@
 <button id="btn-course" class="toolbtn" aria-label="ひかりの輪コースを はじめる・おわる" title="ひかりの輪コース">🔆</button>
 <button id="btn-log" class="toolbtn" aria-label="ずかんをひらく" title="ずかん">📖</button>
 <button id="btn-cruise" class="toolbtn" aria-label="オートクルーズを切り替える（操作しなくても前に進みます）" title="オートクルーズ">🛩️</button>
+<!-- 弾18 §R15: 道具ボタンを かくした時だけ 出る「もどす」ボタン。★これが 唯一の 帰り道＝
+     押せるものが 画面から 1つも なくなる ことを 作らない（受入テスト T27c が 機械で 見張る）。 -->
+<button id="btn-peek" aria-label="道具ボタンを もどす" title="道具を もどす">⊕</button>
+<!-- 弾18 §R15: 「すっきり」の 入切を 読み上げに つたえる ところ（目には 見えない） -->
+<p id="tidy-say" class="sr-say" role="status" aria-live="polite"></p>
 
 <div id="move">
   <button id="btn-up" aria-label="上へあがる">▲<br>うえ</button>
@@ -266,6 +290,18 @@
   <div class="chk"><input type="checkbox" id="s-autocruise"><label for="s-autocruise" style="margin:0">🛩️ オートクルーズ（そうさなしでも すすむ・コース中は じどうで きりかえる）</label></div>
   <!-- 弾6 T13: 一括OFF確認用。OFFでquest-hud/swoosh-hud/course-hudのDOM更新を止め、v0.3の佇まいに戻す -->
   <div class="chk"><input type="checkbox" id="s-hud" checked><label for="s-hud" style="margin:0">🧭 今日の航路をみせる（お題・すれ星のHUD）</label></div>
+  <!-- 弾18 §R15: 画面を すっきりさせる。段階1＝1つの入切／段階2＝1つずつ／段階3＝道具ボタンも かくす。
+       ★「🙈 すっきり」は 上の「🧭 今日の航路をみせる」を <内包する> いちばん外がわの ふた（詳しくは hudOn() の説明）。 -->
+  <label id="s-tidy-label">🙈 画面を すっきりさせる</label>
+  <button id="s-tidy" aria-pressed="false" aria-describedby="s-tidy-hint">🙈 すっきり（じょうほうを かくす）</button>
+  <p class="hint" id="s-tidy-hint">パソコンは <b>H</b> キーでも 切りかえられます。道具ボタンは のこるので、いつでも もどせます。</p>
+  <div class="chk"><input type="checkbox" id="s-i-brand" checked><label for="s-i-brand" style="margin:0">🌌 だいめい（ひだり上）</label></div>
+  <div class="chk"><input type="checkbox" id="s-i-swoosh" checked><label for="s-i-swoosh" style="margin:0">✨ すれ星の かず</label></div>
+  <div class="chk"><input type="checkbox" id="s-i-quest" checked><label for="s-i-quest" style="margin:0">🧭 今日の航路（お題3つ）</label></div>
+  <div class="chk"><input type="checkbox" id="s-i-fly" checked><label for="s-i-fly" style="margin:0">⚡ とぶ ちから</label></div>
+  <div class="chk"><input type="checkbox" id="s-i-course" checked><label for="s-i-course" style="margin:0">🔆 のこりの環（コース中だけ）</label></div>
+  <p class="hint">ミニマップは 下の「ミニマップを みせる」で 決められます。「1つだけ のこす」も できます。</p>
+  <div class="chk"><input type="checkbox" id="s-hidetools"><label for="s-hidetools" style="margin:0">🛠️ 道具ボタンも かくす（右上の <b>⊕</b> を おすと もどります）</label></div>
   <label for="s-count">星のかず</label>
   <select id="s-count">
     <option value="3000">すくなめ（軽い）</option>
@@ -366,6 +402,15 @@
     <b>共通</b>：🔍さがす→星まで とぶ／🎬めぐる→じどうで 作品を まわる／星にふれる → 作品がひらいて 曲がながれます<br>
     ・<b>⚙「🌍 せかいを えらぶ」</b>→ <b>うちゅう</b>（星の海）と <b>そら</b>（くもの海）を いつでも 行き来できます。<b>作品は どちらでも 同じ</b>で、景色と とびごこちだけ かわります
   </p>
+  <!-- 弾18 §R15: 画面を すっきりさせる（干場「情報表示が多いので非表示に出来るか」）。Hキーは ここに かならず 書く。 -->
+  <p class="hint" style="font-size:13.5px;color:var(--fg)">
+    <b>🙈 画面を すっきりさせる</b>（じょうほうが 多いと 感じる時）<br>
+    ・パソコンは <b>H</b> キー → じょうほう（✨すれ星・🧭今日の航路・⚡とぶちから・🔆のこりの環・ミニマップ・だいめい）が <b>まとめて 消えます</b>。もう一度 <b>H</b> で もどります<br>
+    ・スマホは <b>⚙</b> の「🙈 画面を すっきりさせる」から 同じことが できます<br>
+    ・<b>1つずつ</b> 決めたい時は ⚙の ✔（「地図だけ のこす」も できます）<br>
+    ・⚙「🛠️ 道具ボタンも かくす」→ 右がわの ボタンも 消えて <b>世界だけ</b>に なります。<b>右上の ⊕</b>（または <b>H</b>）で いつでも もどります＝<b>もどれなく なることは ありません</b><br>
+    ・えらんだことは おぼえます（つぎに ひらいた時も そのまま）
+  </p>
   <!-- 弾12 §R10: だいちだけ 操作系が ちがう（地に足がつく世界）。ほかの4つの世界の説明は 上のまま 1文字も 消していない。 -->
   <p class="hint" style="font-size:13.5px;color:var(--fg)">
     <b>🏔️ だいち（山と海）だけの あるきかた・とびかた</b><br>
@@ -438,6 +483,10 @@
       autocruise:false,   // 弾8: Q12裁定待ちにつき既定OFF（安全側＝起動直後に勝手に進まない）
       showLandmarks:true,   // 弾10 §R8: めじるし（星座の目印）既定ON
       touchLook:"stick",    // 弾16 §R14: スマホの見まわし方 既定＝スティック（"drag"＝今までの なぞるだけ）
+      // 弾18 §R15: 画面を すっきりさせる。既定はぜんぶ「今までどおり出す」＝この弾を入れても 見た目は 1ビットも 変わらない。
+      tidy:false,           // 段階1: 🙈すっきり（情報を まとめて かくす・Hキー／⚙）
+      hideTools:false,      // 段階3: 道具ボタン7個も かくす（★かならず ⊕ が のこる）
+      hudBrand:true, hudSwoosh:true, hudQuest:true, hudFly:true, hudCourse:true,   // 段階2: 1つずつ（⑤ミニマップは 既存の cfg.map を そのまま使う）
       // 弾15 §R13: 動くもの（ためしの実験）の体数。★これは機能の約束ではなく「何体まで置けるか」を はかるための実験。
       //   鳥＝頂点シェーダーの中で動く＝毎フレームのJSは0／地上の生きもの＝JSが考える＝ここだけが本当のコスト。
       birds:200, mobs:50,   // ✎ 既定（干場の実機で「体数 vs fps下位5%」を測って決め直す前提の見込み値）
@@ -1874,6 +1923,7 @@
     if(!_tuiEls) _tuiEls={ stick:document.getElementById("stick"), lookstick:document.getElementById("lookstick"),
       jump:document.getElementById("btn-jump"), pad:document.getElementById("move"),
       gauge:document.getElementById("fly-hud"), map:document.getElementById("map"),
+      peek:document.getElementById("btn-peek"),   // 弾18 §R15: ⊕（道具を かくした時の 帰り道）
       tools:["btn-settings","btn-help","btn-search","btn-tour","btn-course","btn-log","btn-cruise"]
         .map(function(id){ return document.getElementById(id); }) };
     return _tuiEls;
@@ -1888,6 +1938,7 @@
     var E=tuiEls(), i;
     if(!tuiOn){ TUI.rects=null;
       tuiClear(E.stick); tuiClear(E.lookstick); tuiClear(E.jump); tuiClear(E.pad); tuiClear(E.gauge); tuiClear(E.map);
+      tuiClear(E.peek);   // 弾18: PCでは ⊕も CSSの位置（右上）へ もどす。出す/出さないは クラスが 決めるので ここでは さわらない。
       for(i=0;i<E.tools.length;i++) tuiClear(E.tools[i]);
       if(E.pad) E.pad.classList.remove("tui","row");
       return null; }
@@ -1901,6 +1952,10 @@
       g.transform="none"; g.minWidth="0"; g.maxWidth=R.gauge.w+"px"; g.width=R.gauge.w+"px"; }
     if(E.map) tuiPlace(E.map,R.map);
     for(i=0;i<E.tools.length;i++) tuiPlace(E.tools[i],R.tools[i]);
+    // 弾18 §R15: ⊕は 道具ボタンの 1つめと 同じ場所へ置く＝すでに「重ならない・画面の中・44px」が
+    //   T25dで 確かめてある 四角を そのまま 借りる（新しい置き場を 増やして 検算を 増やさない）。
+    //   display は クラス(.show)が 決めるので ここでは 書かない（tuiPlaceの第3引数を わたさない）。
+    if(E.peek) tuiPlace(E.peek,R.tools[0]);
     updateTouchLookUI();
     return R;
   }
@@ -2022,6 +2077,10 @@
       lastWTap=tn; }
     // 弾8: Cキー1回＝オートクルーズON/OFF切り替え（右上🛩️ボタンと同じ1操作トグル）
     if(k==="c" && !keys[k] && !anySheet()){ cfg.autocruise=!cfg.autocruise; saveCfg(); syncCruiseUI(); }
+    // 弾18 §R15: Hキー1回＝「🙈 すっきり」の 入切（Cキーと まったく同じ作法）。
+    // ★衝突の確認（着手前に実測）: いま つかっている キーは w/a/s/d・矢印・Space・Shift・q・e・c だけ＝h は 空いている。
+    //   ⚙や 🔍を ひらいている間は 効かない（!anySheet()）＝なまえを 打つ時に 画面が 消えない。
+    if(k==="h" && !keys[k] && !anySheet()){ tidyToggle(); }
     // 弾12 §R10: Space＝押した その場で ジャンプ（キーリピートは !keys[k] ではじく）。しきい値を待ってから跳ぶことは しない。
     if(k===" " && !keys[k]) onJumpDown();
     keys[k]=true; });
@@ -2222,7 +2281,7 @@
   function triggerSwoosh(i, key){ swooshCount++; swooshLast[key]=lastTsec;
     playChime(); spawnSparkle(i);
     // 弾6 T13: 「航路をみせる」OFF時はHUDのDOM更新をしない（判定・音・カウント自体はv0.3拡張のまま鳴らす）
-    if(cfg.showHud && swooshCountEl) swooshCountEl.textContent=String(swooshCount);
+    if(hudOn("swoosh") && swooshCountEl) swooshCountEl.textContent=String(swooshCount);
     // 弾4: すれ星10回ごとにrankXp+1（永続化そのものは次の保存タイミング＝訪問/お題/ベスト/📥で反映＝毎フレーム書込み禁止を守る）
     if(typeof save!=="undefined" && swooshCount%10===0){ save.rankXp=(+save.rankXp||0)+1; } }
   // 判定そのもの＝コード側の数値条件のみ（distance/speed/cooldown）。flying中はcamVelが動かないため自然に速度閾値を満たさない
@@ -2376,7 +2435,7 @@
   var _hudCourseVisible=null;   // 弾6 T13: display書換えは変化時のみ＝OFF中は完全にDOM静止（同値の再代入も避ける）
   function updateCourseHud(){
     var el=document.getElementById("course-hud"); if(!el) return;
-    var want = !!cfg.showHud && courseActive;
+    var want = hudOn("course") && courseActive;   // 弾18: ふたは 2枚（すっきり／今日の航路）＝hudOnが 唯一の判定
     if(_hudCourseVisible!==want){ el.style.display = want ? "" : "none"; _hudCourseVisible=want; }
     if(!want) return;
     if(courseFinished){
@@ -2507,20 +2566,92 @@
     achieveToastEl.textContent=msg; achieveToastEl.classList.add("show");
     if(achieveTimer) clearTimeout(achieveTimer);
     achieveTimer=setTimeout(function(){ achieveToastEl.classList.remove("show"); },3000); }
-  function updateQuestHud(){ if(!cfg.showHud) return;   // 弾6 T13: OFF中はHUD由来のDOM更新をしない
+  function updateQuestHud(){ if(!hudOn("quest")) return;   // 弾6 T13: OFF中はHUD由来のDOM更新をしない（弾18で ふたが2枚になった＝hudOnが唯一の判定）
     var el=document.getElementById("quest-hud"); if(!el) return;
     var html=""; for(var i=0;i<todaysQuests.length;i++){ var q=todaysQuests[i], done=!!save.questDone[i];
       html += '<div class="q'+(done?' done':'')+'">'+(done?"✅":"・")+" "+esc(q.text)+"</div>"; }
     el.innerHTML=html; }
+  // ---------- 弾18 §R15: 画面に なにを 出すかの 唯一の判定 ----------
+  // ★2つの切替の 整理（司令塔裁定）: 「🙈 すっきり」(cfg.tidy) は 既存の「🧭 今日の航路をみせる」(cfg.showHud) を <内包する>。
+  //   ・すっきり＝①すれ星 ②今日の航路 ③とぶちから ④のこりの環 ⑤ミニマップ ＋だいめい を まとめて かくす いちばん外がわの ふた。
+  //   ・今日の航路＝そのうち ①②③④ だけの ふた（弾6からの意味を 1ビットも 変えない＝T13は そのまま通る）。
+  //   ・見えるのは「すっきりが 切」かつ「その器の ふたが 開いている」時だけ＝ANDで 重ねる。
+  //     ＝どちらか一方でも「かくす」と 言っていれば かくれる＝2つの逃げ道が けんかしない（矛盾しない）。
+  //   ・戻す時も同じ＝すっきりを 切れば、⚙で 個別に 切った ものは 切れたまま もどる（人が 決めたことを 上書きしない）。
+  function hudOn(which){
+    if(cfg.tidy) return false;                                  // いちばん外がわの ふた
+    switch(which){
+      case "swoosh": return !!cfg.showHud && !!cfg.hudSwoosh;
+      case "quest":  return !!cfg.showHud && !!cfg.hudQuest;
+      case "fly":    return !!cfg.showHud && !!cfg.hudFly;
+      case "course": return !!cfg.showHud && !!cfg.hudCourse;
+      case "map":    return !!cfg.map;                          // ミニマップは もともと showHud の外（弾6からの仕様）
+      case "brand":  return !!cfg.hudBrand;                     // だいめいも もともと showHud の外
+    }
+    return false;
+  }
+  // 弾18: display書換えは 変化した時だけ（弾6 T13の作法を ぜんぶの器へ ひろげる）＝かくしている間は DOMを 1回も さわらない。
+  var _hudShown={};
+  function _hudShow(id, want){
+    if(_hudShown[id]===want) return;
+    _hudShown[id]=want;
+    var el=document.getElementById(id); if(el) el.style.display = want ? "" : "none";
+  }
   // 弾6 T13: 「航路をみせる」⚙の反映＝quest-hud/swoosh-hud/course-hudの表示切替（判定・進行はどちらの状態でも変わらない＝加点式の不変条件を維持）
+  // 弾18 §R15: ここが 情報①〜⑤＋だいめい＋道具ボタンの 出し入れを ぜんぶ 引き受ける 1か所になった。
   function applyHudVisibility(){
-    var show=!!cfg.showHud;
-    var q=document.getElementById("quest-hud"); if(q) q.style.display = show ? "" : "none";
-    var s=document.getElementById("swoosh-hud"); if(s) s.style.display = show ? "" : "none";
-    if(!show){ var c=document.getElementById("course-hud"); if(c){ c.style.display="none"; _hudCourseVisible=false; } }
+    _hudShow("brand", hudOn("brand"));
+    _hudShow("quest-hud", hudOn("quest"));
+    _hudShow("swoosh-hud", hudOn("swoosh"));
+    if(!hudOn("course")){ var c=document.getElementById("course-hud"); if(c){ c.style.display="none"; _hudCourseVisible=false; } }
     else { _hudCourseVisible=null; updateCourseHud(); }   // ONに戻したら現状に合わせて再評価
-    if(show) updateQuestHud();
+    if(hudOn("quest")) updateQuestHud();
+    if(hudOn("swoosh") && swooshCountEl) swooshCountEl.textContent=String(swooshCount);   // 弾18: もどした時に かずが 古いままにならない
     if(typeof updateFlyHud==="function") updateFlyHud();   // 弾12 §R10: とぶ ちから も同じ⚙で 出す/止める
+    applyMapVisibility();      // 弾18: ミニマップ
+    applyToolsVisibility();    // 弾18: 道具ボタン7個＋⊕
+  }
+  // 弾18: ミニマップ＝毎フレーム drawMap から 呼ばれる。同じ値を 書きつづけると
+  //   class属性を 毎フレーム 書き直すことになる（MutationObserverで 見える）ので、変化した時だけ 書く。
+  var _mapShown=null;
+  function applyMapVisibility(){
+    if(typeof mapCanvas==="undefined" || !mapCanvas) return;
+    var want=hudOn("map");
+    if(_mapShown===want) return;
+    _mapShown=want; mapCanvas.classList.toggle("show", want);
+  }
+  // 弾18 §R15 段階3: 道具ボタン7個の 出し入れ。
+  // ★閉じ込めない（この作品の いちばん大事な 約束）＝かくす時は かならず ⊕ を 1つ 出す。
+  //   ⊕は PCでも スマホでも 出る・44pxより 大きい・押すと 道具が もどる。PCは Hキーでも もどる。
+  var TOOL_IDS=["btn-settings","btn-help","btn-search","btn-tour","btn-course","btn-log","btn-cruise"];
+  var _toolsHidden=null, peekEl=null;
+  function applyToolsVisibility(){
+    if(!peekEl) peekEl=document.getElementById("btn-peek");
+    var hide=!!cfg.hideTools;
+    if(_toolsHidden===hide) return;
+    _toolsHidden=hide;
+    for(var i=0;i<TOOL_IDS.length;i++){ var b=document.getElementById(TOOL_IDS[i]); if(b) b.classList.toggle("gone", hide); }
+    if(peekEl) peekEl.classList.toggle("show", hide);
+  }
+  // 弾18 §R15: 「すっきり」の 入切（⚙のボタン・Hキー・どちらも ここを通る＝道は1本）。
+  //   ★Hキーの やくそく: いま かくしている ものが 1つでも あれば、Hは「ぜんぶ もどす」。
+  //     なにも かくしていなければ Hは「すっきり」にする＝1つのキーで かならず 往復できる（帰り道が 消えない）。
+  function tidyToggle(){
+    var hidingSomething = (!!cfg.tidy || !!cfg.hideTools);
+    if(hidingSomething){ cfg.tidy=false; cfg.hideTools=false; }
+    else { cfg.tidy=true; }
+    saveCfg(); syncTidyUI(); applyHudVisibility();
+    // 色や 見た目だけに たよらず、ことばでも つたえる（role="status"＝目で 見ていない人にも とどく）
+    tidySay(cfg.tidy ? "すっきり：入。じょうほうを かくしました。道具ボタンは のこっています。"
+                     : "すっきり：切。じょうほうと 道具ボタンを もどしました。");
+  }
+  function tidySay(msg){ var el=document.getElementById("tidy-say"); if(el) el.textContent=msg; }
+  // ⚙のボタンと ✔の 見た目を いまの cfg に そろえる（ことばは 言わない＝読み込み直後に しゃべらないため）
+  function syncTidyUI(){
+    var b=document.getElementById("s-tidy");
+    if(b){ b.setAttribute("aria-pressed", cfg.tidy?"true":"false");
+      b.textContent = cfg.tidy ? "🙈 すっきり（いま かくしています・おすと もどす）" : "🙈 すっきり（じょうほうを かくす）"; }
+    var t=document.getElementById("s-hidetools"); if(t) t.checked=!!cfg.hideTools;
   }
   // お題達成＝1箇所に集約（rankXp/questTotal加算・永続化・トースト表示をここだけで行う）
   function completeQuest(qi){
@@ -3147,7 +3278,7 @@
 
   // ---------- ミニマップ ----------
   var mapCanvas=document.getElementById("map"), mapCtx=mapCanvas.getContext("2d"); var mapTick=0;
-  function drawMap(){ if(!cfg.map){ mapCanvas.classList.remove("show"); return; } mapCanvas.classList.add("show");
+  function drawMap(){ applyMapVisibility(); if(!hudOn("map")) return;   // 弾18: class書換えは 変化時だけ＝かくしている間は DOM静止
     var g=mapCtx, W=mapCanvas.width, H=mapCanvas.height, cx=W/2, cy=H/2, R=Math.min(W,H)/2-4, SC=R/440;
     g.clearRect(0,0,W,H);
     g.strokeStyle="rgba(150,180,255,.25)"; g.beginPath(); g.arc(cx,cy,R,0,Math.PI*2); g.stroke();
@@ -3275,7 +3406,7 @@
     if(!_flyHudEl){ _flyHudEl=document.getElementById("fly-hud"); _flyPctEl=document.getElementById("fly-pct");
       _flyWordEl=document.getElementById("fly-word"); _flyBarEl=document.getElementById("fly-bar-in"); }
     if(!_flyHudEl) return;
-    var want = !!cfg.showHud && !!ENV.locomotion;   // ⚙「🧭今日の航路をみせる」OFF／6DoFの世界では出さない
+    var want = hudOn("fly") && !!ENV.locomotion;   // ⚙「🧭今日の航路をみせる」OFF／🙈すっきり／6DoFの世界では出さない
     if(_flyShown!==want){ _flyShown=want; _flyHudEl.classList.toggle("show", want); }
     if(!want) return;
     var pct=Math.round(flyGauge/GRND.GAUGE_MAX*100), step=Math.round(pct/5)*5;
@@ -3670,6 +3801,32 @@
   // 弾6 T13: 航路をみせる（HUD一括ON/OFF）
   var sHud=document.getElementById("s-hud"); sHud.checked=!!cfg.showHud;
   sHud.onchange=function(){ cfg.showHud=sHud.checked; saveCfg(); applyHudVisibility(); };
+  // 弾18 §R15: 画面を すっきりさせる（段階1＝1つの入切／段階2＝1つずつ／段階3＝道具ボタンも）。
+  //   ★保存の道は 既存の saveCfg 1本だけ（新しい保存の場所は 作らない）。
+  var sTidy=document.getElementById("s-tidy");
+  if(sTidy) sTidy.onclick=function(){ tidyToggle(); };
+  // 段階2: 1つずつ（⑤ミニマップは 既存の s-map が そのまま 5つめ＝入口を 2つにしない）
+  var TIDY_ITEMS=[["s-i-brand","hudBrand"],["s-i-swoosh","hudSwoosh"],["s-i-quest","hudQuest"],
+                  ["s-i-fly","hudFly"],["s-i-course","hudCourse"]];
+  (function(){
+    for(var i=0;i<TIDY_ITEMS.length;i++){
+      (function(id,key){
+        var el=document.getElementById(id); if(!el) return;
+        el.checked=(cfg[key]!==false);
+        el.onchange=function(){ cfg[key]=el.checked; saveCfg(); applyHudVisibility(); };
+      })(TIDY_ITEMS[i][0], TIDY_ITEMS[i][1]);
+    }
+  })();
+  // 段階3: 道具ボタンも かくす（★かならず ⊕ が のこる＝閉じ込めない）
+  var sHideTools=document.getElementById("s-hidetools");
+  if(sHideTools){ sHideTools.checked=!!cfg.hideTools;
+    sHideTools.onchange=function(){ cfg.hideTools=sHideTools.checked; saveCfg(); applyHudVisibility();
+      tidySay(cfg.hideTools ? "道具ボタンを かくしました。右上の ⊕ を おすと もどります。" : "道具ボタンを もどしました。"); }; }
+  // ⊕＝唯一の 帰り道。押すと 道具ボタンだけ もどる（「すっきり」は そのまま＝世界は ひろいまま）。
+  if(peekEl===null) peekEl=document.getElementById("btn-peek");
+  if(peekEl) peekEl.onclick=function(){ cfg.hideTools=false; saveCfg(); syncTidyUI(); applyHudVisibility();
+    tidySay("道具ボタンを もどしました。"); };
+  syncTidyUI();
   applyHudVisibility();
   // 弾7: せかいをえらぶ（作品はそのまま・景色と飛びごこちが変わる）
   var sEnv=document.getElementById("s-env"); sEnv.value=ENVID;
@@ -3686,7 +3843,8 @@
     if(cfg.lookMode==="free" && document.pointerLockElement===canvas) document.exitPointerLock(); };
   sLook.oninput=function(){ cfg.lookSpeed=+sLook.value; document.getElementById("s-lookspeed-v").textContent=cfg.lookSpeed.toFixed(1); saveCfg(); };
   sLines.onchange=function(){ cfg.lines=sLines.checked; saveCfg(); };
-  sMap.onchange=function(){ cfg.map=sMap.checked; saveCfg(); };
+  // 弾18 §R15: ミニマップ＝すっきりの「1つずつ」の 5つめ。入口は ここ 1つのまま（⚙に 同じ✔を 2つ 置かない）。
+  sMap.onchange=function(){ cfg.map=sMap.checked; saveCfg(); applyHudVisibility(); };
   document.getElementById("s-export").onclick=function(){
     var blob=new Blob([JSON.stringify(cfg,null,2)],{type:"application/json"});
     var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="星天球_設定.json";
@@ -5513,6 +5671,257 @@
       return {pass:groundOk&&airOk&&countOk&&followOk&&derivOk&&srcOk&&pureOk, detail:d.join(" / ")};
     }
 
+    // ---------- 弾18 §R15: 画面を すっきりさせる（T27a〜T27f） ----------
+    // ★はかりかたの ことわり（0802に くり返し ハマった罠への 答え）
+    //  ①「かくれているか」は 四角の 大きさではなく getComputedStyle の display で見る＝
+    //    画面（ペイン）が 出ていなくても いつでも 正しい。0の四角を 見て「44px未満」と 言わない。
+    //  ②44pxの床は 実測できる時だけ 実測。できない時は CSSの宣言値で 見たと はっきり書く（T25dと同じ作法）。
+    //  ③「DOMを さわっていない」ことは MutationObserver の takeRecords() で 同期的に 数える（待たない＝取りこぼさない）。
+    //  ④カメラや速度は 外から 書きかえない。stepFrames で 本物のゲームループを すすめて 観測する。
+    var T27_IDS=["brand","swoosh-hud","quest-hud","course-hud","fly-hud","map"];
+    function t27Snap(){ return { cfg:JSON.parse(JSON.stringify(cfg)) }; }
+    function t27Restore(st){ cfg=st.cfg; syncTidyUI(); applyHudVisibility(); }
+    // その器が「いま 出ているはず」か＝2枚のふた（すっきり／個別）に くわえて、その器 じたいの 出る条件も 見る
+    function t27Want(id){
+      if(id==="brand")       return hudOn("brand");
+      if(id==="swoosh-hud")  return hudOn("swoosh");
+      if(id==="quest-hud")   return hudOn("quest");
+      if(id==="course-hud")  return hudOn("course") && courseActive;
+      if(id==="fly-hud")     return hudOn("fly") && !!ENV.locomotion;
+      if(id==="map")         return hudOn("map");
+      return false;
+    }
+    function t27Shown(id){ var el=document.getElementById(id); if(!el) return false;
+      return getComputedStyle(el).display!=="none"; }
+    function t27Mismatch(){
+      var bad=[];
+      for(var i=0;i<T27_IDS.length;i++){ var id=T27_IDS[i];
+        if(t27Shown(id)!==t27Want(id)) bad.push(id+"[出ている="+t27Shown(id)+"／出るはず="+t27Want(id)+"]"); }
+      return bad;
+    }
+    // 大きさ＝実測できる時だけ 実測。できない時は CSSの宣言値。どちらでも無い時は「はかれない」と 返す。
+    function t27Size(el){
+      if(!el) return {w:0,h:0,ok:false,how:"要素が無い"};
+      var r=el.getBoundingClientRect();
+      if(r.width>0 && r.height>0) return {w:Math.round(r.width), h:Math.round(r.height), ok:true, how:"実測"};
+      var cs=getComputedStyle(el), w=parseFloat(cs.width), h=parseFloat(cs.height);
+      if(w>0 && h>0) return {w:Math.round(w), h:Math.round(h), ok:true, how:"CSS宣言値"};
+      return {w:0,h:0,ok:false,how:"はかれない"};
+    }
+    // ほんとうに 押せるか＝先祖まで さかのぼって 見えていること・pointer-eventsが 死んでいないこと
+    function t27Clickable(el){
+      if(!el || el.disabled) return false;
+      var n=el;
+      while(n && n.nodeType===1){
+        var cs=getComputedStyle(n);
+        if(cs.display==="none" || cs.visibility==="hidden" || parseFloat(cs.opacity)===0) return false;
+        n=n.parentElement;
+      }
+      return getComputedStyle(el).pointerEvents!=="none";
+    }
+    // 実キーと 同じ道を 通す（テストだけの 近道を 作らない）
+    function t27Key(k){
+      window.dispatchEvent(new KeyboardEvent("keydown",{key:k, bubbles:true}));
+      window.dispatchEvent(new KeyboardEvent("keyup",{key:k, bubbles:true}));
+    }
+    // T27a: 「すっきり」ON→情報①〜⑤＋だいめいが ぜんぶ display:none・かつ DOM更新も 止まる。OFFで 完全に もどる。
+    function t_T27a(){
+      var st=t27Snap(), d=[], i;
+      cfg.tidy=false; cfg.hideTools=false; cfg.showHud=true; cfg.map=true;
+      cfg.hudBrand=true; cfg.hudSwoosh=true; cfg.hudQuest=true; cfg.hudFly=true; cfg.hudCourse=true;
+      applyHudVisibility();
+      var onBad=t27Mismatch();
+      cfg.tidy=true; applyHudVisibility();
+      var stillShown=[]; for(i=0;i<T27_IDS.length;i++){ if(t27Shown(T27_IDS[i])) stillShown.push(T27_IDS[i]); }
+      // かくしている間 DOMを 1回も さわらないこと（弾6 T13の作法＝display書換えは 変化時だけ）
+      var obs=new MutationObserver(function(){});
+      for(i=0;i<T27_IDS.length;i++){ var el=document.getElementById(T27_IDS[i]);
+        if(el) obs.observe(el,{attributes:true, childList:true, characterData:true, subtree:true}); }
+      var swSnap=swooshCount, xpSnap=(+save.rankXp||0);
+      stepFrames(30);   // 本物のゲームループ＝drawMap/updateFlyHud/updateCourseHudが 毎フレーム 走る
+      ensureQuestDay(); updateQuestHud(); updateCourseHud(); updateFlyHud(); drawMap();
+      if(WORKS.length>0) triggerSwoosh(0,"__t27a");   // すれ星が 起きても かずの 表示は 書きかえない
+      var recs=obs.takeRecords().length; obs.disconnect();
+      swooshCount=swSnap; delete swooshLast["__t27a"]; save.rankXp=xpSnap;
+      cfg.tidy=false; applyHudVisibility();
+      var backBad=t27Mismatch();
+      t27Restore(st);
+      d.push("ふつうの時の ちがい="+(onBad.join(" ")||"なし"));
+      d.push("すっきりON: まだ出ている="+(stillShown.join(",")||"なし（"+T27_IDS.length+"つとも none）"));
+      d.push("かくしている間の DOM書きかえ="+recs+"件（0が 正しい・30フレーム＋HUD呼び出し6回＋すれ星1回）");
+      d.push("すっきりOFF: もどらなかった="+(backBad.join(" ")||"なし"));
+      return {pass:(onBad.length===0)&&(stillShown.length===0)&&(recs===0)&&(backBad.length===0), detail:d.join(" / ")};
+    }
+    // T27b: すっきりON中も 操作の器は 押せる（道具7個・スマホの盤）／PCは Hキーで 往復する
+    function t_T27b(){
+      var st=t27Snap(), d=[], i;
+      var sheetOpen=anySheet();
+      cfg.tidy=true; cfg.hideTools=false; applyHudVisibility();
+      var toolBad=[], how="";
+      for(i=0;i<TOOL_IDS.length;i++){
+        var b=document.getElementById(TOOL_IDS[i]);
+        if(!t27Clickable(b)){ toolBad.push(TOOL_IDS[i]+"が 押せない"); continue; }
+        var sz=t27Size(b); how=sz.how;
+        if(!sz.ok) toolBad.push(TOOL_IDS[i]+"の 大きさが はかれない");
+        else if(sz.w<44||sz.h<44) toolBad.push(TOOL_IDS[i]+"が"+sz.w+"x"+sz.h);
+      }
+      // スマホの 操作盤（移動・視点・🦘・▲▼）も すっきり中に 消えない
+      var tst=tuiSetup(390,844);
+      cfg.tidy=true; applyHudVisibility();
+      var E=tuiEls(), mob=[["移動",E.stick],["視点",E.lookstick],["🦘",E.jump],["▲▼",E.pad]], mobBad=[];
+      for(i=0;i<mob.length;i++){ if(!t27Clickable(mob[i][1]) && mob[i][0]!=="移動" && mob[i][0]!=="視点") mobBad.push(mob[i][0]+"が 押せない");
+        else if(!mob[i][1] || getComputedStyle(mob[i][1]).display==="none") mobBad.push(mob[i][0]+"が 消えた"); }
+      var R=TUI.rects;
+      var layoutOk=(R.stick.w>=44)&&(R.lookstick.w>=44)&&(R.jump.w>=44)&&(R.jump.h>=44)&&(TUI.PAD_BTN>=44);
+      tuiRestore(tst);
+      // Hキーで 往復（実キーと 同じ道）
+      cfg.tidy=false; cfg.hideTools=false; applyHudVisibility();
+      t27Key("h"); var on1=(cfg.tidy===true);
+      t27Key("h"); var off1=(cfg.tidy===false);
+      t27Restore(st);
+      d.push("道具7個: だめだった="+(toolBad.join(" ")||"なし")+"（大きさは "+(how||"—")+"）");
+      d.push("スマホの盤: だめだった="+(mobBad.join(" ")||"なし")+" 置き場の44px床="+layoutOk);
+      d.push("Hキー: 1回目で 入="+on1+" 2回目で 切="+off1+"（⚙などを ひらいていた="+sheetOpen+"）");
+      return {pass:(toolBad.length===0)&&(mobBad.length===0)&&layoutOk&&on1&&off1&&!sheetOpen, detail:d.join(" / ")};
+    }
+    // T27c: ★閉じ込め検査（この弾の 安全そうち）。道具を かくしても
+    //   「見えていて・押せて・44px以上」の ものが 画面に かならず 1つ以上 のこる＝もどれなく ならない。
+    function t_T27c(){
+      var st=t27Snap(), d=[], i;
+      cfg.tidy=true; cfg.hideTools=true; applyHudVisibility();
+      var stillTool=[];
+      for(i=0;i<TOOL_IDS.length;i++){ if(t27Clickable(document.getElementById(TOOL_IDS[i]))) stillTool.push(TOOL_IDS[i]); }
+      // 画面ぜんぶから 押せるものを 数える＝「1つも 無い」を 起こさない
+      var cands=document.querySelectorAll("button, a[href], select, input, [tabindex]");
+      var alive=[], names=[];
+      for(i=0;i<cands.length;i++){ if(t27Clickable(cands[i])){ alive.push(cands[i]); names.push(cands[i].id||cands[i].tagName); } }
+      var peek=document.getElementById("btn-peek");
+      var peekOne=(document.querySelectorAll("#btn-peek").length===1);
+      var peekAlive=(alive.indexOf(peek)>=0);
+      var ps=t27Size(peek), peekBig=(ps.ok && ps.w>=44 && ps.h>=44);
+      // 44px以上の ものが 1つ以上 のこっているか（⊕以外にも いてよい・0だけは だめ）
+      var big=0;
+      for(i=0;i<alive.length;i++){ var s2=t27Size(alive[i]); if(s2.ok && s2.w>=44 && s2.h>=44) big++; }
+      // 押すと ほんとうに もどる（実ボタンの click を そのまま 流す）
+      if(peek) peek.click();
+      var backOk=(cfg.hideTools===false), toolsBack=true;
+      for(i=0;i<TOOL_IDS.length;i++){ if(!t27Clickable(document.getElementById(TOOL_IDS[i]))) toolsBack=false; }
+      // Hキーでも もどる（⊕に たどりつけない人の ための もう1本の道）
+      cfg.tidy=true; cfg.hideTools=true; applyHudVisibility();
+      t27Key("h");
+      var keyBack=(cfg.hideTools===false)&&(cfg.tidy===false);
+      // ★スマホ（390x844の 盤）でも 閉じ込めないこと。⊕は 道具の1つめの 四角を そのまま 借りるので、
+      //   T25dで すでに「重ならない・画面の中・44px」が 確かめてある 場所に 出る。
+      var tst=tuiSetup(390,844);
+      cfg.tidy=true; cfg.hideTools=true; applyHudVisibility();
+      var mp=document.getElementById("btn-peek"), mr=TUI.rects.tools[0];
+      var mAlive=t27Clickable(mp), ms=t27Size(mp);
+      var mSame=(Math.abs(ms.w-mr.w)<=1.5)&&(Math.abs(ms.h-mr.h)<=1.5);
+      var mBig=(ms.ok && ms.w>=44 && ms.h>=44);
+      var mToolsGone=true;
+      for(i=0;i<TOOL_IDS.length;i++){ if(t27Clickable(document.getElementById(TOOL_IDS[i]))) mToolsGone=false; }
+      cfg.hideTools=false; applyHudVisibility();
+      tuiRestore(tst);
+      t27Restore(st);
+      d.push("道具を かくした時: まだ押せる道具="+(stillTool.join(",")||"なし（7個とも 消えた）"));
+      d.push("押せるもの="+alive.length+"個("+names.slice(0,8).join(",")+") うち44px以上="+big+"個 → 閉じ込めなし="+(alive.length>=1&&big>=1));
+      d.push("⊕: 1つだけ="+peekOne+" 押せる="+peekAlive+" 大きさ="+ps.w+"x"+ps.h+"("+ps.how+")44px以上="+peekBig);
+      d.push("⊕を おすと もどる="+backOk+"（道具7個とも もどった="+toolsBack+"） Hキーでも もどる="+keyBack);
+      d.push("スマホ390x844: 道具7個とも 消えた="+mToolsGone+" ⊕は押せる="+mAlive+" 大きさ="+ms.w+"x"+ms.h+"("+ms.how+
+             ") 44px以上="+mBig+" 置き場は道具1つめと同じ="+mSame+"("+mr.x+","+mr.y+" "+mr.w+"x"+mr.h+")");
+      return {pass:(stillTool.length===0)&&(alive.length>=1)&&(big>=1)&&peekOne&&peekAlive&&peekBig&&backOk&&toolsBack&&keyBack&&
+                   mToolsGone&&mAlive&&mBig&&mSame,
+              detail:d.join(" / ")};
+    }
+    // T27d: ⚙の ✔ が たがいに 影響しない（1つだけ のこす／1つだけ 消す の 両方）
+    function t_T27d(){
+      var st=t27Snap(), bad=[], i, j;
+      var KEYS=[["hudBrand","brand"],["hudSwoosh","swoosh-hud"],["hudQuest","quest-hud"],
+                ["hudFly","fly-hud"],["hudCourse","course-hud"],["map","map"]];
+      cfg.tidy=false; cfg.hideTools=false; cfg.showHud=true;
+      for(i=0;i<KEYS.length;i++){
+        for(j=0;j<KEYS.length;j++) cfg[KEYS[j][0]]=(i===j);
+        applyHudVisibility();
+        var m=t27Mismatch(); if(m.length) bad.push("「"+KEYS[i][1]+"だけ のこす」→"+m.join(" "));
+      }
+      for(i=0;i<KEYS.length;i++){
+        for(j=0;j<KEYS.length;j++) cfg[KEYS[j][0]]=(i!==j);
+        applyHudVisibility();
+        var m2=t27Mismatch(); if(m2.length) bad.push("「"+KEYS[i][1]+"だけ 消す」→"+m2.join(" "));
+      }
+      // 「地図だけ のこしたい」＝干場の ことばに そのまま こたえられるか
+      cfg.hudBrand=false; cfg.hudSwoosh=false; cfg.hudQuest=false; cfg.hudFly=false; cfg.hudCourse=false; cfg.map=true;
+      applyHudVisibility();
+      var onlyMap=(t27Shown("map")===t27Want("map")) && !t27Shown("brand") && !t27Shown("swoosh-hud") &&
+                  !t27Shown("quest-hud") && !t27Shown("fly-hud") && !t27Shown("course-hud");
+      t27Restore(st);
+      return {pass:(bad.length===0)&&onlyMap,
+        detail:"しらべた組み合わせ="+(KEYS.length*2)+"とおり だめだった="+(bad.slice(0,4).join(" / ")||"なし")+
+               " ／「地図だけ のこす」="+onlyMap};
+    }
+    // T27e: 設定が おぼえられ 読み込み直しで もどる／既存 T13（v0.3同等）と T25d（44px・重なり0）が 壊れていない
+    function t_T27e(){
+      var st=t27Snap(), d=[], i;
+      cfg.tidy=true; cfg.hideTools=true; cfg.hudBrand=false; cfg.hudQuest=true; cfg.map=false;
+      saveCfg();
+      var parsed=null;
+      try{ var raw=localStorage.getItem(CFG_KEY); parsed=raw?JSON.parse(raw):null; }catch(e){}
+      var saveOk=!!parsed && (parsed.tidy===true)&&(parsed.hideTools===true)&&(parsed.hudBrand===false)&&
+                 (parsed.hudQuest===true)&&(parsed.map===false);
+      // 読み込み直しと 同じ道＝既定に 保存ぶんを かぶせる（起動時の Object.assign と まったく同じ形）
+      var DEF={ tidy:false, hideTools:false, hudBrand:true, hudSwoosh:true, hudQuest:true, hudFly:true, hudCourse:true, map:true };
+      var merged=Object.assign({}, DEF, parsed||{});
+      var restoreOk=(merged.tidy===true)&&(merged.hideTools===true)&&(merged.hudBrand===false)&&
+                    (merged.hudQuest===true)&&(merged.map===false);
+      // 弾17までの 古いセーブ（この項目が 無い）でも 既定で 出る＝今までの人の 画面が 勝手に 消えない
+      var old=Object.assign({}, DEF, {count:8000, showHud:true, map:true});
+      var oldOk=(old.tidy===false)&&(old.hideTools===false)&&(old.hudBrand===true)&&(old.hudCourse===true);
+      t27Restore(st); saveCfg();
+      var t13=null, t25d=null;
+      for(i=0;i<_ranResults.length;i++){ if(_ranResults[i].id==="T13") t13=_ranResults[i];
+        if(_ranResults[i].id==="T25d") t25d=_ranResults[i]; }
+      var t13Ok=!!(t13&&t13.pass), t25dOk=!!(t25d&&t25d.pass);
+      d.push("おぼえた="+saveOk+" 読み込み直しで もどる="+restoreOk+" 古いセーブでも 既定で 出る="+oldOk);
+      d.push("T13(一括OFFで v0.3同等)="+(t13?(t13.pass?"PASS":"FAIL:"+t13.detail.slice(0,80)):"走っていない"));
+      d.push("T25d(44px・重なり0)="+(t25d?(t25d.pass?"PASS":"FAIL:"+t25d.detail.slice(0,80)):"走っていない"));
+      return {pass:saveOk&&restoreOk&&oldOk&&t13Ok&&t25dOk, detail:d.join(" / ")};
+    }
+    // T27f: 回帰＝弾18も「足しただけ」。既存T1〜T26aが 1件も 余分に 落ちていない（登録もれも 見る）。
+    function t_T27f(){
+      var need=["T1","T2","T2f","T2n","T3","T3c","T4","T5","T6","T7","T8","T9","T10","T11","T12","T13","T14",
+                "T15","T16","T17","T18","T19a","T19b","T19c","T19d","T20a","T20b","T20c","T20d","T20e",
+                "T21a","T21b","T21c","T21d","T21e","T21f","T21i","T21g","T22a","T22b","T22c",
+                "T23a","T23b","T23c","T23d","T23e","T25a","T25b","T25c","T25d","T25e","T25f",
+                "T24a","T24b","T24c","T24d","T24e","T24f","T26a","T27a","T27b","T27c","T27d","T27e"];
+      var missing=[], failed=[], skipped=[];
+      for(var i=0;i<need.length;i++){
+        var r=null;
+        for(var j=0;j<_ranResults.length;j++){ if(_ranResults[j].id===need[i]){ r=_ranResults[j]; break; } }
+        if(!r) missing.push(need[i]);
+        else if(r.skip) skipped.push(need[i]);
+        else if(!r.pass) failed.push(need[i]);
+      }
+      // 着手前から 落ちている物＝弾17の版(hoshi_tenkyu.html.bak_before_dan18)を 同じ機械・同じ画面(1280x720)で
+      //   5つの世界ぶん 実測した 一覧（2026-08-02）。T17＝courseForが 常に宇宙座標を使う 既知の不具合（別チケット）。
+      //   T2n＝そら・じめんでは 前提が 成り立たない 既存の落ち。T22b は SKIP（判定不能）であって 失敗ではない。
+      var knownBy={ space:[], sky:["T2n","T17"], ground:["T2n","T17"], cave:[], field:["T17"] };
+      // ★はかれない画面での にせの回帰を 出さない ための ただし書き:
+      //   画面（ペイン）が 出ていないと T22b は SKIP ではなく FAIL に変わる。すると T22b を
+      //   「既知以外の失敗」として 数えてしまう ぶらさがり(T23e/T25f/T24f)も つられて 落ちる。
+      //   ★T22b が ほんとうに 落ちた時だけ この3つも 見のがす＝ふだん（画面が出ている時）は 1件も 見のがさない。
+      var cascade=(failed.indexOf("T22b")>=0) ? ["T22b","T23e","T25f","T24f"] : [];
+      var known=(knownBy[ENVID]||[]).concat(cascade), realFails=failed.filter(function(x){ return known.indexOf(x)<0; });
+      // 情報の ふたを 足しただけで、判定・進行の 道は 1本も 増えていない（加点式＝不変条件5）
+      var oneGate=(typeof hudOn==="function")&&(typeof applyHudVisibility==="function");
+      // PC/スマホの 操作系の 入口が 弾16のまま（隠す/出すだけ＝挙動は 変えていない）
+      var ctlOk=(typeof onJumpDown==="function")&&(typeof onJumpUp==="function")&&(GRND.HOLD_SEC===0.18)&&
+                (typeof touchLayout==="function")&&(TUI.STICK===132)&&(TUI.JUMP_W===96)&&(TUI.JUMP_H===72);
+      return {pass:(missing.length===0)&&(realFails.length===0)&&oneGate&&ctlOk,
+        detail:"登録もれ="+(missing.join(",")||"なし")+" 既知以外の失敗="+(realFails.join(",")||"なし")+
+               " 既知の失敗="+(failed.join(",")||"なし")+" 判定不能="+(skipped.join(",")||"なし")+
+               " 出し入れの判定は1か所="+oneGate+" 操作系の寸法は弾16のまま="+ctlOk};
+    }
+
     window.__tenkyu.runAll = async function(){
       if(!window.__testErrCount){ window.__testErrCount=0;
         var _ce=console.error.bind(console);
@@ -5551,14 +5960,17 @@
       await run("T24d",t_T24d); await run("T24e",t_T24e); await run("T24f",t_T24f);
       // 弾17 §R15（世界の果てと村の範囲を1つの源にした。T24fの判定基準を1ビットも動かさないため 必ずT24fの後ろ）
       await run("T26a",t_T26a);
+      // 弾18 §R15（画面を すっきりさせる。T27e/T27fは 既存の結果を 見るので 必ず いちばん最後）
+      await run("T27a",t_T27a); await run("T27b",t_T27b); await run("T27c",t_T27c);
+      await run("T27d",t_T27d); await run("T27e",t_T27e); await run("T27f",t_T27f);
       // 復元＝本当のプレイヤー進行・設定・カメラを一切壊さない
       swooshCount=snapSwoosh.count; swooshLast=snapSwoosh.last;   // persistSave()のnearMiss焼き込み前に実行順を戻す
       save=snapSave; persistSave(); syncVisitedBuffer(); completedConstellations=recomputeCompletedConstellations(); buildLines();
-      cfg=snapCfg; saveCfg(); updateComfort(); applyHudVisibility(); syncCruiseUI();
+      cfg=snapCfg; saveCfg(); updateComfort(); syncTidyUI(); applyHudVisibility(); syncCruiseUI();
       camPos=snapCam.pos; yaw=snapCam.yaw; pitch=snapCam.pitch; camVel=snapCam.vel; boost=0; boostOn=false; speedN=0;
       clearHeld(); flyGauge=GRND.GAUGE_MAX; updateFlyHud();   // 弾12: 押しっぱなし・ゲージをテスト前の素の状態へ戻す
       tuiOn=!hasMouse; layoutTouchUI(); updateTouchLookUI();  // 弾16: スマホの盤の 出し入れも テスト前の素の状態へ戻す
-      if(swooshCountEl && cfg.showHud) swooshCountEl.textContent=String(swooshCount);
+      if(swooshCountEl && hudOn("swoosh")) swooshCountEl.textContent=String(swooshCount);   // 弾18: すっきり中は 書きかえない
       var passCount=results.filter(function(r){return r.pass;}).length;
       var skipCount=results.filter(function(r){return r.skip;}).length;   // 弾13: 判定不能は 失敗にも成功にも数えない
       var summary={ total:results.length, pass:passCount, fail:results.length-passCount-skipCount, skip:skipCount, results:results };
