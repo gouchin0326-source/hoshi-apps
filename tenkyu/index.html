@@ -49,6 +49,11 @@
   #btn-course{ right:14px; top:222px; }
   #btn-log{ right:14px; top:274px; }
   #btn-cruise{ right:14px; top:326px; }
+  /* 弾26 §R21: 👁 見え方（いちにんしょう→さんにんしょう→まうえ→…）。★足すボタンは これ 1つだけ。
+     色だけで 状態を つたえない＝「絵」と「ことば」を たてに ならべて 両方 出す（44pxの 床は 割らない）。 */
+  #btn-view{ right:14px; top:378px; flex-direction:column; gap:0; line-height:1.05; }
+  #btn-view-icon{ font-size:17px; }
+  #btn-view-word{ font-size:9px; letter-spacing:-0.5px; opacity:.95; }
   .toolbtn:focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }
   .toolbtn.on{ background:rgba(143,184,255,.30); }
   /* 弾18 §R15: 道具ボタンを かくす（段階3）。★[hidden]属性ではなく クラスで 消す＝
@@ -289,6 +294,9 @@
 <button id="btn-course" class="toolbtn" aria-label="ひかりの輪コースを はじめる・おわる" title="ひかりの輪コース">🔆</button>
 <button id="btn-log" class="toolbtn" aria-label="ずかんをひらく" title="ずかん">📖</button>
 <button id="btn-cruise" class="toolbtn" aria-label="オートクルーズを切り替える（操作しなくても前に進みます）" title="オートクルーズ">🛩️</button>
+<!-- 弾26 §R21: 見え方を かえる（おすたびに いちにんしょう→さんにんしょう→まうえ→いちにんしょう）。
+     ★aria-label と 中みの ことばは syncViewUI が いまの 状態に あわせて 書きかえる（色だけに たよらない）。 -->
+<button id="btn-view" class="toolbtn" aria-label="見え方を かえる" title="見え方"><span id="btn-view-icon" aria-hidden="true">👁</span><span id="btn-view-word" aria-hidden="true">め</span></button>
 <!-- 弾18 §R15: 道具ボタンを かくした時だけ 出る「もどす」ボタン。★これが 唯一の 帰り道＝
      押せるものが 画面から 1つも なくなる ことを 作らない（受入テスト T27c が 機械で 見張る）。 -->
 <button id="btn-peek" aria-label="道具ボタンを もどす" title="道具を もどす">⊕</button>
@@ -384,13 +392,15 @@
   <input type="range" id="s-sens" min="0" max="2" step="0.1" value="1">
   <label for="s-inertia">動きのなめらかさ：<span id="s-inertia-v">0.5</span></label>
   <input type="range" id="s-inertia" min="0" max="1" step="0.05" value="0.5">
-  <!-- 弾22 §R19: 見え方（既定＝目の高さ＝今までどおり）。パソコンは Vキー ひとつでも 切りかえられる -->
+  <!-- 弾22 §R19: 見え方（既定＝目の高さ＝今までどおり）。パソコンは Vキー ひとつでも 切りかえられる
+       弾26 §R21: 3つめ「まうえ」を 足した。★入口は 3つ（👁ボタン・Vキー・ここ）だが 通る道は setViewMode 1本だけ。 -->
   <label for="s-view">見え方</label>
   <select id="s-view">
     <option value="first">目の高さ（一人称・今までどおり）</option>
     <option value="third">じぶんが 見える（三人称）</option>
+    <option value="top">まうえ（ななめ上から 見おろす）</option>
   </select>
-  <p class="hint">パソコンは <b>V</b> キーでも 切りかえられます。</p>
+  <p class="hint">パソコンは <b>V</b> キーでも 切りかえられます（右がわの <b>👁</b> ボタンでも 同じです）。</p>
   <label for="s-lookmode">パソコンの 見まわし方</label>
   <select id="s-lookmode">
     <option value="lock">クリックで固定（ずれない・3Dゲーム式）</option>
@@ -507,6 +517,7 @@
     ・もっと 速くしたい時は <b>⚙「とぶ速さ」</b>＝<b>6.0倍</b>まで 上げられます（はじめは 1.0倍。酔いやすい方は 上げないで ください）<br>
     ・速さ・ゆれ・かたむきは <b>⚙</b>で かえられます（酔いやすい方は「🍃 快適モード」）<br>
     ・<b>🛩️オートクルーズ</b>（右上のボタン、または <b>C</b> キーで切り替え）→ そうさしなくても ゆっくり前へ すすみます。<b>ひかりの輪コース中</b>は 次の輪へ 針路を自動でととのえます。とめたい時は <b>S／↓</b>（うしろ）でブレーキ、そうさすれば いつでも自分の操作にもどります<br>
+    ・<b>👁 見え方</b>（右がわのボタン、または <b>V</b> キー、⚙「見え方」）→ おすたびに <b>目の高さ</b>→<b>じぶんが 見える</b>→<b>まうえ</b>→ もどる、と かわります。<b>すすむ むきは どの 見え方でも 同じ</b>です（覚え直しは いりません）<br>
     <b>共通</b>：🔍さがす→星まで とぶ／🎬めぐる→じどうで 作品を まわる／星にふれる → 作品がひらいて 曲がながれます<br>
     ・<b>⚙「🌍 せかいを えらぶ」</b>→ <b>うちゅう</b>（星の海）と <b>そら</b>（くもの海）を いつでも 行き来できます。<b>作品は どちらでも 同じ</b>で、景色と とびごこちだけ かわります
   </p>
@@ -606,7 +617,8 @@
       showLandmarks:true,   // 弾10 §R8: めじるし（星座の目印）既定ON
       touchLook:"stick",    // 弾16 §R14: スマホの見まわし方 既定＝スティック（"drag"＝今までの なぞるだけ）
       // 弾22 §R19: 見え方（"first"＝目の高さ／"third"＝じぶんが見える）。
-      // ★既定は "first" のまま＝今までの人の 体験を 勝手に 変えない。三人称は「選ぶもの」である（§G T31e）。
+      // 弾26 §R21: "top"＝まうえ（ななめ上から 見おろす）を 足した。
+      // ★既定は "first" のまま＝今までの人の 体験を 勝手に 変えない。三人称も まうえも「選ぶもの」である（§G T31e／T35e）。
       view:"first",
       // 弾18 §R15: 画面を すっきりさせる。⚙の 逃げ道は ぜんぶ そのまま＝出したい人は いつでも 出せる。
       tidy:false,           // 段階1: 🙈すっきり（情報を まとめて かくす・Hキー／⚙）
@@ -3301,6 +3313,8 @@
             JUMP_W:96, JUMP_H:72, JUMP_B:12, JUMP_GAP:16,
             ATK:56, ATK_MIN:44, ATK_GAP:8,   // 弾25 §R20: ⚔ふる／✨うつ（★44pxの 床は ぜったいに 割らない）
             TB:44, TB_EDGE:14, TB_GAP:6, TB_TALL_H:558, TB_MID_H:360,
+            TB_N:8,   // 弾26 §R21: 道具ボタンの 数（⚙？🔍🎬🔆📖🛩️＋👁）＝ここが 唯一の 正本
+
             GAUGE_L:130, GAUGE_R:66, GAUGE_W:240, GAUGE_H:40,
             MAP:80, MAP_EDGE:14, MAP_B:6,
             CENTER_X:0.30, CENTER_Y0:0.20, CENTER_Y1:0.58,
@@ -3311,18 +3325,25 @@
     // うんと ひくい画面（小さな機械の 横持ち）だけ スティックを 少し小さくする＝下の帯が つぶれないように
     var S=(H>=TUI.TB_MID_H)?TUI.STICK:TUI.STICK_SMALL;
     var sTop=H-TUI.STICK_B-S;
-    // 右上の道具ボタン＝縦に7つ並ぶのは 高い画面だけ。入らない時は 段を分ける（スティックに かぶらせない）。
-    var cols, rows;
-    if(H>=TUI.TB_TALL_H){ cols=1; rows=7; }
-    else if(H>=TUI.TB_MID_H){ cols=4; rows=2; }
-    else { cols=7; rows=1; }
+    // 右上の道具ボタン＝縦に ぜんぶ 並ぶのは 高い画面だけ。入らない時は 段を分ける（スティックに かぶらせない）。
+    // 弾26 §R21: 道具は 7つ→8つ（👁見え方を 1つ 足した）。★数は TUI.TB_N ひとつが 正本＝
+    //   数えまちがいを 作らない（TOOL_IDS・tuiEls の ならびと 必ず 同じ数）。
+    var N=TUI.TB_N, cols, rows;
+    // ★たてに 1列で ならべるのは「スティックの 上に 入りきる」画面だけ＝入らない画面では 段を分ける
+    //   （弾26で 道具が 8つに なり、320x568 では 8つめが 視点スティックに かぶった＝実測して 直した）。
+    if(H>=TUI.TB_TALL_H && (TUI.TB_EDGE + N*TUI.TB + 8) <= sTop){ cols=1; }
+    else if(H>=TUI.TB_MID_H){ cols=4; }
+    else { // ひくくて 横に 長い画面＝1段に ならべたい。★横はばが 足りない時だけ 段を分ける（画面の 外へ 出さない）
+      cols=(W-TUI.TB_EDGE*2 >= N*TUI.TB+(N-1)*TUI.TB_GAP) ? N : 4;
+    }
+    rows=Math.ceil(N/cols);
     var gap=(cols===1)?0:TUI.TB_GAP;
     var tbW=cols*TUI.TB+(cols-1)*gap, tbH=rows*TUI.TB+(rows-1)*gap;
     var tools=[], i;
-    for(i=0;i<7;i++){ var cc=i%cols, rr=Math.floor(i/cols);
+    for(i=0;i<N;i++){ var cc=i%cols, rr=Math.floor(i/cols);
       tools.push(_r(W-TUI.TB_EDGE-tbW+cc*(TUI.TB+gap), TUI.TB_EDGE+rr*(TUI.TB+gap), TUI.TB, TUI.TB)); }
     // ⚡とぶ ちから＝親指と 手の付け根で 隠れない 上のほうへ（弾12までは 下にあった）
-    var gy=(rows===7)? TUI.TB_EDGE : (TUI.TB_EDGE+tbH+8);
+    var gy=(cols===1)? TUI.TB_EDGE : (TUI.TB_EDGE+tbH+8);
     var gx=TUI.GAUGE_L, gRight=W-TUI.GAUGE_R;
     if(gy+TUI.GAUGE_H > sTop){ gx=Math.max(gx, E+S+8); gRight=Math.min(gRight, W-E-S-8); }
     var gw=Math.max(120, Math.min(TUI.GAUGE_W, gRight-gx));
@@ -3370,8 +3391,8 @@
       atkM:document.getElementById("btn-atk-melee"), atkR:document.getElementById("btn-atk-shot"),   // 弾25 §R20
       gauge:document.getElementById("fly-hud"), map:document.getElementById("map"),
       peek:document.getElementById("btn-peek"),   // 弾18 §R15: ⊕（道具を かくした時の 帰り道）
-      tools:["btn-settings","btn-help","btn-search","btn-tour","btn-course","btn-log","btn-cruise"]
-        .map(function(id){ return document.getElementById(id); }) };
+      tools:["btn-settings","btn-help","btn-search","btn-tour","btn-course","btn-log","btn-cruise","btn-view"]
+        .map(function(id){ return document.getElementById(id); }) };   // 弾26 §R21: 👁を 末尾へ（前の7つの 番号は 1つも ずらさない）
     return _tuiEls;
   }
   function tuiPlace(el,r,disp){ if(!el) return; var s=el.style;
@@ -3535,7 +3556,8 @@
     // ★衝突の確認（着手前に grep で 実測）: いま つかっている キーは w/a/s/d・矢印・Space・Shift・q・e・c・h だけ。
     //   v は どこにも 無い＝空いている。えらんだ 理由＝view（見え方）の 頭文字で、W/A/S/D の となりに あって 押しやすい。
     //   ⚙や 🔍を ひらいている間は 効かない（!anySheet()）＝なまえを 打つ時に 視点が 変わらない。
-    if(k==="v" && !keys[k] && !anySheet()){ setViewMode(cfg.view==="third"?"first":"third"); }
+    // 弾26 §R21: Vキーは 3つの 状態を 👁ボタンと 同じ順で 巡る（作法は 弾22の まま＝押した1回で 1つ すすむ）。
+    if(k==="v" && !keys[k] && !anySheet()){ cycleViewMode(); }
     // 弾25 §R20: F＝ちかくを ふる／R＝とおくへ うつ（C・H・Vと まったく 同じ 作法）。
     // ★衝突の 確認（着手前に grep で 実測）: いま つかって いる キーは w/a/s/d・矢印・Space・Shift・q・e・c・h・v だけ。
     //   f と r は どこにも 無い＝空いている。えらんだ 理由＝左手が W/A/S/D に 置かれた まま とどく となりの キーで、
@@ -3640,12 +3662,14 @@
     var ndcx=(px-rect.left)/rect.width*2-1, ndcy=1-(py-rect.top)/rect.height*2;
     var aspect=canvas.width/canvas.height, t=Math.tan(fov/2);
     var vx=ndcx*t*aspect, vy=ndcy*t, vz=-1;
-    var Vr=mul(rotZ(roll),mul(rotX(pitch),rotY(yaw)));  // 描画と同じ姿勢（かたむき込み）で当てる
+    // 弾26 §R21: まうえ では 絵の むきに 見おろし(viewPitchAdd)が 足されている＝レイも 同じ数を 足す
+    //   （三人称・一人称では viewPitchAdd は かならず 0＝弾22と 1ビットも 変わらない）。
+    var Vr=mul(rotZ(roll),mul(rotX(pitch+viewPitchAdd),rotY(yaw)));  // 描画と同じ姿勢（かたむき込み）で当てる
     var wr=tDir(Vr,vx,vy,vz); var wl=Math.hypot(wr[0],wr[1],wr[2]); wr[0]/=wl; wr[1]/=wl; wr[2]/=wl;
     // 弾22 §R19: ★レイの 起点は「いま 絵を 描いている 目の 場所」＝三人称では うしろへ 下がった 場所。
     //   カメラは 自機の 真うしろ 一直線にしか 下がらないので、画面まん中を 通る 線は
     //   一人称のときと 完全に 同じ1本（camPos は その線の 上に ある）＝ねらった 星は 変わらない（§G T31d）。
-    var o=(cfg.view==="third")?viewPos:camPos;
+    var o=viewIsAway()?viewPos:camPos;
     var best=-1, bestDot=Math.cos(0.09);
     for(var i=0;i<wkPos.length;i++){ var p=wkPos[i];
       var vxx=p[0]-o[0], vyy=p[1]-o[1], vzz=p[2]-o[2];
@@ -4108,7 +4132,8 @@
   // 弾18 §R15 段階3: 道具ボタン7個の 出し入れ。
   // ★閉じ込めない（この作品の いちばん大事な 約束）＝かくす時は かならず ⊕ を 1つ 出す。
   //   ⊕は PCでも スマホでも 出る・44pxより 大きい・押すと 道具が もどる。PCは Hキーでも もどる。
-  var TOOL_IDS=["btn-settings","btn-help","btn-search","btn-tour","btn-course","btn-log","btn-cruise"];
+  // 弾26 §R21: 👁見え方も 同じ ならびへ 足す＝「すっきり」で 他の道具と 一緒に かくれる（＋⊕で もどる）。
+  var TOOL_IDS=["btn-settings","btn-help","btn-search","btn-tour","btn-course","btn-log","btn-cruise","btn-view"];
   var _toolsHidden=null, peekEl=null;
   function applyToolsVisibility(){
     if(!peekEl) peekEl=document.getElementById("btn-peek");
@@ -4457,9 +4482,51 @@
   //   だから だいちでは「ほんとうの 地面（heightAt）＋CLR_G(0.8)」を 下限に する＝地面より 下へは 絶対に 行かない。
   //   床が「数」の 世界（そら=8／じめん=1）では その数 そのものが 通れない 面（人の 目も そこで 止まる）＝
   //   すきまを 足さずに その数を 下限に する。足すと 同じ理由で つぶれる（§G T31e の 陰性対照が これを 見張る）。
+  // ================= 弾26 §R21: 「まうえ」＝ななめ上から 引いた 見おろし =================
+  // ★芯（ここを まちがえると 操作を 覚え直させる ことに なる）:
+  //   ①進む むきの 規則は 三人称と **1ミリも 変えない**＝pitch/yaw（＝体の むき）は 1ビットも さわらない。
+  //     まうえは **カメラの 置き場だけ** の話であり、locomotion・速さ・重力の 式には 一切 触れない。
+  //   ②見おろす ぶんの かたむき(viewPitchAdd)は **絵と レイキャストにだけ** 足す。
+  //     カメラは その かたむいた むきの「真うしろ」へ 下がるので、画面まん中を 通る 線は
+  //     かならず 自機（camPos）を 通る＝三人称と 同じ ならび（ねらいが 体から ずれない）。
+  //   ③当たり判定は **弾22の viewFreeT を そのまま** つかう。下がる むきが 上向きに なるので、
+  //     同じ 二分探索が そのまま **上方向の 当たり判定**に なる（新しい 仕組みを 作らない）。
+  //   ④どうくつ（筒の中）だけ 天井が ある＝筒の 内がわに とどまる ぶんだけ 縮める。
+  //     縮めきれない（TOPV.MIN も 取れない）ときは **三人称へ 落とす**＝黙って 真っ黒に しない。
+  //   ⑤切りかわりは ease（TOPV.BLEND）＝画面が とばない・明滅しない・シェイクしない。
+  var TOPV = {
+    PITCH:  0.62,   // ✎ 見おろす ぶんの かたむき（ラジアン＝約36度。真下向きには しない＝自分が 点に ならない）
+    DIST:   2.15,   // ✎ 下がる 長さの 倍率（AVC.BACK 6.5 × これ ＝ 約14.0）
+    BLEND:  3.4,    // ✎ 三人称⇔まうえ の うつりかわりの はやさ（1/秒。ゆっくり＝酔わせない）
+    MIN:    2.20,   // ✎ これだけも 下がれない ときは 三人称へ 落とす
+    BACKON: 1.35,   // ✎ もどす ときの ゆとり（ヒステリシス＝ひらひら 行き来しない）
+    CAVE_M: 3.00    // ✎ どうくつの 壁から これだけ 内がわで 止める（結晶の 列より 内がわ）
+  };
   var viewPos=[0,0,0], viewDist=0, viewSteps=0, viewWant=0, viewHitBy="なし";
+  var viewPitchAdd=0, topBlend=0, topOn=false, topFree=0, topSteps=0;
   var avAir=0, avPhase=0, avSwing=0, avLean=0, avDrawn=false;
   function viewIsThird(){ return cfg.view==="third"; }
+  // カメラが 自機から はなれる 見え方（三人称・まうえ）か＝一人称では ここが false＝弾21と 同じ 道を 通る
+  function viewIsAway(){ return cfg.view==="third" || cfg.view==="top"; }
+  // どうくつ＝筒の 外に 出たか（★中心線は z について 1対1なので、その z の 輪切りで はかる＝速い）
+  function caveOutside(x,y,z){
+    var t=(-z-CAVE_MIN)/CAVE_SPAN; if(t<0) t=0; else if(t>1) t=1;
+    var C=caveCenter(t), ddx=x-C[0], ddy=y-C[1], lim=CAVE_R-TOPV.CAVE_M;
+    return (ddx*ddx+ddy*ddy) > lim*lim;
+  }
+  // どうくつの 天井（＝筒の 壁）まで。★弾22の terrainSweepT と まったく 同じ かたち（きざみ→二分探索）。
+  //   起点が すでに 筒の 外なら 何も しない（＝天井の 話では ない＝弾22の 「床が 無い世界」と 同じ 作法）。
+  function caveSweepT(ox,oy,oz, dx,dy,dz, maxT){
+    if(ENVID!=="cave") return maxT;
+    if(caveOutside(ox,oy,oz)) return maxT;
+    var lo=0, hi=maxT, i, t, hit=-1;
+    for(i=1;i<=AVC.STEP;i++){ t=maxT*i/AVC.STEP;
+      if(caveOutside(ox+dx*t, oy+dy*t, oz+dz*t)){ hit=t; lo=maxT*(i-1)/AVC.STEP; hi=t; break; } }
+    if(hit<0) return maxT;
+    for(i=0;i<AVC.REFINE;i++){ var m=(lo+hi)*0.5;
+      if(caveOutside(ox+dx*m, oy+dy*m, oz+dz*m)) hi=m; else lo=m; }
+    return lo;
+  }
   // その場所で カメラが 下りてよい いちばん 低い 高さ（地面のある世界だけ・無い世界では null）
   function camFloorAt(x,z){
     if(ENV.terrain) return heightAt(x,z)+AVC.CLR_G;   // だいち＝ほんとうの 地面＋すきま
@@ -4488,16 +4555,47 @@
     viewHitBy = (tb<tg-1e-9) ? "建物" : ((tg<maxT-1e-9) ? "地面" : "なし");
     return (tb<tg)?tb:tg;
   }
+  // 弾26 §R21: まうえ だけが 通る 道＝地面/建物（弾22の viewFreeT）に どうくつの 天井を 1つ 足すだけ。
+  function viewFreeTop(dx,dy,dz, maxT){
+    var t=viewFreeT(camPos[0],camPos[1],camPos[2], dx,dy,dz, maxT);
+    var tc=caveSweepT(camPos[0],camPos[1],camPos[2], dx,dy,dz, t);
+    if(tc<t-1e-9) viewHitBy="天井";
+    return (tc<t)?tc:t;
+  }
   // 毎フレーム 1回。一人称のときは if を 1つ 通って すぐ 帰る＝弾21と 1ビットも 変わらない道。
   function updateView(dt, snap){
-    if(!viewIsThird()){
+    if(!viewIsAway()){
       viewPos[0]=camPos[0]; viewPos[1]=camPos[1]; viewPos[2]=camPos[2];
-      viewDist=0; viewWant=0; viewHitBy="なし"; avDrawn=false; return;
+      viewDist=0; viewWant=0; viewHitBy="なし"; avDrawn=false;
+      viewPitchAdd=0; topBlend=0; topOn=false; topFree=0; return;
     }
     viewSteps++;
-    var Vr=mul(rotX(pitch),rotY(yaw)), fw=tDir(Vr,0,0,-1);
+    // ---- 弾26 §R21: まうえ の 見おろし角（三人称では ぜんぶ 0＝下の道は 弾22と 1ビットも 変わらない）----
+    var pFull=pitch+TOPV.PITCH; if(pFull>1.45) pFull=1.45;        // clampPitch と 同じ 上限＝真上を こえない
+    var aFull=pFull-pitch, free1=-1;
+    if(cfg.view==="top"){
+      topSteps++;
+      // pitch は さわらない。見おろしを 足した「絵のむき」だけを 作り、その 真うしろへ 下がる。
+      var VrT=mul(rotX(pFull),rotY(yaw)), fwT=tDir(VrT,0,0,-1);
+      free1=viewFreeTop(-fwT[0],-fwT[1],-fwT[2], AVC.BACK*TOPV.DIST);
+      if(free1<0) free1=0;
+      topFree=free1;
+      // 縮めきれない（＝天井や 屋根で MIN も 取れない）ときは 三人称へ 落とす。ヒステリシスで ひらひら しない。
+      topOn = (free1 >= (topOn ? TOPV.MIN : TOPV.MIN*TOPV.BACKON));
+    } else { topOn=false; topFree=0; }
+    // ★1つの なめらかな 数(topBlend)が「かたむき」も「下がる 長さ」も 決める＝落とす時も 入る時も 同じ道で なめらか。
+    var bWant=topOn?1:0;
+    if(snap) topBlend=bWant;
+    else { topBlend += (bWant-topBlend)*Math.min(1, dt*TOPV.BLEND);
+           if(Math.abs(topBlend-bWant)<0.002) topBlend=bWant; }
+    viewPitchAdd = aFull*topBlend;
+    var maxT = AVC.BACK*(1+(TOPV.DIST-1)*topBlend);
+    var Vr=mul(rotX(pitch+viewPitchAdd),rotY(yaw)), fw=tDir(Vr,0,0,-1);
     var dx=-fw[0], dy=-fw[1], dz=-fw[2];
-    var want=viewFreeT(camPos[0],camPos[1],camPos[2], dx,dy,dz, AVC.BACK);
+    var want;
+    if(topBlend===1 && free1>=0) want=free1;                      // まうえ で 落ち着いている＝上で 測った ものを そのまま つかう（2回 測らない）
+    else if(viewPitchAdd>0) want=viewFreeTop(dx,dy,dz, maxT);      // うつりかわりの 途中（天井も 見る）
+    else want=viewFreeT(camPos[0],camPos[1],camPos[2], dx,dy,dz, maxT);   // 三人称＝弾22と まったく 同じ 1本
     if(want<0) want=0;
     viewWant=want;
     var k=(comfortActive||reduceActive)?AVC.STIFF:1;
@@ -4516,17 +4614,36 @@
     avSwing = amp*AVC.SWING*Math.sin(avPhase) + avAir*AVC.AIR_SWING;
     avLean = avAir*AVC.LEAN_FLY;
   }
-  // 見え方の きりかえ（⚙と Vキーの 唯一の 入口）。★三人称へ 入るときは 0から そっと 引く＝画面が とばない。
+  // 見え方の きりかえ（👁ボタン・Vキー・⚙ の **唯一の 入口**）。★はなれた 見え方へ 入るときは 0から そっと 引く＝画面が とばない。
+  // 弾26 §R21: 3つの 状態（first／third／top）。どの 入口から 変えても かならず ここを 通る＝状態は 1つに そろう。
+  var VIEW_MODES=["first","third","top"];
+  var VIEW_WORDS={ first:{ icon:"👁", word:"め",    say:"👁 目の高さ（いちにんしょう）",  aria:"見え方を かえる。いまは 目の高さ（いちにんしょう）" },
+                   third:{ icon:"🧍", word:"じぶん", say:"🧍 じぶんが 見える（さんにんしょう）", aria:"見え方を かえる。いまは じぶんが 見える（さんにんしょう）" },
+                   top:  { icon:"🗺", word:"まうえ", say:"🗺 まうえ（ななめ上から 見おろす）",   aria:"見え方を かえる。いまは まうえ（ななめ上から 見おろす）" } };
   function setViewMode(m, persist){
-    var v=(m==="third")?"third":"first";
+    var v=(VIEW_MODES.indexOf(m)>=0)?m:"first";
     if(cfg.view!==v){
+      var wasAway=viewIsAway();
       cfg.view=v;
-      if(v==="third"){ viewDist=0; avAir=(ENV.locomotion==="grounded"&&onGround)?0:1; avPhase=0; }
-      updateView(0, v!=="third");
-      if(persist!==false){ saveCfg(); showAchieveToast(v==="third"?"👤 じぶんが 見える":"👁 目の高さ"); }
+      if(v!=="first" && !wasAway){ viewDist=0; avAir=(ENV.locomotion==="grounded"&&onGround)?0:1; avPhase=0; }
+      updateView(0, v==="first");                       // 一人称へ もどる時だけ その場で・入る/移る時は そっと
+      if(persist!==false){ saveCfg(); showAchieveToast(VIEW_WORDS[v].say); }
     }
-    var s=document.getElementById("s-view"); if(s) s.value=cfg.view;
+    syncViewUI();
     return cfg.view;
+  }
+  // 巡る順＝いちにんしょう→さんにんしょう→まうえ→いちにんしょう（👁ボタンも Vキーも この1本）
+  function cycleViewMode(){ var i=VIEW_MODES.indexOf(cfg.view); if(i<0) i=0;
+    return setViewMode(VIEW_MODES[(i+1)%VIEW_MODES.length]); }
+  // ⚙の えらび・👁の 絵と ことば・読み上げの ことばを いまの 状態に そろえる（★色だけに たよらない）
+  function syncViewUI(){
+    var w=VIEW_WORDS[cfg.view]||VIEW_WORDS.first;
+    var s=document.getElementById("s-view"); if(s) s.value=cfg.view;
+    var ic=document.getElementById("btn-view-icon"); if(ic && ic.textContent!==w.icon) ic.textContent=w.icon;
+    var wd=document.getElementById("btn-view-word"); if(wd && wd.textContent!==w.word) wd.textContent=w.word;
+    var b=document.getElementById("btn-view");
+    if(b){ if(b.getAttribute("aria-label")!==w.aria) b.setAttribute("aria-label", w.aria);
+           if(b.getAttribute("title")!==w.say) b.setAttribute("title", w.say); }
   }
   // ================= 弾22 ここまで =================
 
@@ -4578,7 +4695,9 @@
     var aspect=canvas.width/canvas.height;
     var P=perspective(fov,aspect,0.1,8000);
     // 弾8の揺蕩い＋微振動(タービュランス)は描画だけに乗せる（roll/pitch/yaw本体は変えない＝物理・判定・他テストに影響させない）
-    var Vrot=mul(rotZ(roll+wanderRoll+turbRoll),mul(rotX(pitch+wanderPitch+turbPitch),rotY(yaw+wanderYaw+turbYaw)));
+    // 弾26 §R21: viewPitchAdd＝まうえ の 見おろし ぶん（絵にだけ 足す・pitch 本体は 1ビットも 変えない＝
+    //   物理・判定・他のテストに 影響させない＝弾8の 揺蕩いと まったく 同じ 作法）。三人称/一人称では 0。
+    var Vrot=mul(rotZ(roll+wanderRoll+turbRoll),mul(rotX(pitch+viewPitchAdd+wanderPitch+turbPitch),rotY(yaw+wanderYaw+turbYaw)));
     // 弾22 §R19: 目の 置き場＝一人称では camPos そのもの（viewPos は 毎フレーム camPos の 写しになる）。
     //   三人称では 自機の 真うしろ 一直線に 下がった 場所（updateView が 当たり判定ずみで 用意してある）。
     var Vfull=mul(Vrot, transl(-viewPos[0],-viewPos[1],-viewPos[2]));
@@ -4790,7 +4909,15 @@
     setView:function(m,persist){ return setViewMode(m,persist); },
     viewState:function(){ return { mode:cfg.view, pos:viewPos.slice(), dist:viewDist, want:viewWant,
       hitBy:viewHitBy, drawn:avDrawn, steps:viewSteps, air:avAir, swing:avSwing, lean:avLean,
-      root:[camPos[0], camPos[1]-AVC.EYE, camPos[2]] }; },
+      root:[camPos[0], camPos[1]-AVC.EYE, camPos[2]],
+      // 弾26 §R21: まうえ の 中み（topOn=false かつ mode==="top" ＝三人称へ 落ちている）
+      pitchAdd:viewPitchAdd, blend:topBlend, topOn:topOn, topFree:topFree, topSteps:topSteps }; },
+    topConsts:function(){ return Object.assign({},TOPV); },
+    cycleView:function(){ return cycleViewMode(); },
+    viewModes:function(){ return VIEW_MODES.slice(); },
+    caveOutside:caveOutside,
+    caveCenterAt:function(t){ return caveCenter(t).slice(); },
+    caveConsts:function(){ return { R:CAVE_R, MIN:CAVE_MIN, SPAN:CAVE_SPAN, TURNS:CAVE_TURNS }; },
     camFloorAt:camFloorAt,
     // カメラの 当たり判定 そのものを 外から 呼ぶ入口（線分の 長さを 返す）＝T31b/T31c と 時間の はかりに 使う
     viewFreeT:function(dx,dy,dz,maxT){ return viewFreeT(camPos[0],camPos[1],camPos[2], dx,dy,dz,
@@ -4830,6 +4957,19 @@
       var Vr=mul(rotX(pitch),rotY(yaw)), fw=tDir(Vr,0,0,-1), k=times|0;
       var t0=performance.now(); for(var i=0;i<k;i++) viewFreeT(camPos[0],camPos[1],camPos[2], -fw[0],-fw[1],-fw[2], AVC.BACK);
       return { times:k, ms:(performance.now()-t0) }; },
+    // ★弾26 §R21: 毎フレームJSの 増分を いまの 見え方の ままで はかる器（描く仕事は 1ミリも 入らない）。
+    //   updateView を そのまま n回 呼び、うごいた 数は ぜんぶ 元へ もどす＝はかった ことで 世界が 変わらない。
+    viewFrameBench:function(times){
+      var k=times|0;
+      var sv=[viewDist,topBlend,topOn,viewPitchAdd,avPhase,avAir,avSwing,avLean,viewSteps,topSteps,viewWant,viewHitBy,avDrawn,
+              viewPos[0],viewPos[1],viewPos[2]];
+      var t0=performance.now();
+      for(var i=0;i<k;i++) updateView(1/60, false);
+      var ms=performance.now()-t0;
+      viewDist=sv[0]; topBlend=sv[1]; topOn=sv[2]; viewPitchAdd=sv[3]; avPhase=sv[4]; avAir=sv[5]; avSwing=sv[6];
+      avLean=sv[7]; viewSteps=sv[8]; topSteps=sv[9]; viewWant=sv[10]; viewHitBy=sv[11]; avDrawn=sv[12];
+      viewPos[0]=sv[13]; viewPos[1]=sv[14]; viewPos[2]=sv[15];
+      return { times:k, ms:ms }; },
     avStats:function(){ return { parts:AV_PARTS.length, bytes:avBytes, buildMs:avBuildMs, built:!!avVAO }; },
     // 弾11 §R9のテスト用フック（だいちの地形）
     heightAt:heightAt, heightRawAt:heightRawAt, floorYAt:floorYAt,
@@ -4879,6 +5019,8 @@
         mobDrawn:lastMobOn, mobShown:mbShown, mobWanted:mbWanted, mobAlpha:mobAlpha,
         // 弾22 §R19: 見え方（一人称では view="first"・avatarDrawn=false・viewDist=0＝弾21と 同じ）
         view:cfg.view, avatarDrawn:avDrawn, viewDist:viewDist, viewPos:viewPos.slice(),
+        // 弾26 §R21: まうえ の 見おろし ぶん（first/third では かならず 0）
+        viewPitchAdd:viewPitchAdd, topBlend:topBlend, topOn:topOn,
         // 弾24 §R19: 戦闘（⚔OFF・既存4環境では すべて false／0 のまま＝弾23と 同じ）
         battle:battleOn(), enemyDrawn:lastEnOn, enemyShown:enShown, enemyWanted:enWanted,
         hp:hp, hpMax:BAT.HP_MAX, hpHudShown:!!_hpShown }; },
@@ -5778,9 +5920,13 @@
   sInvert.onchange=function(){ cfg.invertY=sInvert.checked; saveCfg(); };
   // 弾16 §R14: スマホの 見まわし方（スティック／なぞる）。えらんだら すぐ 反映して おぼえる。
   // 弾22 §R19: 見え方（既定＝目の高さ）。⚙と Vキーは 同じ 1本（setViewMode）しか 通らない。
+  // 弾26 §R21: 3つの 入口（👁ボタン／Vキー／⚙）は どれも setViewMode 1本しか 通らない＝状態は かならず 1つ。
   var sView=document.getElementById("s-view");
-  if(sView){ sView.value=(cfg.view==="third")?"third":"first";
-    sView.onchange=function(){ setViewMode(sView.value); }; }
+  if(sView) sView.onchange=function(){ setViewMode(sView.value); };
+  var btnView=document.getElementById("btn-view");
+  if(btnView) btnView.onclick=function(){ cycleViewMode(); };
+  if(VIEW_MODES.indexOf(cfg.view)<0) cfg.view="first";   // 知らない 値が 入っていたら 今までどおりへ（黙って 世界の 見え方を 変えない）
+  syncViewUI();   // 読み込み直後＝保存されていた 見え方に ⚙も 👁の 絵と ことばも そろえる（しゃべらない）
   var sTouchLook=document.getElementById("s-touchlook");
   if(sTouchLook){ sTouchLook.value=(cfg.touchLook==="drag")?"drag":"stick";
     sTouchLook.onchange=function(){ cfg.touchLook=(sTouchLook.value==="drag")?"drag":"stick"; saveCfg(); updateTouchLookUI(); }; }
@@ -10227,6 +10373,357 @@
                " 弾24までの道は そのまま="+pathOk+" ⚙の逃げ道="+gearOk+" 弾25の器="+newOk};
     }
 
+    // ---------- 弾26 §R21: 見え方の ボタンと「まうえ」（T35a〜T35f） ----------
+    // ★はかりかたの ことわり（弾22〜弾25から そのまま つぐ）
+    //  ①置くのは vwPlace（地面へ そっと 置いて 落ちつかせる）。どうくつだけは 床が 無いので cavePlace＝
+    //    **置くための** 代入だけ 行う（弾22の vwPlace と 同じ 作法。はかっている 最中に 座標を 書きかえる ことは しない）。
+    //  ②判定は 時計に よらない物だけ（座標・箱・回数・DOMの 文字）。時間を 使うのは T35d だけ・**最小値側**で 見る。
+    //  ③しきい値は 結果を 見る前に 置く（下の T35_* は 実装より 先に 決めた）。
+    //  ④画素は 1つも 見ない＝ペインが 出ていなくても 同じ 判定に なる。
+    //  ⑤符号は **実測してから** 書く（pitch は ＋で 下＝forward.y=-sin(pitch)。T35e が これを 毎回 測り直す）。
+    var T35_MAX_US  = 30;    // ✎ 毎フレームJSの 増分の 上限（µs。弾22の カメラ判定 8.06µs・弾23の T32_MAX_US と 同じ けた）
+    var T35_MINHIT  = 4;     // ✎ 「ほんとうに 縮めた」場面が これだけ 無いと めり込み検査は 意味を 持たない
+    var T35_GRIDR   = 30;    // ✎ 建物の めり込み検査で 総あたりする 半径（弾22 T31_GRIDR と 同じ）
+    function viewUi(){
+      var b=document.getElementById("btn-view"), s=document.getElementById("s-view");
+      return { mode:cfg.view, sel:s?s.value:"(無)",
+               icon:(document.getElementById("btn-view-icon")||{}).textContent||"",
+               word:(document.getElementById("btn-view-word")||{}).textContent||"",
+               aria:b?b.getAttribute("aria-label"):"" };
+    }
+    function viewUiAgrees(u){ return (u.sel===u.mode) && (u.aria.indexOf("見え方")>=0) && (u.icon!=="") && (u.word!==""); }
+    // どうくつ＝床が 無い（floorYAt が null）ので 置き方だけ 別に 持つ。筒の 中心から よこへ ずらして 置ける。
+    function cavePlace(t, dy){
+      var C=window.__tenkyu.caveCenterAt(t);
+      clearHeld(); moveVec={f:0,s:0};
+      camPos=[C[0], C[1]+(dy||0), C[2]]; camVel=[0,0,0];
+      yaw=0; pitch=0; yawV=0; pitchV=0; roll=0;
+      takenOff=true; takeoffKick=0; boost=0; boostOn=false; boostKick=0; speedN=0;
+      stepFrames(3);
+    }
+
+    // T35a: ★3つの 入口（👁ボタン・Vキー・⚙）が 同じ順で 巡り、どこから 変えても 状態が 1つに そろう
+    function t_T35a(){
+      var st=vwSetup(), d=[], bad=[];
+      setEnv("field"); vwPlace(120,140,0,0);
+      var WANT=["first","third","top","first","third"];   // 巡る順＝いちにんしょう→さんにんしょう→まうえ→いちにんしょう
+      var btn=document.getElementById("btn-view");
+      var exists=!!btn && !!document.getElementById("s-view");
+      // ①👁ボタンを 4回 おす
+      window.__tenkyu.setView("first", false);
+      var seqBtn=[viewUi().mode], u;
+      for(var i=0;i<4;i++){ btn.click(); u=viewUi(); seqBtn.push(u.mode);
+        if(!viewUiAgrees(u)) bad.push("ボタン"+(i+1)+"回目で ⚙/絵/ことばが そろわない("+u.mode+"/"+u.sel+")"); }
+      // ②Vキーを 4回 おす（キーは 押しっぱなしに ならないよう かならず はなす）
+      window.__tenkyu.setView("first", false);
+      var seqKey=[viewUi().mode];
+      for(i=0;i<4;i++){
+        window.dispatchEvent(new KeyboardEvent("keydown",{key:"v",bubbles:true}));
+        window.dispatchEvent(new KeyboardEvent("keyup",{key:"v",bubbles:true}));
+        u=viewUi(); seqKey.push(u.mode);
+        if(!viewUiAgrees(u)) bad.push("Vキー"+(i+1)+"回目で ⚙/絵/ことばが そろわない("+u.mode+"/"+u.sel+")");
+      }
+      // ③⚙の えらびで 直に 決める（3つとも）
+      var gearOk=true, sel=document.getElementById("s-view");
+      var optVals=[].map.call(sel.options,function(o){return o.value;}).join(",");
+      for(i=0;i<3;i++){ var m=["top","third","first"][i];
+        sel.value=m; sel.onchange(); u=viewUi();
+        if(u.mode!==m || u.sel!==m || !viewUiAgrees(u)) { gearOk=false; bad.push("⚙で "+m+" に できない"); } }
+      // ④絵も ことばも 3つとも ちがう＝色だけに たよっていない
+      var icons=[], words=[], arias=[];
+      for(i=0;i<3;i++){ window.__tenkyu.setView(["first","third","top"][i], false); u=viewUi();
+        icons.push(u.icon); words.push(u.word); arias.push(u.aria); }
+      var distinctOk=(icons[0]!==icons[1])&&(icons[1]!==icons[2])&&(icons[0]!==icons[2])&&
+                     (words[0]!==words[1])&&(words[1]!==words[2])&&(words[0]!==words[2])&&
+                     (arias[0]!==arias[1])&&(arias[1]!==arias[2])&&(arias[0]!==arias[2]);
+      // ⑤おぼえる＝localStorage に のこる（つぎに ひらいた時も 同じ 見え方）
+      var keep="(はかれない)", keepOk=true;
+      try{
+        window.__tenkyu.setView("first", false);      // ★かならず ちがう 値から 入る（同じ値だと 保存が 走らない＝はかったことに ならない）
+        window.__tenkyu.setView("top", true);
+        keep=(JSON.parse(localStorage.getItem(CFG_KEY)||"{}").view)||"(無)";
+        keepOk=(keep==="top");
+        window.__tenkyu.setView("first", true);
+        var keep2=(JSON.parse(localStorage.getItem(CFG_KEY)||"{}").view)||"(無)";
+        keepOk=keepOk&&(keep2==="first"); keep=keep+"→"+keep2;
+      }catch(e){ keepOk=true; keep="(localStorage が つかえない＝はかっていない)"; }
+      // ⑥ボタンは 44px以上・キーボードで 押せる（tabIndex が 負でない＝<button> そのもの）
+      var r=btn.getBoundingClientRect();
+      var sizeOk=(r.width>=44&&r.height>=44)||(r.width===0&&r.height===0);   // 窓が 0の 機械では 大きさを はかったと 言わない
+      var sizeNote=(r.width===0&&r.height===0)?"（窓が 0＝はかれない）":(Math.round(r.width)+"x"+Math.round(r.height));
+      var keyOk=(btn.tagName==="BUTTON")&&(btn.tabIndex>=0);
+      var seqOk=(seqBtn.join(",")===WANT.join(","))&&(seqKey.join(",")===WANT.join(","));
+      vwRestore(st);
+      d.push("👁ボタン="+seqBtn.join("→")+"／Vキー="+seqKey.join("→")+"／のぞむ順="+WANT.join("→")+"＝一致="+seqOk);
+      d.push("⚙の えらび("+optVals+")から 3つとも 決められる="+gearOk+"／どの 入口でも ⚙・絵・ことばが そろう="+(bad.length===0));
+      d.push("絵="+icons.join("/")+" ことば="+words.join("/")+"＝3つとも ちがう(色だけに たよらない)="+distinctOk);
+      d.push("おぼえる（localStorage）="+keep+"="+keepOk+"／👁は "+sizeNote+"="+sizeOk+" キーボードで 押せる="+keyOk+
+             (bad.length?(" ／だめ: "+bad.slice(0,3).join(" ")):""));
+      return {pass:exists&&seqOk&&gearOk&&distinctOk&&keepOk&&sizeOk&&keyOk&&(bad.length===0), detail:d.join(" / ")};
+    }
+
+    // T35b: ★まうえ で 地面にも 建物にも めり込まない（弾22の 二分探索を そのまま 通っている ことを 計数器で 見る）
+    function t_T35b(){
+      var st=vwSetup(), d=[];
+      setEnv("field");
+      var boxes=window.__tenkyu.cityBoxesNow(), vb=window.__tenkyu.villageBoxes(), all=boxes.concat(vb);
+      // 舞台①＝いちばん 高いビルの あいだの 道路（屋根の 下に もぐらないか）
+      var tall=boxes.filter(function(x){ return x.ground && x.size[1]>=20; });
+      tall.sort(function(p,q){ return q.size[1]-p.size[1]; });
+      var spots=[], C=window.__tenkyu.cityConsts(), i, j;
+      for(i=0;i<tall.length && spots.length<5;i++){
+        var t=tall[i], x=t.pos[0]+C.BLOCK*0.5, z=t.pos[2], inside=false;
+        for(j=0;j<all.length;j++){ if(Math.hypot(all[j].pos[0]-x, all[j].pos[2]-z)<T35_GRIDR && vwPtInBox(all[j],x,floorYAt(x,z),z,0)){ inside=true; break; } }
+        if(!inside) spots.push([x,z,"市街地"]);
+      }
+      // 舞台②＝かたむきの きつい ところ（斜面）を さがす＝地面の 高さの 差が 大きい ます
+      var slopes=[], best=[];
+      for(i=0;i<600;i++){
+        var a=i*0.61803398875*Math.PI*2, rr=200+((i*97)%900);
+        var sx=Math.cos(a)*rr, sz=Math.sin(a)*rr;
+        var h0=heightAt(sx,sz); if(h0<=SEA_Y+1) continue;
+        var g=Math.max(Math.abs(heightAt(sx+6,sz)-h0), Math.abs(heightAt(sx,sz+6)-h0));
+        best.push([g,sx,sz]);
+      }
+      best.sort(function(p,q){ return q[0]-p[0]; });
+      for(i=0;i<5 && i<best.length;i++) slopes.push([best[i][1], best[i][2], "斜面(かたむき "+best[i][0].toFixed(1)+"/6)"]);
+      var stage=spots.concat(slopes);
+      var n=0, underGround=0, inBox=0, hits=0, minGap=1e9, worst="", upOk=true, bx0=window.__tenkyu.boxTested(true);
+      for(var s=0;s<stage.length;s++){
+        vwPlace(stage[s][0], stage[s][1], 0, 0);
+        window.__tenkyu.setView("top", false);
+        var near=[];
+        for(var m=0;m<all.length;m++){ if(Math.hypot(all[m].pos[0]-camPos[0], all[m].pos[2]-camPos[2])<T35_GRIDR+AVC.BACK*2.2) near.push(all[m]); }
+        for(var aa=0; aa<12; aa++){ for(var bb=0; bb<3; bb++){
+          yaw=aa*Math.PI/6; pitch=[-0.5,0,0.5][bb];
+          updateView(0.05, true);
+          var vs=window.__tenkyu.viewState(), e=vs.pos; n++;
+          if(vs.dist < AVC.BACK*TOPV.DIST-1e-9) hits++;
+          if(vs.topOn && !(e[1] > camPos[1])) upOk=false;      // ★符号の 実測＝まうえ の カメラは かならず 自機より 上
+          var f=camFloorAt(e[0],e[2]);
+          if(f!=null){ var gap=e[1]-f; if(gap<minGap) minGap=gap;
+            if(gap < -1e-6){ underGround++; if(!worst) worst="地面の下("+e[0].toFixed(1)+","+e[1].toFixed(1)+","+e[2].toFixed(1)+")"; } }
+          for(var q=0;q<near.length;q++){
+            if(vwPtInBox(near[q], e[0],e[1],e[2], 0)){ inBox++; if(!worst) worst="建物の中("+e[0].toFixed(1)+","+e[1].toFixed(1)+","+e[2].toFixed(1)+")"; }
+          }
+        } }
+      }
+      var bxN2=window.__tenkyu.boxTested(true)-0;
+      var okAll=(underGround===0)&&(inBox===0)&&upOk;
+      var meaningful=(stage.length>=6)&&(hits>=T35_MINHIT)&&(bxN2>0);
+      vwRestore(st);
+      d.push("しらべた 地点="+stage.length+"（市街地 "+spots.length+"・斜面 "+slopes.length+"）×むき12×上下3＝"+n+"場面");
+      d.push("★地面より 下に 入った数="+underGround+"／建物の 中に 入った数="+inBox+(worst?("（例 "+worst+"）"):"")+
+             "／いちばん 近づいた 地面までの 差="+(isFinite(minGap)?minGap.toFixed(3):"-")+"（＞0＝めり込んでいない・下限は CLR_G "+AVC.CLR_G+"）");
+      d.push("ほんとうに 縮めた 場面="+hits+"（≧"+T35_MINHIT+"）／弾22の 箱の 判定を 通った回数="+bxN2+
+             "（新しい 仕組みは 作っていない）／カメラは かならず 自機より 上="+upOk);
+      return {pass:okAll&&meaningful, detail:d.join(" / ")};
+    }
+
+    // T35c: ★どうくつ＝天井（筒の 壁）を つきぬけない／縮めきれない ときは 三人称へ 落ちる
+    function t_T35c(){
+      var st=vwSetup(), d=[], rows=[], ok=true;
+      setEnv("cave");
+      var T=window.__tenkyu.topConsts(), lim=window.__tenkyu.caveConsts();
+      // 中心／すこし上／天井ぎわ／天井に くっつく、の 4段階（★中に 居ることは 置いた 直後に 確かめる）
+      var full=AVC.BACK*T.DIST;
+      var cases=[[0.50, 0,    "まん中"], [0.35, 20,   "上のほう"],
+                 [0.62, 33,   "天井の 近く"], [0.45, 36.6, "天井に くっつく"]];
+      var shrank=0, fell=0;
+      for(var i=0;i<cases.length;i++){
+        cavePlace(cases[i][0], cases[i][1]);
+        var inside0=!window.__tenkyu.caveOutside(camPos[0],camPos[1],camPos[2]);
+        window.__tenkyu.setView("top", false);
+        stepFrames(6); updateView(0.05, true);             // うつりかわりを 待たずに その場で そろえる（弾22 T31c と 同じ 作法）
+        var vs=window.__tenkyu.viewState(), e=vs.pos;
+        var out=window.__tenkyu.caveOutside(e[0],e[1],e[2]);
+        if(out) ok=false;                                  // ★天井の 外へ 出たら その時点で だめ
+        if(!inside0) ok=false;                             // 置いた 場所が 筒の 外なら 実験に なっていない
+        if(vs.topOn && vs.topFree < full-0.05) shrank++;    // ★「縮めた」は 測った 長さ(topFree)で 見る（ゆっくり もどる 途中と 混ぜない）
+        if(!vs.topOn) fell++;
+        // 落ちた ときは 三人称と 同じ 置き場に なっている（見おろしも 0＝黙って こわれない）
+        if(!vs.topOn && !(vs.pitchAdd===0 && vs.blend===0)) ok=false;
+        rows.push(cases[i][2]+": 天井まで="+vs.topFree.toFixed(2)+"（いっぱい="+full.toFixed(2)+
+                  "）下がった="+vs.dist.toFixed(2)+" まうえ="+vs.topOn+" 見おろし="+vs.pitchAdd.toFixed(3)+" 天井の外="+out);
+      }
+      // ★ヒステリシス＝天井ぎわで ひらひら 行き来しない（同じ場所で 60フレーム 走らせて 切りかわりを 数える）
+      cavePlace(0.45, 36.3);
+      window.__tenkyu.setView("top", false); stepFrames(30);
+      var prev=window.__tenkyu.viewState().topOn, flips=0;
+      for(var f=0;f<60;f++){ stepFrames(1); var now=window.__tenkyu.viewState().topOn; if(now!==prev) flips++; prev=now; }
+      var flipOk=(flips===0);
+      var meaningful=(shrank>=1)&&(fell>=1);               // 「縮めた」も「落ちた」も 1回は 起きていないと 検査に ならない
+      vwRestore(st);
+      d.push("筒＝半径 "+lim.R+"／壁から "+T.CAVE_M+" 内がわで 止める（＝"+(lim.R-T.CAVE_M)+"）");
+      d.push(rows.join(" ／ "));
+      d.push("縮めた場面="+shrank+" 三人称へ 落ちた場面="+fell+"（どちらも 1回以上="+meaningful+"）／"+
+             "天井ぎわ60フレームでの 行き来="+flips+"回="+flipOk+"（ヒステリシス "+T.BACKON+"倍）");
+      return {pass:ok&&meaningful&&flipOk, detail:d.join(" / ")};
+    }
+
+    // T35d: ★ドローコールの 増分は 0（カメラを 動かすだけ）／毎フレームJSの 増分を 実測
+    function t_T35d(){
+      var st=vwSetup(), d=[], ids=["space","sky","ground","cave","field"], i;
+      var dcRows=[], dcOk=true;
+      for(i=0;i<ids.length;i++){
+        setEnv(ids[i]); clearHeld(); moveVec={f:0,s:0};
+        var f0=floorYAt(0,0);
+        camPos=[0,(f0!=null?f0:0),0]; camVel=[0,0,0]; yaw=0; pitch=0; yawV=0; pitchV=0;
+        boost=0; boostOn=false; boostKick=0; speedN=0; takenOff=true; takeoffKick=0;
+        window.__tenkyu.setView("third", false); stepFrames(60);
+        var dcT=window.__tenkyu.getState().drawCalls;
+        window.__tenkyu.setView("top", false); stepFrames(60);
+        var s2=window.__tenkyu.getState(), dcU=s2.drawCalls;
+        window.__tenkyu.setView("first", false); stepFrames(4);
+        var dcF=window.__tenkyu.getState().drawCalls;
+        if(dcU!==dcT) dcOk=false;                       // ★三人称と まうえで 描く回数が 同じ＝増分0
+        if(dcT!==dcF+1) dcOk=false;                     // 陰性対照＝自機の ぶんの +1 は ちゃんと ある
+        dcRows.push(ids[i]+": 一人称"+dcF+" 三人称"+dcT+" まうえ"+dcU+(s2.avatarDrawn?"(自機あり)":"(自機なし)"));
+      }
+      // 毎フレームJS＝同じ場所・同じ むきで updateView を n回。三人称と まうえの 差を 最小値どうしで くらべる
+      setEnv("field"); vwPlace(120,140,0.4,0);
+      function bench(mode){
+        window.__tenkyu.setView(mode, false); stepFrames(4); updateView(0.05, true);   // その場で そろえる＝はかる前に うつりかわりを 終わらせる
+        var best=1e9; for(var k=0;k<7;k++){ var r=window.__tenkyu.viewFrameBench(2000); var us=r.ms/r.times*1000; if(us<best) best=us; }
+        return best;
+      }
+      var usT=bench("third"), usU=bench("top");
+      // どうくつ（天井の 判定が 1つ 増える 世界）でも はかる
+      setEnv("cave"); cavePlace(0.5, 0);
+      var usTc=bench("third"), usUc=bench("top");
+      var res=perfTimerRes();
+      var delta=usU-usT, deltaC=usUc-usTc;
+      var usOk=(delta<=T35_MAX_US)&&(deltaC<=T35_MAX_US);
+      vwRestore(st);
+      d.push("★ドローコール: "+dcRows.join(" ／ ")+"＝まうえの 増分 0="+dcOk);
+      d.push("毎フレームJS（updateView 1回ぶん・描く仕事は 0・2000回×7セットの 最小値）: "+
+             "だいち 三人称"+usT.toFixed(2)+"µs→まうえ"+usU.toFixed(2)+"µs（差 "+delta.toFixed(2)+"µs）／"+
+             "どうくつ 三人称"+usTc.toFixed(2)+"µs→まうえ"+usUc.toFixed(2)+"µs（差 "+deltaC.toFixed(2)+"µs＝天井の 判定こみ）");
+      d.push("上限 "+T35_MAX_US+"µs（弾23 T32_MAX_US と 同じ けた）="+usOk+"／時計の 細かさ="+res+"ms");
+      return {pass:dcOk&&usOk, detail:d.join(" / ")};
+    }
+
+    // T35e: ★陰性対照＝既定は いちにんしょう のまま／まうえは 物理・操作を 1ビットも 変えない／符号を 実測する
+    function t_T35e(){
+      var st=vwSetup(), d=[], ids=["space","sky","ground","cave","field"];
+      var defOk=(CFG_DEFAULTS.view==="first");
+      // ①同じ 入力を 一人称→まうえ→一人称 で 走らせて 結果が 完全一致（座標・速度・むき・床・とぶちから）
+      function seqOne(id){
+        setEnv(id); clearHeld(); moveVec={f:0,s:0};
+        camPos=[0, (floorYAt(0,0)!=null?floorYAt(0,0):0)+6, 0]; camVel=[0,0,0];
+        yaw=0.3; pitch=-0.1; yawV=0; pitchV=0;
+        takenOff=true; takeoffKick=0; boost=0; boostOn=false; boostKick=0; roll=0; speedN=0;
+        stepFrames(3);
+        keys["w"]=true; stepFrames(40); keys={}; clearHeld();
+        var s=window.__tenkyu.getState();
+        return id+":"+camPos.map(function(v){return v.toFixed(6);}).join(",")+
+               "|"+camVel.map(function(v){return v.toFixed(6);}).join(",")+
+               "|"+yaw.toFixed(6)+","+pitch.toFixed(6)+
+               "|"+(s.floorY==null?"-":s.floorY.toFixed(6))+"|"+window.__tenkyu.flyState().gauge.toFixed(6);
+      }
+      function runSeq(){ var out=[]; for(var i=0;i<ids.length;i++) out.push(seqOne(ids[i])); return out; }
+      window.__tenkyu.setView("first", false);
+      var topBefore=window.__tenkyu.viewState().topSteps;
+      var A=runSeq();
+      var topAfter=window.__tenkyu.viewState().topSteps;
+      window.__tenkyu.setView("top", false); var B=runSeq();
+      window.__tenkyu.setView("first", false); var C=runSeq();
+      var sameOk=(A.join(";")===C.join(";"));
+      var neverRan=(topAfter===topBefore);      // 一人称の あいだ まうえの 道を 1度も 通っていない
+      var sameTopOk=(A.join(";")===B.join(";"));// ★まうえの あいだも 物理の 結果が まったく 同じ＝カメラの 置き場だけ
+      // ②pitch 本体は 1ビットも 変わらない（見おろしは viewPitchAdd だけに 乗る）
+      setEnv("field"); vwPlace(120,140,0.4,0.2);
+      var p0=pitch;
+      window.__tenkyu.setView("top", false);
+      var inF=0; while(inF<300 && window.__tenkyu.viewState().blend!==1){ stepFrames(5); inF+=5; }
+      var vs=window.__tenkyu.viewState(), p1=pitch;
+      var pitchUntouched=(p0===p1);
+      // ③★符号の 実測（推測で 書かない）＝pitch を ＋にすると 前が 下を 向く／まうえの カメラは 上へ 行く
+      var fwPlus=tDir(mul(rotX(0.5),rotY(0)),0,0,-1);      // pitch=+0.5 の 前
+      var signOk=(fwPlus[1]<0);                            // ＝＋で 下（forward.y = -sin(pitch)）
+      var camUp=(vs.pos[1]-camPos[1]);
+      var camBack=Math.hypot(vs.pos[0]-camPos[0], vs.pos[2]-camPos[2]);
+      var placeOk=(vs.pitchAdd>0)&&(camUp>0)&&(camBack>0)&&(vs.blend===1);
+      // ④一人称・三人称では 見おろしは かならず 0（新しい 数が 古い 道へ もれていない）
+      //   ★まうえ→三人称は **ゆっくり もどす**（TOPV.BLEND＝画面が とばない）ので、0に なるまで 実際に フレームを すすめて 見る。
+      window.__tenkyu.setView("third", false);
+      var backF=0; while(backF<300 && window.__tenkyu.viewState().blend!==0){ stepFrames(5); backF+=5; }
+      var v3=window.__tenkyu.viewState(), thirdZero=(v3.pitchAdd===0)&&(v3.blend===0)&&(v3.topOn===false);
+      window.__tenkyu.setView("first", false); stepFrames(4);
+      var v1=window.__tenkyu.viewState(), firstZero=(v1.pitchAdd===0)&&(v1.blend===0)&&(v1.dist===0)&&(v1.drawn===false);
+      // ⑤進む むきの 規則＝三人称と 同じ（式そのものを 見る＝カメラの 数は 物理に 入っていない）
+      //   ★式そのものを 読む＝地上(stepGrounded)にも 6DoF(frame の中)にも カメラの 数(viewPitchAdd/topBlend)は 1文字も 入っていない。
+      var srcPhys=String(stepGrounded)+"\n"+String(frame).split("drawScene")[0];
+      var srcOk=(srcPhys.indexOf("viewPitchAdd")<0)&&(srcPhys.indexOf("topBlend")<0);
+      vwRestore(st);
+      d.push("既定＝いちにんしょう="+defOk+"／一人称の あいだ まうえの 道を 通った回数="+(topAfter-topBefore)+"="+neverRan+
+             "／三人称の 見おろし=0="+thirdZero+"（まうえから もどりきるまで "+backF+"フレーム＝"+(backF/60).toFixed(2)+"秒）"+
+             "／一人称は 弾21のまま="+firstZero);
+      d.push("★5つの世界で 同じ入力: 一人称→まうえ→一人称 が 完全一致="+sameOk+
+             "・まうえの あいだも 一人称と 完全一致="+sameTopOk+"（座標・速度・むき・床・とぶちからを 小数6けたで）");
+      d.push("pitch 本体は 変わらない("+p0.toFixed(6)+"→"+p1.toFixed(6)+")="+pitchUntouched+
+             "／進む むきの 式に カメラの 数は 入っていない="+srcOk);
+      d.push("★符号の 実測: pitch=+0.5 の 前の y="+fwPlus[1].toFixed(4)+"（＜0＝＋で 下）="+signOk+
+             "／まうえの カメラ＝自機より 上へ "+camUp.toFixed(2)+"・うしろへ "+camBack.toFixed(2)+
+             "（見おろし "+vs.pitchAdd.toFixed(3)+"ラジアン＝"+(vs.pitchAdd*180/Math.PI).toFixed(1)+"度・"+
+             "入りきるまで "+inF+"フレーム＝"+(inF/60).toFixed(2)+"秒）="+placeOk);
+      return {pass:defOk&&neverRan&&sameOk&&sameTopOk&&pitchUntouched&&signOk&&placeOk&&thirdZero&&firstZero&&srcOk,
+              detail:d.join(" / ")};
+    }
+
+    // T35f: 回帰＝既存 T1〜T34f が 1件も 余分に 落ちていない（既知の T17・T22b・T24b SKIP/失敗を のぞく）
+    function t_T35f(){
+      var need=["T1","T2","T2f","T2n","T3","T3c","T4","T5","T6","T7","T8","T9","T10","T11","T12","T13","T14",
+                "T15","T16","T17","T18","T19a","T19b","T19c","T19d","T20a","T20b","T20c","T20d","T20e",
+                "T21a","T21b","T21c","T21d","T21e","T21f","T21i","T21g","T22a","T22b","T22c",
+                "T23a","T23b","T23c","T23d","T23e","T25a","T25b","T25c","T25d","T25e","T25f",
+                "T24a","T24b","T24c","T24d","T24e","T24f","T26a","T27a","T27b","T27c","T27d","T27e","T27f",
+                "T28a","T28b","T28c","T28d","T28e","T28f","T29a","T29b","T29c","T29d","T29e",
+                "T30a","T30b","T30c","T30d","T30e","T31a","T31b","T31c","T31d","T31e","T31f",
+                "T32a","T32b","T32c","T32d","T32e","T33a","T33b","T33c","T33d","T33e","T33f",
+                "T34a","T34b","T34c","T34d","T34e","T34f","T35a","T35b","T35c","T35d","T35e"];
+      var missing=[], failed=[], skipped=[];
+      for(var i=0;i<need.length;i++){
+        var r=null;
+        for(var j=0;j<_ranResults.length;j++){ if(_ranResults[j].id===need[i]){ r=_ranResults[j]; break; } }
+        if(!r) missing.push(need[i]);
+        else if(r.skip) skipped.push(need[i]);
+        else if(!r.pass) failed.push(need[i]);
+      }
+      var known=regKnown(failed);
+      var realFails=failed.filter(function(x){ return known.indexOf(x)<0; });
+      // 弾26も「足しただけ」＝弾25までの 操作・判定の 道を 1本も 消していない
+      var pathOk=(typeof hudOn==="function")&&(typeof onJumpDown==="function")&&(GRND.HOLD_SEC===0.18)&&
+                 (typeof touchLayout==="function")&&(TUI.STICK===132)&&(TUI.JUMP_W===96)&&
+                 (typeof stepBattle==="function")&&(typeof battleHurt==="function")&&
+                 (typeof viewFreeT==="function")&&(AVC.BACK===6.5)&&(AVC.STEP===8)&&(AVC.REFINE===3)&&
+                 (ENVS.field.locomotion==="grounded")&&(ENVS.space.locomotion===undefined)&&
+                 (ENVS.field.battle===true)&&(ENVS.space.battle===undefined);
+      // ⚙の 逃げ道は ぜんぶ 生きている（弾26で 1つも 消していない）
+      var gearOk=!!document.getElementById("s-view")&&!!document.getElementById("s-tidy")&&
+                 !!document.getElementById("s-hidetools")&&!!document.getElementById("s-touchlook")&&
+                 !!document.getElementById("s-map")&&!!document.getElementById("btn-peek")&&
+                 !!document.getElementById("s-battle")&&!!document.getElementById("s-enemies");
+      // 弾26で 足した 器＝👁は 1つだけ・道具の ならびに 入っている（＝「すっきり」で 一緒に かくれる）
+      var vb=document.getElementById("btn-view");
+      var oneOnly=(document.querySelectorAll("#btn-view").length===1)&&
+                  (TOOL_IDS.indexOf("btn-view")>=0)&&(TOOL_IDS.length===TUI.TB_N)&&(tuiEls().tools.length===TUI.TB_N)&&
+                  (touchLayout(390,844).tools.length===TUI.TB_N);
+      // 「すっきり」で 他の道具と 一緒に かくれ、⊕で もどる（実物の class で 見る）
+      var hid0=!!cfg.hideTools;
+      cfg.hideTools=true; applyHudVisibility();
+      var goneOk=!!vb && vb.classList.contains("gone");
+      cfg.hideTools=false; applyHudVisibility();
+      var backOk=!!vb && !vb.classList.contains("gone");
+      cfg.hideTools=hid0; applyHudVisibility();
+      var newOk=oneOnly&&goneOk&&backOk;
+      return {pass:(missing.length===0)&&(realFails.length===0)&&pathOk&&gearOk&&newOk,
+        detail:"登録もれ="+(missing.join(",")||"なし")+" 既知以外の失敗="+(realFails.join(",")||"なし")+
+               " 既知の失敗="+(failed.join(",")||"なし")+" 判定不能="+(skipped.join(",")||"なし")+
+               " 弾25までの道は そのまま="+pathOk+" ⚙の逃げ道="+gearOk+
+               " 👁は1つだけ・道具"+TUI.TB_N+"個に 入っている="+oneOnly+" すっきりで かくれる="+goneOk+" ⊕で もどる="+backOk};
+    }
+
     window.__tenkyu.runAll = async function(){
       if(!window.__testErrCount){ window.__testErrCount=0;
         var _ce=console.error.bind(console);
@@ -10294,6 +10791,10 @@
       //   T33f を ふくむ 前の 網の 判定基準は 1ビットも 動かしていない＝T33f の 後ろに 置く）
       await run("T34a",t_T34a); await run("T34b",t_T34b); await run("T34c",t_T34c);
       await run("T34d",t_T34d); await run("T34e",t_T34e); await run("T34f",t_T34f);
+      // 弾26 §R21（見え方の ボタンと まうえ。★T35f は 前の 網を ぜんぶ 見るので 必ず いちばん最後。
+      //   T34f を ふくむ 前の 網の 判定基準は 1ビットも 動かしていない＝T34f の 後ろに 置く）
+      await run("T35a",t_T35a); await run("T35b",t_T35b); await run("T35c",t_T35c);
+      await run("T35d",t_T35d); await run("T35e",t_T35e); await run("T35f",t_T35f);
       // 復元＝本当のプレイヤー進行・設定・カメラを一切壊さない
       swooshCount=snapSwoosh.count; swooshLast=snapSwoosh.last;   // persistSave()のnearMiss焼き込み前に実行順を戻す
       save=snapSave; persistSave(); syncVisitedBuffer(); completedConstellations=recomputeCompletedConstellations(); buildLines();
@@ -10301,7 +10802,7 @@
       camPos=snapCam.pos; yaw=snapCam.yaw; pitch=snapCam.pitch; camVel=snapCam.vel; boost=0; boostOn=false; speedN=0;
       clearHeld(); flyGauge=GRND.GAUGE_MAX; updateFlyHud();   // 弾12: 押しっぱなし・ゲージをテスト前の素の状態へ戻す
       // 弾22 §R19: 見え方も テスト前の 素の状態へ（⚙の 見た目も 合わせ、カメラの 当たり判定も その場で 合わせ直す）
-      var _sv=document.getElementById("s-view"); if(_sv) _sv.value=cfg.view; updateView(0, true);
+      syncViewUI(); updateView(0, true);   // 弾26 §R21: ⚙も 👁の 絵と ことばも 同じ 1本で もどす
       // 弾24 §R19: 戦闘も テスト前の 素の状態へ（いのちは まんたん・敵は 生まれた すがた・数えものは 0）
       window.__tenkyu.enemyCount((+cfg.enemies)|0);
       window.__tenkyu.setBattle(!!cfg.battle, false); window.__tenkyu.battleReset(); applyBattleUi();
