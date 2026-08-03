@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-08-04 08:19:05",
+  "generated_at": "2026-08-04 08:25:05",
   "gpu": {
     "occupant": "画像/音楽生成中（ComfyUI）",
     "note": "ファイル: live_illust",
-    "vram_used_gb": 13.5,
+    "vram_used_gb": 13.4,
     "vram_total_gb": 15.9,
-    "util": 100,
+    "util": 99,
     "lock": {
       "locked": false,
       "holder": null,
@@ -41,7 +41,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-04 08:17",
+    "updated": "2026-08-04 08:23",
     "current": null
   },
   "queue": [
@@ -128,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 12
+    "push_today": 13
   },
   "ai_works": [
     {
@@ -205,8 +205,8 @@
     }
   ],
   "resources": {
-    "cpu_pct": 16,
-    "mem_pct": 59,
+    "cpu_pct": 67,
+    "mem_pct": 58,
     "mem_total_gb": 31.7,
     "disk_used_gb": 365.9,
     "disk_free_gb": 1495.9
