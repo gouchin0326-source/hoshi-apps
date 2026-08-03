@@ -482,6 +482,12 @@
     <option value="1000">1000</option>
     <option value="2000">2000（いちばん多い）</option>
   </select>
+  <!-- 弾28 §R23: 箱に命を入れる。★切ると 弾27と まったく 同じ 見た目・同じ 数に もどる（いつでも 元に もどせる）。 -->
+  <div class="chk"><input type="checkbox" id="s-mob-rich" checked><label for="s-mob-rich" style="margin:0">🧸 生きものを こまかく つくる（からだ・手足の うごき・気づく）</label></div>
+  <div class="chk"><input type="checkbox" id="s-rich-shape" checked><label for="s-rich-shape" style="margin:0">　①かたち（からだを 箱の 組にする）</label></div>
+  <div class="chk"><input type="checkbox" id="s-rich-motion" checked><label for="s-rich-motion" style="margin:0">　②うごき（手足を ふる・はばたく・息をする）</label></div>
+  <div class="chk"><input type="checkbox" id="s-rich-variety" checked><label for="s-rich-variety" style="margin:0">　③ひとりひとり ちがう（うごきの ずれ）</label></div>
+  <div class="chk"><input type="checkbox" id="s-rich-action" checked><label for="s-rich-action" style="margin:0">　④気づく（近づくと こちらを 見て にげる）</label></div>
   <div class="chk"><input type="checkbox" id="s-mob-near" checked><label for="s-mob-near" style="margin:0">近くの子だけ かんがえる（切ると おもくなります）</label></div>
   <div class="chk"><input type="checkbox" id="s-mob-tick" checked><label for="s-mob-tick" style="margin:0">毎フレームは かんがえない（切ると おもくなります）</label></div>
   <div class="chk"><input type="checkbox" id="s-mob-grid" checked><label for="s-mob-grid" style="margin:0">近くの相手だけ さがす（切ると おもくなります）</label></div>
@@ -677,6 +683,8 @@
       //   battleLevel＝敵の つよさ（"easy"＝やさしい／"normal"＝ふつう）／battlePeace＝敵は おそってこない。
       //   battleTold＝はじめの1回だけ「たたかう あそびが あります」と 伝えたか（save には 1ビットも 足さない）。
       battle:true, battleLevel:"normal", battlePeace:false, battleTold:false, enemies:24,
+      // 弾28 §R23: 箱に命を入れる（形＝箱の組・動きは ぜんぶ 頂点シェーダーの中）。★切ると 弾27と まったく 同じ 見た目と 数に もどる。
+      mobRich:true,
       simpleScene:false };  // 弾11 §R9: 「けしきを かんたんにする」既定OFF＝地形は既定で出る（ONで地形の1ドローコールを飛ばす）
   var cfg = Object.assign({}, CFG_DEFAULTS,
     (function(){ try{ return JSON.parse(localStorage.getItem(CFG_KEY))||{}; }catch(e){ return {}; } })());
@@ -713,6 +721,8 @@
   var debugEnemies=dbgNum("enemies"), debugNoBattle=dbgHas("nobattle");
   // 節約の技を1つずつ切って「効いているか」を対照実験できるようにする（既定はぜんぶON）
   var debugNoNear=dbgHas("nonear"), debugNoTick=dbgHas("notick"), debugNoGrid=dbgHas("nogrid");
+  // 弾28 §R23: 作り込み（箱の組・手足のふり・気づく）を 切って くらべるための スイッチ（?debug=norich）。既定はON。
+  var debugNoRich=dbgHas("norich");
 
   var EMBED = { count:12, stars:[
     {id:"e01",title:"灰の祈り",type:"song",image:null,audio:null,date:"2026-07-05",hue:275,constellation:"2026-07"},
@@ -1019,7 +1029,12 @@
   var bdProg = prog(
     HEAD+"layout(location=0) in vec3 a_pos; layout(location=1) in vec3 a_nrm;"+
     "layout(location=2) in vec4 i_orb; layout(location=3) in vec4 i_flk; layout(location=4) in vec4 i_bod;"+
+    // 弾28 §R23: a_rig=(はばたきの むき −1/0/+1, つばさの つけね(x), 予備)。★これが ぜんぶ 0 のとき、
+    //   下の 式は 弾27の 式へ ぴったり もどる（cos0=1・sin0=0・つけね0＝引いて足す 相手が 0）。
+    //   だから 同じ器に 相乗りしている 敵(弾24)と 弾(弾25)は この属性を 持たないまま 1ビットも 変わらない。
+    "layout(location=5) in vec3 a_rig;"+
     "uniform mat4 u_vp; uniform vec4 u_fog; uniform float u_time; uniform float u_slow;"+
+    "uniform float u_anim; uniform float u_vary;"+
     "out vec3 v_nrm; out vec3 v_col; out float v_fog;"+
     "void main(){ float ang = i_orb.z + u_time*i_orb.y*u_slow;"+          // ①旋回（群れごとに同じ速さ＝ばらけない）
     "float bob = sin(u_time*i_flk.w*u_slow + i_orb.z*3.1)*i_flk.z;"+      // ②上下のうねり（鳥ごとに位相がちがう）
@@ -1027,8 +1042,17 @@
     "float th = 3.14159265 - ang;"+                                       // 進む向きへ 体をむける（-z が前）
     "float s=sin(th), c=cos(th);"+
     "vec3 q=(a_pos-vec3(0.0,0.5,0.0))*vec3(i_bod.x*2.6, i_bod.x*0.5, i_bod.x*1.1);"+   // よこ長＝つばさ・うすい・まん中ぞろえ
+    // 弾28 §R23②: はばたき＝位相は (個体id, 時刻) の 純関数。gl_InstanceID が そのまま「その鳥の 番号」。
+    //   ★JSは 1行も 増えない・GPUへ 毎フレーム 送る 中みも 増えない（弾22の 自機と 同じ 作法）。
+    // 段3（個体差）＝u_vary を 0 に すると 個体idの 項が 消えて みな 同じ 位相で そろう。
+    //   ★式の 形は 1文字も 変わらない＝段3の 費用が「掛け算 1つぶん」であることを 目で 見せる。
+    "float rate = 6.2 + mod(float(gl_InstanceID), 7.0)*0.35*u_vary;"+
+    "float fl = a_rig.x * u_anim * 0.62 * sin(float(gl_InstanceID)*1.7*u_vary + u_time*rate*u_slow);"+
+    "float px = a_rig.y * i_bod.x * 2.6, cf=cos(fl), sf=sin(fl);"+
+    "q = vec3(px + (q.x-px)*cf - q.y*sf, (q.x-px)*sf + q.y*cf, q.z);"+
+    "vec3 nl = vec3(a_nrm.x*cf - a_nrm.y*sf, a_nrm.x*sf + a_nrm.y*cf, a_nrm.z);"+
     "vec3 wp=vec3(q.x*c+q.z*s, q.y, -q.x*s+q.z*c)+ctr;"+
-    "vec3 n=vec3(a_nrm.x*c+a_nrm.z*s, a_nrm.y, -a_nrm.x*s+a_nrm.z*c);"+
+    "vec3 n=vec3(nl.x*c+nl.z*s, nl.y, -nl.x*s+nl.z*c);"+
     "gl_Position=u_vp*vec4(wp,1.0); float w=max(gl_Position.w,0.001);"+
     "v_fog=exp(-pow(w*u_fog.a, 2.0));"+                                   // 地形・村と同じ式のかすみ
     "v_nrm=n; v_col=i_bod.yzw; }",
@@ -1040,6 +1064,7 @@
     "lit=mix(u_fog.rgb, lit, v_fog);"+
     "o=vec4(lit,1.0); }");
   var bd_vp=gl.getUniformLocation(bdProg,"u_vp"), bd_fog=gl.getUniformLocation(bdProg,"u_fog"),
+      bd_anim=gl.getUniformLocation(bdProg,"u_anim"), bd_vary=gl.getUniformLocation(bdProg,"u_vary"),
       bd_time=gl.getUniformLocation(bdProg,"u_time"), bd_slow=gl.getUniformLocation(bdProg,"u_slow"),
       bd_sun=gl.getUniformLocation(bdProg,"u_sun"), bd_sunc=gl.getUniformLocation(bdProg,"u_sunc"),
       bd_sky=gl.getUniformLocation(bdProg,"u_sky");
@@ -1054,14 +1079,30 @@
     HEAD+"layout(location=0) in vec3 a_pos; layout(location=1) in vec3 a_nrm;"+
     "layout(location=2) in vec3 i_p0; layout(location=3) in vec3 i_p1; layout(location=4) in vec2 i_yaws;"+
     "layout(location=5) in vec3 i_size; layout(location=6) in vec3 i_col;"+
-    "uniform mat4 u_vp; uniform vec4 u_fog; uniform float u_alpha;"+
+    // 弾28 §R23: a_rig=(ふりの むき −1/0/+1, つけねの 高さ(たての 割合), 足なら つけねの おくゆき／足でなければ 息づかいの 深さ)。
+    //   ★ぜんぶ 0 のとき 下の 式は 弾27の 式へ ぴったり もどる＝この器に 相乗りしている 敵(弾24)・弾(弾25)は
+    //   この属性を 持たない（＝0,0,0 が 入る）ので 1ビットも 変わらない。
+    "layout(location=7) in vec3 a_rig;"+
+    "uniform mat4 u_vp; uniform vec4 u_fog; uniform float u_alpha; uniform float u_time; uniform float u_anim; uniform float u_vary;"+
     "out vec3 v_nrm; out vec3 v_col; out float v_fog;"+
     "void main(){ vec3 ctr=mix(i_p0, i_p1, u_alpha);"+
     "float dd=i_yaws.y-i_yaws.x; dd=mod(dd+3.14159265, 6.28318531)-3.14159265;"+   // 向きは 近いほうへ まわす（一周ぶん逆走しない）
     "float th=i_yaws.x+dd*u_alpha, s=sin(th), c=cos(th);"+
     "vec3 q=a_pos*i_size;"+
+    // 弾28 §R23②: あしの ふり＝速さは「前に考えた位置と いま考えた位置の へだたり」から その場で 出す。
+    //   ★だから 止まれば あしも 止まり、にげれば あしが 速くなる＝JSから 何も 送らずに 動きが つながる。
+    //   位相は (個体id, 時刻) の 純関数＝毎フレームの JS も GPUへの 転送も 1バイトも 増えない。
+    "float mv = length(i_p1.xz - i_p0.xz);"+
+    "float isLeg = abs(a_rig.x);"+
+    "float sw = a_rig.x * u_anim * (0.10 + min(mv,0.6)*0.62) * sin(float(gl_InstanceID)*2.39996*u_vary + u_time*(3.4 + min(mv,0.9)*9.0));"+
+    "float py = a_rig.y * i_size.y, pz = a_rig.z * i_size.z * isLeg;"+
+    "float cw=cos(sw), sq=sin(sw), dy=q.y-py, dz=q.z-pz;"+
+    "q = vec3(q.x, py + dy*cw - dz*sq, pz + dy*sq + dz*cw);"+
+    // 息づかい（足では ない 部品だけ）＝遠くて「考えて いない」子でも 生きて見える。これも 純関数＝タダ。
+    "q.y += a_rig.z*(1.0-isLeg) * u_anim * i_size.y * sin(u_time*1.7 + float(gl_InstanceID)*0.9*u_vary);"+
+    "vec3 nl = vec3(a_nrm.x, a_nrm.y*cw - a_nrm.z*sq, a_nrm.y*sq + a_nrm.z*cw);"+
     "vec3 wp=vec3(q.x*c+q.z*s, q.y, -q.x*s+q.z*c)+ctr;"+
-    "vec3 n=vec3(a_nrm.x*c+a_nrm.z*s, a_nrm.y, -a_nrm.x*s+a_nrm.z*c);"+
+    "vec3 n=vec3(nl.x*c+nl.z*s, nl.y, -nl.x*s+nl.z*c);"+
     "gl_Position=u_vp*vec4(wp,1.0); float w=max(gl_Position.w,0.001);"+
     "v_fog=exp(-pow(w*u_fog.a, 2.0));"+
     "v_nrm=n; v_col=i_col; }",
@@ -1074,6 +1115,8 @@
     "o=vec4(lit,1.0); }");
   var mb_vp=gl.getUniformLocation(mbProg,"u_vp"), mb_fog=gl.getUniformLocation(mbProg,"u_fog"),
       mb_alpha=gl.getUniformLocation(mbProg,"u_alpha"),
+      mb_time=gl.getUniformLocation(mbProg,"u_time"), mb_anim=gl.getUniformLocation(mbProg,"u_anim"),
+      mb_vary=gl.getUniformLocation(mbProg,"u_vary"),
       mb_sun=gl.getUniformLocation(mbProg,"u_sun"), mb_sunc=gl.getUniformLocation(mbProg,"u_sunc"),
       mb_sky=gl.getUniformLocation(mbProg,"u_sky");
 
@@ -2247,6 +2290,78 @@
   // 守っていること（§R13「守ること」）: 敵を作らない・襲ってこない・失敗状態を作らない／作品星より小さく暗く・
   //   ピッキング対象にしない／形は箱＝新規アセット0／だいちの世界だけ（既存4環境は mobs キー自体が無い＝完全に不変）。
 
+  // ================= 弾28 §R23: 箱に命を入れる =================
+  // ★この節の 予算（司令塔が 先に 宣言した数。超えたら 実装を もどす）:
+  //     ドローコール +0 ／ 三角形 +30,000まで ／ 毎フレームJS +30µsまで ／ 画像・音は 1バイトも 足さない。
+  // ★作り込みの 4段（安い順）＝ ①形は 箱の組 ②動きは ぜんぶ 頂点シェーダーの中（位相は (個体id,時刻) の純関数）
+  //     ③個体差は 個体idから ④アクション（状態を持つ動き）は NEAR の 中の 少数だけ。
+  // ★捨てた案＝テクスチャ画像／1体ごとに ちがうモデル／物理演算の 歩行／シャドウマップ（§R23に 理由）。
+  var mobRich = !debugNoRich && (cfg.mobRich!==false);
+  // ★干場の 目的（2026-08-03）＝「4段が 問題なく 作れるのか」。だから **4段は 1段ずつ 独立に 切れる**。
+  //   全部入りで「予算内でした」では どの段が 効いて どの段が 危ないかが 分からない＝目的を 果たさない。
+  //   ?debug=noshape,nomotion,novariety,noaction で 1段ずつ 切れる（⚙にも 4つ 出す）。
+  var RICH = { shape:!dbgHas("noshape"), motion:!dbgHas("nomotion"),
+               variety:!dbgHas("novariety"), action:!dbgHas("noaction") };
+  //   ★段は かならず 親（作り込み全体）と かけ算する＝親を 切れば 4段とも 消えて 弾27に 完全に もどる。
+  function rShape(){   return mobRich && RICH.shape; }
+  function rMotion(){  return mobRich && RICH.motion; }
+  function rVariety(){ return mobRich && RICH.variety; }
+  function rAction(){  return mobRich && RICH.action; }
+  // ゆれの 深さ。★prefers-reduced-motion（動きを少なくする）では 0＝ぴたりと 止まる。
+  function richAnim(){ return reduceActive ? 0 : (comfortActive ? 0.55 : 1); }
+  // 段2（動き）と 段3（個体差）を シェーダーへ わたす 数。切れば 0＝式は そのまま で 効果だけ 消える。
+  function richMotionAmt(){ return rMotion() ? richAnim() : 0; }
+  function richVaryAmt(){   return rVariety() ? 1 : 0; }
+  // 箱の組を「1つの形」として GPUへ わたす道具。★ドローコールは 増えない＝
+  //   インスタンス1つぶんの 中みが「箱1個」から「箱n個」に なるだけ（村・鳥・自機と まったく 同じ 様式）。
+  //   parts[i] = { name, off:[まん中x, 下端y, まん中z], size:[よこ,たて,おくゆき], rig:[ふりのむき, つけねの高さ, つけねのおくゆき or 息づかい] }
+  //   scale/center/rigDiv＝シェーダーが あとから かける 伸ばし方の 逆数を 先に 焼いておくための もの
+  //   （鳥の器は よこ長に 伸ばしてから 使うので、そのままでは つばさが つぶれる）。
+  function partsMesh(parts, scale, center, rigDiv){
+    var sc=scale||[1,1,1], ct=center||[0,0,0], rd=rigDiv||[1,1,1];
+    var CB=cube36(), n=parts.length, V=36*n;
+    var pos=new Float32Array(V*3), nrm=new Float32Array(V*3), rig=new Float32Array(V*3), q=0;
+    for(var p=0;p<n;p++){ var P=parts[p];
+      for(var v=0;v<36;v++){
+        var x=P.off[0]+CB.pos[v*3]*P.size[0], y=P.off[1]+CB.pos[v*3+1]*P.size[1], z=P.off[2]+CB.pos[v*3+2]*P.size[2];
+        pos[q*3]=x/sc[0]+ct[0]; pos[q*3+1]=y/sc[1]+ct[1]; pos[q*3+2]=z/sc[2]+ct[2];
+        nrm[q*3]=CB.nrm[v*3]; nrm[q*3+1]=CB.nrm[v*3+1]; nrm[q*3+2]=CB.nrm[v*3+2];
+        rig[q*3]=P.rig[0]/rd[0]; rig[q*3+1]=P.rig[1]/rd[1]; rig[q*3+2]=P.rig[2]/rd[2]; q++; } }
+    return { pos:pos, nrm:nrm, rig:rig, verts:V, tris:V/3, parts:n,
+             bytes:pos.byteLength+nrm.byteLength+rig.byteLength };
+  }
+  // ✎鳥の 部品（4個）。単位は「体の 大きさ i_bod.x」。前は −z。★弾27の 板1枚（よこ±1.3）と ほぼ 同じ さしわたし＝
+  //   作品星より 小さく 保つ 不変条件を 崩さない。つばさは つけね(x=±0.17)で 上下に はばたく。
+  var BIRD_PARTS = [
+    { name:"どう",       off:[ 0.00,-0.16, 0.00], size:[0.34,0.32,1.00], rig:[ 0, 0.00, 0] },
+    { name:"あたま",     off:[ 0.00,-0.10,-0.62], size:[0.26,0.24,0.30], rig:[ 0, 0.00, 0] },
+    { name:"みぎつばさ", off:[ 0.72,-0.04, 0.02], size:[1.10,0.08,0.60], rig:[ 1, 0.17, 0] },
+    { name:"ひだりつばさ",off:[-0.72,-0.04, 0.02], size:[1.10,0.08,0.60], rig:[-1,-0.17, 0] }
+  ];
+  // ✎生きものの 部品（6個）。単位は 弾27の 箱そのもの（よこ・おくゆき ±0.5／たて 0〜1）＝
+  //   ★外がわの 大きさは 1ミリも 変えない＝足もとは y=0 で 地面に つき、頭は 1.0 を こえない。
+  //   あしは たすきがけ（右前と左後ろが 同じ むき）＝四つ足の 歩き方に 見える。
+  var MOB_PARTS = [
+    { name:"どう",           off:[ 0.00,0.42, 0.00], size:[0.62,0.40,0.94], rig:[ 0, 0.00, 0.045] },
+    { name:"あたま",         off:[ 0.00,0.58, 0.30], size:[0.38,0.34,0.36], rig:[ 0, 0.00, 0.075] },
+    { name:"みぎまえあし",   off:[ 0.20,0.00, 0.30], size:[0.16,0.44,0.18], rig:[ 1, 0.44, 0.30] },
+    { name:"ひだりまえあし", off:[-0.20,0.00, 0.30], size:[0.16,0.44,0.18], rig:[-1, 0.44, 0.30] },
+    { name:"みぎうしろあし", off:[ 0.20,0.00,-0.30], size:[0.16,0.44,0.18], rig:[-1, 0.44,-0.30] },
+    { name:"ひだりうしろあし",off:[-0.20,0.00,-0.30],size:[0.16,0.44,0.18], rig:[ 1, 0.44,-0.30] }
+  ];
+  // ★頂点シェーダーと 同じ式の JS側の うつし（birdPosAt と 同じ 役目）。
+  //   テストが「同じ (個体id, 時刻) なら 同じ 姿勢か」を 画素を 見ずに 確かめるために 使う。
+  function birdFlapAt(i, t, dir){
+    var v=richVaryAmt(), rate=6.2 + (i%7)*0.35*v, slow=(comfortActive||reduceActive)?BIRD.SLOW:1;
+    return (dir||1) * richMotionAmt() * 0.62 * Math.sin(i*1.7*v + t*rate*slow);
+  }
+  function mobSwingAt(i, t, mv, dir){
+    var m=(mv||0), v=richVaryAmt();
+    return (dir||1) * richMotionAmt() * (0.10 + Math.min(m,0.6)*0.62) * Math.sin(i*2.39996*v + t*(3.4 + Math.min(m,0.9)*9.0));
+  }
+  function mobBreathAt(i, t, depth){ return (depth||0) * richMotionAmt() * Math.sin(t*1.7 + i*0.9*richVaryAmt()); }
+  // ================= 弾28 の 部品表 ここまで =================
+
   // ---------- A群: 空をとぶ鳥（シェーダーで動く＝毎フレームのJSは0） ----------
   var BIRD = {
     MAX:      2000,   // ✎ 用意しておく上限（起動時に1回だけ作る。体数を減らしても 作りなおさない＝切りかえが すぐ効く）
@@ -2263,6 +2378,8 @@
   // ✎鳥の色（作品星より暗い＝空にとける影のような見え方。テクスチャ画像は いっさい使わない）
   var BIRD_COL = [[0.16,0.15,0.17],[0.23,0.21,0.19],[0.13,0.14,0.18],[0.28,0.25,0.21]];
   var bdVAO=null, bdBufs=[], bdBuilt=0, bdTris=0, bdBytes=0, bdBuildMs=0, bdUploads=0, lastBirdOn=false, bdShown=0;
+  // 弾28 §R23: 箱の組の 器（弾27の 1箱の 器 bdVAO は そのまま 残す＝作り込みOFF で 完全に もどれる）
+  var bdRVAO=null, bdRBufs=[], bdRVerts=0, bdRTris=0, bdRBytes=0, bdRParts=0;
   var bdOrb=null, bdFlk=null, bdBod=null;
   // ★これが鳥の動きそのもの＝JS側の「うつし」。本物は頂点シェーダーの中で動いている（同じ式を1行ずつ写した物）。
   //   T24a はこれで「位置が (その鳥の種, 時刻) の純関数であること」を見る。シェーダーが動かしている証拠は
@@ -2318,6 +2435,21 @@
     gl.bindVertexArray(null);
     bdUploads=3;   // ★属性をGPUへ送った回数。以後ずっと3のまま＝JSが毎フレーム位置を作っていない証拠（§G T24a）
     bdBufs=[pb,nb,ob,fb,bb]; bdBuilt=n; bdTris=12;
+    // 弾28 §R23: 箱の組の 器（作り込みON のとき だけ 使う）。★同じ 鳥の属性(ob/fb/bb)を そのまま 見る＝
+    //   バッファは 1つも 増えない・毎フレームの 転送も 増えない。ドローコールも 1回のまま（器を 差しかえるだけ）。
+    var RM=partsMesh(BIRD_PARTS, [2.6,0.5,1.1], [0,0.5,0], [1,2.6,1]);
+    bdRVerts=RM.verts; bdRTris=RM.tris; bdRBytes=RM.bytes; bdRParts=RM.parts;
+    bdRVAO=gl.createVertexArray(); gl.bindVertexArray(bdRVAO);
+    var rp=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,rp); gl.bufferData(gl.ARRAY_BUFFER,RM.pos,gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,3,gl.FLOAT,false,0,0);
+    var rn=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,rn); gl.bufferData(gl.ARRAY_BUFFER,RM.nrm,gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1,3,gl.FLOAT,false,0,0);
+    gl.bindBuffer(gl.ARRAY_BUFFER,ob); gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2,4,gl.FLOAT,false,0,0); gl.vertexAttribDivisor(2,1);
+    gl.bindBuffer(gl.ARRAY_BUFFER,fb); gl.enableVertexAttribArray(3); gl.vertexAttribPointer(3,4,gl.FLOAT,false,0,0); gl.vertexAttribDivisor(3,1);
+    gl.bindBuffer(gl.ARRAY_BUFFER,bb); gl.enableVertexAttribArray(4); gl.vertexAttribPointer(4,4,gl.FLOAT,false,0,0); gl.vertexAttribDivisor(4,1);
+    var rr=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,rr); gl.bufferData(gl.ARRAY_BUFFER,RM.rig,gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(5); gl.vertexAttribPointer(5,3,gl.FLOAT,false,0,0);
+    gl.bindVertexArray(null); bdRBufs=[rp,rn,rr];
     bdBytes=CB.pos.byteLength+CB.nrm.byteLength+bdOrb.byteLength+bdFlk.byteLength+bdBod.byteLength;
     bdBuildMs=+(performance.now()-t0).toFixed(2);
   }
@@ -2336,7 +2468,12 @@
     TURN:      1.0,   // ✎ 向きのゆらぎ（ラジアン/秒）＝目的地をもたず ぶらぶら歩く（経路探索は使わない＝§R13の捨案）
     HOME:       52,   // ✎ 村の中心から これ以上はなれたら もどる（村のまわりに居つく）
     SIZE_MIN: 0.72, SIZE_SPAN:0.46,
-    SLOW:      0.5    // ✎ 快適モード／うごきを少なくする ときの 速さの倍率
+    SLOW:      0.5,   // ✎ 快適モード／うごきを少なくする ときの 速さの倍率
+    // 弾28 §R23④: アクション（状態を もつ 動き）。★NEAR(260)より ずっと 小さい＝考える 子の 中の さらに 少数だけ。
+    ALERT:      22,   // ✎ これより 近づくと 気づく
+    HOLD:      0.9,   // ✎ 立ちどまって こちらを 見ている 秒数
+    FLEE:      2.4,   // ✎ にげる 秒数
+    FLEE_MUL:  1.7    // ✎ にげるときの 速さの 倍率
   };
   // ✎生きものの色（地面と村になじむ・作品星より暗い）
   var MOB_COL = [[0.55,0.47,0.35],[0.42,0.36,0.30],[0.62,0.58,0.50],[0.36,0.40,0.32],[0.50,0.42,0.42]];
@@ -2345,6 +2482,13 @@
   var mobX=null, mobZ=null, mobH=null, mobSpd=null, mobPh=null, mobW=null, mobHx=null, mobHz=null;
   var mbHead=null, mbNext=null, MB_GW=0;
   var mbBuilt=0, mbBytes=0, mbBuildMs=0, mbUploads=0, lastMobOn=false, mbShown=0;
+  // 弾28 §R23: 箱の組の 器（弾27の 1箱の 器 mbVAO は そのまま 残す＝作り込みOFFで 完全に もどれる）
+  var mbRVAO=null, mbRBufs=[], mbRVerts=0, mbRTris=0, mbRBytes=0, mbRParts=0;
+  // 弾28 §R23④: アクション（状態を もつ 動き）＝0:ぶらぶら 1:きづいて こちらを 見る 2:にげる。
+  //   ★NEAR の 中の さらに 近い 少数だけが これを 持つ＝遠い子は 純関数のまま（弾15の「近くだけ考える」に 相乗り）。
+  var mobAct=null, mobActT=null, mobActive=0, mobRichSteps=0, mobActTick=0;
+  // 弾28: GPUへ 毎フレーム 送った バイト数。★段2/段3が「転送を 1バイトも 増やさない」ことを 数で 見る。
+  var mbUpBytes=0;
   var mobT=0, mobAcc=0, mobAlpha=1, mobTicks=0, mobThought=0, mobThinkMs=0;
   // 節約の技（既定はぜんぶON。1つずつ切って「効いているか」を対照実験できる＝§G T24c）
   var mobNear=!debugNoNear, mobTickSave=!debugNoTick, mobGrid=!debugNoGrid;
@@ -2358,6 +2502,8 @@
     mbP0=new Float32Array(n*3); mbP1=new Float32Array(n*3); mbYw=new Float32Array(n*2);
     mbSize=new Float32Array(n*3); mbCol=new Float32Array(n*3);
     mobX=new Float32Array(n); mobZ=new Float32Array(n); mobH=new Float32Array(n); mobSpd=new Float32Array(n);
+    mobAct=new Uint8Array(n); mobActT=new Float32Array(n);   // 弾28 §R23④
+
     mobPh=new Float32Array(n); mobW=new Float32Array(n); mobHx=new Float32Array(n); mobHz=new Float32Array(n);
     // 村のまわりに 順ぐりに 割りあてる＝体数を減らしても どの村にも まんべんなく残る（くらべるとき 場面が変わらない）
     var sites=villages.length ? villages : [{center:[0,heightAt(0,0),0], radius:60}];
@@ -2396,6 +2542,23 @@
     var lb=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,lb); gl.bufferData(gl.ARRAY_BUFFER,mbCol,gl.STATIC_DRAW);
     gl.enableVertexAttribArray(6); gl.vertexAttribPointer(6,3,gl.FLOAT,false,0,0); gl.vertexAttribDivisor(6,1);
     gl.bindVertexArray(null);
+    // 弾28 §R23: 箱の組の 器。★位置・向き(mbP0Buf/mbP1Buf/mbYwBuf)は 同じ バッファを そのまま 見る＝
+    //   1秒に10回の 転送は 1バイトも 増えない。ドローコールも 1回のまま。
+    var RM2=partsMesh(MOB_PARTS, [1,1,1], [0,0,0], [1,1,1]);
+    mbRVerts=RM2.verts; mbRTris=RM2.tris; mbRBytes=RM2.bytes; mbRParts=RM2.parts;
+    mbRVAO=gl.createVertexArray(); gl.bindVertexArray(mbRVAO);
+    var qp=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,qp); gl.bufferData(gl.ARRAY_BUFFER,RM2.pos,gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,3,gl.FLOAT,false,0,0);
+    var qn=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,qn); gl.bufferData(gl.ARRAY_BUFFER,RM2.nrm,gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1,3,gl.FLOAT,false,0,0);
+    gl.bindBuffer(gl.ARRAY_BUFFER,mbP0Buf); gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2,3,gl.FLOAT,false,0,0); gl.vertexAttribDivisor(2,1);
+    gl.bindBuffer(gl.ARRAY_BUFFER,mbP1Buf); gl.enableVertexAttribArray(3); gl.vertexAttribPointer(3,3,gl.FLOAT,false,0,0); gl.vertexAttribDivisor(3,1);
+    gl.bindBuffer(gl.ARRAY_BUFFER,mbYwBuf); gl.enableVertexAttribArray(4); gl.vertexAttribPointer(4,2,gl.FLOAT,false,0,0); gl.vertexAttribDivisor(4,1);
+    gl.bindBuffer(gl.ARRAY_BUFFER,sb); gl.enableVertexAttribArray(5); gl.vertexAttribPointer(5,3,gl.FLOAT,false,0,0); gl.vertexAttribDivisor(5,1);
+    gl.bindBuffer(gl.ARRAY_BUFFER,lb); gl.enableVertexAttribArray(6); gl.vertexAttribPointer(6,3,gl.FLOAT,false,0,0); gl.vertexAttribDivisor(6,1);
+    var qr=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,qr); gl.bufferData(gl.ARRAY_BUFFER,RM2.rig,gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(7); gl.vertexAttribPointer(7,3,gl.FLOAT,false,0,0);
+    gl.bindVertexArray(null); mbRBufs=[qp,qn,qr];
     mbBufs=[pb,nb,mbP0Buf,mbP1Buf,mbYwBuf,sb,lb]; mbBuilt=n;
     mbBytes=CB.pos.byteLength+CB.nrm.byteLength+mbP0.byteLength+mbP1.byteLength+mbYw.byteLength+mbSize.byteLength+mbCol.byteLength;
     mbBuildMs=+(performance.now()-t0).toFixed(2);
@@ -2434,6 +2597,9 @@
     var t0=performance.now();
     var slow=(comfortActive||reduceActive)?MOB.SLOW:1;
     var cx=camPos[0], cz=camPos[2], nr=MOB.NEAR*MOB.NEAR, thought=0;
+    // 弾28 §R23④: 作り込みの 入切は ここで 1度だけ 読む（くり返しの 中で 何度も 読まない）。
+    //   ★切っていれば 下の if は 一度も 開かない＝弾27と 同じ 道を 通る（§G T37b が 数え役 mobRichSteps で 見張る）。
+    var rich=rAction(), ar2=MOB.ALERT*MOB.ALERT, acted=0, actSteps=0;
     if(mobGrid) mobGridBuild(n);
     for(var i=0;i<n;i++){
       // 「前に考えた位置」を いまの位置で 上書き＝つぎの1/10秒の あいだ ここから ここへ つないで見せる
@@ -2448,7 +2614,23 @@
       var h=mobH[i] + Math.sin(mobPh[i] + mobT*mobW[i])*MOB.TURN*dtT;
       mobSeparate(i, x, z, n);
       if(_sepX!==0 || _sepZ!==0) h = Math.atan2(Math.sin(h)+_sepX*MOB.SEP_PUSH, Math.cos(h)+_sepZ*MOB.SEP_PUSH);
-      var st=mobSpd[i]*dtT*slow;
+      var sp=mobSpd[i];
+      // 弾28 §R23④: 気づく→こちらを 見る→にげる。★乱数は 1つも 引かない（時計と 個体の 数だけ）＝決定論。
+      //   ★おそってこない・つかまらない（不変条件5＝モブは 世界が 生きている 気配であって 脅威ではない）。
+      if(rich){
+        var a0=mobAct[i], adx=cx-x, adz=cz-z, ad2=adx*adx+adz*adz;
+        if(a0===0){ if(ad2<ar2){ a0=1; mobActT[i]=MOB.HOLD; } }
+        if(a0===1){
+          h=Math.atan2(adx,adz); sp=0;                       // 立ちどまって こちらを 見る（前=(sin h, cos h)）
+          mobActT[i]-=dtT; if(mobActT[i]<=0){ a0=2; mobActT[i]=MOB.FLEE; }
+        } else if(a0===2){
+          h=Math.atan2(-adx,-adz); sp=mobSpd[i]*MOB.FLEE_MUL;  // むこうへ かけていく
+          mobActT[i]-=dtT; if(mobActT[i]<=0 || ad2>ar2*4){ a0=0; }
+        }
+        mobAct[i]=a0; if(a0) acted++;
+        mobRichSteps++; actSteps++;
+      }
+      var st=sp*dtT*slow;
       x += Math.sin(h)*st; z += Math.cos(h)*st;
       // 村から はなれすぎたら 中へ もどす（うろうろ する範囲を もたせる＝経路探索は使わない）
       var ox=x-mobHx[i], oz=z-mobHz[i], od=Math.sqrt(ox*ox+oz*oz);
@@ -2462,10 +2644,17 @@
       gl.bindBuffer(gl.ARRAY_BUFFER,mbP0Buf); gl.bufferSubData(gl.ARRAY_BUFFER,0,mbP0.subarray(0,n*3));
       gl.bindBuffer(gl.ARRAY_BUFFER,mbP1Buf); gl.bufferSubData(gl.ARRAY_BUFFER,0,mbP1.subarray(0,n*3));
       gl.bindBuffer(gl.ARRAY_BUFFER,mbYwBuf); gl.bufferSubData(gl.ARRAY_BUFFER,0,mbYw.subarray(0,n*2));
-      gl.bindBuffer(gl.ARRAY_BUFFER,null); mbUploads+=3;
+      gl.bindBuffer(gl.ARRAY_BUFFER,null); mbUploads+=3; mbUpBytes+=(n*3+n*3+n*2)*4;
     }
-    mobTicks++; mobThought=thought; mobThinkMs=performance.now()-t0;
+    mobTicks++; mobThought=thought; mobThinkMs=performance.now()-t0; mobActive=acted;
+    // 段4の 合格線＝**NEARの 外の 個体が 1体も 考えていない**。考えた体数と アクションを 通した体数が
+    // ぴったり 同じ なら、アクションは NEAR の 外へ 1歩も 出ていない（数で 示す・§G T37h）。
+    mobActTick=actSteps;
   }
+  // 弾28 §R23: 1体あたりの 三角形。★手で 書き写さない＝実際に GPUへ わたした 器から 出す
+  //   （見た目を いじった ときに 予算の 数だけ 古いまま 残る、という ずれを 作らない）。
+  function birdTriPer(){ return (rShape() && bdRVAO) ? bdRTris : 12; }
+  function mobTriPer(){  return (rShape() && mbRVAO) ? mbRTris : 12; }
   // 体数の きめかた。⚙の設定（または ?debug=）＋ 快適モード/うごきを少なくする では 半分にする（§R13）。
   function birdCountNow(){
     if(!(ENV.mobs && !cfg.simpleScene && bdVAO)) return 0;
@@ -2502,6 +2691,26 @@
     mbWanted=n; if(persist){ cfg.mobs=n; saveCfg(); }
     var s=document.getElementById("s-mobs"); if(s && s.value!==String(n)) s.value=String(n);
     return mbWanted;
+  }
+  // 弾28 §R23: 作り込みの 入切（★いつでも 元に もどせる＝OFFで 弾27と まったく 同じ 数に なる）。
+  function setMobRich(v, persist){
+    mobRich=!!v; if(persist){ cfg.mobRich=mobRich; saveCfg(); }
+    var c=document.getElementById("s-mob-rich"); if(c && c.checked!==mobRich) c.checked=mobRich;
+    syncStageUi();
+    return mobRich;
+  }
+  // ★4段の 入切（検査からも ⚙からも 同じ 1本を 通る）。おぼえない＝はかるための ためし だから。
+  var STAGE_IDS=["shape","motion","variety","action"];
+  function setMobStage(o){
+    if(o){ for(var i=0;i<STAGE_IDS.length;i++){ var k=STAGE_IDS[i]; if(k in o) RICH[k]=!!o[k]; } syncStageUi(); }
+    return { shape:RICH.shape, motion:RICH.motion, variety:RICH.variety, action:RICH.action,
+             on:{ shape:rShape(), motion:rMotion(), variety:rVariety(), action:rAction() } };
+  }
+  function syncStageUi(){
+    for(var i=0;i<STAGE_IDS.length;i++){
+      var c=document.getElementById("s-rich-"+STAGE_IDS[i]);
+      if(c){ if(c.checked!==RICH[STAGE_IDS[i]]) c.checked=RICH[STAGE_IDS[i]]; c.disabled=!mobRich; }
+    }
   }
   var bdWanted = (debugBirds!=null) ? Math.max(0,Math.min(BIRD.MAX,debugBirds|0)) : Math.max(0,Math.min(BIRD.MAX,(+cfg.birds)|0));
   var mbWanted = (debugMobs!=null)  ? Math.max(0,Math.min(MOB.MAX, debugMobs|0))  : Math.max(0,Math.min(MOB.MAX, (+cfg.mobs)|0));
@@ -4543,7 +4752,7 @@
         timerResolutionMs:perfTimerRes() },   // これより短い時間は 0 に丸まる＝うちわけが 0 でも「速い」とは限らない
       // 弾15 §R13: 三角形の合計にも 鳥と生きものを 足す（体数を上げたとき 何が増えたのかが 分かるように）
       draw: { drawCalls:lastDrawCalls|0,
-        triangles:((terrainOn?trTris:0)+(villageOn?vlTris:0)+(lastBirdOn?bdShown*12:0)+(lastMobOn?mbShown*12:0))|0,
+        triangles:((terrainOn?trTris:0)+(villageOn?vlTris:0)+(lastBirdOn?bdShown*birdTriPer():0)+(lastMobOn?mbShown*mobTriPer():0))|0,
         terrainVerts:(terrainOn?trVerts:0)|0,
         terrainTriangles:(terrainOn?trTris:0)|0,
         bgPoints:bgCount|0, workPoints:WORKS.length|0, nebulaPoints:nbCount|0,
@@ -4555,9 +4764,17 @@
         villageOnlyBoxes:(villageOn?vlgOnlyCount:0)|0, cityBoxes:(villageOn?cityBoxes.length:0)|0,
         shrubBoxes:(villageOn?shrubBoxes.length:0)|0,
         // 弾15 §R13: ★干場が実機で「体数 vs fps下位5%」の表を作るための欄。A群とB群は 必ず 分けて出す。
-        birds:(lastBirdOn?bdShown:0)|0, birdTriangles:(lastBirdOn?bdShown*12:0)|0, birdDrawn:!!lastBirdOn,
+        birds:(lastBirdOn?bdShown:0)|0, birdTriangles:(lastBirdOn?bdShown*birdTriPer():0)|0, birdDrawn:!!lastBirdOn,
+        // 弾28 §R23: 作り込みの 入切と、1体あたりの 箱の数・三角形の数（予算表を そのまま 数で 出す）
+        mobRich:!!mobRich, mobRichAnim:richAnim(),
+        // 弾28: 4段の 入切（干場の 目的＝段ごとの 成否を 数で 見る）と GPUへ 毎フレーム 送った バイト数
+        mobStages:{ shape:rShape(), motion:rMotion(), variety:rVariety(), action:rAction() },
+        mobUpBytes:mbUpBytes|0, mobActTick:mobActTick|0,
+        birdParts:(mobRich?bdRParts:1)|0, birdTriPer:birdTriPer()|0,
+        mobParts:(mobRich?mbRParts:1)|0, mobTriPer:mobTriPer()|0,
+        mobActive:mobActive|0, mobRichSteps:mobRichSteps|0,
         birdUploads:bdUploads|0,        // 鳥の属性をGPUへ送った回数。ずっと3のまま＝JSは毎フレーム位置を作っていない
-        mobs:(lastMobOn?mbShown:0)|0, mobTriangles:(lastMobOn?mbShown*12:0)|0, mobDrawn:!!lastMobOn,
+        mobs:(lastMobOn?mbShown:0)|0, mobTriangles:(lastMobOn?mbShown*mobTriPer():0)|0, mobDrawn:!!lastMobOn,
         mobUpdateHz:(mobTickSave?MOB.HZ:0),   // 0＝毎フレーム考えている（②の節約を切っている状態）
         mobUpdateNote:(mobTickSave?("1秒に "+MOB.HZ+" 回 かんがえる"):"毎フレーム かんがえる（ためし＝おもい）"),
         mobThought:mobThought|0,        // 直近の1回で 実際に考えた体数（①で遠い子を のぞいた残り）
@@ -4961,7 +5178,13 @@
         gl.uniform4f(bd_fog,F[0],F[1],F[2],F[3]);
         gl.uniform1f(bd_time,tsec); gl.uniform1f(bd_slow,(comfortActive||reduceActive)?BIRD.SLOW:1);
         gl.uniform3fv(bd_sun,DS.sun); gl.uniform3fv(bd_sunc,DS.sunc); gl.uniform3fv(bd_sky,DS.zen);
-        gl.bindVertexArray(bdVAO); gl.drawArraysInstanced(gl.TRIANGLES,0,36,bdShown); dc++;
+        // 弾28 §R23: 作り込みON なら 箱の組の 器へ 差しかえる。★えがく命令は どちらでも この 1回だけ。
+        if(rShape() && bdRVAO){
+          gl.uniform1f(bd_anim, richMotionAmt()); gl.uniform1f(bd_vary, richVaryAmt());
+          gl.bindVertexArray(bdRVAO); gl.drawArraysInstanced(gl.TRIANGLES,0,bdRVerts,bdShown); dc++;
+        } else {
+          gl.bindVertexArray(bdVAO); gl.drawArraysInstanced(gl.TRIANGLES,0,36,bdShown); dc++;
+        }
       }
       // 弾15 §R13 B群: 地上をあるく生きもの。位置は stepMobs が すでに考えて GPUへ送ってある。
       //   ここで渡すのは「前に考えた位置と いま考えた位置の あいだの どこか(u_alpha)」だけ＝これも uniform 1個。専用1ドローコール。
@@ -4969,7 +5192,13 @@
         gl.useProgram(mbProg); gl.uniformMatrix4fv(mb_vp,false,VPfull);
         gl.uniform4f(mb_fog,F[0],F[1],F[2],F[3]); gl.uniform1f(mb_alpha,mobAlpha);
         gl.uniform3fv(mb_sun,DS.sun); gl.uniform3fv(mb_sunc,DS.sunc); gl.uniform3fv(mb_sky,DS.zen);
-        gl.bindVertexArray(mbVAO); gl.drawArraysInstanced(gl.TRIANGLES,0,36,mbDraw); dc++;
+        // 弾28 §R23: 同じく 器の 差しかえだけ。★OFF のときは 下の else＝弾27の 1行と 1文字も 変わらない。
+        if(rShape() && mbRVAO){
+          gl.uniform1f(mb_time,tsec); gl.uniform1f(mb_anim,richMotionAmt()); gl.uniform1f(mb_vary,richVaryAmt());
+          gl.bindVertexArray(mbRVAO); gl.drawArraysInstanced(gl.TRIANGLES,0,mbRVerts,mbDraw); dc++;
+        } else {
+          gl.bindVertexArray(mbVAO); gl.drawArraysInstanced(gl.TRIANGLES,0,36,mbDraw); dc++;
+        }
       }
       // 弾24 §R19: 敵。★弾15の B群と まったく 同じ 器(mbProg)に 相乗りする＝**足すのは この 1ドローコールだけ**。
       //   ⚔を 切っていれば enShown は 0 のままなので この if は 一度も 開かない＝ドローコールは 弾23と 同じ数（§G T33a）。
@@ -5219,6 +5448,7 @@
         villageOnlyBoxes:vlgOnlyCount, cityBoxes:cityBoxes.length, shrubBoxes:shrubBoxes.length,
         // 弾15 §R13: 動くもの（だいち以外では どちらも false／0 のまま）
         birdDrawn:lastBirdOn, birdShown:bdShown, birdWanted:bdWanted,
+        mobRich:!!mobRich, birdTriPer:birdTriPer(), mobTriPer:mobTriPer(),   // 弾28 §R23
         mobDrawn:lastMobOn, mobShown:mbShown, mobWanted:mbWanted, mobAlpha:mobAlpha,
         // 弾22 §R19: 見え方（一人称では view="first"・avatarDrawn=false・viewDist=0＝弾21と 同じ）
         view:cfg.view, avatarDrawn:avDrawn, viewDist:viewDist, viewPos:viewPos.slice(),
@@ -5312,6 +5542,25 @@
     mobStats:function(){ return { wanted:mbWanted, shown:mbShown, built:mbBuilt, bytes:mbBytes,
       buildMs:mbBuildMs, uploads:mbUploads, drawn:lastMobOn, ticks:mobTicks, thought:mobThought,
       thinkMs:mobThinkMs, alpha:mobAlpha, updateHz:(mobTickSave?MOB.HZ:0) }; },
+    // 弾28 §R23のテスト用フック（箱に命を入れる）
+    mobRich:function(v){ if(v!==undefined) setMobRich(v,false); return mobRich; },
+    // ★4段を 1段ずつ 切る 入口（干場の 目的＝「4段が 問題なく 作れるのか」を 段ごとに 測るため）
+    mobStage:setMobStage,
+    richAnim:richAnim, richMotionAmt:richMotionAmt, richVaryAmt:richVaryAmt,
+    birdFlapAt:birdFlapAt, mobSwingAt:mobSwingAt, mobBreathAt:mobBreathAt,
+    richParts:function(){ return {
+      birdParts:BIRD_PARTS.map(function(p){ return { name:p.name, off:p.off.slice(), size:p.size.slice(), rig:p.rig.slice() }; }),
+      mobParts:MOB_PARTS.map(function(p){ return { name:p.name, off:p.off.slice(), size:p.size.slice(), rig:p.rig.slice() }; }),
+      birdVerts:bdRVerts, birdTris:bdRTris, birdBytes:bdRBytes, birdBuilt:!!bdRVAO,
+      mobVerts:mbRVerts, mobTris:mbRTris, mobBytes:mbRBytes, mobBuilt:!!mbRVAO,
+      birdTriPer:birdTriPer(), mobTriPer:mobTriPer(), on:!!mobRich }; },
+    // アクション（状態を もつ 動き）の 数えもの。★OFF のとき ここが ぜんぶ 0 のままである ことが「1回も 走っていない」証拠。
+    mobActState:function(){ var c=[0,0,0];
+      if(mobAct){ for(var i=0;i<mbShown;i++) c[mobAct[i]]++; }
+      return { wander:c[0], notice:c[1], flee:c[2], active:mobActive, steps:mobRichSteps,
+               actTick:mobActTick, thought:mobThought, shown:mbShown, upBytes:mbUpBytes,
+               alert:MOB.ALERT, hold:MOB.HOLD, flee_s:MOB.FLEE, mul:MOB.FLEE_MUL }; },
+    mobActReset:function(){ if(mobAct){ mobAct.fill(0); mobActT.fill(0); } mobActive=0; mobRichSteps=0; mobActTick=0; return true; },
     // 節約の技のON/OFF（3つを 1つずつ 切って くらべるための入口＝§G T24c）
     mobSaving:function(o){ if(o){ if("near" in o) mobNear=!!o.near; if("tick" in o) mobTickSave=!!o.tick;
         if("grid" in o) mobGrid=!!o.grid; syncMobUi(); }
@@ -6038,10 +6287,11 @@
   // 弾15 §R13: 動くもの（ためしの実験）。体数はおぼえる／節約の技3つは おぼえない（切ったまま忘れて重いままにしない）。
   var sBirds=document.getElementById("s-birds"), sMobs=document.getElementById("s-mobs");
   var sMobNear=document.getElementById("s-mob-near"), sMobTick=document.getElementById("s-mob-tick"),
-      sMobGrid=document.getElementById("s-mob-grid");
+      sMobGrid=document.getElementById("s-mob-grid"), sMobRich=document.getElementById("s-mob-rich");
   function syncMobUi(){
     if(sBirds) sBirds.value=String(bdWanted);
     if(sMobs)  sMobs.value=String(mbWanted);
+    if(sMobRich) sMobRich.checked=!!mobRich;
     if(sMobNear) sMobNear.checked=!!mobNear;
     if(sMobTick) sMobTick.checked=!!mobTickSave;
     if(sMobGrid) sMobGrid.checked=!!mobGrid;
@@ -6059,6 +6309,14 @@
   if(sMobNear) sMobNear.onchange=function(){ mobNear=!!sMobNear.checked; };
   if(sMobTick) sMobTick.onchange=function(){ mobTickSave=!!sMobTick.checked; mobAcc=0; };
   if(sMobGrid) sMobGrid.onchange=function(){ mobGrid=!!sMobGrid.checked; };
+  // 弾28 §R23: 作り込みは おぼえる（節約の技3つと ちがい「はかるための ためし」ではなく 見た目の 好みだから）。
+  if(sMobRich) sMobRich.onchange=function(){ setMobRich(sMobRich.checked, true); };
+  // 弾28: 4段の 入切。★おぼえない（節約の技3つと 同じ＝はかるための ためし）。
+  (function(){ for(var i=0;i<STAGE_IDS.length;i++){ (function(k){
+    var c=document.getElementById("s-rich-"+k);
+    if(c) c.onchange=function(){ var o={}; o[k]=c.checked; setMobStage(o); };
+  })(STAGE_IDS[i]); } })();
+  syncStageUi();
   // 弾24 §R19: ⚔ たたかう あそび（入切・つよさ・おそってこない・敵の かず）。入口は setBattle 1本だけ。
   var sBattle=document.getElementById("s-battle"), sBatLv=document.getElementById("s-battle-level"),
       sBatPeace=document.getElementById("s-battle-peace"), sEnemies=document.getElementById("s-enemies");
@@ -7079,7 +7337,8 @@
                yaw:yaw, pitch:pitch, show:window.__tenkyu.villageShow(),
                // 弾15 §R13: 動くものも 同じ置き場に しまって 必ず戻す（体数と 節約の技3つ）
                birds:window.__tenkyu.birdCount(), mobs:window.__tenkyu.mobCount(),
-               saving:window.__tenkyu.mobSaving(),
+               saving:window.__tenkyu.mobSaving(), rich:window.__tenkyu.mobRich(),   // 弾28 §R23
+               stage:window.__tenkyu.mobStage(),
                // 弾24 §R19: 敵も 同じ置き場に しまって 必ず戻す（⚔の 入切と 体数）
                battle:cfg.battle, enemies:window.__tenkyu.enemyCount(),
                sel:selIndex, card:card.classList.contains("show"),
@@ -7096,7 +7355,8 @@
     function vlgRestore(st){
       window.__tenkyu.villageShow(st.show);
       window.__tenkyu.birdCount(st.birds); window.__tenkyu.mobCount(st.mobs);
-      window.__tenkyu.mobSaving(st.saving);
+      window.__tenkyu.mobSaving(st.saving); window.__tenkyu.mobRich(st.rich);   // 弾28 §R23
+      window.__tenkyu.mobStage(st.stage);
       window.__tenkyu.enemyCount(st.enemies); window.__tenkyu.setBattle(st.battle, false);   // 弾24
       setEnv(st.env); cfg=st.cfg; updateComfort();
       camPos=st.cam; camVel=st.vel; yaw=st.yaw; pitch=st.pitch;
@@ -11249,6 +11509,481 @@
                " ／ 器の 数え="+oneOnly+" 弾26までの道="+pathOk};
     }
 
+    // ---------- 弾28 §R23: 箱に命を入れる（T37a〜T37f） ----------
+    // ★はかり方の ことわり（弾15・弾21・弾26の 作法を そのまま つぐ）:
+    //   1) 予算の 数は 司令塔が **実装より 先に** 宣言した もの＝結果を 見てから ゆるめない（下の T37_*）。
+    //   2) 三角形・ドローコール・数えものは **時計に よらない**＝整数の 一致で 見る（いちばん 強い 証拠）。
+    //   3) 毎フレームJS は 弾15の 物差し(d15BenchAB)を そのまま つかう＝新しい 物差しを 増やさない。
+    //      はかれない ときは 判定不能(SKIP)＝にせのPASSも にせのFAILも 作らない。
+    //   4) 「箱に 見えなくなったか」「生きものらしいか」「多すぎて うるさくないか」は
+    //      **干場の 実機でしか 決まらない**＝ここでは 数を 出すだけで 断定しない（この機械では 画が 出ない）。
+    var T37_TRI_MAX   = 30000;   // ✎ 三角形の 増分の 上限（§R23 予算表）
+    var T37_US_MAX    = 30;      // ✎ 毎フレームJSの 増分の 上限（µs・§R23 予算表）
+    var T37_PARTS_MAX = 6;       // ✎ 1体あたりの 箱は 6個まで（§R23①）
+    var T37_STEP_MAX  = 0.15;    // ✎ 1フレーム(1/60秒)での ふれ幅の 上限＝明滅（とびとび）を 作っていない ことの しるし
+    // 弾28の しらべ台＝だいちの 街に 立ち、体数を 既定に そろえる（比べる 場面を 固定する）。
+    function t37Stand(){
+      setEnv("field");
+      var at=d15Stand("town");
+      window.__tenkyu.birdCount(CFG_DEFAULTS.birds); window.__tenkyu.mobCount(CFG_DEFAULTS.mobs);
+      stepFrames(3);
+      return at;
+    }
+    function t37Shot(){ var R=perfReport(); return {
+      tri:R.draw.triangles, dc:R.draw.drawCalls, birds:R.draw.birds, mobs:R.draw.mobs,
+      bTri:R.draw.birdTriangles, mTri:R.draw.mobTriangles,
+      bPer:R.draw.birdTriPer, mPer:R.draw.mobTriPer, rich:R.draw.mobRich }; }
+
+    // T37a: ★形＝箱の組（部品の 数・三角形の 数・外がわの 大きさ）。数は ぜんぶ 器そのものから 出す。
+    function t_T37a(){
+      var st=vlgSetup(), d=[];
+      window.__tenkyu.mobRich(true);
+      var at=t37Stand();
+      var RP=window.__tenkyu.richParts();
+      // ①部品の 数は 6個まで（§R23①「1体あたり 箱1個→最大6個まで」）
+      var partsOk=(RP.mobParts.length<=T37_PARTS_MAX)&&(RP.birdParts.length<=T37_PARTS_MAX)&&
+                  (RP.mobParts.length>=2)&&(RP.birdParts.length>=2);
+      // ②頂点と 三角形の 数が 部品の 数と ぴったり 合う（36頂点=12三角形 が 部品の 数だけ）
+      var countOk=(RP.mobVerts===36*RP.mobParts.length)&&(RP.mobTris===12*RP.mobParts.length)&&
+                  (RP.birdVerts===36*RP.birdParts.length)&&(RP.birdTris===12*RP.birdParts.length)&&
+                  RP.mobBuilt&&RP.birdBuilt;
+      // ③★外がわの 大きさは 弾27の 箱から はみ出さない＝作品星より 小さい という 不変条件を 数で 守る。
+      //    生きもの＝よこ・おくゆき ±0.5／たて 0〜1／いちばん 下は ちょうど 0（足が 地面に つく）。
+      var lo=[9,9,9], hi=[-9,-9,-9], i, k;
+      for(i=0;i<RP.mobParts.length;i++){ var p=RP.mobParts[i];
+        for(k=0;k<3;k++){ var a=p.off[k]-(k===1?0:p.size[k]*0.5), b=p.off[k]+(k===1?p.size[k]:p.size[k]*0.5);
+          if(a<lo[k]) lo[k]=a; if(b>hi[k]) hi[k]=b; } }
+      var boxOk=(lo[0]>=-0.5-1e-6)&&(hi[0]<=0.5+1e-6)&&(lo[2]>=-0.5-1e-6)&&(hi[2]<=0.5+1e-6)&&
+                (Math.abs(lo[1])<1e-6)&&(hi[1]<=1.0+1e-6);
+      // 鳥＝つばさの さしわたしが 弾27の 板（体の 大きさ×2.6＝よこ±1.3）を こえない
+      var bw=0; for(i=0;i<RP.birdParts.length;i++){ var q=RP.birdParts[i];
+        var e=Math.abs(q.off[0])+q.size[0]*0.5; if(e>bw) bw=e; }
+      var birdOk=(bw<=1.3+1e-6);
+      // ④足は かならず 対（左右）で ふりが 逆＝人形の 歩き方（右前と 左後ろが 同じ むき＝たすきがけ）
+      var dirs=RP.mobParts.map(function(p){ return p.rig[0]; });
+      var legs=dirs.filter(function(v){ return v!==0; });
+      var sum=legs.reduce(function(a,b){ return a+b; },0);
+      var legOk=(legs.length===4)&&(sum===0);
+      // ⑤★えがく命令は 増えない（作り込みON と OFF で ぴったり 同じ）
+      window.__tenkyu.mobRich(true);  stepFrames(2); var A=t37Shot();
+      window.__tenkyu.mobRich(false); stepFrames(2); var B=t37Shot();
+      window.__tenkyu.mobRich(true);  stepFrames(2);
+      var dcOk=(A.dc===B.dc);
+      // ⑥三角形の 増え方が 数え上げと ぴったり 合う（実測 − 数え上げ ＝ 0）
+      var want=B.tri + A.birds*(RP.birdTris-12) + A.mobs*(RP.mobTris-12);
+      var triOk=(A.tri===want)&&(B.bPer===12)&&(B.mPer===12)&&(A.bPer===RP.birdTris)&&(A.mPer===RP.mobTris);
+      vlgRestore(st); stepFrames(1);
+      d.push("部品: 生きもの"+RP.mobParts.length+"個("+RP.mobParts.map(function(p){return p.name;}).join("・")+")／鳥"+
+             RP.birdParts.length+"個("+RP.birdParts.map(function(p){return p.name;}).join("・")+")＝"+T37_PARTS_MAX+"個以内="+partsOk);
+      d.push("頂点/三角形: 生きもの"+RP.mobVerts+"頂点"+RP.mobTris+"三角形／鳥"+RP.birdVerts+"頂点"+RP.birdTris+
+             "三角形（部品の数と 一致="+countOk+"）バッファ 生きもの"+RP.mobBytes+"バイト・鳥"+RP.birdBytes+"バイト");
+      d.push("外がわ: 生きもの x["+lo[0].toFixed(2)+","+hi[0].toFixed(2)+"] y["+lo[1].toFixed(2)+","+hi[1].toFixed(2)+
+             "] z["+lo[2].toFixed(2)+","+hi[2].toFixed(2)+"]＝弾27の 箱から はみ出さない="+boxOk+
+             "／鳥の つばさの はば="+bw.toFixed(2)+"（1.3以内="+birdOk+"）");
+      d.push("足は 4本・ふりの 合計0（たすきがけ）="+legOk+" 向き="+dirs.join(","));
+      d.push("★えがく回数: ON="+A.dc+" OFF="+B.dc+"（増分0="+dcOk+"）三角形: OFF="+B.tri+" → ON="+A.tri+
+             "（数え上げ="+want+"・一致="+triOk+"）鳥"+A.birds+"体×"+A.bPer+"／生きもの"+A.mobs+"体×"+A.mPer+" 立った所=街"+at.join(","));
+      return {pass:partsOk&&countOk&&boxOk&&birdOk&&legOk&&dcOk&&triOk, detail:d.join(" / ")};
+    }
+
+    // T37b: ★陰性対照＝作り込みを OFF にすると 弾27に 完全に もどる。
+    //   （三角形・ドローコールは 整数で 一致／弾28の 仕事は 1回も 走らない＝数え役で 見る／弾27の 道が 本文に そのまま 残っている）
+    function t_T37b(){
+      var st=vlgSetup(), d=[];
+      var at=t37Stand();
+      // ①OFF のときの 三角形は 弾27の 式（地形＋村＋鳥×12＋生きもの×12）と ぴったり 同じ
+      window.__tenkyu.mobRich(false); stepFrames(3);
+      var R=perfReport(), Dw=R.draw;
+      var want27=(Dw.terrainTriangles|0)+(Dw.villageTriangles|0)+(Dw.birds|0)*12+(Dw.mobs|0)*12;
+      var eq27=(Dw.triangles===want27)&&(Dw.birdTriPer===12)&&(Dw.mobTriPer===12)&&(Dw.mobRich===false);
+      // ②弾28の 仕事が 1回も 走らない（アクションの 数え役が 0 のまま・状態も ぜんぶ「ぶらぶら」）
+      window.__tenkyu.mobActReset(); stepFrames(120);
+      var offAct=window.__tenkyu.mobActState();
+      var offQuiet=(offAct.steps===0)&&(offAct.notice===0)&&(offAct.flee===0);
+      // ③陽性対照＝ON にすれば ちゃんと 走る（走らないなら この 数え役が 死んでいる＝②は 意味を 失う）
+      window.__tenkyu.mobRich(true); window.__tenkyu.mobActReset(); stepFrames(120);
+      var onAct=window.__tenkyu.mobActState();
+      var onRuns=(onAct.steps>0);
+      // ④★弾27の 道が 本文に そのまま 残っている（＝いつでも 元に もどせる ことの 文字の 証拠）
+      var src=String(drawScene);
+      var pathOk=(src.indexOf("gl.bindVertexArray(mbVAO); gl.drawArraysInstanced(gl.TRIANGLES,0,36,mbDraw)")>=0)&&
+                 (src.indexOf("gl.bindVertexArray(bdVAO); gl.drawArraysInstanced(gl.TRIANGLES,0,36,bdShown)")>=0)&&
+                 (String(mobThink).indexOf("if(rich)")>=0);
+      // ⑤ドローコールは 5つの 世界の どこでも ON/OFF で 変わらない（だいち以外は そもそも 出ない）
+      var ids=["space","sky","ground","cave","field"], rows=[], dcAll=true;
+      for(var i=0;i<ids.length;i++){
+        setEnv(ids[i]); window.__tenkyu.battleReset(); clearHeld(); moveVec={f:0,s:0};
+        var f0=floorYAt(0,0); camPos=[0,(f0!=null?f0:0),0]; camVel=[0,0,0]; yaw=0; pitch=0;
+        window.__tenkyu.mobRich(true); stepFrames(8); var a=window.__tenkyu.getState().drawCalls;
+        window.__tenkyu.mobRich(false); stepFrames(8); var b=window.__tenkyu.getState().drawCalls;
+        window.__tenkyu.mobRich(true); stepFrames(8); var c=window.__tenkyu.getState().drawCalls;
+        if(a!==b||c!==b) dcAll=false;
+        rows.push(ids[i]+":ON"+a+"/OFF"+b+"/ON"+c);
+      }
+      window.__tenkyu.mobRich(true);
+      vlgRestore(st); stepFrames(1);
+      d.push("OFFの 三角形="+Dw.triangles+"（弾27の 式="+want27+"・一致="+eq27+"）1体あたり 鳥"+Dw.birdTriPer+"／生きもの"+Dw.mobTriPer);
+      d.push("★OFFで 弾28の 仕事は 1回も 走らない: 数え役="+offAct.steps+" 気づいた="+offAct.notice+" にげた="+offAct.flee+"（="+offQuiet+"）");
+      d.push("陽性対照 ONなら 走る: 数え役="+onAct.steps+" 気づいた="+onAct.notice+" にげた="+onAct.flee+"（="+onRuns+"）");
+      d.push("弾27の 道が 本文に そのまま ある="+pathOk);
+      d.push("えがく回数 5つの世界 ON/OFF/ON: "+rows.join(" ")+"（ぜんぶ 同じ="+dcAll+"）立った所=街"+at.join(","));
+      if(!onRuns) return {pass:false, skip:true,
+        detail:"判定不能(SKIP): 陽性対照（ONで アクションが 走る）が 立たない＝この 数え役では 陰性を 名のれない。 "+d.join(" / ")};
+      return {pass:eq27&&offQuiet&&pathOk&&dcAll, detail:d.join(" / ")};
+    }
+
+    // T37c: ★予算表の 4項目を 実測する（ドローコール／三角形／毎フレームJS／画像・音）。超えたら FAIL。
+    function t_T37c(){
+      var st=vlgSetup(), d=[];
+      var at=t37Stand();
+      // ①ドローコール ＝ +0（整数の 一致）
+      window.__tenkyu.mobRich(false); stepFrames(3); var OFF=t37Shot();
+      window.__tenkyu.mobRich(true);  stepFrames(3); var ON =t37Shot();
+      var dcDelta=ON.dc-OFF.dc, dcOk=(dcDelta===0);
+      // ②三角形 ＝ +30,000まで（★既定の 体数で はかる＝体数の つまみは 干場の 実験用であって 予算の 前提ではない）
+      var triDelta=ON.tri-OFF.tri, triOk=(triDelta<=T37_TRI_MAX);
+      // ③毎フレームJS ＝ +30µsまで。弾15の 物差しを そのまま つかう（最小値・かわりばんこ・往復）。
+      //    ★陽性対照（生きもの500体）が 効かない回は 判定不能(SKIP)＝にせのPASSを 出さない。
+      function cond(rich, mobs){ return function(){
+        window.__tenkyu.mobRich(rich); window.__tenkyu.birdCount(CFG_DEFAULTS.birds);
+        window.__tenkyu.mobCount(mobs!=null?mobs:CFG_DEFAULTS.mobs); }; }
+      var B=d15BenchAB([ cond(false), cond(true), cond(false,500) ], D15.FRAMES, D15.ROUNDS);
+      var msOff=B.mins[0], msOn=B.mins[1], msCtl=B.mins[2];
+      var band=d15Band(B.all), R=D15.ROUNDS;
+      var winOn=d15Wins(B.all[1],B.all[0]), winCtl=d15Wins(B.all[2],B.all[0]);
+      // 1フレームあたりの µs（D15.FRAMES フレームぶんを ためて はかっている）
+      var usDelta=((msOn-msOff)/D15.FRAMES)*1000;
+      var usOk=(usDelta<=T37_US_MAX);
+      var sensitive=(winCtl>=R-1);
+      // ④画像・音は 1バイトも 足していない。★本文を 文字で さがすと この テスト自身の 文字に 当たって
+      //   にせのFAILに なる（0803に 実際に 起きた）。だから **DOMの 実物の src/href を 1つずつ 見る**。
+      var srcEls=document.querySelectorAll("[src],[href]"), dataUri=false, urls=[], uu;
+      for(var z=0;z<srcEls.length;z++){
+        uu=srcEls[z].getAttribute("src")||srcEls[z].getAttribute("href")||"";
+        if(uu.slice(0,5)==="data:") dataUri=true;
+        if(uu) urls.push(srcEls[z].tagName.toLowerCase()+":"+uu.slice(0,30));
+      }
+      var cssUrl=false, sts=document.querySelectorAll("style");
+      for(z=0;z<sts.length;z++){ if(sts[z].textContent.indexOf("url(")>=0) cssUrl=true; }
+      var extra=document.querySelectorAll("video,source,link[rel=stylesheet],iframe").length;
+      var scripts=document.querySelectorAll("script[src]").length;
+      var newSrc=String(partsMesh)+String(buildBirds)+String(buildMobs)+String(mobThink)+String(drawScene);
+      var noAsset=(!dataUri)&&(!cssUrl)&&(extra===0)&&(scripts===1)&&
+                  (newSrc.indexOf("createTexture")<0)&&(newSrc.indexOf("new Image")<0)&&
+                  (newSrc.indexOf("new Audio")<0)&&(newSrc.indexOf("da"+"ta:")<0);
+      window.__tenkyu.mobRich(true);
+      vlgRestore(st); stepFrames(1);
+      d.push("①ドローコール: OFF="+OFF.dc+" → ON="+ON.dc+"（増分 "+dcDelta+"／上限 +0="+dcOk+"）");
+      d.push("②三角形: OFF="+OFF.tri+" → ON="+ON.tri+"（増分 "+triDelta+"／上限 +"+T37_TRI_MAX+"＝"+
+             (T37_TRI_MAX>0?(triDelta/T37_TRI_MAX*100).toFixed(1):"-")+"%・="+triOk+"）"+
+             "うちわけ 鳥"+ON.birds+"体×"+ON.bPer+"＝"+ON.bTri+"／生きもの"+ON.mobs+"体×"+ON.mPer+"＝"+ON.mTri);
+      d.push("③毎フレームJS（"+D15.FRAMES+"フレーム×"+R+"往復の 最小値）: OFF="+msOff+"ms ON="+msOn+
+             "ms → 1フレームあたり 増分 "+usDelta.toFixed(3)+"µs（上限 "+T37_US_MAX+"µs＝"+
+             (usDelta/T37_US_MAX*100).toFixed(1)+"%・="+usOk+"）"+
+             " ONが おそかった回="+winOn+"/"+R+"・目もり(band)="+band+"ms");
+      d.push("　陽性対照 生きもの500="+msCtl+"ms（おそかった回="+winCtl+"/"+R+"・物差しは 生きている="+sensitive+"）");
+      d.push("④画像・音: 埋めこみ="+dataUri+" CSSのurl()="+cssUrl+" 外から読む物="+extra+"個 script[src]="+scripts+
+             "（stars.js の 1つだけ）読みこむ物 ぜんぶ="+(urls.join(" ")||"なし")+" 新しい 絵/音の 呼び出し なし="+noAsset);
+      if(!sensitive) return {pass:false, skip:true,
+        detail:"判定不能(SKIP): 陽性対照が 立たない＝③の 時間は 読めていない。①②④は "+
+               ("ドローコール="+dcOk+" 三角形="+triOk+" 画像音="+noAsset)+"。 "+d.join(" / ")};
+      return {pass:dcOk&&triOk&&usOk&&noAsset, detail:d.join(" / ")};
+    }
+
+    // T37d: ★体数 0/50/200/500 で 毎フレームJS を はかる＝「純関数の 個体は 体数に よらない」が
+    //   作り込みの あとでも 成り立つか（弾15 T24a の 結論を 作り込み後に もう一度 問う）。
+    function t_T37d(){
+      var st=vlgSetup(), d=[];
+      var at=t37Stand();
+      window.__tenkyu.mobRich(true);
+      var counts=[0,50,200,500];
+      // A群（鳥）＝作り込みON のまま 体数だけ 変える。生きものは 0 に して 混ぜない。
+      var conds=counts.map(function(n){ return function(){
+        window.__tenkyu.mobRich(true); window.__tenkyu.mobCount(0); window.__tenkyu.birdCount(n); }; });
+      conds.push(function(){ window.__tenkyu.mobRich(true); window.__tenkyu.birdCount(0); window.__tenkyu.mobCount(500); });
+      var B=d15BenchAB(conds, D15.FRAMES, D15.ROUNDS);
+      var R=D15.ROUNDS, band=d15Band(B.all);
+      var winEnd=d15Wins(B.all[3], B.all[0]);              // 鳥500 と 鳥0
+      var winCtl=d15Wins(B.all[4], B.all[0]);              // 陽性対照＝生きもの500
+      var birdDiff=+(B.mins[3]-B.mins[0]).toFixed(3), ctlDiff=+(B.mins[4]-B.mins[0]).toFixed(3);
+      // ★T24a と まったく 同じ 見かた（ミリ秒の 大きさでなく 符号を 数える／または 桁が ちがう）
+      var sameOk=(winEnd<=R-2)||(Math.abs(birdDiff)*4<=Math.abs(ctlDiff));
+      var sensitive=(winCtl>=R-1);
+      // 鳥の 属性を GPUへ 送った回数が 増えていない＝作り込み後も JSが 位置を 作っていない 証拠
+      var upl0=window.__tenkyu.birdStats().uploads;
+      window.__tenkyu.birdCount(500); stepFrames(240);
+      var upl1=window.__tenkyu.birdStats().uploads;
+      var uplOk=(upl1===upl0);
+      // B群（生きもの）の 数も 表に 出す（★こちらは 体数に 比例して 増える側＝§R13の 結論）
+      var conds2=counts.map(function(n){ return function(){
+        window.__tenkyu.mobRich(true); window.__tenkyu.birdCount(0); window.__tenkyu.mobCount(n); }; });
+      var B2=d15BenchAB(conds2, D15.FRAMES/2, 4);   // ★参考の 表（合否に つかわない）＝軽く はかる
+      vlgRestore(st); stepFrames(1);
+      var t1=[]; for(var i=0;i<counts.length;i++) t1.push(counts[i]+"体="+B.mins[i]+"ms");
+      var t2=[]; for(var j=0;j<counts.length;j++) t2.push(counts[j]+"体="+B2.mins[j]+"ms");
+      d.push("★A群 鳥（純関数・作り込みON）"+D15.FRAMES+"フレームの 最小値: "+t1.join(" ")+
+             " → 0体と500体の 差="+birdDiff+"ms・鳥500が おそかった回="+winEnd+"/"+R+
+             "（"+(R-1)+"回以上なら「ちがう」・または 差が 陽性対照の 4分の1未満なら 桁がちがう → ="+sameOk+"）目もり="+band+"ms");
+      d.push("陽性対照 生きもの500="+B.mins[4]+"ms（差="+ctlDiff+"ms・おそかった回="+winCtl+"/"+R+"・物差しは 生きている="+sensitive+"）");
+      d.push("鳥の属性を GPUへ 送った回数: "+upl0+" → 500羽×240フレーム 動かして "+upl1+"（増えていない="+uplOk+"）");
+      d.push("参考＝B群 生きもの（状態を もつ 側・作り込みON・"+(D15.FRAMES/2)+"フレーム×4往復）: "+t2.join(" ")+"（★こちらは 体数に 比例する側）");
+      d.push("生の値(鳥): "+B.all.slice(0,4).map(function(a,ix){ return counts[ix]+":"+a.join("/"); }).join(" ")+" 立った所=街"+at.join(","));
+      if(!sensitive) return {pass:false, skip:true,
+        detail:"判定不能(SKIP): 陽性対照が 立たない＝この機械では 時間差を 読めていない。にせのPASSは 出さない。 "+d.join(" / ")};
+      return {pass:sameOk&&uplOk, detail:d.join(" / ")};
+    }
+
+    // T37e: ★決定論（同じ 個体id・同じ 時刻なら 同じ 姿勢）／reduced で ゆれが 止まる／明滅を 作らない。
+    function t_T37e(){
+      var st=vlgSetup(), d=[];
+      setEnv("field");
+      cfg.reduce=false; cfg.comfort=false; updateComfort(); stepFrames(1);
+      var A=window.__tenkyu;
+      // ①同じ (個体id, 時刻) なら 何度でも 同じ／時刻が ちがえば 動く／ぜんぶ 有限
+      var ids=[0,1,7,199,999,1999], pureOk=true, movedOk=true, finiteOk=true, i;
+      for(i=0;i<ids.length;i++){
+        var k=ids[i];
+        var f1=A.birdFlapAt(k,12.5,1), f2=A.birdFlapAt(k,12.5,1), f3=A.birdFlapAt(k,12.6,1);
+        var s1=A.mobSwingAt(k,12.5,0.3,1), s2=A.mobSwingAt(k,12.5,0.3,1), s3=A.mobSwingAt(k,12.6,0.3,1);
+        var b1=A.mobBreathAt(k,12.5,0.05), b2=A.mobBreathAt(k,12.5,0.05), b3=A.mobBreathAt(k,12.6,0.05);
+        if(f1!==f2||s1!==s2||b1!==b2) pureOk=false;
+        if(f1===f3&&s1===s3&&b1===b3) movedOk=false;
+        if(!isFinite(f1)||!isFinite(s1)||!isFinite(b1)) finiteOk=false;
+      }
+      // 個体が ちがえば 姿勢も ちがう（ぜんぶ 同じ 動きで そろわない＝§R23③ 個体差）
+      var distinct={}, nd=0;
+      for(i=0;i<40;i++){ var v=A.birdFlapAt(i,3.7,1).toFixed(6); if(!distinct[v]){ distinct[v]=1; nd++; } }
+      var varyOk=(nd>=35);
+      // ②乱数を フレームの 中で 使っていない（本文の 文字で 見る＝fail-loud）
+      var srcs=String(mobThink)+String(stepMobs)+String(A.birdFlapAt)+String(A.mobSwingAt)+
+               String(A.mobBreathAt)+String(partsMesh)+String(drawScene);
+      var noRndOk=(srcs.indexOf("Math.random")<0);
+      // ③明滅を 作らない＝1フレーム(1/60秒)での ふれ幅が しきい値より 小さい（とびとびに 変わらない）
+      var maxStep=0, prev=null;
+      for(i=0;i<240;i++){ var t=i/60, cur=A.birdFlapAt(3,t,1);
+        if(prev!==null){ var dd=Math.abs(cur-prev); if(dd>maxStep) maxStep=dd; } prev=cur; }
+      var maxStep2=0; prev=null;
+      for(i=0;i<240;i++){ var t2=i/60, cur2=A.mobSwingAt(3,t2,0.6,1);
+        if(prev!==null){ var d2=Math.abs(cur2-prev); if(d2>maxStep2) maxStep2=d2; } prev=cur2; }
+      var smoothOk=(maxStep<=T37_STEP_MAX)&&(maxStep2<=T37_STEP_MAX);
+      // ④★prefers-reduced-motion（動きを少なくする）では ゆれが ぴたりと 止まる／快適モードでは 小さくなる
+      var full=A.richAnim();
+      cfg.comfort=true; updateComfort(); var soft=A.richAnim(), softF=A.birdFlapAt(3,1.234,1);
+      cfg.comfort=false; cfg.reduce=true; updateComfort();
+      var red=A.richAnim(), redF=A.birdFlapAt(3,1.234,1), redS=A.mobSwingAt(3,1.234,0.6,1), redB=A.mobBreathAt(3,1.234,0.05);
+      cfg.reduce=false; updateComfort(); stepFrames(1);
+      var reduceOk=(full===1)&&(red===0)&&(redF===0)&&(redS===0)&&(redB===0)&&(soft>0)&&(soft<full)&&(Math.abs(softF)<=Math.abs(A.birdFlapAt(3,1.234,1)));
+      // ⑤アクションが ほんとうに 起きる（気づく→にげる→やがて ぶらぶらへ もどる）。
+      //   ★そして おそってこない＝いのちは 1も 減らない（不変条件5＝モブは 脅威ではない）。
+      window.__tenkyu.mobRich(true); var at=t37Stand();
+      var ps=window.__tenkyu.mobPosNow(CFG_DEFAULTS.mobs), best=null, bd=1e18, qq;
+      for(qq=0;qq<ps.length;qq++){ var ddx=ps[qq][0]-camPos[0], ddz=ps[qq][2]-camPos[2], dd2=ddx*ddx+ddz*ddz;
+        if(dd2<bd){ bd=dd2; best=ps[qq]; } }
+      var noticed=0, fled=0, backTo=0, hp0=window.__tenkyu.battleState().hp;
+      if(best){
+        camPos=[best[0], floorYAt(best[0],best[2]), best[2]]; camVel=[0,0,0]; keys={}; moveVec={f:0,s:0};
+        window.__tenkyu.mobActReset();
+        for(qq=0;qq<40;qq++){ stepFrames(6); var s5=window.__tenkyu.mobActState();
+          if(s5.notice>noticed) noticed=s5.notice;
+          if(s5.flee>fled) fled=s5.flee;
+          if(fled>0 && s5.flee===0) backTo++; }
+      }
+      var actOk=(noticed>0)&&(fled>0);
+      var hp1=window.__tenkyu.battleState().hp;
+      var detOk=actOk&&(hp1===hp0);
+      vlgRestore(st); stepFrames(1);
+      d.push("純関数="+pureOk+" 時刻が ちがえば 動く="+movedOk+" 有限="+finiteOk+" 個体ごとに ちがう="+varyOk+"（40体で "+nd+"通り）");
+      d.push("フレームの中で 乱数を 引いていない="+noRndOk);
+      d.push("明滅を 作らない: 1フレームの ふれ幅 鳥="+maxStep.toFixed(4)+" 生きもの="+maxStep2.toFixed(4)+
+             "（上限 "+T37_STEP_MAX+"="+smoothOk+"）");
+      d.push("★ゆれの 深さ: ふつう="+full+" 快適モード="+soft+" うごきを少なくする="+red+
+             "（reduced で 手足も 息づかいも ぴたりと 0="+reduceOk+"）");
+      d.push("アクションが ほんとうに 起きる: 気づいた 最大="+noticed+"体 にげた 最大="+fled+"体 もどった="+backTo+
+             "回（="+actOk+"）いのちは 減らない="+(hp1===hp0)+"（"+hp0+"→"+hp1+"）立った所=街"+at.join(","));
+      return {pass:pureOk&&movedOk&&finiteOk&&varyOk&&noRndOk&&smoothOk&&reduceOk&&detOk, detail:d.join(" / ")};
+    }
+
+    // ---------- 弾28 追補: 4段の 段ごとの 費用と 合否（T37g・T37h） ----------
+    // ★干場の 目的（2026-08-03）＝「この作りこみの **4段が 果たして 問題なく 作れるのか**。まずは ここが 目的」。
+    //   だから ここでは **全部入りの 合計では なく、1段ずつの 費用**を 出す。
+    //   ★不合格を 隠さない＝落ちた段は 数で 落ちたと 書く（無理に 通すと 次の ステップで 必ず 崩れる）。
+    var T37_ST_FRAMES = 120;   // ✎ 段ごとの 時間くらべ（合否の 本命は T37c の 240フレーム。ここは 段の 切りわけが 目的）
+    var T37_ST_ROUNDS = 6;     // ✎ かならず 偶数（A→B／B→A が 半々に なる）
+    // 段を 組みあわせて 立てる（親は かならず ON＝親を 切るのは 陰性対照 T37b の 仕事）
+    function t37Set(sh, mo, va, ac){ return function(){
+      window.__tenkyu.mobRich(true);
+      window.__tenkyu.mobStage({shape:sh, motion:mo, variety:va, action:ac});
+      window.__tenkyu.birdCount(CFG_DEFAULTS.birds); window.__tenkyu.mobCount(CFG_DEFAULTS.mobs); }; }
+    // 時計に よらない 3項目（三角形・ドローコール・GPUへ 毎フレーム 送る バイト）を はかる
+    function t37Cost(apply){
+      apply(); stepFrames(20);
+      var b0=window.__tenkyu.mobActState().upBytes, F=60;
+      stepFrames(F);
+      var b1=window.__tenkyu.mobActState().upBytes, R=perfReport();
+      return { tri:R.draw.triangles, dc:R.draw.drawCalls, bytes:(b1-b0)/F,
+               bTri:R.draw.birdTriangles, mTri:R.draw.mobTriangles };
+    }
+
+    // T37g: ★4段 × 4項目の 費用表。段を 1つずつ 足したとき／全部入りから 1つずつ 抜いたときの 両方を 出す。
+    function t_T37g(){
+      var st=vlgSetup(), d=[];
+      var at=t37Stand();
+      var NONE=t37Set(false,false,false,false), S=t37Set(true,false,false,false),
+          SM=t37Set(true,true,false,false),  SMV=t37Set(true,true,true,false),
+          ALL=t37Set(true,true,true,true),
+          NoS=t37Set(false,true,true,true), NoM=t37Set(true,false,true,true),
+          NoV=t37Set(true,true,false,true), NoA=t37Set(true,true,true,false);
+      // ①時計に よらない 3項目（整数と バイト）＝いちばん 強い 証拠
+      var c0=t37Cost(NONE), c1=t37Cost(S), c2=t37Cost(SM), c3=t37Cost(SMV), c4=t37Cost(ALL);
+      var x1=t37Cost(NoS), x2=t37Cost(NoM), x3=t37Cost(NoV), x4=t37Cost(NoA);
+      // ②毎フレームJS（段を 1つずつ 足す／抜く・陽性対照つき）
+      var CTL=function(){ window.__tenkyu.mobRich(false); window.__tenkyu.birdCount(CFG_DEFAULTS.birds);
+                          window.__tenkyu.mobCount(500); };
+      var B=d15BenchAB([NONE,S,SM,SMV,ALL,NoM,NoV,NoA,CTL], T37_ST_FRAMES, T37_ST_ROUNDS);
+      var m=B.mins, band=d15Band(B.all), R=T37_ST_ROUNDS;
+      function us(a,b){ return ((m[a]-m[b])/T37_ST_FRAMES)*1000; }   // 1フレームあたり µs
+      var wS=d15Wins(B.all[1],B.all[0]), wM=d15Wins(B.all[2],B.all[1]),
+          wV=d15Wins(B.all[3],B.all[2]), wA=d15Wins(B.all[4],B.all[3]),
+          wCtl=d15Wins(B.all[8],B.all[0]);
+      var sensitive=(wCtl>=R-1);
+      // ③段ごとの 合否（§R23の 表・実装より 先に 置いた 合格線）
+      //   段1 形＝ドローコール+0・三角形が 予算内・体数を 増やしても 毎フレームJSが 増えない（T37dが 別に 見る）
+      var g1=(c1.dc===c0.dc)&&((c1.tri-c0.tri)<=T37_TRI_MAX)&&(c1.tri>c0.tri);
+      //   段2 動き＝毎フレームJS +0（符号が 半々＝差が 読めない）・GPUへ 毎フレーム 送る量 +0
+      var g2=(Math.abs(c2.bytes-c1.bytes)<1e-9)&&(c2.tri===c1.tri)&&(c2.dc===c1.dc)&&
+             ((wM<=R-2)||(us(2,1)<=T37_US_MAX));
+      //   段3 個体差＝費用 +0（三角形も 転送も 同じ・JSも 読めない差）
+      var g3=(Math.abs(c3.bytes-c2.bytes)<1e-9)&&(c3.tri===c2.tri)&&(c3.dc===c2.dc)&&
+             ((wV<=R-2)||(us(3,2)<=T37_US_MAX));
+      //   段4 アクション＝三角形も 転送も +0（JSだけ）・増分は 予算内（NEARの 外0体は T37hが 別に 見る）
+      var g4=(Math.abs(c4.bytes-c3.bytes)<1e-9)&&(c4.tri===c3.tri)&&(c4.dc===c3.dc)&&
+             (us(4,3)<=T37_US_MAX);
+      //   段1を 抜くと 段2/3は 効かない＝**構造の 依存**（手足が 無ければ ふる 手足も 無い）。
+      //   これは 不合格では なく「段2・段3は 段1の 上に 乗る」という 事実。数で 見せる。
+      var dep=(x1.tri===c0.tri)&&(x1.dc===c0.dc);
+      window.__tenkyu.mobRich(true); window.__tenkyu.mobStage({shape:true,motion:true,variety:true,action:true});
+      vlgRestore(st); stepFrames(1);
+      function row(nm,c){ return nm+"[三角形"+c.tri+" えがく"+c.dc+" 転送"+c.bytes.toFixed(1)+"B/f]"; }
+      d.push("★足していく: "+row("なし",c0)+" → "+row("+①形",c1)+" → "+row("+②動き",c2)+" → "+
+             row("+③個体差",c3)+" → "+row("+④気づく",c4));
+      d.push("★1つ抜く: "+row("①形なし",x1)+" "+row("②動きなし",x2)+" "+row("③個体差なし",x3)+" "+row("④気づくなし",x4));
+      d.push("★毎フレームJS（"+T37_ST_FRAMES+"フレーム×"+R+"往復の最小値・1フレームあたりの増分）: "+
+             "①形 "+us(1,0).toFixed(3)+"µs（おそかった回"+wS+"/"+R+"） "+
+             "②動き "+us(2,1).toFixed(3)+"µs（"+wM+"/"+R+"） "+
+             "③個体差 "+us(3,2).toFixed(3)+"µs（"+wV+"/"+R+"） "+
+             "④気づく "+us(4,3).toFixed(3)+"µs（"+wA+"/"+R+"）／目もり(band)="+band+"ms＝1フレーム "+
+             ((band/T37_ST_FRAMES)*1000).toFixed(2)+"µs相当");
+      d.push("　陽性対照 生きもの500="+m[8]+"ms（おそかった回="+wCtl+"/"+R+"・物差しは 生きている="+sensitive+"）"+
+             "／生の値 なし="+B.all[0].join("/")+" 全部="+B.all[4].join("/"));
+      d.push("★段ごとの 合否: ①形="+g1+" ②動き="+g2+" ③個体差="+g3+" ④気づく="+g4);
+      d.push("★構造の 依存（不合格ではない）: ①形を 抜くと ②③は 効かない（手足が 無い）＝三角形も えがく回数も 弾27と 同じ="+dep+
+             "。②③は ①の 上に 乗る 段である、という 事実を 数で 示している。 立った所=街"+at.join(","));
+      if(!sensitive) return {pass:false, skip:true,
+        detail:"判定不能(SKIP): 陽性対照が 立たない＝毎フレームJSの 段ごとの 差は 読めていない。"+
+               "時計に よらない 項目（三角形・えがく回数・転送）は ①="+g1+" 転送の 一致="+
+               ((Math.abs(c2.bytes-c1.bytes)<1e-9)&&(Math.abs(c3.bytes-c2.bytes)<1e-9)&&(Math.abs(c4.bytes-c3.bytes)<1e-9))+
+               "。 "+d.join(" / ")};
+      return {pass:g1&&g2&&g3&&g4&&dep, detail:d.join(" / ")};
+    }
+
+    // T37h: ★段4の 合格線＝「NEARの 外の 個体が 1体も 考えていない」を 計数器で 示す／近傍だけに 比例する。
+    function t_T37h(){
+      var st=vlgSetup(), d=[];
+      var at=t37Stand();
+      window.__tenkyu.mobRich(true);
+      window.__tenkyu.mobStage({shape:true,motion:true,variety:true,action:true});
+      // ①体数を 上げても、アクションを 通った体数は **考えた体数と ぴったり 同じ**（＝NEARの 外へ 1歩も 出ていない）
+      var counts=[50,200,500,2000], rows=[], sameOk=true, lessOk=false, i;
+      for(i=0;i<counts.length;i++){
+        window.__tenkyu.mobCount(counts[i]); window.__tenkyu.mobActReset(); stepFrames(30);
+        var A=window.__tenkyu.mobActState();
+        rows.push(counts[i]+"体→考えた"+A.thought+"・アクション"+A.actTick);
+        if(A.actTick!==A.thought) sameOk=false;
+        if(A.thought < A.shown) lessOk=true;         // 実際に NEARで 切り落とせている場面が ある
+      }
+      // ②「近くだけ考える」を 切ると 考えた体数が 増え、アクションも 同じだけ 増える
+      //    ＝アクションは 弾15の 節約に そのまま 相乗りしている（別の 道を 作っていない）
+      window.__tenkyu.mobCount(500);
+      window.__tenkyu.mobSaving({near:true,tick:true,grid:true});
+      window.__tenkyu.mobActReset(); stepFrames(30);
+      var on=window.__tenkyu.mobActState();
+      window.__tenkyu.mobSaving({near:false,tick:true,grid:true});
+      window.__tenkyu.mobActReset(); stepFrames(30);
+      var off=window.__tenkyu.mobActState();
+      window.__tenkyu.mobSaving({near:true,tick:true,grid:true});
+      var rideOk=(off.thought>on.thought)&&(off.actTick===off.thought)&&(on.actTick===on.thought);
+      // ③段4を 切ると 数え役が 完全に 0（他の 3段は ONのまま＝段4だけが 消える）
+      window.__tenkyu.mobStage({action:false});
+      window.__tenkyu.mobActReset(); stepFrames(60);
+      var zero=window.__tenkyu.mobActState();
+      var offOk=(zero.steps===0)&&(zero.actTick===0)&&(zero.notice===0)&&(zero.flee===0);
+      // ④段4を 切っても 形と 動きは 生きている（＝段が ほんとうに 分かれている）
+      var shapeStill=(window.__tenkyu.getState().mobTriPer>12);
+      window.__tenkyu.mobStage({action:true});
+      vlgRestore(st); stepFrames(1);
+      d.push("★NEARの 外は 1体も 考えていない: "+rows.join(" ／ ")+
+             "（アクション==考えた体数 が いつも 成り立つ="+sameOk+"・実際に 切り落とせた場面が ある="+lessOk+"）");
+      d.push("近くだけ考える ON/OFF: ON=考えた"+on.thought+"/アクション"+on.actTick+
+             " OFF=考えた"+off.thought+"/アクション"+off.actTick+
+             "（弾15の 節約に そのまま 相乗り="+rideOk+"）");
+      d.push("④だけ 切る: 数え役="+zero.steps+" 今回="+zero.actTick+" 気づいた="+zero.notice+" にげた="+zero.flee+
+             "（完全に 0="+offOk+"）／そのとき ①形は 生きている（1体あたり三角形>12）="+shapeStill);
+      d.push("立った所=街"+at.join(","));
+      return {pass:sameOk&&lessOk&&rideOk&&offOk&&shapeStill, detail:d.join(" / ")};
+    }
+
+    // T37f: 回帰＝既存 T1〜T37e が 1件も 余分に 落ちていない ／ 弾24〜弾27の 芯に 1ビットも さわっていない。
+    function t_T37f(){
+      var need=["T1","T2","T2f","T2n","T3","T3c","T4","T5","T6","T7","T8","T9","T10","T11","T12","T13","T14",
+                "T15","T16","T17","T18","T19a","T19b","T19c","T19d","T20a","T20b","T20c","T20d","T20e",
+                "T21a","T21b","T21c","T21d","T21e","T21f","T21i","T21g","T22a","T22b","T22c",
+                "T23a","T23b","T23c","T23d","T23e","T25a","T25b","T25c","T25d","T25e","T25f",
+                "T24a","T24b","T24c","T24d","T24e","T24f","T26a","T27a","T27b","T27c","T27d","T27e","T27f",
+                "T28a","T28b","T28c","T28d","T28e","T28f","T29a","T29b","T29c","T29d","T29e",
+                "T30a","T30b","T30c","T30d","T30e","T31a","T31b","T31c","T31d","T31e","T31f",
+                "T32a","T32b","T32c","T32d","T32e","T33a","T33b","T33c","T33d","T33e","T33f",
+                "T34a","T34b","T34c","T34d","T34e","T34f","T35a","T35b","T35c","T35d","T35e","T35f",
+                "T36a","T36b","T36c","T36d","T36e","T36f","T37a","T37b","T37c","T37d","T37e","T37g","T37h"];
+      var missing=[], failed=[], skipped=[], i, j;
+      for(i=0;i<need.length;i++){
+        var r=null;
+        for(j=0;j<_ranResults.length;j++){ if(_ranResults[j].id===need[i]){ r=_ranResults[j]; break; } }
+        if(!r) missing.push(need[i]);
+        else if(r.skip) skipped.push(need[i]);
+        else if(!r.pass) failed.push(need[i]);
+      }
+      var known=regKnown(failed);
+      var realFails=failed.filter(function(x){ return known.indexOf(x)<0; });
+      // ★弾24〜弾27の 芯に 1ビットも さわっていない（数と 道の 文字で 見る）
+      var keepOk=(CFG_DEFAULTS.birds===200)&&(CFG_DEFAULTS.mobs===50)&&(CFG_DEFAULTS.enemies===24)&&
+                 (CFG_DEFAULTS.battle===true)&&(CFG_DEFAULTS.battleLevel==="normal")&&
+                 (window.__tenkyu.battleConsts().HP_MAX===BAT.HP_MAX)&&
+                 (BIRD.STEPS.join(",")==="0,50,200,500,1000,2000")&&(MOB.STEPS.join(",")==="0,50,200,500,1000,2000")&&
+                 (typeof stepBattle==="function")&&(typeof viewFreeT==="function")&&(typeof touchLayout==="function")&&
+                 (ENVS.field.locomotion==="grounded")&&(ENVS.space.mobs===undefined);
+      // 作り込みは 既定ON・⚙に 入切が 出ている・OFFで 保存される
+      var box=document.getElementById("s-mob-rich");
+      var uiOk=(CFG_DEFAULTS.mobRich===true)&&!!box&&(document.querySelectorAll("#s-mob-rich").length===1);
+      // ★4段が 1段ずつ 切れる（⚙にも 出ている・入口は setMobStage 1本）
+      for(i=0;i<STAGE_IDS.length;i++){ if(document.querySelectorAll("#s-rich-"+STAGE_IDS[i]).length!==1) uiOk=false; }
+      var sg0=window.__tenkyu.mobStage();
+      window.__tenkyu.mobStage({shape:false}); if(window.__tenkyu.mobStage().on.shape!==false) uiOk=false;
+      window.__tenkyu.mobStage({shape:true, motion:false}); if(window.__tenkyu.mobStage().on.motion!==false) uiOk=false;
+      window.__tenkyu.mobStage(sg0);
+      var was=window.__tenkyu.mobRich();
+      window.__tenkyu.mobRich(false); var offOk=(window.__tenkyu.mobRich()===false)&&(box.checked===false);
+      window.__tenkyu.mobRich(true);  var onOk=(window.__tenkyu.mobRich()===true)&&(box.checked===true);
+      window.__tenkyu.mobRich(was);
+      // 敵と 弾は 弾28の 属性を 持たない＝同じ器に 相乗りしたまま 1ビットも 変わっていない
+      var shOk=(String(drawScene).indexOf("gl.bindVertexArray(enVAO); gl.drawArraysInstanced(gl.TRIANGLES,0,36,enDraw)")>=0)&&
+               (String(drawScene).indexOf("gl.bindVertexArray(shVAO); gl.drawArraysInstanced(gl.TRIANGLES,0,36,shDraw)")>=0);
+      return {pass:(missing.length===0)&&(realFails.length===0)&&keepOk&&uiOk&&offOk&&onOk&&shOk,
+        detail:"登録もれ="+(missing.join(",")||"なし")+" 既知以外の失敗="+(realFails.join(",")||"なし")+
+               " 既知の失敗="+(failed.join(",")||"なし")+" 判定不能="+(skipped.join(",")||"なし")+
+               " ／ 弾24〜27の 芯は 不変="+keepOk+" ⚙に 入切が ある="+uiOk+"（OFF="+offOk+" ON="+onOk+"）"+
+               " ／ 敵と 弾は 弾27の 器のまま="+shOk};
+    }
+
     window.__tenkyu.runAll = async function(){
       if(!window.__testErrCount){ window.__testErrCount=0;
         var _ce=console.error.bind(console);
@@ -11324,6 +12059,13 @@
       //   T35f を ふくむ 前の 網の 判定基準は 動かしていない＝T35f の 後ろに 置く）
       await run("T36a",t_T36a); await run("T36b",t_T36b); await run("T36c",t_T36c);
       await run("T36d",t_T36d); await run("T36e",t_T36e); await run("T36f",t_T36f);
+      // 弾28 §R23（箱に命を入れる。★T37f は 前の 網を ぜんぶ 見るので 必ず いちばん最後。
+      //   T36f を ふくむ 前の 網の 判定基準は 1ビットも 動かしていない＝T36f の 後ろに 置く）
+      await run("T37a",t_T37a); await run("T37b",t_T37b); await run("T37c",t_T37c);
+      await run("T37d",t_T37d); await run("T37e",t_T37e);
+      // ★干場の 目的＝4段が 成立するか。段ごとの 費用と 合否（T37f より 前に 置く＝T37f が 結果を 見る）
+      await run("T37g",t_T37g); await run("T37h",t_T37h);
+      await run("T37f",t_T37f);
       // 復元＝本当のプレイヤー進行・設定・カメラを一切壊さない
       swooshCount=snapSwoosh.count; swooshLast=snapSwoosh.last;   // persistSave()のnearMiss焼き込み前に実行順を戻す
       save=snapSave; persistSave(); syncVisitedBuffer(); completedConstellations=recomputeCompletedConstellations(); buildLines();
@@ -11336,6 +12078,8 @@
       window.__tenkyu.enemyCount((+cfg.enemies)|0);
       window.__tenkyu.setBattle(!!cfg.battle, false); window.__tenkyu.battleReset(); applyBattleUi();
       // 弾25 §R20: 攻撃も テスト前の 素の状態へ（待ち0・飛んでいる 弾0・数えもの0）＝setBattle の 中で atkResetAll が 走る
+      window.__tenkyu.mobRich(cfg.mobRich!==false); window.__tenkyu.mobActReset();   // 弾28 §R23
+      window.__tenkyu.mobStage({shape:true,motion:true,variety:true,action:true});   // 弾28: 4段も 素の状態へ
       tuiOn=!hasMouse; layoutTouchUI(); updateTouchLookUI();  // 弾16: スマホの盤の 出し入れも テスト前の素の状態へ戻す
       if(swooshCountEl && hudOn("swoosh")) swooshCountEl.textContent=String(swooshCount);   // 弾18: すっきり中は 書きかえない
       var passCount=results.filter(function(r){return r.pass;}).length;
