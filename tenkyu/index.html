@@ -183,6 +183,43 @@
      置き場を あてる とき inline の display が 効かなく なると、スマホの 盤を 出して はかる テストが
      「出ていない」と 誤って 読む（実測で つかまえた）。PCで 出ないのは tuiOn が false だから。 */
   @media (pointer: fine){ .atkbtn{ display:none; } }
+  /* ===== 弾27 §R22: スマホを コントローラーとして 作り直す =====
+     ★考えの中心＝「遊ぶ手」と「開く手」を 分ける。
+       遊ぶ（アクション）＝親指が とどく 下の 左右＝移動スティック／視点スティック／その上の **ひし形4つ**（🦘⚔✨👁）。
+       開く（道具）＝**☰どうぐ 1つ**に 畳む。押すと 板が ひらいて ⚙？🔍🎬🔆📖🛩️ が **大きな行**で ならぶ。
+     ★置き場の 数は ぜんぶ padGeom / toolSheetLayout（純関数）が 決める＝CSSに 数を ちらばらせない。
+     ★PCは 1ビットも 変えない＝ここの ものは tuiOn（スマホ）の時だけ .on が つく。 */
+  #btn-tools{ position:fixed; z-index:6; display:none; flex-direction:column; gap:0; line-height:1.05;
+    align-items:center; justify-content:center; border-radius:14px;
+    background:var(--panel); border:1px solid var(--line); color:var(--fg); cursor:pointer; }
+  #btn-tools.on{ display:flex; }
+  /* 「すっきり」段階3＝★.on より **後ろ**に 書く（同じ強さの 指定は 後ろが 勝つ＝0801の 教訓） */
+  #btn-tools.gone{ display:none; }
+  #btn-tools:focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }
+  #btn-tools-icon{ font-size:19px; }
+  #btn-tools-word{ font-size:9px; letter-spacing:-0.5px; opacity:.95; }
+  /* 道具ボタンが ☰の板の 中に 入っている時の すがた＝**大きな行**（小さい絵を つめるより 押しやすい）。
+     ★PCには .tuck が つかない＝右がわの たて1列は 弾26のまま 1ビットも 変わらない。 */
+  .toolbtn .tlab{ display:none; }
+  .toolbtn.tuck{ display:none; }
+  .toolbtn.tuck.open{ display:flex; z-index:10; justify-content:flex-start; gap:10px; padding:0 14px;
+    border-radius:12px; background:rgba(143,184,255,.14); font-size:22px; }
+  .toolbtn.tuck .tlab{ display:inline; font-size:14px; }
+  .toolbtn.tuck.open.gone{ display:none; }   /* 段階3で かくす時は 板ごと 消える */
+  /* ☰の板（うしろの ふた＝ひらいている間は 世界を さわれない＝誤爆ぼうし） */
+  #toolback{ position:fixed; inset:0; z-index:8; display:none; background:rgba(3,5,14,.45); }
+  #toolback.on{ display:block; }
+  #toolsheet{ position:fixed; z-index:9; display:none; border-radius:16px;
+    background:var(--panel); border:1px solid var(--line); box-shadow:0 8px 30px rgba(0,0,0,.5); }
+  #toolsheet.on{ display:block; }
+  #ts-head{ position:absolute; left:14px; top:11px; margin:0; font-size:15px; font-weight:600; color:var(--fg); }
+  #ts-close{ position:fixed; z-index:10; display:none; border-radius:12px;
+    background:rgba(143,184,255,.18); border:1px solid var(--line); color:var(--fg); font-size:13px; cursor:pointer; }
+  #ts-close.on{ display:block; }
+  #ts-close:focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }
+  /* ★動きを 作らない＝板は すっと 出て すっと 消えるだけ（アニメーションの 指定は 1つも 無い）。
+     明滅も 画面シェイクも 無い。reduced-motion でも 何も 動かない ことを ここで はっきり させる。 */
+  @media (prefers-reduced-motion: reduce){ #toolsheet, #toolback, .toolbtn.tuck.open{ transition:none; animation:none; } }
   /* 近接サムネ（DOMオーバーレイ＝file://安全） */
   #thumbs{ position:fixed; inset:0; z-index:4; pointer-events:none; }
   .thumb{ position:absolute; border-radius:8px; border:1px solid var(--line); object-fit:cover;
@@ -287,19 +324,26 @@
 
 <div id="intro">スマホ：<b>左半分</b>で うごく／<b>右半分</b>で 見まわす。　パソコン：<b>画面をクリック</b>→マウスで 見まわす（Escで解除）・<b>W A S D</b> で うごく・<b>Space</b> で ジャンプ（おしっぱなしで とぶ） <small>（見まわし方は ⚙で かえられます）</small></div>
 
-<button id="btn-settings" class="toolbtn" aria-label="設定をひらく" title="設定">⚙</button>
-<button id="btn-help" class="toolbtn" aria-label="つかいかたをみる" title="つかいかた">？</button>
-<button id="btn-search" class="toolbtn" aria-label="作品をさがす" title="さがす">🔍</button>
-<button id="btn-tour" class="toolbtn" aria-label="じどうで めぐる" title="めぐる">🎬</button>
-<button id="btn-course" class="toolbtn" aria-label="ひかりの輪コースを はじめる・おわる" title="ひかりの輪コース">🔆</button>
-<button id="btn-log" class="toolbtn" aria-label="ずかんをひらく" title="ずかん">📖</button>
-<button id="btn-cruise" class="toolbtn" aria-label="オートクルーズを切り替える（操作しなくても前に進みます）" title="オートクルーズ">🛩️</button>
+<button id="btn-settings" class="toolbtn" aria-label="設定をひらく" title="設定"><span aria-hidden="true">⚙</span><span class="tlab" aria-hidden="true">せってい</span></button>
+<button id="btn-help" class="toolbtn" aria-label="つかいかたをみる" title="つかいかた"><span aria-hidden="true">？</span><span class="tlab" aria-hidden="true">つかいかた</span></button>
+<button id="btn-search" class="toolbtn" aria-label="作品をさがす" title="さがす"><span aria-hidden="true">🔍</span><span class="tlab" aria-hidden="true">さがす</span></button>
+<button id="btn-tour" class="toolbtn" aria-label="じどうで めぐる" title="めぐる"><span aria-hidden="true">🎬</span><span class="tlab" aria-hidden="true">めぐる</span></button>
+<button id="btn-course" class="toolbtn" aria-label="ひかりの輪コースを はじめる・おわる" title="ひかりの輪コース"><span aria-hidden="true">🔆</span><span class="tlab" aria-hidden="true">ひかりの輪</span></button>
+<button id="btn-log" class="toolbtn" aria-label="ずかんをひらく" title="ずかん"><span aria-hidden="true">📖</span><span class="tlab" aria-hidden="true">ずかん</span></button>
+<button id="btn-cruise" class="toolbtn" aria-label="オートクルーズを切り替える（操作しなくても前に進みます）" title="オートクルーズ"><span aria-hidden="true">🛩️</span><span class="tlab" aria-hidden="true">オートクルーズ</span></button>
 <!-- 弾26 §R21: 見え方を かえる（おすたびに いちにんしょう→さんにんしょう→まうえ→いちにんしょう）。
      ★aria-label と 中みの ことばは syncViewUI が いまの 状態に あわせて 書きかえる（色だけに たよらない）。 -->
 <button id="btn-view" class="toolbtn" aria-label="見え方を かえる" title="見え方"><span id="btn-view-icon" aria-hidden="true">👁</span><span id="btn-view-word" aria-hidden="true">め</span></button>
 <!-- 弾18 §R15: 道具ボタンを かくした時だけ 出る「もどす」ボタン。★これが 唯一の 帰り道＝
      押せるものが 画面から 1つも なくなる ことを 作らない（受入テスト T27c が 機械で 見張る）。 -->
 <button id="btn-peek" aria-label="道具ボタンを もどす" title="道具を もどす">⊕</button>
+<!-- 弾27 §R22: ☰どうぐ＝スマホで 道具を 1つに 畳んだ 入口（PCには 出ない＝右がわの たて1列が そのまま ある）。
+     ★キーボードだけで ひらけて・Escapeで とじて・とじたら ここへ フォーカスが もどる（WCAG 2.2 SC2.1.2／2.4.3）。 -->
+<button id="btn-tools" aria-expanded="false" aria-controls="toolsheet" aria-label="どうぐを ひらく"><span id="btn-tools-icon" aria-hidden="true">☰</span><span id="btn-tools-word" aria-hidden="true">どうぐ</span></button>
+<div id="toolback" aria-hidden="true"></div>
+<div id="toolsheet" aria-hidden="true"><h3 id="ts-head">☰ どうぐ</h3></div>
+<button id="ts-close" aria-label="どうぐを とじる">✕ とじる</button>
+<p id="tools-say" class="sr-say" role="status" aria-live="polite"></p>
 <!-- 弾18 §R15: 「すっきり」の 入切を 読み上げに つたえる ところ（目には 見えない） -->
 <p id="tidy-say" class="sr-say" role="status" aria-live="polite"></p>
 
@@ -3299,7 +3343,10 @@
 
   var mouseDown=null, hasMouse=(window.matchMedia && matchMedia("(pointer: fine)").matches);
   var mouseX=0, mouseY=0, overCanvas=false;
-  function anySheet(){ return settings.classList.contains("show")||help.classList.contains("show")||search.classList.contains("show"); }
+  // 弾27 §R22: ☰の板が ひらいている間は 世界を さわれない（誤爆ぼうし）＝ここに 1つ 足すだけ。
+  //   ★毎フレームの 仕事は 真偽の 読みとり 1回ぶんしか 増えない（T36eで 実測する）。
+  var toolSheetOn=false;
+  function anySheet(){ return toolSheetOn||settings.classList.contains("show")||help.classList.contains("show")||search.classList.contains("show"); }
   if(hasMouse){ var _cx=document.getElementById("cross"); if(_cx) _cx.classList.add("show"); }
   function stopAuto(){ tourOn=false; document.getElementById("btn-tour").classList.remove("on"); flying=false; }
 
@@ -3311,88 +3358,163 @@
   //   GAUGE_H は 96→40＝ゲージが 棒と数字だけに なったので、ふさぐ 面積も 実物に あわせて 小さくする。
   var TUI={ EDGE:20, STICK:132, STICK_SMALL:104, STICK_B:92,
             JUMP_W:96, JUMP_H:72, JUMP_B:12, JUMP_GAP:16,
-            ATK:56, ATK_MIN:44, ATK_GAP:8,   // 弾25 §R20: ⚔ふる／✨うつ（★44pxの 床は ぜったいに 割らない）
+            ATK:56, ATK_MIN:44, ATK_GAP:8,   // 弾25 §R20（弾27で ひし形の 一員に なった＝大きさは PAD_B が 決める）
             TB:44, TB_EDGE:14, TB_GAP:6, TB_TALL_H:558, TB_MID_H:360,
-            TB_N:8,   // 弾26 §R21: 道具ボタンの 数（⚙？🔍🎬🔆📖🛩️＋👁）＝ここが 唯一の 正本
-
+            // 弾27 §R22: touchLayout が 返す「いつも 画面に 出ている 道具ボタン」の 数＝**☰ 1つだけ**。
+            //   ⚙？🔍🎬🔆📖🛩️ は ☰の 板の 中へ 畳んだので、いつも 画面を 占める ものでは なくなった。
+            TB_N:1,
+            // 「すっきり（段階3）」で かくす ボタンの 数＝TOOL_IDS の 長さ（7つの道具＋👁）。
+            //   ★TB_N と 分けた 理由＝弾26までは「画面の たて1列＝かくす 相手」が 同じ物だったが、
+            //     弾27で **画面に 出ている数（1）** と **かくす数（8）** が べつの 意味に なったから。
+            HIDE_N:8,
+            MENU:52,                       // ☰ の 大きさ（44pxの 床を こえる）
+            PAD_B:[56,50,44], PAD_GAP:10, PAD_EDGE:4,   // ひし形の 上・左・右の 大きさ（★44pxが 床）
+            ROW_H:52, ROW_W:300, ROW_GAP:6, SHEET_PAD:12, SHEET_HEAD:38, SHEET_EDGE:8,
             GAUGE_L:130, GAUGE_R:66, GAUGE_W:240, GAUGE_H:40,
             MAP:80, MAP_EDGE:14, MAP_B:6,
             CENTER_X:0.30, CENTER_Y0:0.20, CENTER_Y1:0.58,
             rects:null };
   function _r(x,y,w,h){ return {x:x, y:y, w:w, h:h}; }
-  function touchLayout(W,H){
-    var E=TUI.EDGE;
-    // うんと ひくい画面（小さな機械の 横持ち）だけ スティックを 少し小さくする＝下の帯が つぶれないように
-    var S=(H>=TUI.TB_MID_H)?TUI.STICK:TUI.STICK_SMALL;
-    var sTop=H-TUI.STICK_B-S;
-    // 右上の道具ボタン＝縦に ぜんぶ 並ぶのは 高い画面だけ。入らない時は 段を分ける（スティックに かぶらせない）。
-    // 弾26 §R21: 道具は 7つ→8つ（👁見え方を 1つ 足した）。★数は TUI.TB_N ひとつが 正本＝
-    //   数えまちがいを 作らない（TOOL_IDS・tuiEls の ならびと 必ず 同じ数）。
-    var N=TUI.TB_N, cols, rows;
-    // ★たてに 1列で ならべるのは「スティックの 上に 入りきる」画面だけ＝入らない画面では 段を分ける
-    //   （弾26で 道具が 8つに なり、320x568 では 8つめが 視点スティックに かぶった＝実測して 直した）。
-    if(H>=TUI.TB_TALL_H && (TUI.TB_EDGE + N*TUI.TB + 8) <= sTop){ cols=1; }
-    else if(H>=TUI.TB_MID_H){ cols=4; }
-    else { // ひくくて 横に 長い画面＝1段に ならべたい。★横はばが 足りない時だけ 段を分ける（画面の 外へ 出さない）
-      cols=(W-TUI.TB_EDGE*2 >= N*TUI.TB+(N-1)*TUI.TB_GAP) ? N : 4;
-    }
-    rows=Math.ceil(N/cols);
-    var gap=(cols===1)?0:TUI.TB_GAP;
-    var tbW=cols*TUI.TB+(cols-1)*gap, tbH=rows*TUI.TB+(rows-1)*gap;
-    var tools=[], i;
-    for(i=0;i<N;i++){ var cc=i%cols, rr=Math.floor(i/cols);
-      tools.push(_r(W-TUI.TB_EDGE-tbW+cc*(TUI.TB+gap), TUI.TB_EDGE+rr*(TUI.TB+gap), TUI.TB, TUI.TB)); }
-    // ⚡とぶ ちから＝親指と 手の付け根で 隠れない 上のほうへ（弾12までは 下にあった）
-    var gy=(cols===1)? TUI.TB_EDGE : (TUI.TB_EDGE+tbH+8);
-    var gx=TUI.GAUGE_L, gRight=W-TUI.GAUGE_R;
-    if(gy+TUI.GAUGE_H > sTop){ gx=Math.max(gx, E+S+8); gRight=Math.min(gRight, W-E-S-8); }
-    var gw=Math.max(120, Math.min(TUI.GAUGE_W, gRight-gx));
-    // 弾19 §R16: ▲▼の四角(pad)は 返さない＝撤去した。上下は「上を向いて 前へ すすむ」で できる。
-    var jumpX=Math.round(W/2-TUI.JUMP_W/2), jumpY=H-TUI.JUMP_B-TUI.JUMP_H;
-    return { W:W, H:H, short:(H<TUI.TB_TALL_H), cols:cols,
-      stick:_r(E, sTop, S, S),
-      lookstick:_r(W-E-S, sTop, S, S),
-      jump:_r(jumpX, jumpY, TUI.JUMP_W, TUI.JUMP_H),
-      tools:tools,
-      gauge:_r(gx, gy, gw, TUI.GAUGE_H),
+  function _rc(cx,cy,w,h){ return {x:Math.round(cx-w/2), y:Math.round(cy-h/2), w:w, h:h}; }
+  function _hit(a,b){ var x=Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x), y=Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y);
+    return (x>0.001 && y>0.001); }
+  function _cl(v,a,b){ return v<a?a:(v>b?b:v); }
+  // 弾27 §R22: ひし形より **先に** 決まる もの（スティック・☰・ミニマップ・まん中の帯・⚡ゲージ）。
+  //   ★スティックの 置き場は 弾16のまま 1ビットも 動かしていない（親指の 定位置を 変えない）。
+  //   ★☰は **左スティックの 上**（開く手＝左）。右上を 空けて、そこを まるごと ひし形に あけわたす。
+  function padBase(W,H){
+    var E=TUI.EDGE, S=(H>=TUI.TB_MID_H)?TUI.STICK:TUI.STICK_SMALL, sTop=H-TUI.STICK_B-S;
+    var gx=TUI.GAUGE_L, gw=Math.max(120, Math.min(TUI.GAUGE_W, (W-TUI.GAUGE_R)-gx));
+    return { S:S, sTop:sTop,
+      stick:_r(E,sTop,S,S), lookstick:_r(W-E-S,sTop,S,S),
+      menu:_r(E, Math.max(TUI.PAD_EDGE, sTop-TUI.PAD_GAP-TUI.MENU), TUI.MENU, TUI.MENU),
+      gauge:_r(gx, TUI.TB_EDGE, gw, TUI.GAUGE_H),
       map:_r(W-TUI.MAP_EDGE-TUI.MAP, H-TUI.MAP_B-TUI.MAP, TUI.MAP, TUI.MAP),
       center:_r(W*TUI.CENTER_X, H*TUI.CENTER_Y0, W*(1-TUI.CENTER_X*2), H*(TUI.CENTER_Y1-TUI.CENTER_Y0)) };
   }
-  // 弾25 §R20: ⚔ふる／✨うつ の 置き場。★touchLayout の **返す 中みは 1つも 増やさない**。
-  //   理由＝弾20 の T29e が「touchLayout が 返す 名前の ならび」を そのまま 凍らせて いて、
-  //   そこへ 名前を 足すと **弾20の 判定基準を 書きかえる** ことに なるから（前の 網は 1ビットも 動かさない）。
-  //   だから 置き場は この 別の 関数が 持ち、§G T34d が 9通りの 画面で ここを 見張る。
-  //   置き方: **スティックより 下の 帯**に 🦘の となりへ 横に ならべる。
-  //   ・第一希望＝🦘の 右どなり（右親指に いちばん 近い）。
-  //   ・ミニマップに ふさがれて 入らない 画面（せまい 縦持ち）では 🦘の 左どなりへ 逃がす。
-  //     左どなりでも 画面の まん中の すぐ わきなので、どちらの 親指でも とどく。
-  //   ・それでも 入らない ときだけ 56→44へ 小さくする。★44pxの 床は ぜったいに 割らない。
-  //   ・帯の 上は スティックの 下ふち(H-STICK_B)より 下＝スティックと ぜったいに 重ならない。
+  // 弾27 §R22 ★ここが この弾の 芯＝**ひし形4つ の 置き場**（🦘とぶ・⚔ふる・✨うつ・👁見え方）。
+  //   ならび＝下🦘（いちばん よく 押す＝親指に いちばん 近い）／右⚔／左✨／上👁（いちばん たまにしか 押さない）。
+  //   ★大きさが ちがう ものが まざる（🦘だけ 96x72＝弾16からの 大きさを 変えない）ので、
+  //     四角どうしが 重ならない ことを **その場で 実際に 当てて** たしかめる（式を 信じない）。
+  //   ★えらび方＝①まず「視点スティックの すぐ上」で さがす→入らない画面だけ「下の帯」へ。
+  //             ②その中で「右下の すみから いちばん 遠い ボタンが いちばん 近く なる」ものを えらぶ
+  //               （＝親指の 弧に 収める。同点なら 大きいボタンを えらぶ）。
+  //   ★5つの 世界で 位置は 1ミリも 変わらない＝W と H だけで 決まる 純関数（環境を 見ていない）。
+  //     ⚔✨が 出ない 4つの 世界でも 🦘と👁は 同じ所（空いた所に 別の物を つめない）。
+  var _padMemo={k:"", v:null};
+  function padGeom(W,H){
+    var key=W+"x"+H;
+    if(_padMemo.k===key) return _padMemo.v;   // 同じ 画面の 大きさなら 1回 数えれば よい（さがし物なので すこし 重い）
+    var res=padGeomCalc(W,H); _padMemo={k:key, v:res}; return res;
+  }
+  function padGeomCalc(W,H){
+    var B=padBase(W,H), JW=TUI.JUMP_W, JH=TUI.JUMP_H;
+    var avoid=[B.stick,B.lookstick,B.menu,B.map,B.center,B.gauge];
+    var SHAPES=["yoko","tate","hoso"], last=null, best=null, ai,si,bi,xi,i,j;
+    for(ai=0; ai<2; ai++){
+      best=null;
+      for(si=0; si<SHAPES.length; si++){
+        for(bi=0; bi<TUI.PAD_B.length; bi++){
+          var b=TUI.PAD_B[bi], nm=SHAPES[si], Rx, Ry;
+          // yoko＝よこに ひらいた ひし形（せが ひくい＝親指に 近い）／tate＝たて長／hoso＝ほそ長（せまい 画面の 右はし用）
+          if(nm==="yoko"){ Rx=Math.ceil((JW+b)/2)+2; Ry=Math.ceil((JH+b)/4)+2; }
+          else if(nm==="tate"){ Rx=b+6; Ry=Math.ceil((JH+b)/2)+2; }
+          else { Rx=Math.max(22, Math.ceil(b/2)+4); Ry=Math.ceil((JH+b)/2)+2; }
+          var hw=Math.max(JW/2, Rx+b/2), topH=Ry+b/2, botH=Ry+JH/2;
+          var minCx=TUI.PAD_EDGE+hw, maxCx=W-TUI.PAD_EDGE-hw;
+          if(minCx>maxCx) continue;
+          // ★よこの 置きどころは **端から 6pxきざみで ぜんぶ ためす**（4つだけ ためして
+          //   「入らなかった」と 言わない＝0727の「探した範囲でしか 言えない」の 教訓）。
+          //   ★はしに ぴったり つける 置き方（画面の ふちの あき0）も 候補に 入れる＝
+          //     せまい たて画面では これしか まん中の 帯を よけられない（実測して つかまえた）。
+          var lcx=B.lookstick.x+B.lookstick.w/2, cxs=[_cl(lcx,minCx,maxCx), W-hw, hw], cxv;
+          for(cxv=maxCx; cxv>=minCx; cxv-=6) cxs.push(cxv);
+          if(cxs[cxs.length-1]!==minCx) cxs.push(minCx);
+          var cy=(ai===0)? (B.sTop-TUI.PAD_GAP-botH) : (H-TUI.PAD_EDGE-botH);
+          if(cy-topH < TUI.PAD_EDGE) continue;
+          for(xi=0; xi<cxs.length; xi++){
+            var cx=cxs[xi];
+            var g={ b:b, shape:nm+(ai?"-shita":""), cx:cx, cy:cy, Rx:Rx, Ry:Ry,
+              jump:_rc(cx, cy+Ry, JW, JH), view:_rc(cx, cy-Ry, b, b),
+              atkM:_rc(cx+Rx, cy, b, b), atkR:_rc(cx-Rx, cy, b, b) };
+            last=g;
+            var mine=[g.jump,g.view,g.atkM,g.atkR], ok=true;
+            for(i=0;i<mine.length&&ok;i++){
+              var r=mine[i];
+              if(r.x<0||r.y<0||r.x+r.w>W||r.y+r.h>H) ok=false;
+              for(j=0;j<avoid.length&&ok;j++){ if(_hit(r,avoid[j])) ok=false; }
+              for(j=i+1;j<mine.length&&ok;j++){ if(_hit(r,mine[j])) ok=false; }
+            }
+            if(ok){ var mx=0;
+              for(i=0;i<mine.length;i++){ var rr=mine[i]; mx=Math.max(mx, Math.hypot(rr.x+rr.w/2-W, rr.y+rr.h/2-H)); }
+              g.maxd=mx; g.score=mx+(56-b)*1.5;
+              if(!best || g.score<best.score) best=g; }
+          }
+        }
+      }
+      if(best) return best;
+    }
+    return last;   // ★どうしても 入らない 画面（まず 無い）＝いちばん 最後に ためした 形を 返す。T36aが 見張る。
+  }
+  // 弾27 §R22: ☰の板の 中みの 置き場（⚙？🔍🎬🔆📖🛩️＝7つの **大きな行**）。
+  //   ★板は「ひらいている間だけ」出る ものなので、いつも 画面を 占める 6か所とは 別の 関数に する
+  //     （＝T25d/T34d が 見ている「いつも 出ている ものの 重なり」に、板を 混ぜない）。
+  function toolSheetLayout(W,H){
+    var pad=TUI.SHEET_PAD, gap=TUI.ROW_GAP, HD=TUI.SHEET_HEAD, N=7;
+    var availH=H-TUI.SHEET_EDGE*2, availW=W-TUI.SHEET_EDGE*2;
+    function need(r,h){ return pad*2+HD+8+r*h+(r-1)*gap; }
+    var cand=[[1,7,TUI.ROW_H],[1,7,44],[2,4,TUI.ROW_H],[2,4,44],[3,3,44]], pick=null, i;
+    for(i=0;i<cand.length;i++){
+      var c=cand[i][0], rN=cand[i][1], h=cand[i][2];
+      var rw=Math.min(TUI.ROW_W, Math.floor((availW-pad*2-(c-1)*gap)/c));
+      if(rw<44) continue;
+      if(need(rN,h)<=availH){ pick=[c,rN,h,rw]; break; }
+    }
+    if(!pick){ var rw3=Math.min(TUI.ROW_W, Math.floor((availW-pad*2-2*gap)/3)); pick=[3,3,44,rw3]; }
+    var cols=pick[0], rows=pick[1], rh=pick[2], rowW=pick[3];
+    var sw=pad*2+cols*rowW+(cols-1)*gap, sh=need(rows,rh);
+    var sx=Math.max(TUI.SHEET_EDGE, W-TUI.SHEET_EDGE-sw), sy=Math.max(TUI.SHEET_EDGE, H-TUI.SHEET_EDGE-sh);
+    var y0=sy+pad+HD+8, out=[];
+    for(i=0;i<N;i++){ var cc=i%cols, rr=Math.floor(i/cols);
+      out.push(_r(sx+pad+cc*(rowW+gap), y0+rr*(rh+gap), rowW, rh)); }
+    return { sheet:_r(sx,sy,sw,sh), rows:out, cols:cols, rowH:rh,
+             close:_r(sx+sw-pad-84, sy+pad-6, 84, 44) };
+  }
+  function touchLayout(W,H){
+    var B=padBase(W,H), P=padGeom(W,H);
+    // 弾27 §R22: 右上に あった 道具の たて1列（4x2に 崩れる もと）は もう 無い＝**☰ 1つ**だけ。
+    //   ★返す 名前の ならびは 弾19/弾20のまま（T29eが 凍らせて いる）＝pad も run も atkM も 足していない。
+    return { W:W, H:H, short:(H<TUI.TB_TALL_H), cols:TUI.TB_N,
+      stick:B.stick,
+      lookstick:B.lookstick,
+      jump:P.jump,                 // 🦘＝ひし形の いちばん 下（大きさは 弾16のまま 96x72）
+      tools:[B.menu],              // ☰ だけ（⊕は この 四角を そのまま 借りる＝弾18のまま）
+      gauge:B.gauge,
+      map:B.map,
+      center:B.center };
+  }
+  // 弾25 §R20 → 弾27 §R22: ⚔ふる／✨うつ は **ひし形の 左右**に なった。
+  //   ★touchLayout の 返す 中みは 1つも 増やさない（弾20 T29e の 判定基準を 動かさない）＝ここが 置き場を 持つ、は そのまま。
+  //   ★数の 出どころは padGeom **1本**＝🦘👁と ⚔✨が ずれる ことが しくみの上で 起きない。
   function atkLayout(R){
-    var W=R.W, jumpX=R.jump.x, jumpY=R.jump.y;
-    var mapX=W-TUI.MAP_EDGE-TUI.MAP, agap=TUI.ATK_GAP, a=null, b=null;
-    var abTry=[TUI.ATK, TUI.ATK_MIN];
-    for(var i=0;i<abTry.length && !a;i++){
-      var ab=abTry[i], need=ab*2+agap, y=Math.round(jumpY+TUI.JUMP_H/2-ab/2);
-      var rx0=jumpX+TUI.JUMP_W+agap, rx1=mapX-agap, lx1=jumpX-agap;
-      if(rx1-rx0>=need){ a=_r(rx0,y,ab,ab); b=_r(rx0+ab+agap,y,ab,ab); }
-      else if(lx1-agap>=need){ a=_r(lx1-need,y,ab,ab); b=_r(lx1-ab,y,ab,ab); }
-    }
-    if(!a){   // どこにも 入らないほど 小さい 画面＝いちばん 小さい ものを 左へ（44pxの 床は それでも 守る）
-      var ab2=TUI.ATK_MIN, y2=Math.round(jumpY+TUI.JUMP_H/2-ab2/2), x2=Math.max(0, jumpX-agap-ab2*2-agap);
-      a=_r(x2,y2,ab2,ab2); b=_r(x2+ab2+agap,y2,ab2,ab2);
-    }
-    return { atkM:a, atkR:b };
+    var P=padGeom(R.W, R.H);
+    return { atkM:P.atkM, atkR:P.atkR };
   }
   var tuiOn=!hasMouse, _tuiEls=null;
+  // 弾27 §R22: 道具の 7つは ☰の板の 中へ 畳んだので、tuiEls().tools（＝いつも 出ている 道具）は **☰ 1つだけ**。
+  //   👁は ひし形の 一員に なったので view で 持つ（TOOL_IDS＝「すっきり」で かくす ならびには 弾26のまま 入っている）。
+  var PANEL_IDS=["btn-settings","btn-help","btn-search","btn-tour","btn-course","btn-log","btn-cruise"];
   function tuiEls(){
     if(!_tuiEls) _tuiEls={ stick:document.getElementById("stick"), lookstick:document.getElementById("lookstick"),
       jump:document.getElementById("btn-jump"),
       atkM:document.getElementById("btn-atk-melee"), atkR:document.getElementById("btn-atk-shot"),   // 弾25 §R20
+      view:document.getElementById("btn-view"),      // 弾27 §R22: ひし形の いちばん 上
       gauge:document.getElementById("fly-hud"), map:document.getElementById("map"),
       peek:document.getElementById("btn-peek"),   // 弾18 §R15: ⊕（道具を かくした時の 帰り道）
-      tools:["btn-settings","btn-help","btn-search","btn-tour","btn-course","btn-log","btn-cruise","btn-view"]
-        .map(function(id){ return document.getElementById(id); }) };   // 弾26 §R21: 👁を 末尾へ（前の7つの 番号は 1つも ずらさない）
+      sheet:document.getElementById("toolsheet"), back:document.getElementById("toolback"),
+      close:document.getElementById("ts-close"),
+      panel:PANEL_IDS.map(function(id){ return document.getElementById(id); }),
+      tools:[document.getElementById("btn-tools")] };   // 弾27 §R22: いつも 出ている 道具ボタン＝☰ だけ
     return _tuiEls;
   }
   function tuiPlace(el,r,disp){ if(!el) return; var s=el.style;
@@ -3403,11 +3525,15 @@
   // 置き場を 実際のDOMへ あてる。PCでは 何も書かない＝CSSのまま（弾14までの見た目と 1ビットも 変わらない）。
   function layoutTouchUI(fw,fh){
     var E=tuiEls(), i;
-    if(!tuiOn){ TUI.rects=null; TUI.atk=null;
+    if(!tuiOn){ TUI.rects=null; TUI.atk=null; TUI.pad=null; TUI.sheet=null;
       tuiClear(E.atkM); tuiClear(E.atkR); if(typeof applyAtkButtons==="function") applyAtkButtons();   // 弾25 §R20
       tuiClear(E.stick); tuiClear(E.lookstick); tuiClear(E.jump); tuiClear(E.gauge); tuiClear(E.map);
       tuiClear(E.peek);   // 弾18: PCでは ⊕も CSSの位置（右上）へ もどす。出す/出さないは クラスが 決めるので ここでは さわらない。
-      for(i=0;i<E.tools.length;i++) tuiClear(E.tools[i]);
+      // 弾27 §R22: PCでは ひし形も ☰の板も 1つも 出さない＝道具は 右がわの たて1列（弾26のまま）へ 帰る。
+      if(typeof closeToolSheet==="function") closeToolSheet(true);
+      tuiClear(E.view); tuiClear(E.sheet); tuiClear(E.close);
+      for(i=0;i<E.panel.length;i++){ tuiClear(E.panel[i]); if(E.panel[i]) E.panel[i].classList.remove("tuck"); }
+      for(i=0;i<E.tools.length;i++){ tuiClear(E.tools[i]); if(E.tools[i]) E.tools[i].classList.remove("on"); }
       return null; }
     var W=fw||window.innerWidth||360, H=fh||window.innerHeight||640;
     var R=touchLayout(W,H); TUI.rects=R;
@@ -3417,18 +3543,82 @@
     if(E.gauge){ var g=E.gauge.style; g.left=R.gauge.x+"px"; g.top=R.gauge.y+"px"; g.right="auto"; g.bottom="auto";
       g.transform="none"; g.minWidth="0"; g.maxWidth=R.gauge.w+"px"; g.width=R.gauge.w+"px"; }
     if(E.map) tuiPlace(E.map,R.map);
-    for(i=0;i<E.tools.length;i++) tuiPlace(E.tools[i],R.tools[i]);
+    // 弾27 §R22: ☰は「見えるか」を **クラス(.on)**で 決める＝inline の display を 書かない。
+    //   こうすると「すっきり（段階3）」の .gone が ちゃんと 勝つ（inline を 書くと 勝てない＝0801の 教訓）。
+    for(i=0;i<E.tools.length;i++){ tuiPlace(E.tools[i],R.tools[i]); if(E.tools[i]) E.tools[i].classList.add("on"); }
     // 弾18 §R15: ⊕は 道具ボタンの 1つめと 同じ場所へ置く＝すでに「重ならない・画面の中・44px」が
     //   T25dで 確かめてある 四角を そのまま 借りる（新しい置き場を 増やして 検算を 増やさない）。
     //   display は クラス(.show)が 決めるので ここでは 書かない（tuiPlaceの第3引数を わたさない）。
     if(E.peek) tuiPlace(E.peek,R.tools[0]);
+    // 弾27 §R22: ひし形（🦘は 上の R.jump で すでに 置いた／👁・⚔・✨は ここ）。
+    //   ★👁も 出す/出さないは クラス（.gone）が 決めるので inline の display は 書かない。
+    var P=padGeom(W,H); TUI.pad=P;
+    tuiPlace(E.view,P.view);
     // 弾25 §R20: ⚔／✨は 置き場だけ あてて、出す/出さないは applyAtkButtons（＝⚔たたかう の 入切）が 決める。
     TUI.atk=atkLayout(R);
     tuiPlace(E.atkM,TUI.atk.atkM); tuiPlace(E.atkR,TUI.atk.atkR);
     if(typeof applyAtkButtons==="function"){ _atkBtnShown=null; applyAtkButtons(); }
+    // 弾27 §R22: ☰の板（ひらいた時だけ 出る）。中みの 7つは .tuck を つけて **大きな行**に なる。
+    var SH=toolSheetLayout(W,H); TUI.sheet=SH;
+    tuiPlace(E.sheet,SH.sheet); tuiPlace(E.close,SH.close);
+    for(i=0;i<E.panel.length;i++){ if(!E.panel[i]) continue;
+      E.panel[i].classList.add("tuck"); tuiPlace(E.panel[i],SH.rows[i]); }
     updateTouchLookUI();
     return R;
   }
+
+  // ---------- 弾27 §R22: ☰どうぐ の 板（＝「ひらく手」） ----------
+  // ★キーボードだけで 使えること（WCAG 2.2 SC2.1.2 閉じ込めない／2.4.3 フォーカスの 順）:
+  //   ☰を Enter/Space で ひらく → Tab で 中みを ひとまわり → Escape で とじる → **フォーカスは ☰へ もどる**。
+  // ★色だけで 状態を つたえない＝aria-expanded と 読み上げの ことば（#tools-say）でも 言う。
+  // ★動きを 作らない＝板は 出るか 出ないかの どちらか（アニメーションも 明滅も シェイクも 無い）。
+  function toolSay(m){ var el=document.getElementById("tools-say"); if(el) el.textContent=m; }
+  function toolSheetFocusables(){
+    var E=tuiEls(), out=[], i, b;
+    // ★offsetParent では 見ない＝position:fixed の ものは いつも null に なる（実測して つかまえた）。
+    for(i=0;i<E.panel.length;i++){ b=E.panel[i];
+      if(b && getComputedStyle(b).display!=="none") out.push(b); }
+    if(E.close && getComputedStyle(E.close).display!=="none") out.push(E.close);
+    return out;
+  }
+  function openToolSheet(){
+    if(!tuiOn || toolSheetOn) return;
+    if(typeof closeSheets==="function") closeSheets();   // ⚙などと 二重に かさねない
+    toolSheetOn=true;
+    var E=tuiEls(), i;
+    if(E.back) E.back.classList.add("on");
+    if(E.sheet) E.sheet.classList.add("on");
+    if(E.close) E.close.classList.add("on");
+    for(i=0;i<E.panel.length;i++){ if(E.panel[i]) E.panel[i].classList.add("open"); }
+    if(E.tools[0]) E.tools[0].setAttribute("aria-expanded","true");
+    var f=toolSheetFocusables(); if(f.length){ try{ f[0].focus(); }catch(e){} }
+    toolSay("どうぐを ひらきました。Escape キーで とじます。");
+  }
+  function closeToolSheet(quiet){
+    var E=tuiEls(), i, was=toolSheetOn;
+    toolSheetOn=false;
+    if(E.back) E.back.classList.remove("on");
+    if(E.sheet) E.sheet.classList.remove("on");
+    if(E.close) E.close.classList.remove("on");
+    for(i=0;i<E.panel.length;i++){ if(E.panel[i]) E.panel[i].classList.remove("open"); }
+    if(E.tools[0]) E.tools[0].setAttribute("aria-expanded","false");
+    if(!was || quiet) return;
+    if(E.tools[0]){ try{ E.tools[0].focus(); }catch(e){} }   // ★とじたら ☰へ フォーカスを もどす
+    toolSay("どうぐを とじました。");
+  }
+  (function(){
+    var mb=document.getElementById("btn-tools");
+    if(mb) mb.onclick=function(){ if(toolSheetOn) closeToolSheet(); else openToolSheet(); };
+    var cb=document.getElementById("ts-close");
+    if(cb) cb.onclick=function(){ closeToolSheet(); };
+    var bk=document.getElementById("toolback");
+    if(bk) bk.onclick=function(){ closeToolSheet(); };
+    // 中みを 押したら 板は 用ずみ＝とじる。★ここで つける 方が、あとで 決まる それぞれの onclick より **先に** 走る。
+    for(var i=0;i<PANEL_IDS.length;i++){
+      var b=document.getElementById(PANEL_IDS[i]);
+      if(b) b.addEventListener("click", function(){ if(toolSheetOn) closeToolSheet(true); });
+    }
+  })();
   var lookStickEl=document.getElementById("lookstick"), lookKnobEl=document.getElementById("lookstick-knob");
   var lookVec={x:0,y:0};
   // ✎見込み: 目いっぱい倒して 毎秒2.2ラジアン（⚙「見まわす はやさ」cfg.lookSpeed を マウスと同じように かける）
@@ -3539,6 +3729,15 @@
     camVel[0]+=fw[0]*s; camVel[1]+=fw[1]*s; camVel[2]+=fw[2]*s; },{passive:false});
 
   window.addEventListener("keydown",function(e){ var k=e.key.toLowerCase();
+    // 弾27 §R22: ☰の板が ひらいている間だけの 道（★PCでは toolSheetOn が いつも false＝1度も 通らない）。
+    if(toolSheetOn){
+      if(k==="escape"){ e.preventDefault(); closeToolSheet(); return; }
+      if(k==="tab"){ var f=toolSheetFocusables();
+        if(f.length){ var idx=f.indexOf(document.activeElement);
+          var nx = e.shiftKey ? (idx<=0 ? f.length-1 : idx-1) : ((idx<0||idx>=f.length-1) ? 0 : idx+1);
+          e.preventDefault(); try{ f[nx].focus(); }catch(_e){} }
+        return; }
+    }
     if([" ","arrowup","arrowdown","arrowleft","arrowright"].indexOf(k)>=0 &&
        ["input","textarea","select"].indexOf((e.target.tagName||"").toLowerCase())<0) e.preventDefault();
     if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"," ","shift","q","e"].indexOf(k)>=0) stopAuto();
@@ -4141,6 +4340,10 @@
     if(_toolsHidden===hide) return;
     _toolsHidden=hide;
     for(var i=0;i<TOOL_IDS.length;i++){ var b=document.getElementById(TOOL_IDS[i]); if(b) b.classList.toggle("gone", hide); }
+    // 弾27 §R22: ☰も 一緒に かくす（TOOL_IDS には 入れない＝PCに ☰は 無いので、
+    //   「TOOL_IDS は ぜんぶ PCで 押せる」という 弾18 T27b の 約束を 割らない）。かくす時は 板も とじる。
+    var mb=document.getElementById("btn-tools"); if(mb) mb.classList.toggle("gone", hide);
+    if(hide && typeof closeToolSheet==="function") closeToolSheet(true);
     if(peekEl) peekEl.classList.toggle("show", hide);
   }
   // 弾18 §R15: 「すっきり」の 入切（⚙のボタン・Hキー・どちらも ここを通る＝道は1本）。
@@ -10707,7 +10910,7 @@
       // 弾26で 足した 器＝👁は 1つだけ・道具の ならびに 入っている（＝「すっきり」で 一緒に かくれる）
       var vb=document.getElementById("btn-view");
       var oneOnly=(document.querySelectorAll("#btn-view").length===1)&&
-                  (TOOL_IDS.indexOf("btn-view")>=0)&&(TOOL_IDS.length===TUI.TB_N)&&(tuiEls().tools.length===TUI.TB_N)&&
+                  (TOOL_IDS.indexOf("btn-view")>=0)&&(TOOL_IDS.length===TUI.HIDE_N)&&(tuiEls().tools.length===TUI.TB_N)&&
                   (touchLayout(390,844).tools.length===TUI.TB_N);
       // 「すっきり」で 他の道具と 一緒に かくれ、⊕で もどる（実物の class で 見る）
       var hid0=!!cfg.hideTools;
@@ -10721,7 +10924,329 @@
         detail:"登録もれ="+(missing.join(",")||"なし")+" 既知以外の失敗="+(realFails.join(",")||"なし")+
                " 既知の失敗="+(failed.join(",")||"なし")+" 判定不能="+(skipped.join(",")||"なし")+
                " 弾25までの道は そのまま="+pathOk+" ⚙の逃げ道="+gearOk+
-               " 👁は1つだけ・道具"+TUI.TB_N+"個に 入っている="+oneOnly+" すっきりで かくれる="+goneOk+" ⊕で もどる="+backOk};
+               " 👁は1つだけ・かくす ならび"+TUI.HIDE_N+"個に 入っている="+oneOnly+" すっきりで かくれる="+goneOk+" ⊕で もどる="+backOk};
+    }
+
+    // ---------- 弾27 §R22: スマホを コントローラーとして 作り直す（T36a〜T36f） ----------
+    // ★はかり方の ことわり（0730/0802の 教訓を そのまま つぐ）:
+    //   1) 置き場は touchLayout / padGeom / toolSheetLayout という **純関数**が 唯一の 正本＝9通りの 画面で 機械で 見る。
+    //   2) 実物の 四角は getBoundingClientRect で 突き合わせる（静的なCSSだけで 語らない）。
+    //   3) 窓が はかれない 大きさの 時は「はかった」と 言わない。
+    //   4) 弧の 大きさ・ひし形の ならび順は **干場の 実機でしか 決まらない**＝ここでは 数を 出すだけで 断定しない。
+    var T36_VPS=[[320,568],[360,640],[375,812],[390,844],[414,896],[768,1024],[568,320],[780,360],[844,390]];
+    var T36_TAP=44;
+    var T36_ARC=0.45;    // 参考の 弧＝画面の 対角線の 0.45倍（★見込み。合否には つかわない）
+    var T36_ARC_PX=400;  // 参考の 弧＝400px（およそ106mm・両手持ちの 親指）（★見込み。合否には つかわない）
+    function t36Sets(W,H){
+      var R=touchLayout(W,H), A=atkLayout(R), P=padGeom(W,H);
+      return { R:R, A:A, P:P,
+        act:[["移動",R.stick,"L"],["視点",R.lookstick,"R"],["🦘",R.jump,"R"],
+             ["👁",P.view,"R"],["⚔",A.atkM,"R"],["✨",A.atkR,"R"]],
+        always:[["移動",R.stick],["視点",R.lookstick],["🦘",R.jump],["👁",P.view],
+                ["⚔",A.atkM],["✨",A.atkR],["☰",R.tools[0]]] };
+    }
+    function t36NearDist(r,ox,oy){   // 四角の いちばん 近い ところまでの きょり
+      var x=Math.max(r.x, Math.min(ox, r.x+r.w)), y=Math.max(r.y, Math.min(oy, r.y+r.h));
+      return Math.hypot(x-ox, y-oy);
+    }
+    // T36a: 9通りの 画面で いつも 出ている 7つ（移動・視点・🦘・👁・⚔・✨・☰）が
+    //       44px以上／画面の 中／重なり0／まん中の 帯を ふさがない／ゲージ・地図とも 重ならない。
+    function t_T36a(){
+      var bad=[], v,i,j;
+      for(v=0; v<T36_VPS.length; v++){
+        var W=T36_VPS[v][0], H=T36_VPS[v][1], S=t36Sets(W,H), tag=W+"x"+H+" ";
+        var arr=S.always.concat([["⚡",S.R.gauge],["地図",S.R.map]]);
+        for(i=0;i<S.always.length;i++){
+          var r=S.always[i][1], nm=S.always[i][0];
+          if(!r){ bad.push(tag+nm+"の 置き場が 無い"); continue; }
+          if(r.w<T36_TAP||r.h<T36_TAP) bad.push(tag+nm+"が44px未満("+r.w+"x"+r.h+")");
+          if(r.x<0||r.y<0||r.x+r.w>W||r.y+r.h>H) bad.push(tag+nm+"が 画面の外");
+          if(rectHit(r,S.R.center)) bad.push(tag+nm+"が まん中を ふさぐ");
+        }
+        for(i=0;i<arr.length;i++){ for(j=i+1;j<arr.length;j++){
+          if(arr[i][1]&&arr[j][1]&&rectHit(arr[i][1],arr[j][1])) bad.push(tag+arr[i][0]+"と"+arr[j][0]+"が 重なる"); } }
+      }
+      // 実物の 四角と 突き合わせ（390x844の 盤を 出して はかる）
+      var st=tuiSetup(390,844); window.__tenkyu.setBattle(true,false);
+      var E=tuiEls(), R=TUI.rects, P=TUI.pad, diffs=[], gone=[];
+      var chk=[["移動",E.stick,R.stick],["視点",E.lookstick,R.lookstick],["🦘",E.jump,R.jump],
+               ["👁",E.view,P.view],["⚔",E.atkM,TUI.atk.atkM],["✨",E.atkR,TUI.atk.atkR],["☰",E.tools[0],R.tools[0]]];
+      // ★はかれるか の 見きわめ（0802の 教訓）: window.innerWidth は ペインが 出ていない 機械では 0を 返す。
+      //   ここで くらべる 7つは すべて **left/top/width/height を px で 書き込んだ** ものなので、
+      //   窓の 大きさに よらず 同じ 位置に 出る＝ページの 版面(documentElement.clientWidth)が あれば はかってよい。
+      //   それも 0 の 時だけ「はかっていない」と 正直に 書く。
+      var IW=window.innerWidth||document.documentElement.clientWidth||0;
+      var IH=window.innerHeight||document.documentElement.clientHeight||0;
+      var domOk=true, domNote="実測なし（窓="+window.innerWidth+"x"+window.innerHeight+"・版面="+IW+"x"+IH+"）";
+      if(IW>60&&IH>60){
+        for(i=0;i<chk.length;i++){
+          var el=chk[i][1], rr=chk[i][2];
+          if(!el){ diffs.push(chk[i][0]+"の 実物が 無い"); continue; }
+          if(getComputedStyle(el).display==="none") gone.push(chk[i][0]);
+          var bb=el.getBoundingClientRect();
+          if(Math.abs(bb.left-rr.x)>1.5||Math.abs(bb.top-rr.y)>1.5||Math.abs(bb.width-rr.w)>1.5||Math.abs(bb.height-rr.h)>1.5)
+            diffs.push(chk[i][0]+"[宣言 "+rr.x+","+rr.y+" "+rr.w+"x"+rr.h+" / 実測 "+Math.round(bb.left)+","+Math.round(bb.top)+" "+Math.round(bb.width)+"x"+Math.round(bb.height)+"]");
+        }
+        domOk=(diffs.length===0)&&(gone.length===0);
+        domNote="実測と 突き合わせ(390x844の 盤): ちがい="+(diffs.join(" ")||"なし")+" 出ていない="+(gone.join(",")||"なし");
+      }
+      window.__tenkyu.setBattle(false,false); tuiRestore(st);
+      var L=t36Sets(390,844);
+      return {pass:(bad.length===0)&&domOk,
+        detail:"しらべた画面="+T36_VPS.length+"とおり だめだった所="+(bad.slice(0,6).join(" / ")||"なし")+
+          " ／ 390x844: 🦘"+L.R.jump.x+","+L.R.jump.y+"("+L.R.jump.w+"x"+L.R.jump.h+")"+
+          " 👁"+L.P.view.x+","+L.P.view.y+"("+L.P.view.w+"x"+L.P.view.w+")"+
+          " ⚔"+L.A.atkM.x+","+L.A.atkM.y+" ✨"+L.A.atkR.x+","+L.A.atkR.y+
+          " ☰"+L.R.tools[0].x+","+L.R.tools[0].y+"("+L.R.tools[0].w+"x"+L.R.tools[0].h+")"+
+          " かたち="+L.P.shape+"／ひし形の 半径 Rx"+L.P.Rx+" Ry"+L.P.Ry+" 大きさ"+L.P.b+
+          " ／ "+domNote};
+    }
+    // T36b: ★親指の 弧＝下の 左右の すみから、アクション6か所（スティック2＋ひし形4）までの きょりを 数える。
+    //   合否の きめ手＝「6か所は どれも **とぶ ちからの ゲージ（弾19が わざと 親指の 外へ 置いた もの）より 手前**にある」。
+    //   ＝この作品じしんが すでに 持っている「親指の 外」の 目じるしを 物差しに つかう（あとから 数を 合わせない）。
+    //   弧の 半径そのものは 未確定（干場の 実機）＝0.45×対角線 と 400px の 2つで 数だけ 出す。
+    function t_T36b(){
+      var rows=[], bad=[], v,i, inArcAll=0, inPxAll=0, total=0, worst=0, worstTag="";
+      for(v=0; v<T36_VPS.length; v++){
+        var W=T36_VPS[v][0], H=T36_VPS[v][1], S=t36Sets(W,H);
+        var Rt=Math.hypot(W,H)*T36_ARC, inArc=0, inPx=0, far=0, ds=[];
+        for(i=0;i<S.act.length;i++){
+          var r=S.act[i][1], ox=(S.act[i][2]==="L")?0:W;
+          var cx=r.x+r.w/2, cy=r.y+r.h/2, dd=Math.hypot(cx-ox, cy-H);
+          var gaugeD=t36NearDist(S.R.gauge, ox, H);
+          if(!(dd<gaugeD)) bad.push(W+"x"+H+" "+S.act[i][0]+"が ゲージより 遠い("+dd.toFixed(0)+">"+gaugeD.toFixed(0)+")");
+          if(dd<=Rt) inArc++;
+          if(dd<=T36_ARC_PX) inPx++;
+          far=Math.max(far,dd); ds.push(S.act[i][0]+dd.toFixed(0));
+          total++;
+        }
+        inArcAll+=inArc; inPxAll+=inPx;
+        if(far>worst){ worst=far; worstTag=W+"x"+H; }
+        rows.push(W+"x"+H+": 弧"+Math.round(Rt)+"px内="+inArc+"/6・400px内="+inPx+"/6・いちばん遠い="+far.toFixed(0)+"px("+ds.join(" ")+")");
+      }
+      return {pass:(bad.length===0),
+        detail:"★合否＝6か所とも ゲージより 手前: だめだった所="+(bad.slice(0,4).join(" / ")||"なし")+
+          " ／ 9画面 合計 "+total+"か所のうち 0.45×対角線の 弧に "+inArcAll+"・400pxの 弧に "+inPxAll+
+          "（★どちらも 見込みの 半径＝ほんとうに 親指が 届くかは 干場の 実機だけが 決める）"+
+          " ／ いちばん 遠かったのは "+worstTag+" の "+worst.toFixed(0)+"px ／ "+rows.join(" ／ ")};
+    }
+    // T36c: ★ひし形は 5つの 世界で 同じ場所（⚔✨が 出ない 4つの 世界でも 🦘と👁が 1ドットも 動かない）。
+    function t_T36c(){
+      var st=tuiSetup(390,844), ids=["space","sky","ground","cave","field"], d=[], i;
+      var base=null, bad=[], rows=[];
+      function snap(){ var E=tuiEls();
+        function bb(el){ var r=el.getBoundingClientRect(); return [Math.round(r.left),Math.round(r.top),Math.round(r.width),Math.round(r.height)].join(","); }
+        return { jump:bb(E.jump), view:bb(E.view),
+                 atkM:[TUI.atk.atkM.x,TUI.atk.atkM.y,TUI.atk.atkM.w,TUI.atk.atkM.h].join(","),
+                 atkR:[TUI.atk.atkR.x,TUI.atk.atkR.y,TUI.atk.atkR.w,TUI.atk.atkR.h].join(","),
+                 shown:(getComputedStyle(E.atkM).display!=="none") }; }
+      for(i=0;i<ids.length;i++){
+        setEnv(ids[i]); layoutTouchUI(390,844);
+        var v=snap();
+        if(!base) base=v;
+        else { if(v.jump!==base.jump) bad.push(ids[i]+"の 🦘が 動いた");
+               if(v.view!==base.view) bad.push(ids[i]+"の 👁が 動いた");
+               if(v.atkM!==base.atkM||v.atkR!==base.atkR) bad.push(ids[i]+"の ⚔✨の 置き場が 動いた"); }
+        rows.push(ids[i]+"[🦘"+v.jump+" 👁"+v.view+" ⚔"+(v.shown?"出る":"出ない")+"]");
+      }
+      // ⚔たたかう の 入切でも ひし形は 動かない（空いた所に 別の物を つめない）
+      setEnv("field"); window.__tenkyu.setBattle(true,false); layoutTouchUI(390,844); var on=snap();
+      window.__tenkyu.setBattle(false,false); layoutTouchUI(390,844); var off=snap();
+      var stayOk=(on.jump===off.jump)&&(on.view===off.view)&&(on.atkM===off.atkM);
+      var battleShows=(on.shown===true)&&(off.shown===false);
+      // ★しくみの 上でも 世界を 見ていない＝置き場の 式に 世界の 名前が 1文字も 入っていない
+      var srcOk=(String(padGeom).indexOf("ENV")<0)&&(String(padGeom).indexOf("battle")<0)&&
+                (String(touchLayout).indexOf("ENV")<0);
+      window.__tenkyu.setBattle(true,false);
+      tuiRestore(st);
+      d.push("5つの 世界: ちがい="+(bad.join(" ")||"なし")+" ／ "+rows.join(" "));
+      d.push("たたかう ON/OFF でも 動かない="+stayOk+"（ONで 出る・OFFで 消える="+battleShows+"）");
+      d.push("置き場の 式が 世界を 見ていない="+srcOk);
+      return {pass:(bad.length===0)&&stayOk&&battleShows&&srcOk, detail:d.join(" / ")};
+    }
+    // T36d: ★☰の板＝キーボードだけで 開閉／Escapeで とじる／とじたら ☰へ フォーカスが もどる／
+    //       ひらいている間は 世界が 動かない／中みは 44px以上・重なり0（9通りの画面）。
+    function t_T36d(){
+      var st=tuiSetup(390,844), d=[], i,j,v;
+      var mb=document.getElementById("btn-tools"), cb=document.getElementById("ts-close");
+      var sheet=document.getElementById("toolsheet"), back=document.getElementById("toolback");
+      // 1) ☰が 見えて・押せて・44px以上・キーボードで つかめる
+      var mr=mb.getBoundingClientRect();
+      var mOk=(getComputedStyle(mb).display!=="none")&&(mr.width>=T36_TAP)&&(mr.height>=T36_TAP)&&
+              (mb.tagName==="BUTTON")&&(mb.disabled!==true);
+      try{ mb.focus(); }catch(e){}
+      var focusOk=(document.activeElement===mb);
+      // 2) ひらく（キーボードの Enter は button の click と 同じ道＝click を そのまま 流す）
+      mb.click();
+      var openOk=(toolSheetOn===true)&&(getComputedStyle(sheet).display!=="none")&&
+                 (mb.getAttribute("aria-expanded")==="true");
+      var rowsShown=0, rowBad=[];
+      for(i=0;i<PANEL_IDS.length;i++){ var b=document.getElementById(PANEL_IDS[i]);
+        if(b && getComputedStyle(b).display!=="none"){ rowsShown++;
+          var rb=b.getBoundingClientRect();
+          if(rb.width<T36_TAP||rb.height<T36_TAP) rowBad.push(PANEL_IDS[i]+"が"+Math.round(rb.width)+"x"+Math.round(rb.height)); } }
+      var inFirst=(document.activeElement && PANEL_IDS.indexOf(document.activeElement.id)>=0);
+      // 3) Tab で 中みを ひとまわり（とじこめない＝Escapeで かならず 出られる）
+      var f0=document.activeElement;
+      window.dispatchEvent(new KeyboardEvent("keydown",{key:"Tab",bubbles:true,cancelable:true}));
+      var tabMoved=(document.activeElement!==f0);
+      // 4) ひらいている間は 世界が 動かない（キーも スティックも 効かない・ふたが 画面ぜんぶを おおう）
+      var y0=yaw, p0=pitch, cru0=!!cfg.autocruise, tidy0=!!cfg.tidy, view0=cfg.view;
+      window.dispatchEvent(new KeyboardEvent("keydown",{key:"c",bubbles:true}));
+      window.dispatchEvent(new KeyboardEvent("keydown",{key:"h",bubbles:true}));
+      window.dispatchEvent(new KeyboardEvent("keydown",{key:"v",bubbles:true}));
+      window.dispatchEvent(new KeyboardEvent("keyup",{key:"c",bubbles:true}));
+      window.dispatchEvent(new KeyboardEvent("keyup",{key:"h",bubbles:true}));
+      window.dispatchEvent(new KeyboardEvent("keyup",{key:"v",bubbles:true}));
+      lookVec.x=1; lookVec.y=1; applyLookStick(0.5); lookVec.x=0; lookVec.y=0;
+      var quietOk=(yaw===y0)&&(pitch===p0)&&(!!cfg.autocruise===cru0)&&(!!cfg.tidy===tidy0)&&(cfg.view===view0);
+      // ふたは inset:0＝画面ぜんぶ。★窓が 0の 機械では 実寸が 0に なるので、
+      //   実寸が はかれる時だけ 実寸で 見て、はかれない 時は 指定（fixed かつ 四方0）で 見る。
+      var bkS=getComputedStyle(back), bk=back.getBoundingClientRect();
+      var vw=window.innerWidth||document.documentElement.clientWidth||0;
+      var vh=window.innerHeight||document.documentElement.clientHeight||0;
+      var backOk=(bkS.display!=="none")&&(bkS.position==="fixed")&&
+                 ((bk.width>=vw-1&&bk.height>=vh-1) ||
+                  (bkS.left==="0px"&&bkS.top==="0px"&&bkS.right==="0px"&&bkS.bottom==="0px"));
+      var backNote=(bk.width>=vw-1&&bk.height>=vh-1)?("実測 "+Math.round(bk.width)+"x"+Math.round(bk.height)):("指定 inset:"+bkS.left+" "+bkS.top+" "+bkS.right+" "+bkS.bottom+"（実測は はかれない 窓）");
+      // 5) Escape で とじる → フォーカスは ☰へ もどる
+      window.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true,cancelable:true}));
+      var escOk=(toolSheetOn===false)&&(getComputedStyle(sheet).display==="none")&&
+                (mb.getAttribute("aria-expanded")==="false");
+      var backFocusOk=(document.activeElement===mb);
+      var rowsHidden=true;
+      for(i=0;i<PANEL_IDS.length;i++){ var b2=document.getElementById(PANEL_IDS[i]);
+        if(b2 && getComputedStyle(b2).display!=="none") rowsHidden=false; }
+      // 6) 9通りの 画面で 中みの 行が 44px以上・重なり0・画面の中
+      var geoBad=[];
+      for(v=0; v<T36_VPS.length; v++){
+        var W=T36_VPS[v][0], H=T36_VPS[v][1], SH=toolSheetLayout(W,H), tg=W+"x"+H+" ";
+        for(i=0;i<SH.rows.length;i++){
+          var r=SH.rows[i];
+          if(r.w<T36_TAP||r.h<T36_TAP) geoBad.push(tg+"行"+i+"が"+r.w+"x"+r.h);
+          if(r.x<0||r.y<0||r.x+r.w>W||r.y+r.h>H) geoBad.push(tg+"行"+i+"が 画面の外");
+          for(j=i+1;j<SH.rows.length;j++){ if(rectHit(r,SH.rows[j])) geoBad.push(tg+"行"+i+"と"+j+"が 重なる"); }
+        }
+        if(SH.close.w<T36_TAP||SH.close.h<T36_TAP) geoBad.push(tg+"とじるが 小さい");
+      }
+      tuiRestore(st);
+      d.push("1) ☰: 見えて 押せて 44px以上="+mOk+"("+Math.round(mr.width)+"x"+Math.round(mr.height)+") キーボードで つかめる="+focusOk);
+      d.push("2) ひらく="+openOk+" 中みの 行="+rowsShown+"個 小さい行="+(rowBad.join(",")||"なし")+" ひらいた直後の フォーカスが 中み="+inFirst);
+      d.push("3) Tabで うつる="+tabMoved+" ／ 4) 世界が 動かない="+quietOk+"（ふたが 画面ぜんぶ="+backOk+"／"+backNote+"）");
+      d.push("5) Escapeで とじる="+escOk+" ★フォーカスが ☰へ もどる="+backFocusOk+" 行が ぜんぶ 消える="+rowsHidden);
+      d.push("6) 9画面の 行: だめだった所="+(geoBad.slice(0,4).join(" / ")||"なし")+"（390x844は "+toolSheetLayout(390,844).cols+"れつ・行の高さ"+toolSheetLayout(390,844).rowH+"）");
+      return {pass:mOk&&focusOk&&openOk&&(rowBad.length===0)&&(rowsShown===7)&&inFirst&&tabMoved&&quietOk&&backOk&&
+                   escOk&&backFocusOk&&rowsHidden&&(geoBad.length===0), detail:d.join(" / ")};
+    }
+    // T36e: ★ドローコールの 増分0・毎フレームJSの 増分（DOMの 置き場を 変えただけ＝世界の 描画に 1行も さわっていない）。
+    function t_T36e(){
+      var st=tuiSetup(390,844), d=[], i;
+      var ids=["space","sky","ground","cave","field"], rows=[], dcOk=true;
+      // ★同じ 場面を 3回 作りなおして くらべる（だいちの 敵や 鳥は 時間で 動くので、
+      //   つづけて はかると 数が ゆれる＝それを ドローコールの 増分と 読みちがえない）。
+      function dcRun(env, open){
+        setEnv(env); window.__tenkyu.battleReset(); clearHeld(); moveVec={f:0,s:0};
+        var f0=floorYAt(0,0);
+        camPos=[0,(f0!=null?f0:0),0]; camVel=[0,0,0]; yaw=0; pitch=0; yawV=0; pitchV=0;
+        boost=0; boostOn=false; boostKick=0; speedN=0; takenOff=true; takeoffKick=0;
+        if(open) openToolSheet(); else closeToolSheet(true);
+        stepFrames(20);
+        return window.__tenkyu.getState().drawCalls;
+      }
+      for(i=0;i<ids.length;i++){
+        var a0=dcRun(ids[i],false), a1=dcRun(ids[i],true), a2=dcRun(ids[i],false);
+        closeToolSheet(true);
+        if(a1!==a0||a2!==a0) dcOk=false;
+        rows.push(ids[i]+": とじた"+a0+"→ひらいた"+a1+"→とじた"+a2);
+      }
+      // ★世界を 描く 道に 弾27の しくみが 1つも 入っていない（文字で たしかめる）
+      var srcOk=(String(frame).indexOf("padGeom")<0)&&(String(frame).indexOf("toolSheetLayout")<0)&&
+                (String(frame).indexOf("layoutTouchUI")<0)&&(String(frame).indexOf("openToolSheet")<0);
+      // 毎フレームJSの 増分＝anySheet に 足した 1つの 読みとりぶんだけ。同じ回数で くらべる。
+      function ctl(){ return settings.classList.contains("show")||help.classList.contains("show")||search.classList.contains("show"); }
+      function bench(fn){ var best=1e9;
+        for(var k=0;k<7;k++){ var t0=performance.now(), z=0;
+          for(var q=0;q<20000;q++){ if(fn()) z++; }
+          var us=(performance.now()-t0)/20000*1000; if(us<best) best=us; }
+        return best; }
+      var usNew=bench(anySheet), usOld=bench(ctl), delta=usNew-usOld;
+      var perFrame=delta*2;   // frame 1回で anySheet が 通る 回数の 見つもり（見まわしの 道と キーの 道）
+      var usOk=(perFrame<=1.0);
+      tuiRestore(st);
+      d.push("★ドローコール（板を ひらいても 増えない）: "+rows.join(" ／ ")+"＝増分0="+dcOk);
+      d.push("世界を 描く 道に 弾27の しくみが 入っていない="+srcOk);
+      d.push("anySheet 1回: 弾27="+usNew.toFixed(4)+"µs／足す前の 形="+usOld.toFixed(4)+"µs（差 "+delta.toFixed(4)+
+             "µs）→ 1フレームで 2回 通るとして "+perFrame.toFixed(4)+"µs＝上限1.0µs以内="+usOk+
+             "（時計の 細かさ "+perfTimerRes()+"ms）");
+      return {pass:dcOk&&srcOk&&usOk, detail:d.join(" / ")};
+    }
+    // T36f: 回帰＝既存 T1〜T36e が 1件も 余分に 落ちていない ／ PCは 1ビットも 変わっていない ／
+    //       「すっきり」で ☰も ふくめて ぜんぶ かくせて、⊕で もどる。
+    function t_T36f(){
+      var need=["T1","T2","T2f","T2n","T3","T3c","T4","T5","T6","T7","T8","T9","T10","T11","T12","T13","T14",
+                "T15","T16","T17","T18","T19a","T19b","T19c","T19d","T20a","T20b","T20c","T20d","T20e",
+                "T21a","T21b","T21c","T21d","T21e","T21f","T21i","T21g","T22a","T22b","T22c",
+                "T23a","T23b","T23c","T23d","T23e","T25a","T25b","T25c","T25d","T25e","T25f",
+                "T24a","T24b","T24c","T24d","T24e","T24f","T26a","T27a","T27b","T27c","T27d","T27e","T27f",
+                "T28a","T28b","T28c","T28d","T28e","T28f","T29a","T29b","T29c","T29d","T29e",
+                "T30a","T30b","T30c","T30d","T30e","T31a","T31b","T31c","T31d","T31e","T31f",
+                "T32a","T32b","T32c","T32d","T32e","T33a","T33b","T33c","T33d","T33e","T33f",
+                "T34a","T34b","T34c","T34d","T34e","T34f","T35a","T35b","T35c","T35d","T35e","T35f",
+                "T36a","T36b","T36c","T36d","T36e"];
+      var missing=[], failed=[], skipped=[], i, j;
+      for(i=0;i<need.length;i++){
+        var r=null;
+        for(j=0;j<_ranResults.length;j++){ if(_ranResults[j].id===need[i]){ r=_ranResults[j]; break; } }
+        if(!r) missing.push(need[i]);
+        else if(r.skip) skipped.push(need[i]);
+        else if(!r.pass) failed.push(need[i]);
+      }
+      var known=regKnown(failed);
+      var realFails=failed.filter(function(x){ return known.indexOf(x)<0; });
+      // ★PCは 1ビットも 変えていない＝☰も 板も 出ない・置き場も 書かれない・道具は 右がわの たて1列のまま
+      window.__tenkyu.touchUiForce(false);
+      var fine=!!(window.matchMedia&&matchMedia("(pointer: fine)").matches);
+      var mb=document.getElementById("btn-tools"), sheet=document.getElementById("toolsheet");
+      var pcOk=true, pcNote="";
+      if(!tuiOn){
+        pcOk=(getComputedStyle(mb).display==="none")&&(getComputedStyle(sheet).display==="none")&&
+             (mb.style.left==="")&&(document.getElementById("btn-view").style.left==="")&&
+             (toolSheetOn===false);
+        for(i=0;i<PANEL_IDS.length;i++){ var pb=document.getElementById(PANEL_IDS[i]);
+          if(pb.classList.contains("tuck")) pcOk=false;
+          if(pb.style.left!=="") pcOk=false;
+          var pr=pb.getBoundingClientRect();
+          if(getComputedStyle(pb).display==="none"||pr.width<44||pr.height<44) pcOk=false; }
+        pcNote="PC: ☰も 板も 出ない・置き場も 書かれない・道具7つは たて1列のまま="+pcOk+"（pointer:fine="+fine+"）";
+      } else pcNote="この機械は スマホなので PC側は はかれない";
+      // 「すっきり」段階3＝☰も ふくめて ぜんぶ かくれ、⊕が 1つ のこり、押すと もどる
+      var hid0=!!cfg.hideTools;
+      cfg.hideTools=true; applyHudVisibility();
+      var goneAll=mb.classList.contains("gone");
+      for(i=0;i<TOOL_IDS.length;i++){ if(!document.getElementById(TOOL_IDS[i]).classList.contains("gone")) goneAll=false; }
+      var peek=document.getElementById("btn-peek");
+      var peekOk=(document.querySelectorAll("#btn-peek").length===1)&&peek.classList.contains("show");
+      peek.click();
+      var backOk=(cfg.hideTools===false)&&!mb.classList.contains("gone");
+      for(i=0;i<TOOL_IDS.length;i++){ if(document.getElementById(TOOL_IDS[i]).classList.contains("gone")) backOk=false; }
+      cfg.hideTools=hid0; applyHudVisibility();
+      // 弾27で 足した 器の 数え＝☰は 1つだけ・置き場の 数は 1つの 正本から 出ている
+      var oneOnly=(document.querySelectorAll("#btn-tools").length===1)&&
+                  (document.querySelectorAll("#toolsheet").length===1)&&
+                  (touchLayout(390,844).tools.length===TUI.TB_N)&&(tuiEls().tools.length===TUI.TB_N)&&
+                  (TOOL_IDS.length===TUI.HIDE_N)&&(PANEL_IDS.length===TUI.HIDE_N-1)&&
+                  (touchLayout(390,844).pad===undefined)&&(touchLayout(390,844).atkM===undefined);
+      // 弾26までの 道は 1本も 消していない
+      var pathOk=(typeof hudOn==="function")&&(typeof onJumpDown==="function")&&(GRND.HOLD_SEC===0.18)&&
+                 (typeof touchLayout==="function")&&(TUI.STICK===132)&&(TUI.JUMP_W===96)&&(TUI.JUMP_H===72)&&
+                 (typeof viewFreeT==="function")&&(typeof stepBattle==="function")&&
+                 (ENVS.field.locomotion==="grounded")&&(ENVS.space.locomotion===undefined);
+      return {pass:(missing.length===0)&&(realFails.length===0)&&pcOk&&goneAll&&peekOk&&backOk&&oneOnly&&pathOk,
+        detail:"登録もれ="+(missing.join(",")||"なし")+" 既知以外の失敗="+(realFails.join(",")||"なし")+
+               " 既知の失敗="+(failed.join(",")||"なし")+" 判定不能="+(skipped.join(",")||"なし")+
+               " ／ "+pcNote+
+               " ／ すっきりで ☰も ふくめ ぜんぶ かくれる="+goneAll+" ⊕は1つ="+peekOk+" ⊕で もどる="+backOk+
+               " ／ 器の 数え="+oneOnly+" 弾26までの道="+pathOk};
     }
 
     window.__tenkyu.runAll = async function(){
@@ -10795,6 +11320,10 @@
       //   T34f を ふくむ 前の 網の 判定基準は 1ビットも 動かしていない＝T34f の 後ろに 置く）
       await run("T35a",t_T35a); await run("T35b",t_T35b); await run("T35c",t_T35c);
       await run("T35d",t_T35d); await run("T35e",t_T35e); await run("T35f",t_T35f);
+      // 弾27 §R22（スマホを コントローラーとして 作り直す。★T36f は 前の 網を ぜんぶ 見るので 必ず いちばん最後。
+      //   T35f を ふくむ 前の 網の 判定基準は 動かしていない＝T35f の 後ろに 置く）
+      await run("T36a",t_T36a); await run("T36b",t_T36b); await run("T36c",t_T36c);
+      await run("T36d",t_T36d); await run("T36e",t_T36e); await run("T36f",t_T36f);
       // 復元＝本当のプレイヤー進行・設定・カメラを一切壊さない
       swooshCount=snapSwoosh.count; swooshLast=snapSwoosh.last;   // persistSave()のnearMiss焼き込み前に実行順を戻す
       save=snapSave; persistSave(); syncVisitedBuffer(); completedConstellations=recomputeCompletedConstellations(); buildLines();
