@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-08-03 17:01:05",
+  "generated_at": "2026-08-03 17:07:05",
   "gpu": {
-    "occupant": "空き（アイドル）",
-    "note": "誰も使っていません",
-    "vram_used_gb": 1.1,
+    "occupant": "画像/音楽生成中（ComfyUI）",
+    "note": "ファイル: sera_illust",
+    "vram_used_gb": 12.9,
     "vram_total_gb": 15.9,
-    "util": 3,
+    "util": 100,
     "lock": {
       "locked": false,
       "holder": null,
@@ -41,7 +41,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-03 16:58",
+    "updated": "2026-08-03 17:04",
     "current": null
   },
   "queue": [
@@ -128,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 115
+    "push_today": 116
   },
   "ai_works": [
     {
@@ -205,10 +205,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 18,
-    "mem_pct": 57,
+    "cpu_pct": 83,
+    "mem_pct": 85,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 360.0,
-    "disk_free_gb": 1501.8
+    "disk_used_gb": 373.4,
+    "disk_free_gb": 1488.3
   }
 }
