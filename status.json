@@ -1,22 +1,14 @@
 {
-  "generated_at": "2026-08-04 18:25:05",
+  "generated_at": "2026-08-04 18:31:06",
   "gpu": {
-    "occupant": "bestof_15（opus-20260727-hibana）",
-    "note": "経過25s / 目安あと約5分",
-    "vram_used_gb": 6.4,
+    "occupant": "空き（アイドル）",
+    "note": "誰も使っていません",
+    "vram_used_gb": 1.5,
     "vram_total_gb": 15.9,
-    "util": 97,
+    "util": 71,
     "lock": {
-      "locked": true,
-      "holder": {
-        "pid": 7844,
-        "session": "opus-20260727-hibana",
-        "job": "bestof_15",
-        "started_at": "2026-08-04T18:24:39+0900",
-        "age_sec": 25,
-        "alive": true,
-        "est_minutes": 6
-      },
+      "locked": false,
+      "holder": null,
       "stale": false
     }
   },
@@ -136,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 113
+    "push_today": 114
   },
   "ai_works": [
     {
@@ -213,10 +205,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 28,
-    "mem_pct": 57,
+    "cpu_pct": 52,
+    "mem_pct": 72,
     "mem_total_gb": 31.7,
     "disk_used_gb": 366.8,
-    "disk_free_gb": 1495.0
+    "disk_free_gb": 1494.9
   }
 }
