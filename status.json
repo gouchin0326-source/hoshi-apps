@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-08-04 12:55:14",
+  "generated_at": "2026-08-04 13:01:11",
   "gpu": {
     "occupant": "空き（アイドル）",
     "note": "誰も使っていません",
-    "vram_used_gb": 1.0,
+    "vram_used_gb": 0.8,
     "vram_total_gb": 15.9,
     "util": 0,
     "lock": {
@@ -128,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 58
+    "push_today": 59
   },
   "ai_works": [
     {
