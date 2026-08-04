@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-08-04 10:07:05",
+  "generated_at": "2026-08-04 10:13:05",
   "gpu": {
     "occupant": "run_wan22（run_wan22_cli）",
-    "note": "経過568s / 目安あと約0分",
+    "note": "経過306s / 目安あと約2分",
     "vram_used_gb": 14.8,
     "vram_total_gb": 15.9,
     "util": 99,
@@ -12,8 +12,8 @@
         "pid": 35452,
         "session": "run_wan22_cli",
         "job": "run_wan22",
-        "started_at": "2026-08-04T09:57:36+0900",
-        "age_sec": 568,
+        "started_at": "2026-08-04T10:07:58+0900",
+        "age_sec": 306,
         "alive": true,
         "est_minutes": 8
       },
@@ -49,7 +49,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-04 10:05",
+    "updated": "2026-08-04 10:11",
     "current": null
   },
   "queue": [
@@ -136,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 30
+    "push_today": 31
   },
   "ai_works": [
     {
@@ -213,10 +213,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 20,
+    "cpu_pct": 16,
     "mem_pct": 62,
     "mem_total_gb": 31.7,
     "disk_used_gb": 363.7,
-    "disk_free_gb": 1498.0
+    "disk_free_gb": 1498.1
   }
 }
