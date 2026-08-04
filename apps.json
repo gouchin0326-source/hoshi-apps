@@ -24,8 +24,8 @@
     },
     {
       "id": "hoshi_world",
-      "title": "🌏 HOSHI-WORLD",
-      "desc": "いろんなワールドを歩いて・跳んで・飛んで探索する3Dアクション（作品が星になって置いてある）",
+      "title": "🌏 HOSHI-WORLD（HW）",
+      "desc": "いろんなワールドを歩いて・跳んで・飛んで探索する3Dアクション（作品が星になって置いてある）。略称HW＝今後の改良版もこの名前で続きます",
       "icon": "🌏",
       "path": "hoshi-world/index.html",
       "badge": "NEW",
