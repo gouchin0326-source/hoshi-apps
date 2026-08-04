@@ -1,4 +1,23 @@
 <!doctype html>
+<!--★HW33A-BEGIN-->
+<!-- ============================================================================
+     ★★★ この ファイルは「生成物」です。ここを 直接 なおさないで ください。★★★
+     なおしても、つぎに 焼き直した とき 黙って 消えます。
+
+       源（ほんとうの 直し先） : src\body.part  … 本体
+                                 src\tests.part … テスト（runAll）
+                                 src\tail.part  … とじ（4行）
+       焼き直し                : python build.py         → hoshi_world.html（テスト入り）
+                                 python build.py --ship  → hoshi_world.ship.html（テスト抜き＝出荷用）
+       たしかめ                : python build.py --verify   → 出来あがりが 源と 合っているか
+                                 python build.py --selftest → 焼く道具そのものの 検査
+       やり方の 説明           : README.md
+
+     ★見張り: 下の script の 中の HW_SELF_SHA に「焼いた ときの 自分の すがた」が 入っています。
+       この ファイルを 直接 なおすと、テスト T41a（runAll の いちばん 最後）が 落ちます。
+       ※ file:// で ひらいた ときは 自分を 読み返せないので T41a は「判定不能」に なります。
+     ============================================================================ -->
+<!--★HW33A-END-->
 <html lang="ja">
 <head>
 <meta charset="utf-8">
@@ -695,6 +714,14 @@
 "use strict";
 (function(){
   var CFG_KEY = "tenkyu_cfg_v1";
+//★HW33A-BEGIN
+  // ---------- 弾33-A §R27: この 1枚は src\ から 焼いた 生成物（直接 なおさない） ----------
+  // ★下の 64文字は「焼いた ときの 自分の すがた」。build.py が 0 を 64個 置いた ところへ 書きこむ。
+  //   ＝読む がわは その 64文字を 0 に もどして sha256 を とれば、同じ 数に なる。
+  //   これで「いま 動いている この ファイルが、源から 焼いた ままか」を 機械で 見張れる（T41a）。
+  var HW_SELF_SHA="7cfda9e38c1cdf5a2d217c28c13e2de1e97ca2cb964b8090e3c25e4654bc268f";
+  try{ window.HW_SELF_SHA=HW_SELF_SHA; }catch(e){}   // 人が コンソールで 見られる ように（機能には つかわない）
+//★HW33A-END
   // 干場要望「地上から飛べるように」＝セーブが一度も無い初回起動の時だけ、地面のある世界の低空スタートにする。
   // 既にセーブがある（＝env選択を含む前回設定がある）場合はこの判定より前に読み込み/保存ロジックへ触れず従来通り。
   // 弾11 §R9: 初回起動の世界を「だいち（山と海）」へ。2回目以降（設定が保存済み）の起動仕様はいっさい変えない。
@@ -736,6 +763,8 @@
   function saveCfg(){ try{ localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); }catch(e){} }
   var params = new URLSearchParams(location.search);
   var forceNoGL = params.get("webgl") === "off";
+  // 弾33-B §R27: ?shader=break＝わざと シェーダーを 壊して 起動する（下の bootFail の 実験用・おぼえない）
+  var forceBadShader = params.get("shader") === "break";
   var debugFps  = params.get("debug") === "fps";
   // 弾13 §R11-3: 物差しの開発用入口。?debug=perf＝パネルを開いた状態で起動／?debug=heavy＝陽性対照（わざと重くする）も入れて起動。
   var _dbg      = params.get("debug");
@@ -800,11 +829,39 @@
     return o; }
   function tDir(m,x,y,z){ return [ m[0]*x+m[1]*y+m[2]*z, m[4]*x+m[5]*y+m[6]*z, m[8]*x+m[9]*y+m[10]*z ]; }
 
-  function sh(type, src){ var s=gl.createShader(type); gl.shaderSource(s,src); gl.compileShader(s);
-    if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)){ console.error("shader compile:", gl.getShaderInfoLog(s), src); throw new Error("shader"); }
+  // 弾33-B §R27: ★起動の 失敗を「読める ことば」で 画面に 出す（fail-loud）。
+  //   きっかけ＝スマホ実機(0804 干場)「真っ黒で 動かない」。原因は console にしか 出ず、スマホでは
+  //   誰にも 見えなかった＝直す 手がかりが 取れない。だから 原因さがしより 先に、証拠が 画面に 出る 器を 作る。
+  //   ★出すのは 起動が 終わる前(window.__hwBooted が 立つ前)の 失敗だけ＝あそび中の 別種の エラーでは 出さない。
+  function bootFail(title, log){
+    if(document.getElementById("bootfail")) return;
+    var d=document.createElement("div"); d.id="bootfail"; d.setAttribute("role","alert");
+    d.style.cssText="position:fixed;inset:0;z-index:99;background:#0b1020;color:#eef2ff;padding:24px;overflow:auto;font-family:system-ui,sans-serif";
+    var ren=""; try{ var ext=gl&&gl.getExtension("WEBGL_debug_renderer_info");
+      if(ext) ren=String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)); }catch(e){}
+    function esc(t){ return String(t==null?"":t).replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+    d.innerHTML="<h1 style='font-size:20px;margin:0 0 10px'>うまく 起動できませんでした</h1>"+
+      "<p style='line-height:1.7;color:#9fb0d8;max-width:34em'>この端末での 3Dの 部品づくりに しっぱいしました。"+
+      "この画面を そのまま スクリーンショットして おくってください。なおす 手がかりに なります。</p>"+
+      "<pre style='white-space:pre-wrap;font-size:11px;line-height:1.5;background:#131a33;padding:10px;border-radius:8px'>"+
+      esc(title)+"\n"+esc(log)+(ren?("\nGPU: "+esc(ren)):"")+"\nUA: "+esc(navigator.userAgent)+"</pre>";
+    document.body.appendChild(d);
+    if(typeof canvas!=="undefined" && canvas) canvas.style.display="none";
+  }
+  // ★シェーダー以外の 起動中の 例外も 同じ 器で 見せる（真っ黒の まま 黙らない）
+  window.addEventListener("error", function(ev){
+    if(!window.__hwBooted) bootFail("起動中の エラー: "+(ev.message||"(不明)"), ev.filename?(ev.filename.split("/").pop()+":"+ev.lineno):"");
+  });
+  function sh(type, src){ if(forceBadShader) src="!!壊してある(?shader=break)!!\n"+src;
+    var s=gl.createShader(type); gl.shaderSource(s,src); gl.compileShader(s);
+    if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)){ var lg=gl.getShaderInfoLog(s);
+      console.error("shader compile:", lg, src);
+      bootFail((type===gl.VERTEX_SHADER?"頂点":"いろ")+"シェーダーが 作れませんでした", lg+"\n--- 源(先頭300字) ---\n"+src.slice(0,300));
+      throw new Error("shader"); }
     return s; }
   function prog(vs,fs){ var p=gl.createProgram(); gl.attachShader(p,sh(gl.VERTEX_SHADER,vs)); gl.attachShader(p,sh(gl.FRAGMENT_SHADER,fs));
-    gl.linkProgram(p); if(!gl.getProgramParameter(p,gl.LINK_STATUS)){ console.error("link:", gl.getProgramInfoLog(p)); throw new Error("link"); }
+    gl.linkProgram(p); if(!gl.getProgramParameter(p,gl.LINK_STATUS)){ var lg2=gl.getProgramInfoLog(p);
+      console.error("link:", lg2); bootFail("シェーダーの つなぎこみに しっぱいしました", lg2); throw new Error("link"); }
     return p; }
   var HEAD = "#version 300 es\n";
   var HUE2RGB = "vec3 hue2rgb(float h){ h=fract(h); vec3 k=abs(mod(h*6.0+vec3(0.,4.,2.),6.)-3.)-1.; return clamp(k,0.,1.); }\n";
@@ -7177,6 +7234,9 @@
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(a.href); },1000); };
 
   if(window.__starsMissing){ console.info("stars.js が見つからないため、埋め込みの作品でひらいています。tenkyu_build.py を実行すると本物の作品になります。"); }
+
+  // 弾33-B §R27: ここまで 例外なしに 来られた＝起動は 成功。以後の エラーは bootFail の 対象外（別種の 問題だから）。
+  window.__hwBooted = true;
 
   // ---------- 弾6: 全テスト総回し（§G T1〜T16をwindow.__tenkyu.runAll()から1回で実行） ----------
   // 方針: 実際のsave/cfg/カメラ状態を一時的に使って判定し、終了後に必ず元の値へ復元する（プレイヤーの本当の進行を壊さない）。
@@ -13587,6 +13647,71 @@
                "①TUI.HIDE_N 8→9 ②T36d の 行の数 7→PANEL_IDS.length（決めうちを やめて 出どころを 1つに した）" };
     }
 
+//★HW33A-BEGIN
+    // ---------- 弾33-A §R27: 焼きあがりの 見張り（T41a・T41b） ----------
+    // ★なぜ 要るか＝この 1枚は src\ から 焼いた 生成物。出来あがりを 直接 なおすと、
+    //   つぎに build.py を 走らせた とき 黙って 消える。それを 人の 気くばりでは なく 機械で 捕まえる。
+    // しくみ＝焼くとき「0を 64個 置いた ままの 自分」の sha256 を、その 64個の ところへ 書きこむ。
+    //   だから 読む がわは その 64バイトを 0 に もどして sha256 を とれば 同じ 数に なる。
+    //   ★1バイトでも 直接 なおされていれば、この 数は 合わなくなる。
+    // ※ file:// で ひらいた ときは 自分を 読み返せない（ブラウザが ゆるさない）＝「判定不能(skip)」に する。
+    //   にせの PASS も にせの FAIL も 出さない（弾13の 作法）。
+    var HW_NEEDLE="HW_SELF_SHA=\"";   // ★ここは \" なので、この 行 じたいは めじるしに 当たらない
+    // 生の バイトの まま あつかう＝文字に 直して また バイトに もどす、を しない（そこで ずれない ため）
+    function hwFindStamp(bytes){
+      var pat=new TextEncoder().encode(HW_NEEDLE), hits=[], i, j, ok;
+      for(i=0;i+pat.length+65<=bytes.length;i++){
+        ok=true;
+        for(j=0;j<pat.length;j++){ if(bytes[i+j]!==pat[j]){ ok=false; break; } }
+        if(!ok) continue;
+        var p=i+pat.length, hex=true;
+        for(j=0;j<64;j++){ var c=bytes[p+j];
+          if(!((c>=48&&c<=57)||(c>=97&&c<=102))){ hex=false; break; } }
+        if(hex && bytes[p+64]===34) hits.push(p);   // 34 = ダブルクォート
+      }
+      return hits;
+    }
+    function hwHex(buf){ var a=new Uint8Array(buf), s="", i;
+      for(i=0;i<a.length;i++) s+=("0"+a[i].toString(16)).slice(-2); return s; }
+    // 自分自身を 生の バイトで 読み返す。読めない ときは null（＝判定不能）
+    async function hwSelfBytes(){
+      if(!(window.crypto&&window.crypto.subtle&&window.crypto.subtle.digest)) return null;
+      if(typeof fetch!=="function" || location.protocol==="file:") return null;
+      try{ var r=await fetch(location.href,{cache:"no-store"}); if(!r.ok) return null;
+        return new Uint8Array(await r.arrayBuffer()); }catch(e){ return null; }
+    }
+    async function hwSelfDigest(extra){
+      var b=await hwSelfBytes(); if(!b) return null;
+      var hits=hwFindStamp(b); if(hits.length!==1) return {hits:hits.length, hex:""};
+      var c=b.slice(0), j;                       // ★写しを いじる＝読み返した ものは こわさない
+      for(j=0;j<64;j++) c[hits[0]+j]=48;         // 48 = 文字の "0"
+      if(extra){ var e2=new Uint8Array(c.length+1); e2.set(c); e2[c.length]=32; c=e2; }   // ★陽性対照＝わざと 1バイト 足す
+      var d=await crypto.subtle.digest("SHA-256", c);
+      return {hex:hwHex(d), hits:1};
+    }
+
+    // T41a: いま 動いている この ファイルが「源から 焼いた まま」か（★直接 編集の 見張り）
+    async function t_T41a(){
+      var r=await hwSelfDigest(false);
+      if(r===null) return {pass:false, skip:true,
+        detail:"自分を 読み返せない（file:// で ひらいた／fetch・crypto が つかえない）＝判定不能。"+
+               "サーバー越し（http://localhost:8410 など）で ひらくと 見られる。"+
+               "焼いた ときの めじるし="+HW_SELF_SHA};
+      if(r.hits!==1) return {pass:false, detail:"めじるしが "+r.hits+"か所 見つかった（ちょうど 1か所で ないと いけない）"};
+      var ok=(r.hex===HW_SELF_SHA);
+      return {pass:ok, detail:"焼いた とき="+HW_SELF_SHA+" ／ いまの ファイル="+r.hex+
+        (ok?" （合っている＝直接 なおされていない）"
+           :" （★合わない＝この ファイルは 直接 なおされている。src\\ を 直して python build.py を 走らせ直す こと）")};
+    }
+    // T41b: ★陽性対照＝わざと 1バイト 足したら ちゃんと 合わなくなるか（落ちない 見張りは 見張りでは ない）
+    async function t_T41b(){
+      var r=await hwSelfDigest(true);
+      if(r===null) return {pass:false, skip:true, detail:"自分を 読み返せない＝判定不能（T41a と 同じ わけ）"};
+      var caught=(r.hex!==HW_SELF_SHA);
+      return {pass:caught, detail:"わざと 1バイト 足したら 数が 変わった="+caught+
+        "（変わらなければ 見張りが 効いていない＝この しくみを 信じては いけない）"};
+    }
+//★HW33A-END
     window.__tenkyu.runAll = async function(){
       if(!window.__testErrCount){ window.__testErrCount=0;
         var _ce=console.error.bind(console);
@@ -13681,6 +13806,11 @@
       //   T39f を ふくむ 前の 網の 判定基準は 動かしていない＝T39f の 後ろに 置く）
       await run("T40a",t_T40a); await run("T40b",t_T40b); await run("T40c",t_T40c);
       await run("T40d",t_T40d); await run("T40e",t_T40e); await run("T40f",t_T40f);
+//★HW33A-BEGIN
+      // 弾33-A §R27（焼きあがりの 見張り。★T40f を ふくむ 前の 網の 判定基準は 1ビットも 動かしていない
+      //   ＝T40f の 後ろに 置く。回帰の 網(T40f)の need にも 足していない）
+      await run("T41a",t_T41a); await run("T41b",t_T41b);
+//★HW33A-END
       // 復元＝本当のプレイヤー進行・設定・カメラを一切壊さない
       swooshCount=snapSwoosh.count; swooshLast=snapSwoosh.last;   // persistSave()のnearMiss焼き込み前に実行順を戻す
       save=snapSave; persistSave(); syncVisitedBuffer(); completedConstellations=recomputeCompletedConstellations(); buildLines();
