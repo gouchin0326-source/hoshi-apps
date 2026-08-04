@@ -11662,10 +11662,18 @@
       var sensitive=(winCtl>=R-1);
       // ④画像・音は 1バイトも 足していない。★本文を 文字で さがすと この テスト自身の 文字に 当たって
       //   にせのFAILに なる（0803に 実際に 起きた）。だから **DOMの 実物の src/href を 1つずつ 見る**。
-      var srcEls=document.querySelectorAll("[src],[href]"), dataUri=false, urls=[], uu;
+      //   ★2026-08-04 例外を 1つだけ 足した＝**タブのアイコン(link[rel=icon])が data: で 埋めこまれている 場合**。
+      //     理由＝この 検査が 見たいのは「**モブの 作り込みで 絵や 音を 足していない**」ことであって、
+      //     タブのアイコンは 3Dの 場面の 材料では ない（弾28で 足した物でも ない）。他の 配布アプリは
+      //     ぜんぶ この形の アイコンを 持っており、外へ 取りに行かない data: なので 単一HTML・依存0も 崩れない。
+      //     ★ゆるめ過ぎないため 例外は **アイコン1つまで**＝2つ目以降や、img/audio/video など
+      //     アイコン以外の data: は これまで どおり 落とす（下の iconData<=1 と dataUri で 見張る）。
+      var srcEls=document.querySelectorAll("[src],[href]"), dataUri=false, urls=[], uu, iconData=0;
       for(var z=0;z<srcEls.length;z++){
         uu=srcEls[z].getAttribute("src")||srcEls[z].getAttribute("href")||"";
-        if(uu.slice(0,5)==="data:") dataUri=true;
+        var isIcon=(srcEls[z].tagName.toLowerCase()==="link") &&
+                   ((srcEls[z].getAttribute("rel")||"").toLowerCase().indexOf("icon")>=0);
+        if(uu.slice(0,5)==="data:"){ if(isIcon) iconData++; else dataUri=true; }
         if(uu) urls.push(srcEls[z].tagName.toLowerCase()+":"+uu.slice(0,30));
       }
       var cssUrl=false, sts=document.querySelectorAll("style");
@@ -11673,7 +11681,7 @@
       var extra=document.querySelectorAll("video,source,link[rel=stylesheet],iframe").length;
       var scripts=document.querySelectorAll("script[src]").length;
       var newSrc=String(partsMesh)+String(buildBirds)+String(buildMobs)+String(mobThink)+String(drawScene);
-      var noAsset=(!dataUri)&&(!cssUrl)&&(extra===0)&&(scripts===1)&&
+      var noAsset=(!dataUri)&&(iconData<=1)&&(!cssUrl)&&(extra===0)&&(scripts===1)&&
                   (newSrc.indexOf("createTexture")<0)&&(newSrc.indexOf("new Image")<0)&&
                   (newSrc.indexOf("new Audio")<0)&&(newSrc.indexOf("da"+"ta:")<0);
       window.__tenkyu.mobRich(true);
@@ -11687,7 +11695,7 @@
              (usDelta/T37_US_MAX*100).toFixed(1)+"%・="+usOk+"）"+
              " ONが おそかった回="+winOn+"/"+R+"・目もり(band)="+band+"ms");
       d.push("　陽性対照 生きもの500="+msCtl+"ms（おそかった回="+winCtl+"/"+R+"・物差しは 生きている="+sensitive+"）");
-      d.push("④画像・音: 埋めこみ="+dataUri+" CSSのurl()="+cssUrl+" 外から読む物="+extra+"個 script[src]="+scripts+
+      d.push("④画像・音: アイコン以外の埋めこみ="+dataUri+" タブのアイコン="+iconData+"個(1つまで) CSSのurl()="+cssUrl+" 外から読む物="+extra+"個 script[src]="+scripts+
              "（stars.js の 1つだけ）読みこむ物 ぜんぶ="+(urls.join(" ")||"なし")+" 新しい 絵/音の 呼び出し なし="+noAsset);
       if(!sensitive) return {pass:false, skip:true,
         detail:"判定不能(SKIP): 陽性対照が 立たない＝③の 時間は 読めていない。①②④は "+
