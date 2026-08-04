@@ -719,7 +719,7 @@
   // ★下の 64文字は「焼いた ときの 自分の すがた」。build.py が 0 を 64個 置いた ところへ 書きこむ。
   //   ＝読む がわは その 64文字を 0 に もどして sha256 を とれば、同じ 数に なる。
   //   これで「いま 動いている この ファイルが、源から 焼いた ままか」を 機械で 見張れる（T41a）。
-  var HW_SELF_SHA="7cfda9e38c1cdf5a2d217c28c13e2de1e97ca2cb964b8090e3c25e4654bc268f";
+  var HW_SELF_SHA="4b9c26b56d6359a39ef5149e78639c74cf252a88ba4e7ddeb20b55e32827eb2a";
   try{ window.HW_SELF_SHA=HW_SELF_SHA; }catch(e){}   // 人が コンソールで 見られる ように（機能には つかわない）
 //★HW33A-END
   // 干場要望「地上から飛べるように」＝セーブが一度も無い初回起動の時だけ、地面のある世界の低空スタートにする。
@@ -844,7 +844,9 @@
       "<p style='line-height:1.7;color:#9fb0d8;max-width:34em'>この端末での 3Dの 部品づくりに しっぱいしました。"+
       "この画面を そのまま スクリーンショットして おくってください。なおす 手がかりに なります。</p>"+
       "<pre style='white-space:pre-wrap;font-size:11px;line-height:1.5;background:#131a33;padding:10px;border-radius:8px'>"+
-      esc(title)+"\n"+esc(log)+(ren?("\nGPU: "+esc(ren)):"")+"\nUA: "+esc(navigator.userAgent)+"</pre>";
+      esc(title)+"\n"+esc(log)+(ren?("\nGPU: "+esc(ren)):"")+"\nUA: "+esc(navigator.userAgent)+
+      (gl?("\n限界: 属性"+gl.getParameter(gl.MAX_VERTEX_ATTRIBS)+" 頂点u"+gl.getParameter(gl.MAX_VERTEX_UNIFORM_VECTORS)+
+      " 色u"+gl.getParameter(gl.MAX_FRAGMENT_UNIFORM_VECTORS)+" 橋"+gl.getParameter(gl.MAX_VARYING_VECTORS)):"")+"</pre>";
     document.body.appendChild(d);
     if(typeof canvas!=="undefined" && canvas) canvas.style.display="none";
   }
@@ -852,16 +854,23 @@
   window.addEventListener("error", function(ev){
     if(!window.__hwBooted) bootFail("起動中の エラー: "+(ev.message||"(不明)"), ev.filename?(ev.filename.split("/").pop()+":"+ev.lineno):"");
   });
-  function sh(type, src){ if(forceBadShader) src="!!壊してある(?shader=break)!!\n"+src;
+  // 弾33-C: ★どの 器で 失敗したかを 名前で 出す。実機(Adreno 730)の 報告が「つなぎこみに しっぱい」
+  //   だけで ドライバの ログが 空＝**どの シェーダーか 分からなかった**。作る 順番は 下の 並びで 固定なので、
+  //   何本目かで 名前が 引ける（prog の 呼び出しを 1つ 足したら この 表にも 1つ 足すこと）。
+  var PROG_NAMES=["作品星","星雲","そら(ドーム)","星座線","すれ星","光の環","めじるし","地形","村と街","自機","鳥","生きもの"];
+  var progCount=0;
+  function sh(type, src, nm){ if(forceBadShader) src="!!壊してある(?shader=break)!!\n"+src;
     var s=gl.createShader(type); gl.shaderSource(s,src); gl.compileShader(s);
     if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)){ var lg=gl.getShaderInfoLog(s);
-      console.error("shader compile:", lg, src);
-      bootFail((type===gl.VERTEX_SHADER?"頂点":"いろ")+"シェーダーが 作れませんでした", lg+"\n--- 源(先頭300字) ---\n"+src.slice(0,300));
+      console.error("shader compile:", nm, lg, src);
+      bootFail("「"+nm+"」の "+(type===gl.VERTEX_SHADER?"頂点":"いろ")+"シェーダーが 作れませんでした", lg+"\n--- 源(先頭300字) ---\n"+src.slice(0,300));
       throw new Error("shader"); }
     return s; }
-  function prog(vs,fs){ var p=gl.createProgram(); gl.attachShader(p,sh(gl.VERTEX_SHADER,vs)); gl.attachShader(p,sh(gl.FRAGMENT_SHADER,fs));
+  function prog(vs,fs){ var nm=PROG_NAMES[progCount]||("#"+(progCount+1)); progCount++;
+    var p=gl.createProgram(); gl.attachShader(p,sh(gl.VERTEX_SHADER,vs,nm)); gl.attachShader(p,sh(gl.FRAGMENT_SHADER,fs,nm));
     gl.linkProgram(p); if(!gl.getProgramParameter(p,gl.LINK_STATUS)){ var lg2=gl.getProgramInfoLog(p);
-      console.error("link:", lg2); bootFail("シェーダーの つなぎこみに しっぱいしました", lg2); throw new Error("link"); }
+      console.error("link:", nm, lg2);
+      bootFail("「"+nm+"」("+progCount+"本目)の つなぎこみに しっぱいしました", lg2); throw new Error("link"); }
     return p; }
   var HEAD = "#version 300 es\n";
   var HUE2RGB = "vec3 hue2rgb(float h){ h=fract(h); vec3 k=abs(mod(h*6.0+vec3(0.,4.,2.),6.)-3.)-1.; return clamp(k,0.,1.); }\n";
