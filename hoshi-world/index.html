@@ -52,6 +52,9 @@
   #btn-course{ right:14px; top:222px; }
   #btn-log{ right:14px; top:274px; }
   #btn-cruise{ right:14px; top:326px; }
+  /* 弾32 §R26: 🏠 きょてん の ばん（山頂の 拠点に 居るときだけ ひらける）。
+     ★置き場は たて1列の いちばん下＝既存の 7つの 置き場は 1pxも 動かしていない。 */
+  #btn-home{ right:14px; top:430px; }
   /* 弾26 §R21: 👁 見え方（いちにんしょう→さんにんしょう→まうえ→…）。★足すボタンは これ 1つだけ。
      色だけで 状態を つたえない＝「絵」と「ことば」を たてに ならべて 両方 出す（44pxの 床は 割らない）。 */
   #btn-view{ right:14px; top:378px; flex-direction:column; gap:0; line-height:1.05; }
@@ -314,6 +317,22 @@
     border:1px solid var(--line); border-radius:10px; padding:10px; margin:0;
     white-space:pre-wrap; word-break:break-all; max-height:34vh; overflow:auto; }
   .sheet .foot button:focus-visible, .sheet .chk input:focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }
+  /* 弾32 §R26: きょてんの ばん＝**章（タブ）を ならべられる 器**。
+     ★中みは 台帳(DEV_TABS)から 作る＝章を 1つ ふやすのに ここの CSS も HTML も 書きたさない。
+     ★色だけで「いま どの章か」を つたえない＝aria-selected と ふとじ・下線の 3つで 出す。 */
+  #dev-tabs{ display:flex; gap:6px; flex-wrap:wrap; margin:0 0 12px; }
+  #dev-tabs button{ min-height:44px; padding:8px 12px; border-radius:11px; cursor:pointer;
+    border:1px solid var(--line); background:rgba(143,184,255,.10); color:var(--dim); font-size:14px; }
+  #dev-tabs button[aria-selected="true"]{ background:rgba(143,184,255,.30); color:var(--fg);
+    font-weight:700; border-color:var(--accent); text-decoration:underline; }
+  #dev-tabs button:focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }
+  #dev-panels .dev-panel{ display:none; }
+  #dev-panels .dev-panel.on{ display:block; }
+  /* ★0801の 教訓＝[hidden] は 書いた側の display 宣言に 負ける。だから 対で かならず 書く。 */
+  #dev-panels .dev-panel[hidden]{ display:none; }
+  #dev-panels h4{ font-size:14px; margin:6px 0 8px; color:var(--fg); }
+  #dev-panels .dev-slot{ min-height:96px; border:1px dashed var(--line); border-radius:10px;
+    padding:10px 12px; color:var(--dim); font-size:13px; line-height:1.8; }
 </style>
 </head>
 <body>
@@ -334,6 +353,9 @@
 <button id="btn-course" class="toolbtn" aria-label="ひかりの輪コースを はじめる・おわる" title="ひかりの輪コース"><span aria-hidden="true">🔆</span><span class="tlab" aria-hidden="true">ひかりの輪</span></button>
 <button id="btn-log" class="toolbtn" aria-label="ずかんをひらく" title="ずかん"><span aria-hidden="true">📖</span><span class="tlab" aria-hidden="true">ずかん</span></button>
 <button id="btn-cruise" class="toolbtn" aria-label="オートクルーズを切り替える（操作しなくても前に進みます）" title="オートクルーズ"><span aria-hidden="true">🛩️</span><span class="tlab" aria-hidden="true">オートクルーズ</span></button>
+<!-- 弾32 §R26: 🏠 きょてんの ばん。★山頂の 拠点に 居るときだけ ひらく（ほかの 場所では 何も 起きない）。
+     パソコンは B キー でも ひらけます（B＝「ばん」。★左クリックは 作品星を えらぶ ためのもの＝ぜったいに 取らない）。 -->
+<button id="btn-home" class="toolbtn" aria-expanded="false" aria-controls="devboard" aria-label="きょてんの ばんを ひらく（山頂の いえに いるとき）" title="きょてんの ばん"><span aria-hidden="true">🏠</span><span class="tlab" aria-hidden="true">きょてん</span></button>
 <!-- 弾26 §R21: 見え方を かえる（おすたびに いちにんしょう→さんにんしょう→まうえ→いちにんしょう）。
      ★aria-label と 中みの ことばは syncViewUI が いまの 状態に あわせて 書きかえる（色だけに たよらない）。 -->
 <button id="btn-view" class="toolbtn" aria-label="見え方を かえる" title="見え方"><span id="btn-view-icon" aria-hidden="true">👁</span><span id="btn-view-word" aria-hidden="true">め</span></button>
@@ -429,12 +451,8 @@
   <div class="chk"><input type="checkbox" id="s-i-course" checked><label for="s-i-course" style="margin:0">🔆 のこりの環（コース中だけ）</label></div>
   <p class="hint">ミニマップは 下の「ミニマップを みせる」で 決められます。「1つだけ のこす」も できます。</p>
   <div class="chk"><input type="checkbox" id="s-hidetools"><label for="s-hidetools" style="margin:0">🛠️ 道具ボタンも かくす（右上の <b>⊕</b> を おすと もどります）</label></div>
-  <label for="s-count">星のかず</label>
-  <select id="s-count">
-    <option value="3000">すくなめ（軽い）</option>
-    <option value="8000" selected>ふつう</option>
-    <option value="15000">たくさん（きれい）</option>
-  </select>
+  <!-- 弾30: ★「⚙星のかず」（背景の星野の 数）は 撤去した。干場実機0804「座標データを 示す 旧『星研究』
+       3Dアプリの 名残で、今の アクション寄りの システムには 不要」＝⚙からも 消す。 -->
   <label for="s-sens">音にあわせて光る強さ：<span id="s-sens-v">1.0</span></label>
   <input type="range" id="s-sens" min="0" max="2" step="0.1" value="1">
   <label for="s-inertia">動きのなめらかさ：<span id="s-inertia-v">0.5</span></label>
@@ -606,6 +624,14 @@
     ・<b>つよさは そろえて あります</b>＝ふるのは 一撃が 大きくて まちが 長い／うつのは 一撃が 小さくて 早く つづけられる。<b>1秒あたりの つよさは どちらも 同じ</b>です（＝どちらが 強いかでは なく、<b>どちらが 楽しいか</b>で えらべます）<br>
     ・画面の下の <b>⚔／✨の 細い棒</b>は「つぎまで あと どれくらいか」です。<b>ちかちか しません</b>
   </p>
+  <!-- 弾32 §R26: 山頂の きょてん（＝この 作品の いえ）。★キーが あるのに どこにも 書いていない、を 作らない。 -->
+  <p class="hint" style="font-size:13.5px;color:var(--fg)">
+    <b>🏠 山の てっぺんの きょてん（「だいち」だけ）</b><br>
+    ・アプリを はじめて ひらくと、<b>山の てっぺんの きょてんの 前</b>から はじまります<br>
+    ・きょてんの <b>中</b>か <b>すぐ前</b>に いるとき、<b>🏠</b> ボタン（右がわ の いちばん下・スマホは ☰の 中）で <b>きょてんの ばん</b>が ひらきます<br>
+    ・パソコンは <b>B</b> キー でも ひらきます。<b>← →</b> で しょうを うつり、<b>Escape</b> で とじます<br>
+    ・きょてんから 山を おりると、いちばん近い 村まで およそ 317・街まで およそ 368です
+  </p>
   <div class="foot"><button id="h-close">とじる</button></div>
 </section>
 
@@ -627,6 +653,19 @@
   <div class="foot"><button id="log-close">とじる</button></div>
   <p class="hint">📤で ほかの機械へ うつせます。📥で うつした きろくを、いまの きろくと あわせられます（わるいファイルは うけつけません）。</p>
 </section>
+
+<!-- 弾32 §R26: 🏠 きょてんの ばん＝山頂の 拠点で ひらく **章立ての 器**。
+     ★中みは 弾33（開発の ようす）・弾34（せってい）で 入れます。いまは 見出しと からの 受け皿だけ。
+     ★章の ボタンも 章の 中みも **台帳 DEV_TABS から 作る**＝章を 1つ ふやすのに ここの HTML は 書きたさない。
+     ★キーボードだけで 使えます＝← → で 章を うつり、Escape で とじると 入口(🏠)へ フォーカスが もどります。 -->
+<section id="devboard" class="sheet" role="dialog" aria-labelledby="dev-head" aria-modal="false">
+  <h3 id="dev-head">🏠 きょてんの ばん</h3>
+  <div id="dev-tabs" role="tablist" aria-label="きょてんの しょう"></div>
+  <div id="dev-panels"></div>
+  <div class="foot"><button id="dev-close">とじる</button></div>
+  <p class="hint">ここは 山頂の きょてん の 中でだけ ひらきます。← → で しょうを うつれます。Escape で とじます。</p>
+</section>
+<p id="dev-say" class="sr-say" role="status" aria-live="polite"></p>
 
 <div id="card" role="dialog" aria-label="作品" aria-modal="false">
   <h2 id="card-title">—</h2>
@@ -770,16 +809,7 @@
   var HEAD = "#version 300 es\n";
   var HUE2RGB = "vec3 hue2rgb(float h){ h=fract(h); vec3 k=abs(mod(h*6.0+vec3(0.,4.,2.),6.)-3.)-1.; return clamp(k,0.,1.); }\n";
 
-  var bgProg = prog(
-    HEAD+"layout(location=0) in vec3 a_pos; layout(location=1) in float a_seed;"+
-    "uniform mat4 u_vp; uniform float u_time; uniform float u_reduce; out float v_tw;"+
-    "void main(){ gl_Position=u_vp*vec4(a_pos,1.0); float w=max(gl_Position.w,0.001);"+
-    "float tw = mix(1.0, 0.55+0.45*sin(u_time*1.7+a_seed*40.0), 1.0-u_reduce);"+
-    "v_tw=tw; gl_PointSize=clamp((220.0/w)*(0.5+a_seed*0.9),1.0,20.0); }",
-    HEAD+"precision highp float; in float v_tw; out vec4 o;"+
-    "void main(){ vec2 c=gl_PointCoord-0.5; float d=dot(c,c); float a=exp(-d*22.0)*v_tw;"+
-    "if(a<0.02) discard; o=vec4(vec3(0.85,0.9,1.0)*a, a); }");
-  var bg_vp=gl.getUniformLocation(bgProg,"u_vp"), bg_time=gl.getUniformLocation(bgProg,"u_time"), bg_reduce=gl.getUniformLocation(bgProg,"u_reduce");
+  // 弾30: ★背景の星野(bgstar)の 描画シェーダー(旧bgProg)は 撤去した＝どの器も もう これを 使わない。
 
   // u_fog = vec4(空気の色rgb, かすみの濃さa)。宇宙は (1,1,1,0)＝素通し＝v0.3/弾1と1ビットも変わらない。
   var wkProg = prog(
@@ -826,7 +856,7 @@
       nb_hue=gl.getUniformLocation(nbProg,"u_hue"), nb_fog=gl.getUniformLocation(nbProg,"u_fog"),
       nb_white=gl.getUniformLocation(nbProg,"u_white");
 
-  // 空のグラデーション（地平線）＝全画面三角形1枚。背景星レイヤーと「置き換え」で描くのでドローコール増0。
+  // 空のグラデーション（地平線）＝全画面三角形1枚。ドームの 無い 世界（宇宙）だけ この三角形を 描かない。
   var dmProg = prog(
     HEAD+"uniform vec3 u_r; uniform vec3 u_u; uniform vec3 u_f; out vec3 v_dir;"+
     "void main(){ vec2 q=vec2(float((gl_VertexID<<1)&2), float(gl_VertexID&2));"+
@@ -858,8 +888,9 @@
     "o=vec4(col*v_fog, al); }");
   var ln_vp=gl.getUniformLocation(lnProg,"u_vp"), ln_fog=gl.getUniformLocation(lnProg,"u_fog");
 
-  // 流線（モーションストリーク）＝背景星を2頂点ずつ複製し、尾を速度ベクトル方向へ伸ばすLINESレイヤー。
-  // 背景星と同じ VProt（回転のみ・平行移動なし）空間で描く＝方向ベクトルのみで正しく出る。
+  // 流線（モーションストリーク）＝すれ星の 種となる 点群(buildStreakSeed。弾30で 撤去した 背景の星野の
+  //   生成コードから 名前だけ 引き継いだ 点データ)を 2頂点ずつ複製し、尾を速度ベクトル方向へ伸ばすLINESレイヤー。
+  // 同じ VProt（回転のみ・平行移動なし）空間で描く＝方向ベクトルのみで正しく出る。
   var stProg = prog(
     HEAD+"layout(location=0) in vec3 a_pos; layout(location=1) in float a_seed; layout(location=2) in float a_side;"+
     "uniform mat4 u_vp; uniform vec3 u_velDir; uniform float u_len; out float v_side; out float v_seed;"+
@@ -1078,6 +1109,13 @@
   //   「前に考えた位置(i_p0)」と「いま考えた位置(i_p1)」を両方わたし、あいだを u_alpha でつなぐ＝なめらかに見える。
   //   ★この つなぎも 頂点シェーダーの中でやる＝1体ずつ JS で位置を作りなおさない（毎フレームのJSはuniform1個だけ）。
   //   i_yaws=(前の向き, いまの向き)。箱の たては 0〜1 なので i_p の高さを足すだけで 足もとが地面に着く（村と同じ）。
+  // 弾31 §R25: 1種＝部品表＋**パターン表**。パターン＝見た目の 型＝**部品ごとの 大きさ**（倍率）。
+  //   ★倍率0＝その部品が 無い＝「有無」を 大きさの 特別な場合として 1つの 仕組みで 表す（分かれ道を 増やさない）。
+  //   表は uniform（GPUの 小さな 覚え書き）に 1回 置くだけ＝**1体ずつ 器を 分けない**＝
+  //   えがく命令も 毎フレームの 転送も 1つも 増えない（これが この弾の いちばん 大事な 約束）。
+  //   ★数は ここで 決める＝シェーダーの 文を 作るときに 要る（表を あとから 増やしたら 下の 見張りが 落ちる）。
+  var MB_PAT_STRIDE = 7;    // ✎ 部品の 数（MOB_PARTS の 長さと 一致すること＝§G T39a が 見張る）
+  var MB_PAT_SLOTS  = 28;   // ✎ パターンの 数 × 部品の 数（4×7）
   var mbProg = prog(
     HEAD+"layout(location=0) in vec3 a_pos; layout(location=1) in vec3 a_nrm;"+
     "layout(location=2) in vec3 i_p0; layout(location=3) in vec3 i_p1; layout(location=4) in vec2 i_yaws;"+
@@ -1086,19 +1124,34 @@
     //   ★ぜんぶ 0 のとき 下の 式は 弾27の 式へ ぴったり もどる＝この器に 相乗りしている 敵(弾24)・弾(弾25)は
     //   この属性を 持たない（＝0,0,0 が 入る）ので 1ビットも 変わらない。
     "layout(location=7) in vec3 a_rig;"+
+    // 弾31 §R25: a_anch=(その部品の つけね(off) の 場所, w＝何番目の 部品か)／i_pat＝この個体の パターン番号。
+    //   ★どちらも「作った ときに 1回だけ」送る 静かな 属性＝毎フレームの 転送は 1バイトも 増えない。
+    //   ★この属性を 持たない 器（弾27の 箱・敵・弾）では a_anch=(0,0,0,1)・i_pat=0 が 入る＝
+    //     表の 1番（ふつう×あたま）を 引く。そこは かならず 倍率1・ずらし0 なので 1ビットも 変わらない。
+    "layout(location=8) in vec4 a_anch; layout(location=9) in float i_pat;"+
     "uniform mat4 u_vp; uniform vec4 u_fog; uniform float u_alpha; uniform float u_time; uniform float u_anim; uniform float u_vary;"+
+    // パターン表＝(よこ, たて, おくゆき の 倍率, たての ずらし)。ずらし＝あしを 短くしたら 胴も いっしょに 下げる ため。
+    "uniform vec4 u_pat["+MB_PAT_SLOTS+"];"+
     "out vec3 v_nrm; out vec3 v_col; out float v_fog;"+
     "void main(){ vec3 ctr=mix(i_p0, i_p1, u_alpha);"+
     "float dd=i_yaws.y-i_yaws.x; dd=mod(dd+3.14159265, 6.28318531)-3.14159265;"+   // 向きは 近いほうへ まわす（一周ぶん逆走しない）
     "float th=i_yaws.x+dd*u_alpha, s=sin(th), c=cos(th);"+
-    "vec3 q=a_pos*i_size;"+
+    // 弾31 §R25: 部品ごとに 大きさを かえる。★つけね(a_anch)を 動かさずに そこから 伸び縮みさせる＝
+    //   あしは 足もとが 地面に ついたまま／頭や 胴は つけねから ふくらむ。倍率0なら つぶれて 見えなくなる
+    //   （＝三角形の 数は 減らない。ここは 正直に 書いておく）。
+    //   ★個体差(段3)を 切る と u_vary=0＝どの個体も 型0（ふつう）に なる＝弾28の 見た目へ 完全に もどる。
+    "int pk=int(i_pat*u_vary+0.5)*"+MB_PAT_STRIDE+"+int(a_anch.w+0.5);"+
+    "vec4 pm=u_pat[clamp(pk,0,"+(MB_PAT_SLOTS-1)+")];"+
+    "vec3 lp=a_anch.xyz+(a_pos-a_anch.xyz)*pm.xyz; lp.y+=pm.w;"+
+    "vec3 q=lp*i_size;"+
     // 弾28 §R23②: あしの ふり＝速さは「前に考えた位置と いま考えた位置の へだたり」から その場で 出す。
     //   ★だから 止まれば あしも 止まり、にげれば あしが 速くなる＝JSから 何も 送らずに 動きが つながる。
     //   位相は (個体id, 時刻) の 純関数＝毎フレームの JS も GPUへの 転送も 1バイトも 増えない。
     "float mv = length(i_p1.xz - i_p0.xz);"+
     "float isLeg = abs(a_rig.x);"+
     "float sw = a_rig.x * u_anim * (0.10 + min(mv,0.6)*0.62) * sin(float(gl_InstanceID)*2.39996*u_vary + u_time*(3.4 + min(mv,0.9)*9.0));"+
-    "float py = a_rig.y * i_size.y, pz = a_rig.z * i_size.z * isLeg;"+
+    // 弾31 §R25: ふりの つけね（肩・股）も 部品と 同じ 伸び縮みを うける＝あしを 短くしても つけねが ずれない。
+    "float py = (a_anch.y+(a_rig.y-a_anch.y)*pm.y+pm.w) * i_size.y, pz = (a_anch.z+(a_rig.z-a_anch.z)*pm.z) * i_size.z * isLeg;"+
     "float cw=cos(sw), sq=sin(sw), dy=q.y-py, dz=q.z-pz;"+
     "q = vec3(q.x, py + dy*cw - dz*sq, pz + dy*sq + dz*cw);"+
     // 息づかい（足では ない 部品だけ）＝遠くて「考えて いない」子でも 生きて見える。これも 純関数＝タダ。
@@ -1121,7 +1174,14 @@
       mb_time=gl.getUniformLocation(mbProg,"u_time"), mb_anim=gl.getUniformLocation(mbProg,"u_anim"),
       mb_vary=gl.getUniformLocation(mbProg,"u_vary"),
       mb_sun=gl.getUniformLocation(mbProg,"u_sun"), mb_sunc=gl.getUniformLocation(mbProg,"u_sunc"),
-      mb_sky=gl.getUniformLocation(mbProg,"u_sky");
+      mb_sky=gl.getUniformLocation(mbProg,"u_sky"),
+      mb_pat=gl.getUniformLocation(mbProg,"u_pat");
+  // 弾31 §R25: ★パターン表は 作られる前から「ぜんぶ ふつう(倍率1・ずらし0)」で 埋めておく。
+  //   理由＝この器には 敵(弾24)と 弾(弾25)も 相乗りしている。表が 0のままだと 敵が 一点に つぶれる。
+  //   生きものを 一度も 作らない 世界（そら・うちゅう…）でも かならず 通る 道なので ここで 先に 埋める。
+  (function(){ var idn=new Float32Array(MB_PAT_SLOTS*4);
+    for(var i=0;i<MB_PAT_SLOTS;i++){ idn[i*4]=1; idn[i*4+1]=1; idn[i*4+2]=1; idn[i*4+3]=0; }
+    gl.useProgram(mbProg); gl.uniform4fv(mb_pat, idn); gl.useProgram(null); })();
 
   function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
   function hashStr(s){ var h=2166136261>>>0; for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
@@ -1259,6 +1319,40 @@
   // 起伏の強さ（1.0＝山地のまま＝弾20の地形と 完全に 同じ）。地形も 村も 街も この1つの式を 見る。
   function biomeAmp(B){ return B.mountain + B.plain*BIOME.AMP_PLAIN + B.city*BIOME.AMP_CITY; }
 
+  // ---------- 弾32 §R26: 高い山（★山頂に HW の 拠点＝いえ が 建つ） ----------
+  // ★干場の 指示（2026-08-04）＝「いまの フィールドに 高い山を 作り、山頂に 簡単な 家を 建てる。
+  //   アプリを ひらいた ときの 場所も そこにする」。
+  // ★なぜ こう作るか（ここを まちがえると 世界ぜんぶが こわれる）:
+  //   ①ノイズには 手を ふれない＝**足し算の 項を 1つ 足すだけ**（既存の 地形を 作り直さない）。
+  //   ②足す量は かならず 0 以上＝**地面は 1ミリも 下がらない**。だから 陸が 海に なることは ありえない。
+  //   ③海の 上には 生えない＝海面の すぐ上(LAND_LO〜LAND_HI)で 0 から 立ちあがる（弾21の 地域と 同じ 作法）。
+  //     ②と③で **海と陸の 境目は 弾31と 1ビットも 変わらない**（§G T40a・弾20 T29b が 見ている ところ）。
+  //   ④作品星の 帯（半径110〜470）には ぜったいに 手を 出さない＝半径 KEEP_R の 内がわでは かならず 0 を 返す。
+  //     ＝5つの 世界の 作品座標が 完全一致という §G T30d の 指紋を 割らない（★この作品の 主役は 作品星）。
+  //   ⑤山頂は **きっかり たいら**（半径 FLAT の 中では 高さが ぴったり TOP_Y）＝家が 浮かない・埋まらない。
+  var HOME_MT = {
+    X:   -480,   // ✎ 山の まん中（世界の 中心から 722＝街まで368・いちばん近い村まで317＝村を 見おろせる きょり）
+    Z:    540,
+    TOP_Y: 210,  // ✎ 山頂の 高さ（★世界で いちばん 高い。弾31までの 最高は 175.9・雲は 240なので 雲の下）
+    BOT_Y:   0,  // ✎ すそ野の 高さ（ここまで 下がったら もう 足さない＝まわりの 地面に とけこむ）
+    R:     230,  // ✎ すそ野の 半径（★中心から R を ひくと 492＝KEEP_R=480 の 外がわに おさまること）
+    FLAT:   26,  // ✎ 山頂の たいらな 半径（★ここが 拠点の 建つ 台。屋根の かどまで15.9・立ち位置まで12＝余裕つき）
+    KEEP_R:480,  // ✎ この 内がわには ぜったい 手を 出さない（弾21 BIOME.R_IN と 同じ数＝作品星の 帯を 守る）
+    LAND_LO: 4, LAND_HI: 22   // ✎ 海面から これだけ 上がって はじめて 山が 立ちあがる（弾21 BIOME と 同じ数）
+  };
+  // その場所で「山が 足す 高さ」。★かならず 0 以上。同じ座標なら いつでも 同じ 数（§G T40a）。
+  function homeMountRise(x,z,base){
+    if(x*x+z*z <= HOME_MT.KEEP_R*HOME_MT.KEEP_R) return 0;      // ④作品星の 帯は 不可侵
+    var dx=x-HOME_MT.X, dz=z-HOME_MT.Z, d=Math.sqrt(dx*dx+dz*dz);
+    if(d>=HOME_MT.R) return 0;
+    // 山の かたち＝山頂の たいらな 台から すそ野へ なめらかに 下がる 1つの 面（smooth01 は 既存の もの）
+    var t=(d<=HOME_MT.FLAT)?0:((d-HOME_MT.FLAT)/(HOME_MT.R-HOME_MT.FLAT));
+    var cone=HOME_MT.TOP_Y+(HOME_MT.BOT_Y-HOME_MT.TOP_Y)*smooth01(t);
+    var rise=cone-base;
+    if(rise<=0) return 0;                                        // ②もとの 地面が 高い所は そのまま（尾根は つき出る）
+    return rise*bioRamp(SEA_Y+HOME_MT.LAND_LO, SEA_Y+HOME_MT.LAND_HI, base);   // ③海ぎわでは 0
+  }
+
   // 海へならす前の生の高さ（地形シェーダーが海と陸を分けるのにも使う）
   function heightRawAt(x,z){
     var h=0, amp=1, frq=1/FIELD_CELL, norm=0;
@@ -1279,6 +1373,9 @@
       flat*=bioRamp(SEA_Y+BIOME.LAND_LO, SEA_Y+BIOME.LAND_HI, y);
       if(flat>0) y=y+(plate-y)*flat;
     }
+    // 弾32 §R26: ★ここが「足し算の 項 1つ」。上の 式には いっさい 手を ふれていない
+    //   ＝山を 消したい ときは この 1行を けせば 弾31の 地形に そのまま もどる。
+    y=y+homeMountRise(x,z,y);
     return y;
   }
   // ★これが地形のかたちそのもの。同じ座標なら いつでも同じ高さ（§G T20a）。
@@ -1401,20 +1498,21 @@
   var ENVID = ENVS[cfg.env] ? cfg.env : "space", ENV = ENVS[ENVID];
   // 弾11 §R9: 床の高さは「数」でも「関数」でもよい。読み出しは必ずここを通す＝だいちだけ地形に追従し、既存4環境は数のまま1ビットも変わらない。
   function floorYAt(x,z){ var f=ENV.floorY; if(f==null) return null; return (typeof f==="function") ? f(x,z) : f; }
-  var bgVAO, bgCount, wkVAO, wkPosBuf, wkSelBuf, wkHueBuf, wkVisBuf, wkVisArr=[], nbVAO, nbCount, wkPos=[], lnVAO, lnCount=0;
-  var stVAO=null, stCount=0, bgBufs=[], stBufs=[], nbBufs=[], lnBufs=[];
+  var bgCount, wkVAO, wkPosBuf, wkSelBuf, wkHueBuf, wkVisBuf, wkVisArr=[], nbVAO, nbCount, wkPos=[], lnVAO, lnCount=0;
+  var stVAO=null, stCount=0, stBufs=[], nbBufs=[], lnBufs=[];
+  // 弾29 §R24: 要素台帳の「バイト数」欄を 実測で 埋めるための 数え役。作った ときに GPUへ 送った
+  //   配列の byteLength を そのまま ためる＝毎フレームの 費用は 1つも 増えない（作る ときだけ 動く）。
+  var stBytes=0, nbBytes=0, lnBytes=0, wkBytes=0, lmBytes=0, gtBytes=0;
   function delBufs(a){ for(var i=0;i<a.length;i++) gl.deleteBuffer(a[i]); a.length=0; }
-  function buildBg(n){
-    if(bgVAO){ gl.deleteVertexArray(bgVAO); delBufs(bgBufs); }
+  // 弾30: ★背景の星野(bgstar)は撤去した（干場実機0804「座標データを 示す 旧『星研究』3Dアプリの 名残で、
+  //   今の アクション寄りの システムには 不要」）。GPUへ送る 背景の 点バッファ(旧bgVAO)は もう 作らない＝
+  //   画面には 1点も 出ない。ここに 生成が 残っているのは、すれ星の 尾（すぐ下のbuildStreaks・べつの
+  //   要素として 台帳に 現役）が この 点群を 種に しているから＝そちらは いっさい 触らない。
+  function buildStreakSeed(n){
     var rnd=mulberry32(1234567); var pos=new Float32Array(n*3), seed=new Float32Array(n);
     for(var i=0;i<n;i++){ var u=rnd(), v=rnd(); var th=u*Math.PI*2, ph=Math.acos(2*v-1), sp=Math.sin(ph);
       pos[i*3]=Math.cos(th)*sp*R_BG; pos[i*3+1]=Math.cos(ph)*R_BG; pos[i*3+2]=Math.sin(th)*sp*R_BG; seed[i]=rnd(); }
-    bgVAO=gl.createVertexArray(); gl.bindVertexArray(bgVAO);
-    var pb=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,pb); gl.bufferData(gl.ARRAY_BUFFER,pos,gl.STATIC_DRAW);
-    gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,3,gl.FLOAT,false,0,0);
-    var sb=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,sb); gl.bufferData(gl.ARRAY_BUFFER,seed,gl.STATIC_DRAW);
-    gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1,1,gl.FLOAT,false,0,0);
-    gl.bindVertexArray(null); bgCount=n; bgBufs.push(pb,sb);
+    bgCount=n;
     buildStreaks(pos, seed, n);
   }
   // 流線バッファ＝背景星と必ず同時に作り直す（⚙星のかず変更・自動縮退で星数が変わるため）
@@ -1436,6 +1534,7 @@
     var b2=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,b2); gl.bufferData(gl.ARRAY_BUFFER,sd,gl.STATIC_DRAW);
     gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2,1,gl.FLOAT,false,0,0);
     gl.bindVertexArray(null); stCount=n*2; stBufs.push(b0,b1,b2);
+    stBytes=sp.byteLength+ss.byteLength+sd.byteLength;   // 弾29: 実測
   }
   function buildWorks(){
     var n=WORKS.length; var pos=new Float32Array(n*3), hue=new Float32Array(n); wkPos=[];
@@ -1456,6 +1555,8 @@
     gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(n),gl.DYNAMIC_DRAW);
     gl.enableVertexAttribArray(3); gl.vertexAttribPointer(3,1,gl.FLOAT,false,0,0);
     gl.bindVertexArray(null);
+    // 弾29: 実測（位置・色あい・えらび・ともり の 4本ぶん。えらび/ともり は Float32Array(n) そのもの）
+    wkBytes=pos.byteLength+hue.byteLength+Float32Array.BYTES_PER_ELEMENT*n*2;
     buildLines();
     syncVisitedBuffer();
     buildLandmarks();
@@ -1502,6 +1603,7 @@
     var gb=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,gb); gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(golds),gl.STATIC_DRAW);
     gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2,1,gl.FLOAT,false,0,0);
     gl.bindVertexArray(null); lnBufs.push(pb,hb,gb);
+    lnBytes=(verts.length+hues.length+golds.length)*Float32Array.BYTES_PER_ELEMENT;   // 弾29: 実測
   }
   // 弾10 §R8: めじるし（星座の目印）＝buildLinesと同じconstellationグルーピング（メンバー2件未満は対象外）。
   // pos=メンバーのwkPos(現在の環境写像後の座標)の重心。純関数（同一入力→同一出力・§G T19a）。
@@ -1528,7 +1630,7 @@
     landmarks = landmarksFor(WORKS, wkPos);
     if(lmVAO){ gl.deleteVertexArray(lmVAO); delBufs(lmBufs); }
     var n=landmarks.length;
-    if(n===0){ lmVAO=null; lmCount=0; return; }
+    if(n===0){ lmVAO=null; lmCount=0; lmBytes=0; return; }
     var pos=new Float32Array(n*3), hue=new Float32Array(n), gold=new Float32Array(n), seed=new Float32Array(n);
     for(var i=0;i<n;i++){ var lm=landmarks[i], p=lm.pos;
       pos[i*3]=p[0]; pos[i*3+1]=p[1]; pos[i*3+2]=p[2];
@@ -1547,6 +1649,7 @@
     gl.enableVertexAttribArray(3); gl.vertexAttribPointer(3,1,gl.FLOAT,false,0,0);
     gl.bindVertexArray(null);
     lmCount=n; lmBufs=[pb,hb,gb,sb];
+    lmBytes=pos.byteLength+hue.byteLength+gold.byteLength+seed.byteLength;   // 弾29: 実測
   }
   function buildNebula(n){
     if(nbVAO){ gl.deleteVertexArray(nbVAO); delBufs(nbBufs); }
@@ -1560,6 +1663,7 @@
     var sb=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,sb); gl.bufferData(gl.ARRAY_BUFFER,seed,gl.STATIC_DRAW);
     gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1,1,gl.FLOAT,false,0,0);
     gl.bindVertexArray(null); nbCount=n; nbBufs.push(pb,sb);
+    nbBytes=pos.byteLength+seed.byteLength;   // 弾29: 実測
   }
   // 弾11 §R9: だいちの地形メッシュ（一枚もの・専用1ドローコール）。
   // 頂点は (FIELD_GRID+1)^2 個・三角形は FIELD_GRID^2×2 個。同じ頂点を三角形どうしで使い回すため
@@ -1846,6 +1950,69 @@
     return out;
   }
 
+  // ---------- 弾32 §R26: 山頂の 拠点（＝HWの いえ。ここで 開発の ようすと せっていが 見られる） ----------
+  // ★干場の 追加指示（2026-08-04）＝「拠点は それなりの 大きさに していい。開発状況を 見るにも
+  //   せっていを するにも それなりの スペースが 要る」。だから「小さな 家」では なく **中で 用が 足せる 建物**にする。
+  // ★守ること:
+  //   ①**新しい VAO を 作らない**＝村と 同じ 1回の えがく命令に 相乗りする（§G T40e・弾21 T30cと 同じ 作法）。
+  //     箱の 数が 増えるのは かまわない（三角形は 1箱12枚）。えがく回数だけは 1つも 増やさない。
+  //   ②かべは すりぬけない＝弾23の 当たり判定(bxSolid=1)に そのまま 載る。入口と 中の すきまは
+  //     人の はば(R=0.62＝直径1.24)より ずっと ひろく とる＝詰みを 作らない。
+  //   ③浮かない・埋まらない＝足もとは かならず 山頂の たいら(HOME_MT.TOP_Y)。屋根は 建物の 上面に ぴったり。
+  //   ④乱数を 1回も 引かない＝場所も 大きさも 色も ぜんぶ 定数（決定論・§G T40b）。
+  var HOME = {
+    W:     22.0,  // ✎ 外のり よこ(x)
+    D:     18.0,  // ✎ 外のり おくゆき(z)
+    H:      4.0,  // ✎ かべの 高さ（★人の 高さ2.6より 高い＝中に 立てる）
+    T:      0.7,  // ✎ かべの あつさ
+    DOOR:   3.0,  // ✎ 入口の はば（人の はば1.24の 2倍より ひろい）
+    GAP:    3.4,  // ✎ 中の しきりの すきま（部屋が 2つに 分かれても 行き来できる）
+    ROOF:   0.7,  // ✎ 屋根の あつさ
+    EAVE:   1.2,  // ✎ 軒の 出（屋根が 建物より 外へ 出る ぶん）
+    DECK:   3.0,  // ✎ 入口の 前の 縁台の おくゆき
+    DECK_H: 0.5,  // ✎ 縁台の 高さ（★PLR.STEP=1.70 より 低い＝またげる）
+    TOWER:  2.4,  // ✎ 屋根の 上の 見はり台の はば
+    TOWER_H:1.6,
+    NEAR_X:14.0,  // ✎ ここまで 近ければ「拠点に 居る」（よこ）＝建物の 外がわ11＋3
+    NEAR_Z:14.0,  // ✎ 同じく おくゆき＝建物の 外がわ9＋縁台3＋2
+    NEAR_Y: 8.0,  // ✎ 同じく 高さ（山頂から これ以上 はなれたら 居ないと みなす）
+    FRONT: 12.0   // ✎ アプリを ひらいた とき 立つ 場所（入口の 前・-z がわ）
+  };
+  var HOME_WALL=[0.80,0.75,0.66], HOME_ROOF=[0.42,0.22,0.18],
+      HOME_DECK=[0.45,0.36,0.26], HOME_TOWER=[0.72,0.74,0.78];
+  // ★これが 拠点そのもの。村の 箱と まったく 同じ かたち（中心・大きさ・むき・色）で 返すだけ。
+  function homeBoxesFor(){
+    var cx=HOME_MT.X, cz=HOME_MT.Z, gy=HOME_MT.TOP_Y, out=[];
+    var W=HOME.W, D=HOME.D, H=HOME.H, T=HOME.T;
+    function box(kind,gr,x,y,z,sx,sy,sz,col){
+      out.push({ kind:kind, ground:gr, pos:[x,y,z], size:[sx,sy,sz], yaw:0, col:col }); }
+    box("homewall",true, cx, gy, cz+(D/2-T/2), W, H, T, HOME_WALL);          // おく(+z)の かべ
+    var segW=(W-HOME.DOOR)/2, segX=HOME.DOOR/2+segW/2;                        // 入口の ある 手前(-z)の かべ＝2枚に 分ける
+    box("homewall",true, cx-segX, gy, cz-(D/2-T/2), segW, H, T, HOME_WALL);
+    box("homewall",true, cx+segX, gy, cz-(D/2-T/2), segW, H, T, HOME_WALL);
+    box("homewall",true, cx-(W/2-T/2), gy, cz, T, H, D-T*2, HOME_WALL);       // ひだり(-x)の かべ
+    box("homewall",true, cx+(W/2-T/2), gy, cz, T, H, D-T*2, HOME_WALL);       // みぎ(+x)の かべ
+    var pW=(W-T*2-HOME.GAP)/2, pX=HOME.GAP/2+pW/2;                            // 中の しきり＝部屋を 2つに（まん中は あけておく）
+    box("homewall",true, cx-pX, gy, cz, pW, H, T, HOME_WALL);
+    box("homewall",true, cx+pX, gy, cz, pW, H, T, HOME_WALL);
+    box("homeroof",false, cx, gy+H, cz, W+HOME.EAVE*2, HOME.ROOF, D+HOME.EAVE*2, HOME_ROOF);  // 屋根＝かべの 上面に ぴったり
+    box("hometower",false, cx, gy+H+HOME.ROOF, cz, HOME.TOWER, HOME.TOWER_H, HOME.TOWER, HOME_TOWER); // 見はり台
+    box("homedeck",true, cx, gy, cz-(D/2+HOME.DECK/2), HOME.DOOR+4, HOME.DECK_H, HOME.DECK, HOME_DECK); // 入口の 前の 縁台
+    return out;
+  }
+  // アプリを ひらいた ときに 立つ 場所（入口の 前・拠点の ほうを むく）。
+  // ★yaw の むきは 既存の ミニマップと 同じ 式（進む むき＝[sin(yaw), -cos(yaw)]）＝π で +z を むく。
+  function homeStartPos(){
+    var x=HOME_MT.X, z=HOME_MT.Z-HOME.FRONT;
+    return { x:x, y:fieldFloorY(x,z), z:z, yaw:Math.PI };
+  }
+  // いま「拠点に 居る」か＝中でも 入口の 前でも よい（四角で 見る＝建物の かたちに そっている）。
+  function atHomeAt(x,y,z){
+    if(Math.abs(x-HOME_MT.X)>HOME.NEAR_X) return false;
+    if(Math.abs(z-HOME_MT.Z)>HOME.NEAR_Z) return false;
+    return Math.abs(y-HOME_MT.TOP_Y)<=HOME.NEAR_Y;
+  }
+
   // 単位立方体＝8つの角を 6面×三角形2枚で 36頂点にならべる（面ごとに法線が変わるので頂点は使い回さない）。
   // 村・鳥・地上の生きもの＝ぜんぶ この1つの形を「並べて」使う＝新しい絵の素材は0個のまま（§R12/§R13）。
   // たては 0〜1（＝足もとが原点）。鳥だけは まん中ぞろえにしたいので 頂点シェーダーの中で 0.5 を引いている。
@@ -1869,6 +2036,8 @@
   var vlVAO=null, vlBufs=[], vlCount=0, vlTris=0, vlBytes=0, vlBuildMs=0, villages=[], lastVillageOn=false;
   // 弾21 §R18: 市街地の ビルと 草原の 低木。★村と 別の 器は 作らない＝下の boxes に 足すだけ。
   var cityBoxes=[], shrubBoxes=[], vlgOnlyCount=0;
+  // 弾32 §R26: 山頂の 拠点の 箱。★これも 村と 同じ 器へ 足すだけ（別の VAO は 作らない）。
+  var homeBoxes=[];
   var villageWanted = !debugNoVillage;   // ?debug=novillage のときだけ 村を切る（既定はON）
   function buildVillages(){
     if(vlVAO) return;
@@ -1877,6 +2046,12 @@
     var boxes=[];
     for(var s=0;s<villages.length;s++){ var bs=villages[s].buildings;
       for(var b=0;b<bs.length;b++) boxes.push(bs[b]); }
+    // 弾32 §R26: 山頂の 拠点も 同じ 配列へ 足す＝村と 同じ 1回の えがく命令に 相乗り（えがく回数の 増分は 0）。
+    // ★なぜ 村の 数(vlgOnlyCount)の 中に 入れるのか＝要素台帳の「村と 街」1つに まとめて 数えるため。
+    //   別の 要素として 台帳に 足すと「台帳の 合計」と「器の 箱の数」が ずれ、弾29の 番人 T38b が 落ちる。
+    //   T38b は 既存テスト＝判定基準を 1ビットも 動かせない ので、こちらを 合わせた（要 司令塔判断）。
+    homeBoxes = homeBoxesFor();
+    for(var hb=0; hb<homeBoxes.length; hb++) boxes.push(homeBoxes[hb]);
     vlgOnlyCount=boxes.length;
     // ★弾21 §R18: 市街地と 低木を 同じ 配列へ 足す＝同じ VAO・同じ 1回の drawArraysInstanced に 相乗り。
     //   これが「ドローコール増ゼロ」の 正体である（§G T30c）。
@@ -2324,14 +2499,21 @@
     var sc=scale||[1,1,1], ct=center||[0,0,0], rd=rigDiv||[1,1,1];
     var CB=cube36(), n=parts.length, V=36*n;
     var pos=new Float32Array(V*3), nrm=new Float32Array(V*3), rig=new Float32Array(V*3), q=0;
+    // 弾31 §R25: anch＝その頂点が どの部品の ものか（つけねの 場所 + 何番目か）。
+    //   ★これを 焼いておくと、頂点シェーダーが「部品ごとに 大きさを かえる」を 器を 分けずに できる。
+    var anch=new Float32Array(V*4);
     for(var p=0;p<n;p++){ var P=parts[p];
       for(var v=0;v<36;v++){
         var x=P.off[0]+CB.pos[v*3]*P.size[0], y=P.off[1]+CB.pos[v*3+1]*P.size[1], z=P.off[2]+CB.pos[v*3+2]*P.size[2];
         pos[q*3]=x/sc[0]+ct[0]; pos[q*3+1]=y/sc[1]+ct[1]; pos[q*3+2]=z/sc[2]+ct[2];
         nrm[q*3]=CB.nrm[v*3]; nrm[q*3+1]=CB.nrm[v*3+1]; nrm[q*3+2]=CB.nrm[v*3+2];
-        rig[q*3]=P.rig[0]/rd[0]; rig[q*3+1]=P.rig[1]/rd[1]; rig[q*3+2]=P.rig[2]/rd[2]; q++; } }
-    return { pos:pos, nrm:nrm, rig:rig, verts:V, tris:V/3, parts:n,
-             bytes:pos.byteLength+nrm.byteLength+rig.byteLength };
+        rig[q*3]=P.rig[0]/rd[0]; rig[q*3+1]=P.rig[1]/rd[1]; rig[q*3+2]=P.rig[2]/rd[2];
+        anch[q*4]=P.off[0]/sc[0]+ct[0]; anch[q*4+1]=P.off[1]/sc[1]+ct[1];
+        anch[q*4+2]=P.off[2]/sc[2]+ct[2]; anch[q*4+3]=p; q++; } }
+    // ★bytes は「ほんとうに GPUへ 送った ぶん」だけを 数える＝anch を 使わない 器（鳥）で 嘘に ならないよう
+    //   anchBytes は 別の 欄に する（使う 側が 足す）。
+    return { pos:pos, nrm:nrm, rig:rig, anch:anch, verts:V, tris:V/3, parts:n,
+             bytes:pos.byteLength+nrm.byteLength+rig.byteLength, anchBytes:anch.byteLength };
   }
   // ✎鳥の 部品（4個）。単位は「体の 大きさ i_bod.x」。前は −z。★弾27の 板1枚（よこ±1.3）と ほぼ 同じ さしわたし＝
   //   作品星より 小さく 保つ 不変条件を 崩さない。つばさは つけね(x=±0.17)で 上下に はばたく。
@@ -2350,8 +2532,61 @@
     { name:"みぎまえあし",   off:[ 0.20,0.00, 0.30], size:[0.16,0.44,0.18], rig:[ 1, 0.44, 0.30] },
     { name:"ひだりまえあし", off:[-0.20,0.00, 0.30], size:[0.16,0.44,0.18], rig:[-1, 0.44, 0.30] },
     { name:"みぎうしろあし", off:[ 0.20,0.00,-0.30], size:[0.16,0.44,0.18], rig:[-1, 0.44,-0.30] },
-    { name:"ひだりうしろあし",off:[-0.20,0.00,-0.30],size:[0.16,0.44,0.18], rig:[ 1, 0.44,-0.30] }
+    { name:"ひだりうしろあし",off:[-0.20,0.00,-0.30],size:[0.16,0.44,0.18], rig:[ 1, 0.44,-0.30] },
+    // 弾31 §R25: しっぽ（7個目）。★これを 足したのは「部品の 有無」を パターンで 実演する ため
+    //   （ずんぐり は 倍率0＝しっぽ なし）。ふらない 部品なので rig の むきは 0＝あしは 4本のまま。
+    //   おくゆきは −0.48まで＝どの型でも 弾27の 箱（±0.5）から はみ出さない ように 短く とってある。
+    { name:"しっぽ",         off:[ 0.00,0.58,-0.42], size:[0.12,0.18,0.12], rig:[ 0, 0.00, 0.030] }
   ];
+  // ================= 弾31 §R25: パターン表（1種＝部品表＋パターン表） =================
+  // ★干場の 指示（2026-08-04）＝「1つのモブに いくつかの パターン登録が 要る。まず 1つのモブを 作り上げる」。
+  //   パターン＝**見た目の 型**（部品ごとの 大きさ・有無）。動きの 型では ない。
+  //   ★倍率0＝その部品は 無い。有無を 大きさの 特別な場合に して、分かれ道を 1つも 増やさない。
+  //   ★新しい 種は 作らない＝いま ある「生きもの」1種を 作り込む。
+  var MOB_PAT = [
+    { name:"ふつう",   mul:[[1.00,1.00,1.00],[1.00,1.00,1.00],[1.00,1.00,1.00],[1.00,1.00,1.00],[1.00,1.00,1.00],[1.00,1.00,1.00],[1.00,1.00,1.00]] },
+    { name:"こども",   mul:[[0.80,0.78,0.80],[1.10,1.10,1.10],[0.85,0.62,0.85],[0.85,0.62,0.85],[0.85,0.62,0.85],[0.85,0.62,0.85],[0.90,0.85,0.90]] },
+    { name:"ずんぐり", mul:[[1.25,1.05,1.00],[1.05,1.00,1.00],[1.15,0.70,1.15],[1.15,0.70,1.15],[1.15,0.70,1.15],[1.15,0.70,1.15],[0.00,0.00,0.00]] },
+    { name:"ほそなが", mul:[[0.78,0.90,1.00],[0.88,0.85,0.95],[0.80,1.25,0.80],[0.80,1.25,0.80],[0.80,1.25,0.80],[0.80,1.25,0.80],[1.00,1.45,1.30]] }
+  ];
+  // その部品が 見えるか（倍率が 1つでも 0なら 見えない＝無い）
+  function mobPatVis(m){ return m[0]>0 && m[1]>0 && m[2]>0; }
+  // ★倍率から「たての ずらし」を 計算して 焼く。なぜ 要るか＝あしだけ 短くすると 胴が 宙に うくから。
+  //   あしの てっぺんが どれだけ 上下したかを そのまま 地面に つかない 部品へ 渡す＝足もとは いつも y=0。
+  //   ★わざと「はみ出したら 直す」ような 後始末は 入れない＝倍率を 壊したら ちゃんと 壊れて 見える
+  //     （そうでないと §G T39b の 変異注入が 何も 見つけられない＝物差しが 死ぬ）。
+  function mobPatBake(mul){
+    var top0=0, top1=0, i, P;
+    for(i=0;i<MOB_PARTS.length;i++){ P=MOB_PARTS[i];
+      if(P.off[1]!==0) continue;                                  // 地面に つく 部品＝あし
+      if(P.size[1]>top0) top0=P.size[1];
+      if(mobPatVis(mul[i]) && P.size[1]*mul[i][1]>top1) top1=P.size[1]*mul[i][1]; }
+    var up=top1-top0, dy=[], lo=[9,9,9], hi=[-9,-9,-9], k;
+    for(i=0;i<MOB_PARTS.length;i++){ P=MOB_PARTS[i];
+      var d=(P.off[1]===0)?0:up; dy.push(d);
+      if(!mobPatVis(mul[i])) continue;
+      for(k=0;k<3;k++){
+        var a=(k===1)?(P.off[1]+d):(P.off[k]-P.size[k]*mul[i][k]*0.5);
+        var b=(k===1)?(P.off[1]+d+P.size[1]*mul[i][1]):(P.off[k]+P.size[k]*mul[i][k]*0.5);
+        if(a<lo[k]) lo[k]=a; if(b>hi[k]) hi[k]=b; } }
+    return { dy:dy, lo:lo, hi:hi };
+  }
+  // GPUへ 置く 表＝(よこ, たて, おくゆき の 倍率, たての ずらし) を パターン×部品の 順に ならべる。
+  var MOB_PAT_FLAT=(function(){
+    var out=new Float32Array(MB_PAT_SLOTS*4), n=MOB_PARTS.length, i, j, B;
+    for(i=0;i<MOB_PAT.length;i++){ B=mobPatBake(MOB_PAT[i].mul); MOB_PAT[i].dy=B.dy; MOB_PAT[i].lo=B.lo; MOB_PAT[i].hi=B.hi;
+      for(j=0;j<n;j++){ var s=(i*MB_PAT_STRIDE+j)*4;
+        out[s]=MOB_PAT[i].mul[j][0]; out[s+1]=MOB_PAT[i].mul[j][1]; out[s+2]=MOB_PAT[i].mul[j][2]; out[s+3]=B.dy[j]; } }
+    return out;
+  })();
+  // ★個体番号から 決定論で 型を 決める（乱数は 引かない＝同じidなら いつでも 同じ型・体数を 変えても 変わらない）。
+  function mobPatRaw(i){
+    var h=Math.imul(i|0,2654435761)>>>0; h=(h^(h>>>15))>>>0; h=Math.imul(h,2246822519)>>>0; h=(h^(h>>>13))>>>0;
+    return h % MOB_PAT.length;
+  }
+  // ★パターンは「個体差(段3)」に 属する＝段3を 切ると どの個体も 型0（ふつう）＝弾28の 見た目に 完全に もどる。
+  //   （シェーダー側も 同じ 式＝i_pat*u_vary。JS側の これは その うつし＝テストが 画素を 見ずに 確かめる ため）
+  function mobPatOf(i){ return rVariety() ? mobPatRaw(i) : 0; }
   // ★頂点シェーダーと 同じ式の JS側の うつし（birdPosAt と 同じ 役目）。
   //   テストが「同じ (個体id, 時刻) なら 同じ 姿勢か」を 画素を 見ずに 確かめるために 使う。
   function birdFlapAt(i, t, dir){
@@ -2487,6 +2722,8 @@
   var mbBuilt=0, mbBytes=0, mbBuildMs=0, mbUploads=0, lastMobOn=false, mbShown=0;
   // 弾28 §R23: 箱の組の 器（弾27の 1箱の 器 mbVAO は そのまま 残す＝作り込みOFFで 完全に もどれる）
   var mbRVAO=null, mbRBufs=[], mbRVerts=0, mbRTris=0, mbRBytes=0, mbRParts=0;
+  // 弾31 §R25: 個体ごとの パターン番号（作った ときに 1回 送るだけ）
+  var mbPat=null;
   // 弾28 §R23④: アクション（状態を もつ 動き）＝0:ぶらぶら 1:きづいて こちらを 見る 2:にげる。
   //   ★NEAR の 中の さらに 近い 少数だけが これを 持つ＝遠い子は 純関数のまま（弾15の「近くだけ考える」に 相乗り）。
   var mobAct=null, mobActT=null, mobActive=0, mobRichSteps=0, mobActTick=0;
@@ -2561,7 +2798,19 @@
     gl.bindBuffer(gl.ARRAY_BUFFER,lb); gl.enableVertexAttribArray(6); gl.vertexAttribPointer(6,3,gl.FLOAT,false,0,0); gl.vertexAttribDivisor(6,1);
     var qr=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,qr); gl.bufferData(gl.ARRAY_BUFFER,RM2.rig,gl.STATIC_DRAW);
     gl.enableVertexAttribArray(7); gl.vertexAttribPointer(7,3,gl.FLOAT,false,0,0);
-    gl.bindVertexArray(null); mbRBufs=[qp,qn,qr];
+    // 弾31 §R25: 部品の つけね と 番号（頂点ごと・一度きり）。★STATIC_DRAW＝二度と 書きかえない。
+    var qa=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,qa); gl.bufferData(gl.ARRAY_BUFFER,RM2.anch,gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(8); gl.vertexAttribPointer(8,4,gl.FLOAT,false,0,0);
+    // 弾31 §R25: 個体ごとの パターン番号。★これも 作った ときの 1回だけ＝毎フレームの 転送(mbUpBytes)は 増えない。
+    mbPat=new Float32Array(n); for(var pi=0;pi<n;pi++) mbPat[pi]=mobPatRaw(pi);
+    var qt=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,qt); gl.bufferData(gl.ARRAY_BUFFER,mbPat,gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(9); gl.vertexAttribPointer(9,1,gl.FLOAT,false,0,0); gl.vertexAttribDivisor(9,1);
+    gl.bindVertexArray(null); mbRBufs=[qp,qn,qr,qa,qt];
+    // パターン表を GPUへ 1回だけ 置く。★表が 器より 大きいと 静かに 壊れるので ここで 声を上げる（fail-loud）。
+    if(MOB_PARTS.length!==MB_PAT_STRIDE || MOB_PAT.length*MB_PAT_STRIDE>MB_PAT_SLOTS)
+      console.error("[弾31] パターン表が 器に 入らない: 部品"+MOB_PARTS.length+"／型"+MOB_PAT.length+"／器"+MB_PAT_SLOTS);
+    gl.useProgram(mbProg); gl.uniform4fv(mb_pat, MOB_PAT_FLAT); gl.useProgram(null);
+    mbRBytes+=RM2.anchBytes+mbPat.byteLength;
     mbBufs=[pb,nb,mbP0Buf,mbP1Buf,mbYwBuf,sb,lb]; mbBuilt=n;
     mbBytes=CB.pos.byteLength+CB.nrm.byteLength+mbP0.byteLength+mbP1.byteLength+mbYw.byteLength+mbSize.byteLength+mbCol.byteLength;
     mbBuildMs=+(performance.now()-t0).toFixed(2);
@@ -3403,7 +3652,7 @@
   }
   // ================= 弾25 ここまで =================
 
-  buildBg(cfg.count); buildWorks(); buildNebula(4000);
+  buildStreakSeed(cfg.count); buildWorks(); buildNebula(4000);
   if(ENV.terrain) buildTerrain();
   if(ENV.village) buildVillages();
   if(ENV.mobs){ buildBirds(); buildMobs(); }   // 弾15: だいちだけ。他の4つの世界では 一度も作らない
@@ -3558,7 +3807,9 @@
   // 弾27 §R22: ☰の板が ひらいている間は 世界を さわれない（誤爆ぼうし）＝ここに 1つ 足すだけ。
   //   ★毎フレームの 仕事は 真偽の 読みとり 1回ぶんしか 増えない（T36eで 実測する）。
   var toolSheetOn=false;
-  function anySheet(){ return toolSheetOn||settings.classList.contains("show")||help.classList.contains("show")||search.classList.contains("show"); }
+  // 弾32 §R26: 🏠きょてんの ばん を 足した。★読むのは **真偽の へんすう1つ**（devBoardOn）で、
+  //   classList を 引く 回数は ふやしていない＝毎フレームの 費用は ほぼ 0（§G T36e の 上限を 割らない）。
+  function anySheet(){ return toolSheetOn||devBoardOn||settings.classList.contains("show")||help.classList.contains("show")||search.classList.contains("show"); }
   if(hasMouse){ var _cx=document.getElementById("cross"); if(_cx) _cx.classList.add("show"); }
   function stopAuto(){ tourOn=false; document.getElementById("btn-tour").classList.remove("on"); flying=false; }
 
@@ -3575,10 +3826,12 @@
             // 弾27 §R22: touchLayout が 返す「いつも 画面に 出ている 道具ボタン」の 数＝**☰ 1つだけ**。
             //   ⚙？🔍🎬🔆📖🛩️ は ☰の 板の 中へ 畳んだので、いつも 画面を 占める ものでは なくなった。
             TB_N:1,
-            // 「すっきり（段階3）」で かくす ボタンの 数＝TOOL_IDS の 長さ（7つの道具＋👁）。
+            // 「すっきり（段階3）」で かくす ボタンの 数＝TOOL_IDS の 長さ（8つの道具＋👁）。
             //   ★TB_N と 分けた 理由＝弾26までは「画面の たて1列＝かくす 相手」が 同じ物だったが、
-            //     弾27で **画面に 出ている数（1）** と **かくす数（8）** が べつの 意味に なったから。
-            HIDE_N:8,
+            //     弾27で **画面に 出ている数（1）** と **かくす数** が べつの 意味に なったから。
+            //   ★弾32 §R26: 8→9（🏠 きょてんの ばん を 足した ぶん）。TOOL_IDS と PANEL_IDS の
+            //     長さと つじつまが 合っているかは 弾27 T36f が そのまま 見張っている（判定基準は 動かしていない）。
+            HIDE_N:9,
             MENU:52,                       // ☰ の 大きさ（44pxの 床を こえる）
             PAD_B:[56,50,44], PAD_GAP:10, PAD_EDGE:4,   // ひし形の 上・左・右の 大きさ（★44pxが 床）
             ROW_H:52, ROW_W:300, ROW_GAP:6, SHEET_PAD:12, SHEET_HEAD:38, SHEET_EDGE:8,
@@ -3672,17 +3925,20 @@
   //   ★板は「ひらいている間だけ」出る ものなので、いつも 画面を 占める 6か所とは 別の 関数に する
   //     （＝T25d/T34d が 見ている「いつも 出ている ものの 重なり」に、板を 混ぜない）。
   function toolSheetLayout(W,H){
-    var pad=TUI.SHEET_PAD, gap=TUI.ROW_GAP, HD=TUI.SHEET_HEAD, N=7;
+    // 弾32 §R26: 行の 数は **PANEL_IDS の 長さから 出す**（7 の 決めうちを やめた）＝道具を 1つ ふやしても
+    //   ここを 書きかえなくて よい。列の 候補も 行数を その場で 出す＝表と 実物が ずれない。
+    var pad=TUI.SHEET_PAD, gap=TUI.ROW_GAP, HD=TUI.SHEET_HEAD, N=PANEL_IDS.length;
     var availH=H-TUI.SHEET_EDGE*2, availW=W-TUI.SHEET_EDGE*2;
     function need(r,h){ return pad*2+HD+8+r*h+(r-1)*gap; }
-    var cand=[[1,7,TUI.ROW_H],[1,7,44],[2,4,TUI.ROW_H],[2,4,44],[3,3,44]], pick=null, i;
+    function rowsFor(c){ return Math.ceil(N/c); }
+    var cand=[[1,rowsFor(1),TUI.ROW_H],[1,rowsFor(1),44],[2,rowsFor(2),TUI.ROW_H],[2,rowsFor(2),44],[3,rowsFor(3),44]], pick=null, i;
     for(i=0;i<cand.length;i++){
       var c=cand[i][0], rN=cand[i][1], h=cand[i][2];
       var rw=Math.min(TUI.ROW_W, Math.floor((availW-pad*2-(c-1)*gap)/c));
       if(rw<44) continue;
       if(need(rN,h)<=availH){ pick=[c,rN,h,rw]; break; }
     }
-    if(!pick){ var rw3=Math.min(TUI.ROW_W, Math.floor((availW-pad*2-2*gap)/3)); pick=[3,3,44,rw3]; }
+    if(!pick){ var rw3=Math.min(TUI.ROW_W, Math.floor((availW-pad*2-2*gap)/3)); pick=[3,rowsFor(3),44,rw3]; }
     var cols=pick[0], rows=pick[1], rh=pick[2], rowW=pick[3];
     var sw=pad*2+cols*rowW+(cols-1)*gap, sh=need(rows,rh);
     var sx=Math.max(TUI.SHEET_EDGE, W-TUI.SHEET_EDGE-sw), sy=Math.max(TUI.SHEET_EDGE, H-TUI.SHEET_EDGE-sh);
@@ -3715,7 +3971,8 @@
   var tuiOn=!hasMouse, _tuiEls=null;
   // 弾27 §R22: 道具の 7つは ☰の板の 中へ 畳んだので、tuiEls().tools（＝いつも 出ている 道具）は **☰ 1つだけ**。
   //   👁は ひし形の 一員に なったので view で 持つ（TOOL_IDS＝「すっきり」で かくす ならびには 弾26のまま 入っている）。
-  var PANEL_IDS=["btn-settings","btn-help","btn-search","btn-tour","btn-course","btn-log","btn-cruise"];
+  // 弾32 §R26: 🏠 きょてんの ばん を いちばん うしろへ 足した（既存7つの 並びは 1つも 動かしていない）。
+  var PANEL_IDS=["btn-settings","btn-help","btn-search","btn-tour","btn-course","btn-log","btn-cruise","btn-home"];
   function tuiEls(){
     if(!_tuiEls) _tuiEls={ stick:document.getElementById("stick"), lookstick:document.getElementById("lookstick"),
       jump:document.getElementById("btn-jump"),
@@ -3941,6 +4198,10 @@
     camVel[0]+=fw[0]*s; camVel[1]+=fw[1]*s; camVel[2]+=fw[2]*s; },{passive:false});
 
   window.addEventListener("keydown",function(e){ var k=e.key.toLowerCase();
+    // 弾32 §R26: 🏠きょてんの ばんが ひらいている間の 道（★とじている間は if を 1つ 通るだけ）。
+    //   Escape で とじる → フォーカスは 入口へ もどる（openDevBoard が 覚えている）。
+    //   ★← → は 章の ボタンが 自分で 受ける（devTabKey）ので ここでは 何も しない。
+    if(devBoardOn && k==="escape"){ e.preventDefault(); closeDevBoard(); return; }
     // 弾27 §R22: ☰の板が ひらいている間だけの 道（★PCでは toolSheetOn が いつも false＝1度も 通らない）。
     if(toolSheetOn){
       if(k==="escape"){ e.preventDefault(); closeToolSheet(); return; }
@@ -3979,6 +4240,13 @@
     if(!e.ctrlKey && !e.metaKey && !e.altKey && !anySheet()){
       if(k==="f" && !keys[k]) atkMelee();
       if(k==="r" && !keys[k]) atkShoot();
+      // 弾32 §R26: B キー1回＝🏠きょてんの ばん（C・H・V・F・R と まったく 同じ 作法）。
+      // ★衝突の 確認（着手前に grep で 実測）: いま つかって いる キーは
+      //   w/a/s/d・矢印・Space・Shift・q・e・c・h・v・f・r だけ。b は どこにも 無い＝空いている。
+      //   えらんだ 理由＝b は「ばん（＝board）」の 頭文字で、攻撃の f/r から はなれていて 押しまちがえにくい。
+      // ★★左クリックは ぜったいに 取らない＝作品星を えらぶ 既存操作（この作品の 主役は「訪ねる」）。
+      // ★Ctrl+B など 押しくらべの キーが 押されて いたら 何も しない（上の if が それを 見ている）。
+      if(k==="b" && !keys[k]) openDevBoard();
     }
     // 弾12 §R10: Space＝押した その場で ジャンプ（キーリピートは !keys[k] ではじく）。しきい値を待ってから跳ぶことは しない。
     if(k===" " && !keys[k]) onJumpDown();
@@ -4300,6 +4568,7 @@
     gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1,1,gl.FLOAT,false,0,0);
     gl.bindVertexArray(null);
     gtCount=n*RES; gtBufs=[pb,gtGlowBuf];
+    gtBytes=pos.byteLength+glow.byteLength;   // 弾29: 実測
   }
   // 次にくぐる環だけ高輝度(金)・通過済みは減光・その他は中間（「次の環が明るく光る」§C-5）
   function updateGateGlow(){
@@ -4544,7 +4813,8 @@
   // ★閉じ込めない（この作品の いちばん大事な 約束）＝かくす時は かならず ⊕ を 1つ 出す。
   //   ⊕は PCでも スマホでも 出る・44pxより 大きい・押すと 道具が もどる。PCは Hキーでも もどる。
   // 弾26 §R21: 👁見え方も 同じ ならびへ 足す＝「すっきり」で 他の道具と 一緒に かくれる（＋⊕で もどる）。
-  var TOOL_IDS=["btn-settings","btn-help","btn-search","btn-tour","btn-course","btn-log","btn-cruise","btn-view"];
+  // 弾32 §R26: 「すっきり」で かくす ならびにも 🏠 を 足す（かくれないボタンを 作らない＝T27の 約束）。
+  var TOOL_IDS=["btn-settings","btn-help","btn-search","btn-tour","btn-course","btn-log","btn-cruise","btn-view","btn-home"];
   var _toolsHidden=null, peekEl=null;
   function applyToolsVisibility(){
     if(!peekEl) peekEl=document.getElementById("btn-peek");
@@ -4830,7 +5100,350 @@
     };
   }
   // 📤書き出し（干場がスマホで走らせて 結果を こちらへ送れる形）＝作る所は1つだけにして、ボタンとテストの両方が これを使う
-  function perfExportJson(){ return JSON.stringify(perfReport(), null, 2); }
+  // 弾29 §R24: ★書き出しにだけ 要素台帳を 足す。perfReport() 本体には 足さない
+  //   ＝性能パネルは 開いている あいだ 何フレームかごとに perfReport() を 呼ぶので、そこに 表を 足すと
+  //     「パネルを 開けた人だけ 費用が 増える」ことに なるため（§G T38a が 本文の 文字で 見張る）。
+  function perfExportJson(){ var r=perfReport(); r.elements=elementsLedger(); return JSON.stringify(r, null, 2); }
+
+  // ============ 弾29 §R24: 要素台帳（elements registry）＝この作品の 部品表 ============
+  // ★なぜ あるか＝**新しい要素を 足す人が、その要素の 中みを 知らなくても 手順を 踏める** ようにするため。
+  //   弾10〜弾28で 16の 増築が つみあがったが、「何で できていて・それぞれ いくら 食っていて・何が 番人か」
+  //   が 1か所に 無かった。それ自体が 属人化であり、足すたびに 事故の 確率が 上がる。
+  // ★手で 書くのは【なまえ・入切・依存・番人・世界】の 5欄だけ。**費用は 1つも 手で 書かない**
+  //   ＝その場の 器から 実測して 埋める（手で書いた 見込みは かならず 古くなる。ズレは いつも 過大側に 出る）。
+  // ★測っていない欄は null と「なぜ 測れないか」を 書く。**0 とは 書かない**（0 は「ただ」という 嘘に なる）。
+  // ★毎フレームの 費用は +0＝この表は **呼ばれた ときだけ** 組み立てる。frame() にも drawScene() にも
+  //   1行も 足していない（§G T38a が 本文の 文字で 見張る）。性能パネルが 毎フレーム近く 呼ぶ perfReport()
+  //   にも 足さない＝台帳が 出るのは 📤の 書き出しと __tenkyu.elements() だけ。
+  var ELM_CUBE_TRI = 12;   // 36頂点の 立方体＝12三角形（drawScene の "0,36,…" と 対で・T38b が 文字で 確かめる）
+  var ELM_WHY = {
+    js:"要素ごとの「毎フレームJS」の 時計を 置いていない（置けば その計測 そのものが 毎フレームの 費用に なり、"+
+       "この弾の 約束「費用の 増加は 0」を 破る）。弾28の 実測では この機械の 目もりが 1フレーム 23µs 相当で、"+
+       "ここに 出る 数は どのみち その下に 埋もれる＝測れない。0 とは 書かない。",
+    upl:"この器は「GPUへ 送った 回数/量」の 数え役を 持たない（作る ときの 1回きり という 設計だが、"+
+        "数えていない ものを 0 とは 書かない）。__tenkyu.elements({probe:2}) を 呼べば 実測できる。",
+    perFrame:"1回の 呼び出しでは 出せない欄（1フレームぶんの 差が 要る）。__tenkyu.elements({probe:2}) が "+
+        "2フレーム 走らせて GPUへ 送った バイトを 実測して 埋める。📤の 書き出しでは わざと 走らせない"+
+        "（ボタンを 押しただけで 世界が 2フレーム 進むのは 副作用に なるため）。",
+    tri:"点か 線で 描く 器＝三角形を 1枚も 使わない（測った 結果ではなく 描き方 そのもの）。",
+    dom:"WebGLで 描かない 器（HTMLの 側）＝三角形・ドローコール・GPUの バイトという 費用の 形を そもそも 持たない。"
+  };
+
+  // ★T38の 芯＝「実際に 描いている 器」を **本文から 直に 読む**。えがく命令を 足したのに 台帳へ 書かなければ、
+  //   ここに 出た 名前が 台帳で 引き取り手を 失って 落ちる（＝書き忘れが 必ず 表に 出る）。
+  function elmDrawnVaoNames(){
+    var src=String(drawScene)+"\n"+String(drawAvatar);
+    var re=/bindVertexArray\(\s*([A-Za-z_$][\w$]*)\s*\)\s*;\s*gl\.draw(?:Arrays|Elements)/g;
+    var out=[], m;
+    while((m=re.exec(src))!==null){ if(out.indexOf(m[1])<0) out.push(m[1]); }
+    return out;
+  }
+  // 要素ごとの GPUバッファ（probe が 送ったバイトを この一覧で 要素へ 振り分ける）
+  function elmBufsOf(id){
+    switch(id){
+      case "terrain":  return trBufs;
+      case "village":  return vlBufs;
+      case "bird":     return bdBufs.concat(bdRBufs);
+      case "mob":      return mbBufs.concat(mbRBufs);
+      case "enemy":    return enBufs;
+      case "shot":     return shBufs;
+      case "avatar":   return avBufs;
+      case "nebula":   return nbBufs;
+      // 弾30: ★"bgstar"(背景の星野)の caseは 撤去した＝台帳から 消えたので 呼ばれる ことが 無い。
+      case "streak":   return stBufs;
+      case "line":     return lnBufs;
+      case "workstar": return [wkPosBuf,wkHueBuf,wkSelBuf,wkVisBuf].filter(function(b){ return !!b; });
+      case "gate":     return gtBufs;
+      case "landmark": return lmBufs;
+    }
+    return [];   // shrub＝村と 同じ 器に 相乗り／tui・hud・camera＝WebGLの 器を 持たない
+  }
+  // 「毎フレームの GPU転送」を 実測する 器。★ふだんは 1行も 走らない（呼ばれた ときだけ 包む）。
+  function elmProbe(frames){
+    var n=(frames|0)||2, map=new Map();
+    if(!(window.__tenkyu&&window.__tenkyu.stepFrames)) return null;
+    var oD=gl.bufferData, oS=gl.bufferSubData;
+    function add(bytes){ if(!(bytes>0)) return; var b=gl.getParameter(gl.ARRAY_BUFFER_BINDING);
+      if(b) map.set(b,(map.get(b)||0)+bytes); }
+    gl.bufferData=function(t,a){ var r=oD.apply(gl,arguments);
+      if(t===gl.ARRAY_BUFFER) add((a&&a.byteLength)||((typeof a==="number")?a:0)); return r; };
+    gl.bufferSubData=function(t,off,a){ var r=oS.apply(gl,arguments);
+      if(t===gl.ARRAY_BUFFER) add((a&&a.byteLength)||0); return r; };
+    try{ window.__tenkyu.stepFrames(n); }
+    finally{ delete gl.bufferData; delete gl.bufferSubData; }
+    return { map:map, frames:n };
+  }
+
+  function elmDefs(){
+    var W5=["space","sky","ground","cave","field"];
+    var terrainOn = !!(ENV.terrain && !cfg.simpleScene && trVAO && trIdxCount>0);
+    var villageOn = !!lastVillageOn;
+    var vlgN=(villageOn?vlgOnlyCount:0), cityN=(villageOn?cityBoxes.length:0), shrubN=(villageOn?shrubBoxes.length:0);
+    var vlTriPer=(vlCount>0)?(vlTris/vlCount):ELM_CUBE_TRI;   // 箱1個ぶんの 三角形＝器から 出す（手で 書かない）
+    var domeOn=!!ENV.dome;   // 弾30: bgOn(背景の星野)は 撤去した
+    var lineOn=!!(cfg.lines&&lnCount>0), lmOn=!!(cfg.showLandmarks&&lmVAO&&lmCount>0);
+    var gateOn=!!(courseActive&&gtVAO&&gtCount>0), stOn=(lastStreakCount>0);
+    var hudNames=["brand","quest","swoosh","fly","course","map"], hudN=0;
+    for(var hi=0;hi<hudNames.length;hi++) if(hudOn(hudNames[hi])) hudN++;
+    var tuiN=(TUI&&TUI.rects)?Object.keys(TUI.rects).length:0;
+    function C(o){ return Object.assign({ triangles:null, drawCalls:null, points:null, lines:null,
+      bytes:null, gpuUploads:null, gpuBytes:null, gpuBytesPerFrame:null, jsMs:null }, o); }
+    var WHY_COMMON={ jsMs:ELM_WHY.js, gpuUploads:ELM_WHY.upl, gpuBytes:ELM_WHY.upl, gpuBytesPerFrame:ELM_WHY.perFrame };
+    function W(o){ return Object.assign({}, WHY_COMMON, o); }
+
+    return [
+      { id:"dome", name:"そらの いろ（ドーム）", stage:"①形（画面いっぱいの 三角形1枚）",
+        vao:["dmVAO"], owns:["dmVAO"], units:{ label:"三角形", n:(domeOn?1:0), built:1 },
+        cost:C({ triangles:(domeOn?1:0), drawCalls:(domeOn?1:0), points:0, lines:0,
+                 bytes:0, gpuUploads:0, gpuBytes:0, gpuBytesPerFrame:0 }),
+        costWhy:W({ bytes:"属性の バッファを 1本も 持たない（頂点3個を gl_VertexID だけで 作る）＝構造から 0。",
+                    gpuUploads:"送る バッファが 無い＝構造から 0。",
+                    gpuBytesPerFrame:"送る バッファが 無い＝構造から 0（測っていないから 0 なのでは ない）。" }),
+        off:null, offWhy:"消せない（その世界が 空を 持つか どうかで 決まる。⚙に キーは 無い）",
+        deps:["なし（いちばん 下地）"], guards:["T14","T20d","T20e"],
+        worlds:["sky","ground","cave","field"], available:domeOn, drawn:domeOn },
+
+      { id:"terrain", name:"地形（だいち＝山と海）", stage:"①形",
+        vao:["trVAO"], owns:["trVAO"], units:{ label:"三角形の面", n:(terrainOn?trTris:0), built:trTris },
+        cost:C({ triangles:(terrainOn?trTris:0), drawCalls:(terrainOn?1:0), points:0, lines:0, bytes:trBytes }),
+        costWhy:W({ bytes:"作った ときに GPUへ 送った 配列の 合計（位置・法線・高さ・地域・番号）＝実測。" }),
+        off:{ text:"⚙ けしきを かんたんにする", kind:"cfg", key:"simpleScene", offValue:true },
+        // 弾32 §R26: ★T40a（高い山）は ここに 書けない＝台帳の 番人欄を 見る T38e は T40 より 先に 走るので、
+        //   T40 の 番号を 書くと「実在しない 番人」に なって T38e が 落ちる（＝既存の 判定基準は 動かせない）。
+        deps:["なし（この世界の 土台）"], guards:["T14","T20a","T20b","T20c","T20d","T30e"],
+        worlds:["field"], available:!!ENV.terrain, drawn:terrainOn },
+
+      // 弾32 §R26: 山頂の 拠点の 箱も この 要素に まとめて 数えている（別の 要素に すると
+      //   台帳の 合計と 器の 箱の数が ずれ、弾29の 番人 T38b が 落ちる＝既存の 判定基準を 動かせない ため）。
+      { id:"village", name:"村と 街と 山頂の 拠点（家・塀・屋根・ビル・きょてん）", stage:"①形",
+        vao:["vlVAO"], owns:["vlVAO"], units:{ label:"箱", n:vlgN+cityN, built:vlgOnlyCount+cityBoxes.length },
+        cost:C({ triangles:Math.round((vlgN+cityN)*vlTriPer), drawCalls:(villageOn?1:0), points:0, lines:0,
+                 bytes:vlBytes }),
+        costWhy:W({ bytes:"村・街・低木を ぜんぶ ふくむ 1つの 器の バイト（低木の 欄には 二重に 書かない）＝実測。" }),
+        off:{ text:"⚙ けしきを かんたんにする（★村だけを 切る ⚙キーは 無い＝?debug=novillage と __tenkyu.villageShow だけ）",
+              kind:"cfg", key:"simpleScene", offValue:true },
+        deps:["地形の 高さ（heightAt）","世界の 果て（§R14）","高い山（弾32 §R26 の HOME_MT）"],
+        guards:["T23a","T23b","T23c","T23d","T23e","T26a","T30b","T30d"],   // ★T40b/T40e は 上と 同じ わけで 書けない
+        worlds:["field"], available:!!(ENV.terrain&&ENV.village), drawn:villageOn },
+
+      { id:"shrub", name:"低木・草原（野原の みどり）", stage:"①形",
+        vao:["vlVAO"], owns:[], units:{ label:"箱", n:shrubN, built:shrubBoxes.length },
+        cost:C({ triangles:Math.round(shrubN*vlTriPer), drawCalls:0, points:0, lines:0 }),
+        costWhy:W({ drawCalls:"村と 同じ 1回の 命令に 相乗りする＝この要素が 足す えがく命令は 0（§G T30c）。",
+                    bytes:"村と 同じ 1つの 器に 入っている（バイトは 村の 欄に まとめて 出る）。",
+                    gpuBytes:"村と 同じ 器＝この要素だけの 転送量は 分けられない（村の 欄に まとまって 出る）。",
+                    gpuBytesPerFrame:"村と 同じ 器＝この要素だけの 転送量は 分けられない（村の 欄に まとまって 出る）。" }),
+        off:{ text:"⚙ けしきを かんたんにする（★低木だけを 切る ⚙キーは 無い）",
+              kind:"cfg", key:"simpleScene", offValue:true },
+        deps:["地形の 高さ","地域(biome)の 重み","村と 同じ 器（vlVAO）"],
+        guards:["T30a","T30c","T30d"],
+        worlds:["field"], available:!!(ENV.terrain&&ENV.village), drawn:villageOn },
+
+      { id:"bird", name:"鳥（純関数の モブ）", stage:"①形＋②動き＋③個体差（④アクションは 持たない）",
+        vao:["bdVAO","bdRVAO"], owns:["bdVAO","bdRVAO"], units:{ label:"羽", n:(lastBirdOn?bdShown:0), built:bdBuilt },
+        cost:C({ triangles:(lastBirdOn?bdShown*birdTriPer():0), drawCalls:(lastBirdOn?1:0), points:0, lines:0,
+                 bytes:(bdBytes|0)+(bdRBytes|0), gpuUploads:bdUploads }),
+        costWhy:W({ gpuUploads:"生まれてから 今までに GPUへ 送った 回数の 実測。体数を いくら 増やしても "+
+                    "ここが 増えない ことが「JSが 位置を 作っていない」機械的な 証拠（§G T24a）。",
+                    jsMs:"位置も 姿勢も (個体id, 時刻) の 純関数＝JSは 位置を 作っていない。ただし 0 とは 書かない"+
+                    "（T37dの 実測でも 0羽と 500羽の 差は 目もりの 下＝符号が 5/10 で 半々だった）。" }),
+        off:{ text:"⚙ 空をとぶ鳥の かず ＝0（いない）", kind:"cfgnum", key:"birds", offValue:0 },
+        deps:["なし（地形の 上を 飛ぶが 高さは 見ていない）"],
+        guards:["T24a","T24d","T37a","T37b","T37d"],
+        worlds:["field"], available:!!ENV.terrain, drawn:!!lastBirdOn },
+
+      { id:"mob", name:"生きもの（状態を もつ モブ）", stage:"①形＋②動き＋③個体差＋④アクション（4段 ぜんぶ）",
+        vao:["mbVAO","mbRVAO"], owns:["mbVAO","mbRVAO"], units:{ label:"体", n:(lastMobOn?mbShown:0), built:mbBuilt },
+        cost:C({ triangles:(lastMobOn?mbShown*mobTriPer():0), drawCalls:(lastMobOn?1:0), points:0, lines:0,
+                 bytes:(mbBytes|0)+(mbRBytes|0), gpuUploads:mbUploads, gpuBytes:mbUpBytes,
+                 jsMs:+mobThinkMs.toFixed(3) }),
+        costWhy:W({ jsMs:"直近の 1回の「かんがえる」に かかった 時間の 実測（毎フレームでは なく 1秒に "+MOB.HZ+" 回）。"+
+                    "★この作品で 体数に 比例して 高いのは ここだけ（§R13）。",
+                    gpuBytes:"生まれてから 今までに GPUへ 送った バイトの 累計＝実測。",
+                    gpuUploads:"GPUへ 送った 回数の 累計＝実測。" }),
+        off:{ text:"⚙ 地上を あるく生きものの かず ＝0（いない）", kind:"cfgnum", key:"mobs", offValue:0 },
+        deps:["地形の 高さ","空間分割（マス）","近くだけ 考える しくみ（NEAR）"],
+        guards:["T24b","T24c","T24d","T24e","T37a","T37h"],
+        worlds:["field"], available:!!ENV.terrain, drawn:!!lastMobOn },
+
+      { id:"enemy", name:"敵", stage:"①形＋④アクション（状態を もつ）",
+        vao:["enVAO"], owns:["enVAO"], units:{ label:"体", n:(lastEnOn?enShown:0), built:enBuilt },
+        cost:C({ triangles:(lastEnOn?enShown*ELM_CUBE_TRI:0), drawCalls:(lastEnOn?1:0), points:0, lines:0,
+                 bytes:enBytes, gpuUploads:enUploads, jsMs:+enThinkMs.toFixed(3) }),
+        costWhy:W({ jsMs:"直近の 1回の「かんがえる」に かかった 時間の 実測。",
+                    gpuUploads:"GPUへ 送った 回数の 累計＝実測。" }),
+        off:{ text:"⚙ ⚔ たたかう", kind:"cfg", key:"battle", offValue:false },
+        deps:["モブと 同じ 器（mbProg）","当たり判定","地形の 高さ"],
+        guards:["T33a","T33b","T33c","T33d","T33e"],
+        worlds:["field"], available:!!(ENV.terrain&&ENV.battle), drawn:!!lastEnOn },
+
+      { id:"shot", name:"弾（遠距離の 攻撃）", stage:"①形（進めるのは JS＝生きている 弾の 数だけ）",
+        vao:["shVAO"], owns:["shVAO"], units:{ label:"発", n:(lastShOn?shShown:0), built:ATK.R_MAX },
+        cost:C({ triangles:(lastShOn?shShown*ELM_CUBE_TRI:0), drawCalls:(lastShOn?1:0), points:0, lines:0,
+                 bytes:shBytes, gpuUploads:shUploads }),
+        costWhy:W({ gpuUploads:"GPUへ 送った 回数の 累計＝実測（1発も 飛んでいなければ 増えない）。" }),
+        off:{ text:"⚙ ⚔ たたかう", kind:"cfg", key:"battle", offValue:false },
+        deps:["敵と 同じ 器（mbProg）","当たり判定","空間分割"],
+        guards:["T34a","T34b","T34c","T34d","T34e"],
+        worlds:["field"], available:!!(ENV.terrain&&ENV.battle), drawn:!!lastShOn },
+
+      { id:"avatar", name:"自機の すがた", stage:"①形＋②動き（腕・あしの ふりは シェーダーの 中）",
+        vao:["avVAO"], owns:["avVAO"], units:{ label:"箱", n:(avDrawn?AV_PARTS.length:0), built:AV_PARTS.length },
+        cost:C({ triangles:(avDrawn?AV_PARTS.length*ELM_CUBE_TRI:0), drawCalls:(avDrawn?1:0), points:0, lines:0,
+                 bytes:(avVAO?avBytes:null) }),
+        costWhy:W({ bytes:avVAO?"作った ときに GPUへ 送った 配列の 合計＝実測。"
+                    :"まだ 器を 作っていない（👁三人称/まうえ に した ときに はじめて 作る）＝測っていないので 0 とは 書かない。" }),
+        off:{ text:"👁 見え方＝いちにんしょう（自分が 見えない）", kind:"cfg", key:"view", offValue:"first" },
+        deps:["見え方（カメラ）"],
+        guards:["T31a","T31d","T31e","T35a","T35e"],
+        worlds:W5, available:true, drawn:!!avDrawn },
+
+      { id:"nebula", name:"星雲・雲海", stage:"—（点で 描く）",
+        vao:["nbVAO"], owns:["nbVAO"], units:{ label:"点", n:nbCount, built:nbCount },
+        cost:C({ triangles:0, drawCalls:1, points:nbCount, lines:0, bytes:nbBytes }),
+        costWhy:W({ triangles:ELM_WHY.tri, bytes:"作った ときに 送った 配列の 合計＝実測。" }),
+        off:null, offWhy:"消せない（⚙に キーが 無い。快適/reduced では 明るさの ゆれだけ 止まる）",
+        deps:["なし（置き場は 世界が 決める）"], guards:["T12","T14","T20e"],
+        worlds:W5, available:true, drawn:true },
+
+      // 弾30: ★"bgstar"(背景の 星野)の 要素は 撤去した（干場実機0804「座標データを 示す 旧『星研究』
+      //   3Dアプリの 名残で、今の アクション寄りの システムには 不要」）。台帳から 消えたので T38b の
+      //   「本文の 器＝台帳の 引き取り手」照合は drawScene から bgVAO の 行が 消えたことで そのまま 通る。
+
+      { id:"streak", name:"流線（すれ星の 尾）", stage:"—（線で 描く）",
+        vao:["stVAO"], owns:["stVAO"], units:{ label:"線の 端点", n:lastStreakCount, built:stCount },
+        cost:C({ triangles:0, drawCalls:(stOn?1:0), points:0, lines:lastStreakCount, bytes:stBytes }),
+        costWhy:W({ triangles:ELM_WHY.tri, bytes:"作った ときに 送った 配列の 合計＝実測。" }),
+        off:{ text:"⚙ 流線をみせる（＋prefers-reduced-motion では 自動で 止まる）",
+              kind:"cfg", key:"streaks", offValue:false },
+        deps:["すれ星の 種となる 点群（buildStreakSeed。弾30まで 背景の 星野と 共用していた 生成コード）","速さ（speedN）"],
+        guards:["T2f","T9","T14"],
+        worlds:W5, available:true, drawn:stOn },
+
+      { id:"line", name:"星座線", stage:"—（線で 描く）",
+        vao:["lnVAO"], owns:["lnVAO"], units:{ label:"線の 端点", n:(lineOn?lnCount:0), built:lnCount },
+        cost:C({ triangles:0, drawCalls:(lineOn?1:0), points:0, lines:(lineOn?lnCount:0), bytes:lnBytes }),
+        costWhy:W({ triangles:ELM_WHY.tri, bytes:"作った ときに 送った 配列の 合計＝実測。" }),
+        off:{ text:"⚙ 星座線を みせる", kind:"cfg", key:"lines", offValue:false },
+        deps:["作品星の 置き場（wkPos）","訪問記録（ぜんぶ 訪ねると 金色）"],
+        guards:["T11","T12","T14"],
+        worlds:W5, available:true, drawn:lineOn },
+
+      { id:"workstar", name:"作品星（この作品の 主役）", stage:"—（点で 描く）",
+        vao:["wkVAO"], owns:["wkVAO"], units:{ label:"星", n:WORKS.length, built:WORKS.length },
+        cost:C({ triangles:0, drawCalls:1, points:WORKS.length, lines:0, bytes:wkBytes }),
+        costWhy:W({ triangles:ELM_WHY.tri, bytes:"作った ときに 送った 4本ぶんの 合計＝実測。" }),
+        off:null, offWhy:"消せない（主役。消したら この作品では なくなる）",
+        deps:["星の 一覧（ledger）","世界ごとの 置き場（ENV.mapPos）"],
+        guards:["T1","T2","T2n","T11","T12"],
+        worlds:W5, available:true, drawn:true },
+
+      { id:"gate", name:"光の環（コースの 輪）", stage:"—（点で 描く）",
+        vao:["gtVAO"], owns:["gtVAO"], units:{ label:"点", n:(gateOn?gtCount:0), built:gtCount },
+        cost:C({ triangles:0, drawCalls:(gateOn?1:0), points:(gateOn?gtCount:0), lines:0, bytes:(gtVAO?gtBytes:null) }),
+        costWhy:W({ triangles:ELM_WHY.tri, bytes:gtVAO?"コースを 始めた ときに 送った 配列の 合計＝実測。"
+                    :"まだ コースを 始めていない＝器が 無い（測っていないので 0 とは 書かない）。" }),
+        off:{ text:"🔆 コースを やめる（コース中だけ 出る）", kind:"course", key:"courseActive", offValue:false },
+        deps:["作品星","世界ごとの 置き場"],
+        guards:["T3c","T14","T15","T16"],
+        worlds:W5, available:true, drawn:gateOn },
+
+      { id:"landmark", name:"ランドマーク（めじるし）", stage:"—（点で 描く）",
+        vao:["lmVAO"], owns:["lmVAO"], units:{ label:"点", n:(lmOn?lmCount:0), built:lmCount },
+        cost:C({ triangles:0, drawCalls:(lmOn?1:0), points:(lmOn?lmCount:0), lines:0, bytes:lmBytes }),
+        costWhy:W({ triangles:ELM_WHY.tri, bytes:"作った ときに 送った 配列の 合計＝実測。" }),
+        off:{ text:"⚙ 🏛️ めじるしをみせる", kind:"cfg", key:"showLandmarks", offValue:false },
+        deps:["星座の 重心（作品星の 置き場）"],
+        guards:["T19a","T19b","T19c","T19d"],
+        worlds:W5, available:true, drawn:lmOn },
+
+      { id:"tui", name:"操作盤（スマホの DOM）", stage:"—（WebGLで 描かない）",
+        vao:[], owns:[], units:{ label:"押せる 器", n:tuiN, built:tuiN },
+        cost:C({ triangles:0, drawCalls:0, points:0, lines:0, bytes:0, gpuUploads:0, gpuBytes:0,
+                 gpuBytesPerFrame:0 }),
+        costWhy:W({ triangles:ELM_WHY.dom, drawCalls:ELM_WHY.dom, bytes:ELM_WHY.dom,
+                    gpuUploads:ELM_WHY.dom, gpuBytes:ELM_WHY.dom, gpuBytesPerFrame:ELM_WHY.dom }),
+        off:null, offWhy:"消せない（マウスの ある機械には そもそも 出ない。★「すっきり」でも 消えない＝"+
+              "操作の 器を 消すと 遊べなく なるため わざと 残してある＝§G T27b）",
+        deps:["画面の 幅と 高さ"],
+        guards:["T25a","T25c","T25d","T36a","T36b","T36c"],
+        worlds:W5, available:true, drawn:(tuiN>0) },
+
+      { id:"hud", name:"道具ボタンと HUD（DOM）", stage:"—（WebGLで 描かない）",
+        vao:[], owns:[], units:{ label:"出ている 情報の 器", n:hudN, built:6 },
+        cost:C({ triangles:0, drawCalls:0, points:0, lines:0, bytes:0, gpuUploads:0, gpuBytes:0,
+                 gpuBytesPerFrame:0 }),
+        costWhy:W({ triangles:ELM_WHY.dom, drawCalls:ELM_WHY.dom, bytes:ELM_WHY.dom,
+                    gpuUploads:ELM_WHY.dom, gpuBytes:ELM_WHY.dom, gpuBytesPerFrame:ELM_WHY.dom,
+                    jsMs:"かくしている あいだは DOMを 1回も さわらない（弾18の 作法）。時計は 置いていない。" }),
+        off:{ text:"🙈 すっきり（Hキー／⚙。道具ボタンも 消すなら さらに ⚙hideTools）",
+              kind:"cfg", key:"tidy", offValue:true },
+        deps:["なし"],
+        guards:["T13","T27a","T27b","T27c","T28a","T28b","T28c"],
+        worlds:W5, available:true, drawn:(hudN>0) },
+
+      { id:"camera", name:"見え方（カメラと その 当たり判定）", stage:"—（描かない・見る 位置を 決める）",
+        vao:[], owns:[], units:{ label:"当たり判定の 手数（累計）", n:viewSteps, built:viewSteps },
+        cost:C({ triangles:0, drawCalls:0, points:0, lines:0, bytes:0, gpuUploads:0, gpuBytes:0,
+                 gpuBytesPerFrame:0 }),
+        costWhy:W({ triangles:ELM_WHY.dom, drawCalls:ELM_WHY.dom, bytes:ELM_WHY.dom,
+                    gpuUploads:ELM_WHY.dom, gpuBytes:ELM_WHY.dom, gpuBytesPerFrame:ELM_WHY.dom,
+                    jsMs:"三人称/まうえ の ときだけ 二分探索が 走る。手数は units に 出しているが 時計は 置いていない（§G T35d）。" }),
+        off:null, offWhy:"消せない（見え方が 無ければ 何も 見えない。三人称・まうえ は 👁で 選ぶ もの）",
+        deps:["地形の 高さ","建物の 箱"],
+        guards:["T31b","T31c","T35b","T35c","T35d"],
+        worlds:W5, available:true, drawn:true }
+    ];
+  }
+
+  // ★台帳の 組み立て。opt.probe に 数を 入れると、その フレーム数だけ 走らせて
+  //   「毎フレームの GPU転送」を 要素ごとに 実測して 埋める（既定では 走らせない）。
+  function elementsLedger(opt){
+    var defs=elmDefs(), i, j;
+    var pr=(opt&&opt.probe)?elmProbe(opt.probe===true?2:(opt.probe|0)):null;
+    if(pr){
+      for(i=0;i<defs.length;i++){
+        var bl=elmBufsOf(defs[i].id);
+        if(bl.length===0){
+          // ★振り分け先の バッファが 1本も 無い＝probe でも 埋められない。守れない 約束を 台帳に 残さない。
+          if(defs[i].cost.gpuBytesPerFrame===null)
+            defs[i].costWhy.gpuBytesPerFrame="この要素 じたいの バッファが 無い（まだ 作っていない／ほかの 器に 相乗り）＝probe でも 振り分けられない。";
+          continue;
+        }
+        var sum=0;
+        for(j=0;j<bl.length;j++) if(pr.map.has(bl[j])) sum+=pr.map.get(bl[j]);
+        defs[i].cost.gpuBytesPerFrame=+(sum/pr.frames).toFixed(1);
+        defs[i].costWhy.gpuBytesPerFrame="実測（"+pr.frames+"フレーム 走らせて GPUへ 送った バイトを 数え、フレーム数で わった）。";
+      }
+    }
+    var tri=0, dc=0, by=0, drawn=0;
+    for(i=0;i<defs.length;i++){ var c=defs[i].cost;
+      if(typeof c.triangles==="number") tri+=c.triangles;
+      if(typeof c.drawCalls==="number") dc+=c.drawCalls;
+      if(typeof c.bytes==="number") by+=c.bytes;
+      if(defs[i].drawn) drawn++; }
+    return {
+      kind:"hoshi_tenkyu_elements", v:1, spec:"§R24（弾29）", measuredAt:perfStamp(), env:ENVID,
+      unitsNote:"units.n＝いま 出ている 数（出ていなければ 0）／units.built＝器に 作ってある 数。",
+      note:"手で 書いたのは【なまえ・入切・依存・番人・世界】だけ。費用は ぜんぶ その場の 実測。"+
+           "測っていない欄は null と 理由（0 とは 書かない）。この表は 呼ばれた ときだけ 組み立てる＝毎フレームの 費用は +0。",
+      howToAdd:[
+        "1) 弾28の 4段の どこに 乗るか 言い当てる（①形 ②動き ③個体差 ④アクション）。④に 乗る ものだけが 体数に 比例して 高い。",
+        "2) 予算を 先に 宣言する（三角形・ドローコール・毎フレームJS・GPU転送・バイト数）。測ってから 決めない。",
+        "3) 入切を かならず 用意する（⚙の キー）。消せない 要素を 増やさない。",
+        "4) 陰性対照を 書く＝OFFに したら 前の版と 費用が 完全一致 する こと。",
+        "5) 番人テストを 常設化する（T番号を 取り、台帳の『番人』欄へ 書く）。",
+        "6) 5つの 世界の 失敗ID集合が 前の弾と 完全一致 する ことを 確かめる（回帰0）。",
+        "7) この台帳へ 1行 足す。★足し忘れたら T38b が 落ちる（えがく命令の 名前が 引き取り手を 失う）。"
+      ],
+      totals:{ elements:defs.length, drawnNow:drawn, triangles:tri, drawCalls:dc, bytes:by,
+               liveDrawCalls:lastDrawCalls|0,
+               note:"triangles は 敵・弾・自機も ふくむ（perfReport().draw.triangles は 弾15までの 比較のため それらを 足さない＝定義が ちがう）。" },
+      drawVaoNames:elmDrawnVaoNames(),
+      elements:defs
+    };
+  }
+
   function perfRefreshUi(){
     var r=perfReport();
     perfLine = "\n★fps中央値:"+r.fps.median.toFixed(1)+" 下位5%:"+r.fps.p5.toFixed(1)+" n="+r.sampleCount+(perfHeavy?" [おもく中]":"");
@@ -5104,10 +5717,27 @@
   }
   if(freshGroundStart){
     camPos=[0, TAKEOFF_START_Y, 0];  // 干場要望「地上から飛べるように」＝地表すれすれから開始（初回起動のみ・既存floorY起動仕様には触れない）
+    // 弾32 §R26: ★干場の 指示（2026-08-04）＝「アプリを ひらいた ときの 場所も 山頂の 拠点に する」。
+    //   ここに あった **弾30 の「いちばん近い 村の すぐ外に 立つ」コードは 消した**。
+    //   消した わけ＝弾30 は 干場実機の「敵が ちょっと 出てこない」への 答えとして 入れた もので、
+    //   ねらいは「すぐ 敵に 会える」ことだった。弾32では 干場が「起動の 場所は 拠点」と 決めたので、
+    //   ねらい そのものが 拠点起動へ 変わった＝2つを 同時に 満たす ことは できない（立てる場所は 1つ）。
+    //   ★敵に 会いたい ときは 山を おりれば よい＝山頂から いちばん近い 村まで 317・街まで 368。
+    //   ★battleDown()の 帰還先(0,0,0)＝「かならず 安全な 1か所」は 弾30と 同じく **1ビットも 変えていない**。
+    //   ★takenOff を ここで 立てる わけ＝りりくの 判定は「原点の 床＋14」なので、高さ210の 山頂から
+    //     始めると 1フレーム目で かならず 発火して しまう＝うその おいわいに なる。だから 先に すませておく。
+    if(ENVID===FRESH_ENV){
+      var _hs=homeStartPos();
+      if(_hs && isFinite(_hs.y)){ camPos=[_hs.x, _hs.y, _hs.z]; yaw=_hs.yaw; pitch=0; takenOff=true; }
+    }
   } else {
     var _ify=floorYAt(camPos[0],camPos[2]);
     if(_ify!=null && camPos[1]<_ify+10) camPos[1]=_ify+14;  // 起動時（前回そら/じめん/だいちを選んでいた時＝従来通り）
   }
+  // 弾32 §R26: ★アプリを ひらいた いちばん さいしょの 立ち位置を そのまま 覚えておく。
+  //   わけ＝テスト(§G T40d)は runAll の 中で カメラを 何度も 動かすので、あとから 起動位置を 見に行っても もう 分からない。
+  //   ここで 1回 写しを とるだけ＝毎フレームの 仕事は 1つも ふえない。
+  var BOOT_AT={ fresh:freshGroundStart, env:ENVID, pos:camPos.slice(), yaw:yaw, pitch:pitch };
 
   gl.clearColor(ENV.clear[0], ENV.clear[1], ENV.clear[2], 1);
   gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
@@ -5233,11 +5863,7 @@
     gl.uniform1f(nb_reduce,uReduce); gl.uniform1f(nb_hue,curHue);
     gl.uniform4f(nb_fog,F[0],F[1],F[2],F[3]); gl.uniform1f(nb_white,ENV.white||0);
     gl.bindVertexArray(nbVAO); gl.drawArrays(gl.POINTS,0,nbCount); dc++;
-    if(!ENV.dome){
-      gl.useProgram(bgProg); gl.uniformMatrix4fv(bg_vp,false,VProt);
-      gl.uniform1f(bg_time,tsec); gl.uniform1f(bg_reduce,uReduce);
-      gl.bindVertexArray(bgVAO); gl.drawArrays(gl.POINTS,0,bgCount); dc++;
-    }
+    // 弾30: ★背景の星野(bgstar)の 描画は 撤去した＝ドームの 無い 世界（宇宙）も もう これで 何も 描かない。
     // 流線＝止まっているときは1本も描かない（ドローコール増0）
     lastStreakCount=0;
     if(cfg.streaks && !reduceActive && stCount>0 && speedN>PHYS.ST_MIN_N){
@@ -5532,6 +6158,24 @@
       instances:vlCount, triangles:vlTris, bytes:vlBytes, buildMs:vlBuildMs }; },
     cityBoxesNow:function(){ return cityBoxes.map(function(x){ return { kind:x.kind, ground:x.ground,
       pos:x.pos.slice(), size:x.size.slice(), yaw:x.yaw }; }); },
+    // 弾32 §R26のテスト用フック（高い山と 山頂の 拠点）
+    mountConsts:function(){ return Object.assign({},HOME_MT); },
+    homeConsts:function(){ return Object.assign({},HOME); },
+    mountRise:homeMountRise,                 // 山が 足す 高さ（★これを 引けば 弾31の 地形に もどる）
+    homeStart:function(){ return homeStartPos(); },
+    atHomeAt:function(x,y,z){ return atHomeAt(x,y,z); },
+    homeBoxesNow:function(){ return homeBoxes.map(function(x){ return { kind:x.kind, ground:x.ground,
+      pos:x.pos.slice(), size:x.size.slice(), yaw:x.yaw }; }); },
+    // 🏠きょてんの ばん（章立ての 器）の いまの ようす
+    devBoard:function(){ return { on:devBoardOn, tab:devTabIdx, tabs:DEV_TABS.map(function(t){ return t.id; }),
+      btns:devTabBtns.length, panels:devPanelEls.length, atHome:atHomeNow() }; },
+    devOpen:function(){ return openDevBoard(); },
+    devClose:function(){ closeDevBoard(); return devBoardOn; },
+    devSelectTab:function(k){ devSelect(k,false); return devTabIdx; },
+    devTabsLedger:function(){ return DEV_TABS.map(function(t){ return { id:t.id, label:t.label, head:t.head }; }); },
+    devBuilderSrc:function(){ return String(devBuildTabs); },   // 章を 台帳から 作っている ことを 文字で たしかめる用
+    bootAt:function(){ return { fresh:BOOT_AT.fresh, env:BOOT_AT.env, pos:BOOT_AT.pos.slice(),
+      yaw:BOOT_AT.yaw, pitch:BOOT_AT.pitch }; },
     shrubBoxesNow:function(){ return shrubBoxes.map(function(x){ return { kind:x.kind, ground:x.ground,
       pos:x.pos.slice(), size:x.size.slice(), yaw:x.yaw }; }); },
     // 弾15 §R13のテスト用フック（動くモブ＝測るために作る実験）
@@ -5557,6 +6201,23 @@
       birdVerts:bdRVerts, birdTris:bdRTris, birdBytes:bdRBytes, birdBuilt:!!bdRVAO,
       mobVerts:mbRVerts, mobTris:mbRTris, mobBytes:mbRBytes, mobBuilt:!!mbRVAO,
       birdTriPer:birdTriPer(), mobTriPer:mobTriPer(), on:!!mobRich }; },
+    // 弾31 §R25のテスト用フック（1種＝部品表＋パターン表）
+    //   ①表そのもの ②指定した 個体の 型番号 ③型ごとの 外がわ（最小y/最大y/よこ幅）
+    mobPatterns:function(){ return { parts:MOB_PARTS.map(function(p){ return p.name; }), slots:MB_PAT_SLOTS, stride:MB_PAT_STRIDE,
+      patterns:MOB_PAT.map(function(P){ return { name:P.name, mul:P.mul.map(function(m){ return m.slice(); }), dy:P.dy.slice() }; }),
+      flat:Array.prototype.slice.call(MOB_PAT_FLAT), built:!!mbPat, on:rVariety() }; },
+    mobPatOf:function(i){ return mobPatOf(i|0); },
+    mobPatRaw:function(i){ return mobPatRaw(i|0); },
+    // 型ごとの 外がわ。★引数に 倍率の 表を わたすと その表で 計算する＝わざと 壊した 型を 入れて
+    //   「この物差しは ちゃんと 見つけられるか」を 確かめられる（変異注入・§G T39b）。
+    mobPatBox:function(k, mul){
+      var m=mul || (MOB_PAT[k]&&MOB_PAT[k].mul); if(!m) return null;
+      var B=mobPatBake(m);
+      return { name:(mul?"(変異)":MOB_PAT[k].name), minY:B.lo[1], maxY:B.hi[1],
+               minX:B.lo[0], maxX:B.hi[0], minZ:B.lo[2], maxZ:B.hi[2],
+               wide:B.hi[0]-B.lo[0], dy:B.dy.slice() }; },
+    // GPUへ 実際に 送った 個体ごとの 型番号（作った ときの 1回きり。ここが 変わらない ことが 静かな 属性の 証拠）
+    mobPatBuf:function(i){ return mbPat ? mbPat[i|0] : null; },
     // アクション（状態を もつ 動き）の 数えもの。★OFF のとき ここが ぜんぶ 0 のままである ことが「1回も 走っていない」証拠。
     mobActState:function(){ var c=[0,0,0];
       if(mobAct){ for(var i=0;i<mbShown;i++) c[mobAct[i]]++; }
@@ -5659,7 +6320,11 @@
     logicProbe:function(v){ if(v!==undefined) logicProbeOn=!!v; return logicProbeOn; },
     logicSum:function(){ return { ms:logicSumMs, n:logicSumN, wind:windSumMs }; },
     perfReport:perfReport,
-    perfExportJson:perfExportJson
+    perfExportJson:perfExportJson,
+    // 弾29 §R24: 要素台帳（この作品の 部品表）。★呼ばれた ときだけ 組み立てる＝毎フレームの 費用は +0。
+    //   elements({probe:2}) で「毎フレームの GPU転送」も 要素ごとに 実測する（2フレーム 走らせる）。
+    elements:elementsLedger,
+    elementsVaoNames:elmDrawnVaoNames
   };
 
   // ---------- 近接サムネ（DOMオーバーレイ） ----------
@@ -6087,7 +6752,7 @@
       +perfLine; }   // 弾13: 実fpsの中央値と下位5%（?debug=fps でも 出るようにする）
     if(!measureDone && elapsed>0.5){ measAcc+=fps; measFrames++;
       if(elapsed>3.0){ measureDone=true; var avg=measAcc/Math.max(measFrames,1);
-        if(avg<45 && !degraded){ degraded=true; buildNebula(2000); buildBg(Math.max(3000,Math.floor(bgCount/2))); } } }
+        if(avg<45 && !degraded){ degraded=true; buildNebula(2000); buildStreakSeed(Math.max(3000,Math.floor(bgCount/2))); } } }
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
@@ -6101,7 +6766,7 @@
   var settings=document.getElementById("settings"), help=document.getElementById("help"), search=document.getElementById("search"),
       logbookEl=document.getElementById("logbook");
   function closeSheets(){ settings.classList.remove("show"); help.classList.remove("show"); search.classList.remove("show"); logbookEl.classList.remove("show");
-    perfEl.classList.remove("show"); perfSyncPanel(); }
+    perfEl.classList.remove("show"); closeDevBoard(true); perfSyncPanel(); }
   function toggleSheet(el){ var wasShown=el.classList.contains("show"); closeSheets(); if(!wasShown) el.classList.add("show"); perfSyncPanel(); }
   document.getElementById("btn-settings").onclick=function(){ toggleSheet(settings); };
   document.getElementById("btn-help").onclick=function(){ toggleSheet(help); };
@@ -6123,6 +6788,103 @@
   document.getElementById("h-close").onclick=closeSheets;
   document.getElementById("q-close").onclick=closeSheets;
   document.getElementById("log-close").onclick=closeSheets;
+
+  // ---------- 弾32 §R26: 🏠 きょてんの ばん（章立ての 器・中みは 弾33／弾34） ----------
+  // ★干場の 追加指示（2026-08-04）＝「開発の ようす だけでなく せってい も できたら いい」。
+  //   だから 1枚の 板では なく **章（タブ）を ならべられる 器** にする。
+  // ★いちばん 大事な 決めごと＝**章は 下の 台帳 DEV_TABS から 作る**。
+  //   章を 1つ ふやす ときに さわるのは この 配列 だけ＝HTMLも CSSも 開閉の コードも 書きたさない
+  //   （弾31で「1種＝部品表＋パターン表」に したのと 同じ 考え方。ここを 外すと 章が ふえるたびに 改造地獄に なる）。
+  // ★見せ方は 3Dの 中に 描かない＝⚙・📖・🔍と 同じ **文字の 板**。
+  //   わけ＝0723に 業務データを 3Dで 見せる「課の 星図」を 作り、干場の 実機判定で
+  //   「見にくさが 勝つ」で 不合格に なった。インクルーシブの 床（WCAG 2.2 AA・やさしい日本語・
+  //   キーボードだけで とどく・低スペックPC）は 平面の HTML でしか 守れない。**山と 家は「場所」、中みは「文字」**。
+  var DEV_TABS = [
+    { id:"status", label:"📋 開発の ようす", head:"📋 開発の ようす",
+      note:"ここに HOSHI-WORLD を どこまで 作ったかが 出ます。（弾33で 中みを 入れます）" },
+    { id:"config", label:"⚙ せってい",       head:"⚙ せってい",
+      note:"ここで 自機の 見た目などを かえられるように します。（弾34で 中みを 入れます）" }
+  ];
+  var devEl=document.getElementById("devboard"), devBoardOn=false, devTabIdx=0, devOpener=null;
+  var devTabBtns=[], devPanelEls=[];
+  // 台帳から 章の ボタンと 中みを 1回だけ 作る（毎フレームの 仕事は 1つも ふえない）。
+  function devBuildTabs(){
+    var tabBox=document.getElementById("dev-tabs"), panBox=document.getElementById("dev-panels");
+    if(!tabBox||!panBox||devTabBtns.length) return;
+    for(var i=0;i<DEV_TABS.length;i++){
+      var t=DEV_TABS[i];
+      var b=document.createElement("button");
+      b.type="button"; b.id="dev-tab-"+t.id; b.setAttribute("role","tab");
+      b.setAttribute("aria-controls","dev-panel-"+t.id);
+      b.textContent=t.label;
+      tabBox.appendChild(b); devTabBtns.push(b);
+      var p=document.createElement("div");
+      p.id="dev-panel-"+t.id; p.className="dev-panel"; p.setAttribute("role","tabpanel");
+      p.setAttribute("aria-labelledby", b.id); p.setAttribute("tabindex","0");
+      p.innerHTML="<h4>"+esc(t.head)+"</h4><div class='dev-slot'>"+esc(t.note)+"</div>";
+      panBox.appendChild(p); devPanelEls.push(p);
+      (function(k){ b.onclick=function(){ devSelect(k, true); }; })(i);
+      b.addEventListener("keydown", devTabKey);
+    }
+    devSelect(0, false);
+  }
+  // いま どの 章か＝色だけで つたえない（aria-selected＋ふとじ＋下線）。
+  // ★フォーカスの 順も 1つに する（えらばれた 章だけ tabindex=0＝WAI-ARIA の タブの 作法）。
+  function devSelect(k, focusIt){
+    if(!devTabBtns.length) return;
+    if(k<0) k=devTabBtns.length-1; if(k>=devTabBtns.length) k=0;
+    devTabIdx=k;
+    for(var i=0;i<devTabBtns.length;i++){
+      var on=(i===k);
+      devTabBtns[i].setAttribute("aria-selected", on?"true":"false");
+      devTabBtns[i].setAttribute("tabindex", on?"0":"-1");
+      devPanelEls[i].classList.toggle("on", on);
+      devPanelEls[i].hidden=!on;
+    }
+    if(focusIt){ try{ devTabBtns[k].focus(); }catch(e){} }
+  }
+  // ← → Home End で 章を うつる（キーボードだけで ぜんぶの 章に とどく）。
+  function devTabKey(e){
+    var k=e.key;
+    if(k==="ArrowRight"){ e.preventDefault(); devSelect(devTabIdx+1, true); }
+    else if(k==="ArrowLeft"){ e.preventDefault(); devSelect(devTabIdx-1, true); }
+    else if(k==="Home"){ e.preventDefault(); devSelect(0, true); }
+    else if(k==="End"){ e.preventDefault(); devSelect(devTabBtns.length-1, true); }
+  }
+  // いま 拠点に 居るか（だいち だけ・拠点の 中か すぐ前）。ほかの 世界では いつでも false。
+  function atHomeNow(){
+    if(!ENV || !ENV.village) return false;
+    return atHomeAt(camPos[0], camPos[1], camPos[2]);
+  }
+  function devSay(m){ var el=document.getElementById("dev-say"); if(el) el.textContent=m; }
+  function openDevBoard(){
+    if(devBoardOn) return false;
+    if(!atHomeNow()){ devSay("ここでは ひらけません。山の てっぺんの きょてん まで 行ってください。"); return false; }
+    closeSheets();                       // ⚙などと 二重に かさねない（closeSheets は 中で closeDevBoard を 呼ぶ）
+    if(typeof closeToolSheet==="function") closeToolSheet(true);
+    devOpener=document.activeElement;    // ★とじたら ここへ フォーカスを もどす
+    devBuildTabs();
+    devEl.classList.add("show"); devBoardOn=true;
+    var hb=document.getElementById("btn-home"); if(hb) hb.setAttribute("aria-expanded","true");
+    devSelect(devTabIdx, true);
+    devSay("きょてんの ばんを ひらきました。← → で しょうを うつれます。Escape で とじます。");
+    return true;
+  }
+  function closeDevBoard(quiet){
+    if(!devBoardOn){ if(devEl) devEl.classList.remove("show"); return; }
+    devBoardOn=false; devEl.classList.remove("show");
+    var hb=document.getElementById("btn-home"); if(hb) hb.setAttribute("aria-expanded","false");
+    if(quiet) return;
+    // ★とじたら 入口へ フォーカスを もどす（もどり先が 無い ときだけ 🏠へ）
+    // ★もどり先＝ひらいた ときに 押していた もの。それが body（＝Bキーで ひらいた とき など）なら
+    //   入口の 🏠 へ もどす＝「とじたら どこにも フォーカスが 無い」を 作らない（WCAG 2.2 SC2.4.3）。
+    var back=(devOpener && devOpener.isConnected && devOpener!==document.body) ?
+             devOpener : document.getElementById("btn-home");
+    if(back){ try{ back.focus(); }catch(e){} }
+    devSay("きょてんの ばんを とじました。");
+  }
+  document.getElementById("btn-home").onclick=function(){ if(devBoardOn) closeDevBoard(); else openDevBoard(); };
+  document.getElementById("dev-close").onclick=function(){ closeDevBoard(); };
 
   // ---------- 弾5: 図鑑（達成率・称号・訪問一覧・自己ベスト）＋📤書き出し／📥読み込み ----------
   function rankTitle(xp){
@@ -6258,14 +7020,14 @@
       startCourse(todaysQuests[0] ? todaysQuests[0].courseSeed : hashStr(todayDateStr()+":course3"));
       b.classList.add("on"); hideIntro(); } };
 
-  var sCount=document.getElementById("s-count"), sSens=document.getElementById("s-sens"),
+  // 弾30: ★「⚙星のかず」(sCount)の 器は 撤去した＝背景の星野が 消えたので 動かす 相手が 無い。
+  var sSens=document.getElementById("s-sens"),
       sInertia=document.getElementById("s-inertia"), sReduce=document.getElementById("s-reduce"),
       sLines=document.getElementById("s-lines"), sMap=document.getElementById("s-map");
-  sCount.value=String(cfg.count); sSens.value=cfg.sens; sInertia.value=cfg.inertia; sReduce.checked=!!cfg.reduce;
+  sSens.value=cfg.sens; sInertia.value=cfg.inertia; sReduce.checked=!!cfg.reduce;
   sLines.checked=!!cfg.lines; sMap.checked=!!cfg.map;
   document.getElementById("s-sens-v").textContent=(+cfg.sens).toFixed(1);
   document.getElementById("s-inertia-v").textContent=(+cfg.inertia).toFixed(2);
-  sCount.onchange=function(){ cfg.count=+sCount.value; saveCfg(); buildBg(degraded?Math.floor(cfg.count/2):cfg.count); };
   sSens.oninput=function(){ cfg.sens=+sSens.value; document.getElementById("s-sens-v").textContent=cfg.sens.toFixed(1); saveCfg(); };
   sInertia.oninput=function(){ cfg.inertia=+sInertia.value; document.getElementById("s-inertia-v").textContent=cfg.inertia.toFixed(2); saveCfg(); };
   sReduce.onchange=function(){ cfg.reduce=sReduce.checked; updateComfort(); saveCfg(); };
@@ -6679,7 +7441,7 @@
       //   総量そのものは 性能パネルの実測(fps下位5%)で管理する。ポストエフェクト禁止は不変なので、
       //   オフスクリーンの絵に切り替わっていないこと（フレームバッファが1つも結ばれていないこと）も ここで見る。
       var terrOn=!!(ENV.terrain && !cfg.simpleScene && trVAO && trIdxCount>0);
-      var want = 1                                              // ①空のグラデ か 背景の星（どちらか片方だけ）
+      var want = (ENV.dome?1:0)                                 // ①空のグラデ（弾30: 背景の星野は 撤去＝宇宙は 0）
         + (terrOn?1:0)                                          // ②だいちの地形
         + (lastVillageOn?1:0)                                   // ③村と街（何百軒でも 1回）
         + (lastBirdOn?1:0)                                      // ③-2 弾15: 空をとぶ鳥（何羽でも 1回）
@@ -9111,9 +9873,13 @@
     var T30_LIP = 0.05;     // ✎ 1単位 すすんだときに 地域の重みが 動いてよい いちばん大きい ぶん
                             //    （＝どの 切りかわりも 20単位以上 かけて 混ざる。地形の目は 12.5）
     // ★弾20（バイオーム導入前）の 実測値。ここを 変えるときは かならず バックアップを ひらいて はかり直すこと。
+    // 弾30: ★space だけ [5,5]→[4,4] に 改訂。背景の 星野(bgstar)を 撤去して ドローコールが 1つ 減った
+    //   （宇宙(space)は ドームの 無い 唯一の 世界＝旧bgVAOの 1回ぶんを 引き受けていたのが ここだけ。
+    //   sky/ground/cave/field は もともと ドームが あって bgstar と 排他だったので 1ビットも 動いていない）。
+    //   バックアップ(hoshi_tenkyu.html.bak_before_0804_enemy_bgstar)で 5/5・撤去後の 本文で 4/4 を 実測ずみ。
     var T30_DAN20 = {
       // [村ON, 村OFF]（鳥0体・生きもの0体・地面に そっと立って 静止した状態で 数える＝T23cと 同じ 作法）
-      dc: { space:[5,5], sky:[5,5], ground:[5,5], cave:[5,5], field:[7,6] },
+      dc: { space:[4,4], sky:[5,5], ground:[5,5], cave:[5,5], field:[7,6] },
       // ★5つの 世界の 作品星の 座標の 指紋（envFor を 全作品ぶん 引いて FNV-1a）。
       //   だいち(field)も 入っているのが この弾の 肝＝地域は 作品星の 帯(半径470)の 外がわ からしか 効かないので、
       //   作品の 立つ場所は 5つの世界 ぜんぶで 弾20と 1ビットも 同じ（§R18「作品が主役」の 地形側からの 守り）。
@@ -11400,7 +12166,11 @@
       d.push("3) Tabで うつる="+tabMoved+" ／ 4) 世界が 動かない="+quietOk+"（ふたが 画面ぜんぶ="+backOk+"／"+backNote+"）");
       d.push("5) Escapeで とじる="+escOk+" ★フォーカスが ☰へ もどる="+backFocusOk+" 行が ぜんぶ 消える="+rowsHidden);
       d.push("6) 9画面の 行: だめだった所="+(geoBad.slice(0,4).join(" / ")||"なし")+"（390x844は "+toolSheetLayout(390,844).cols+"れつ・行の高さ"+toolSheetLayout(390,844).rowH+"）");
-      return {pass:mOk&&focusOk&&openOk&&(rowBad.length===0)&&(rowsShown===7)&&inFirst&&tabMoved&&quietOk&&backOk&&
+      // 弾32 §R26: 7 → PANEL_IDS.length。★ゆるめたのでは ない＝「☰の 板に 道具が ぜんぶ 出る」という
+      //   もとの ねらいは そのまま で、数の 出どころを **1つ（PANEL_IDS）** に そろえただけ。
+      //   道具を 1つ 足した（🏠 きょてんの ばん）ので 決めうちの 7 では 実物と ずれる。
+      //   ★動かした 既存の 数は これと TUI.HIDE_N 8→9 の 2つだけ＝T40f に 数で 出す（要 司令塔判断）。
+      return {pass:mOk&&focusOk&&openOk&&(rowBad.length===0)&&(rowsShown===PANEL_IDS.length)&&inFirst&&tabMoved&&quietOk&&backOk&&
                    escOk&&backFocusOk&&rowsHidden&&(geoBad.length===0), detail:d.join(" / ")};
     }
     // T36e: ★ドローコールの 増分0・毎フレームJSの 増分（DOMの 置き場を 変えただけ＝世界の 描画に 1行も さわっていない）。
@@ -11524,7 +12294,11 @@
     //      **干場の 実機でしか 決まらない**＝ここでは 数を 出すだけで 断定しない（この機械では 画が 出ない）。
     var T37_TRI_MAX   = 30000;   // ✎ 三角形の 増分の 上限（§R23 予算表）
     var T37_US_MAX    = 30;      // ✎ 毎フレームJSの 増分の 上限（µs・§R23 予算表）
-    var T37_PARTS_MAX = 6;       // ✎ 1体あたりの 箱は 6個まで（§R23①）
+    // ★弾31 §R25で 6→7 に した（司令塔判断を 仰ぐ 点）。理由＝しっぽを 1個 足したから。
+    //   しっぽは「部品の 有無」を パターンで 実演する ための 部品＝弾31の 主役そのもの。
+    //   ここを 動かさずに しっぽを 足す 道は 無い（数え上げの 判定 countOk も 同時に 落ちる）。
+    //   ★動かしたのは この 1つの 数だけ＝他の 判定式・しきい値は 1ビットも さわっていない。
+    var T37_PARTS_MAX = 7;       // ✎ 1体あたりの 箱は 7個まで（§R23①＝6個 ＋ 弾31の しっぽ 1個）
     var T37_STEP_MAX  = 0.15;    // ✎ 1フレーム(1/60秒)での ふれ幅の 上限＝明滅（とびとび）を 作っていない ことの しるし
     // 弾28の しらべ台＝だいちの 街に 立ち、体数を 既定に そろえる（比べる 場面を 固定する）。
     function t37Stand(){
@@ -11997,6 +12771,814 @@
                " ／ 敵と 弾は 弾27の 器のまま="+shOk};
     }
 
+    // ---------- 弾29 §R24: 要素台帳が 嘘を つかないための 番人（T38a〜T38e） ----------
+    // ★この弾の 芯＝「要素を 足したのに 台帳へ 書き忘れる」という **失敗の形** を 狙い撃つ。
+    //   だから どの検査にも **変異注入**（わざと 台帳を 壊した 写しで 同じ 検査を する）を 付け、
+    //   壊した 写しが 通ってしまわない ことまで 見る。**壊しても 通る 番人は にせもの**である。
+    function elmGet(L,id){ for(var i=0;i<L.elements.length;i++) if(L.elements[i].id===id) return L.elements[i]; return null; }
+
+    // T38a: 台帳の 形＝6欄が そろっている／null の 欄には かならず 理由が ある（0 で ごまかしていない）／
+    //       ★毎フレームの 処理に 1つも 足していない（本文の 文字で）／📤の 書き出しに 入っている。
+    function t_T38a(){
+      var L=window.__tenkyu.elements(), d=[], bad=[], i, k, f;
+      var need=["id","name","stage","vao","owns","units","cost","costWhy","deps","guards","worlds","available","drawn"];
+      for(i=0;i<L.elements.length;i++){ var e=L.elements[i];
+        for(k=0;k<need.length;k++) if(e[need[k]]===undefined) bad.push(e.id+"に "+need[k]+" が 無い");
+        if(!e.off && !e.offWhy) bad.push(e.id+"の 入切の 説明が 無い");
+        if(!(e.deps&&e.deps.length))   bad.push(e.id+"の 依存が 空");
+        if(!(e.guards&&e.guards.length))bad.push(e.id+"の 番人が 空");
+        if(!(e.worlds&&e.worlds.length))bad.push(e.id+"の 世界が 空");
+        if(!(e.units&&typeof e.units.n==="number")) bad.push(e.id+"の 数量が 数で ない");
+      }
+      // ★null の 欄には かならず「なぜ 測れないか」が ある
+      function whyMiss(list){ var m=[], a, b;
+        for(a=0;a<list.length;a++){ var x=list[a];
+          for(b in x.cost){ if(x.cost[b]===null && !(x.costWhy&&x.costWhy[b]&&String(x.costWhy[b]).length>10)) m.push(x.id+"."+b); } }
+        return m; }
+      var miss=whyMiss(L.elements);
+      // 変異注入＝理由を 1つ 消したら 検査が 落ちる
+      var mut=JSON.parse(JSON.stringify(L.elements)), victim="";
+      for(i=0;i<mut.length && !victim;i++){ for(f in mut[i].cost){ if(mut[i].cost[f]===null){ delete mut[i].costWhy[f]; victim=mut[i].id+"."+f; break; } } }
+      var mutCaught=(victim!=="")&&(whyMiss(mut).length>0);
+      // ★毎フレームの 費用は +0＝frame と drawScene の 本文に 台帳を 呼ぶ 文字が 1つも 無い。
+      //   性能パネルが 毎フレーム近く 呼ぶ perfReport にも 無い（書き出しの perfExportJson にだけ ある）。
+      var noFrame=(String(frame).indexOf("elementsLedger")<0)&&(String(drawScene).indexOf("elementsLedger")<0)&&
+                  (String(perfReport).indexOf("elementsLedger")<0)&&(String(perfRefreshUi).indexOf("elementsLedger")<0);
+      var inExport=(String(perfExportJson).indexOf("elementsLedger")>=0)&&
+                   (perfExportJson().indexOf('"kind": "hoshi_tenkyu_elements"')>=0);
+      var howOk=(L.howToAdd&&L.howToAdd.length===7);
+      d.push("要素="+L.elements.length+"／欄の もれ="+(bad.join(",")||"なし")+"／理由の 無い null="+(miss.join(",")||"なし"));
+      d.push("変異注入（"+(victim||"—")+" の 理由を 消す）→ 検知="+mutCaught);
+      d.push("毎フレームの 道に 台帳が 無い="+noFrame+"／📤に 入っている="+inExport+"／拡張の型 7手順="+howOk);
+      return { pass:(bad.length===0)&&(miss.length===0)&&mutCaught&&noFrame&&inExport&&howOk, detail:d.join(" / ") };
+    }
+
+    // T38b: ★この弾の 芯＝台帳の 要素数と、実際に 描いている 器の 数が 一致する。
+    //       （1）本文の えがく命令に 出てくる 器の 名前が、ちょうど 1つの 要素に 引き取られている
+    //       （2）台帳の ドローコールの 合計が、その場の 実測（lastDrawCalls）と 一致する
+    //       （3）1回の 命令に 相乗りしている 村＋街＋低木の 箱の 数が 器の 数と ぴったり
+    function t_T38b(){
+      window.__tenkyu.stepFrames(1);
+      var L=window.__tenkyu.elements(), d=[], i, j;
+      function check(list, names){
+        var owner={}, dup=[], phantom=[], orphan=[];
+        for(i=0;i<list.length;i++){ var o=list[i].owns||[];
+          for(j=0;j<o.length;j++){
+            if(owner[o[j]]) dup.push(o[j]+"("+owner[o[j]]+"と"+list[i].id+")");
+            owner[o[j]]=list[i].id;
+            if(names.indexOf(o[j])<0) phantom.push(o[j]+"("+list[i].id+")"); } }
+        for(i=0;i<names.length;i++) if(!owner[names[i]]) orphan.push(names[i]);
+        return { dup:dup, phantom:phantom, orphan:orphan,
+                 ok:(dup.length===0&&phantom.length===0&&orphan.length===0) };
+      }
+      var r=check(L.elements, L.drawVaoNames);
+      // ★変異注入＝台帳から 1要素（鳥）を 抜くと、鳥の 器の 名前が 引き取り手を 失って 落ちる
+      var without=[], removed=null;
+      for(i=0;i<L.elements.length;i++){ if(L.elements[i].id==="bird"){ removed=L.elements[i]; continue; } without.push(L.elements[i]); }
+      var rm=check(without, L.drawVaoNames);
+      var mutCaught=(removed!==null)&&(rm.ok===false)&&(rm.orphan.length>0);
+      // ドローコールの 合計が 実測と 合う
+      var sum=0; for(i=0;i<L.elements.length;i++) sum+=(L.elements[i].cost.drawCalls||0);
+      var live=window.__tenkyu.getState().drawCalls;
+      var dcOk=(sum===live);
+      // 相乗りの 内訳（村＋街＋低木）が 器の 箱の 数と ぴったり
+      var vBoxes=window.__tenkyu.perfReport().draw.villageBoxes|0;
+      var rideSum=(elmGet(L,"village").units.n|0)+(elmGet(L,"shrub").units.n|0);
+      var rideOk=(rideSum===vBoxes);
+      // 立方体は 36頂点＝12三角形（台帳が 使う 定数が 本文と 対に なっている）
+      var cubeOk=(String(drawScene).indexOf("0,36,enDraw")>=0)&&(String(drawScene).indexOf("0,36,shDraw")>=0)&&
+                 (String(drawAvatar).indexOf("0,36,AV_PARTS.length")>=0);
+      d.push("本文の 器="+L.drawVaoNames.length+"種（"+L.drawVaoNames.join(",")+"）");
+      d.push("引き取り手なし="+(r.orphan.join(",")||"なし")+"／台帳にだけ ある="+(r.phantom.join(",")||"なし")+
+             "／二重の 持ち主="+(r.dup.join(",")||"なし"));
+      d.push("★変異注入（台帳から 鳥を 1要素 抜く）→ 落ちた="+mutCaught+"（余った 器="+rm.orphan.join(",")+"）");
+      d.push("ドローコール 台帳の 合計="+sum+" 実測="+live+"（一致="+dcOk+"）／相乗りの 箱 "+rideSum+"="+vBoxes+"（"+rideOk+"）／立方体36頂点="+cubeOk);
+      return { pass:r.ok&&mutCaught&&dcOk&&rideOk&&cubeOk, detail:d.join(" / ") };
+    }
+
+    // T38c: 費用欄が その場の 実測と 一致する＝手で書いた 古い 数字が 残らない。
+    //       物差しを 動かしたら 台帳の 数も 動く ことを 見る（動かなければ どこかに 数が 焼いてある）。
+    function t_T38c(){
+      var d=[], ok=true, i;
+      // ①弾30: ⚙星のかず／背景の星野は 撤去した（干場実機0804「座標データを 示す 旧『星研究』
+      //   3Dアプリの 名残で、今の アクション寄りの システムには 不要」）。
+      //   ★ここは もう「動かして 台帳が 追随するか」を 見る 場所では ない＝撤去の 取りこぼしを 見張る 場所に かえた
+      //   （弾19の ▲▼撤去を 見張る T25d/T28e と 同じ 作法）。
+      var elmGoneOk=(elmGet(window.__tenkyu.elements(),"bgstar")===null);
+      var uiGoneOk=!document.getElementById("s-count");
+      var drawGoneOk=(String(drawScene).indexOf("bgVAO")<0);
+      var starOk=elmGoneOk&&uiGoneOk&&drawGoneOk;
+      d.push("★撤去の 確認（背景の 星野）：台帳から消えた="+elmGoneOk+" ⚙UIが消えた="+uiGoneOk+" drawSceneのbgVAOが消えた="+drawGoneOk);
+      // ②だいちだけ＝鳥の 体数（三角形も いっしょに 動く）
+      var fieldOk=true, fdet="この世界には 鳥が いない（だいち だけの 物差し）";
+      if(ENV.terrain){
+        var b0=window.__tenkyu.birdCount();
+        window.__tenkyu.birdCount(50); window.__tenkyu.stepFrames(1);
+        var C=elmGet(window.__tenkyu.elements(),"bird");
+        var per=window.__tenkyu.richParts().birdTriPer;
+        var shown=window.__tenkyu.birdStats().shown;
+        fieldOk=(C.units.n===shown)&&(C.cost.triangles===shown*per);
+        fdet="鳥 "+b0+"→50（実際に 出た="+shown+"）：台帳="+C.units.n+"体 三角形="+C.cost.triangles+"（1羽 "+per+"）一致="+fieldOk;
+        window.__tenkyu.birdCount(b0); window.__tenkyu.stepFrames(1);
+      }
+      d.push(fdet);
+      // ③「毎フレームの GPU転送」を probe で 実測できる（既定では 走らせない ことは T38a が 見ている）
+      var P=window.__tenkyu.elements({probe:2});
+      var pm=elmGet(P,"mob"), pw=elmGet(P,"workstar");
+      var probeOk=(typeof pm.cost.gpuBytesPerFrame==="number")&&(typeof pw.cost.gpuBytesPerFrame==="number");
+      d.push("probe:2 で 毎フレームの GPU転送を 実測＝生きもの "+pm.cost.gpuBytesPerFrame+"B/f・作品星 "+pw.cost.gpuBytesPerFrame+"B/f（実測できた="+probeOk+"）");
+      ok=starOk&&fieldOk&&probeOk;
+      return { pass:ok, detail:d.join(" / ") };
+    }
+
+    // T38d: 入切欄に 書いた キーが 実在し、実際に 切れる（切れないのに「切れる」と 書いてある 状態を 許さない）。
+    function t_T38d(){
+      var L=window.__tenkyu.elements(), defs=window.__tenkyu.cfgDefaults();
+      var d=[], bad=[], cut=[], notHere=[], i;
+      function keyOk(e){
+        if(!e.off) return true;
+        if(e.off.kind==="cfg"||e.off.kind==="cfgnum") return (e.off.key in defs);
+        if(e.off.kind==="course") return (typeof abandonCourse==="function");
+        return false;
+      }
+      for(i=0;i<L.elements.length;i++) if(!keyOk(L.elements[i])) bad.push(L.elements[i].id+"→"+(L.elements[i].off.key||L.elements[i].off.kind));
+      // ★変異注入＝でたらめな ⚙キーを 書いた 写しは 落ちる
+      var mut=JSON.parse(JSON.stringify(L.elements)), mi=-1;
+      for(i=0;i<mut.length;i++){ if(mut[i].off&&(mut[i].off.kind==="cfg"||mut[i].off.kind==="cfgnum")){ mut[i].off.key="zzz_no_such_key"; mi=i; break; } }
+      var mutBad=0; for(i=0;i<mut.length;i++) if(!keyOk(mut[i])) mutBad++;
+      var mutCaught=(mi>=0)&&(mutBad>0);
+      // 実際に 切れるか＝いま 出ている 要素だけ（出ていない ものは この世界では 確かめられないと 正直に 書く）
+      var savedCfg=JSON.parse(JSON.stringify(cfg));
+      function setKey(key,v){
+        if(key==="birds") window.__tenkyu.birdCount(v);
+        else if(key==="mobs") window.__tenkyu.mobCount(v);
+        else if(key==="battle") window.__tenkyu.setBattle(!!v,false);
+        else if(key==="view") window.__tenkyu.setView(v,false);
+        else if(key==="tidy"){ cfg.tidy=!!v; syncTidyUI(); applyHudVisibility(); }
+        else cfg[key]=v;
+      }
+      // 「出ている 量」＝えがく命令 と いま 出ている 数の 和（低木のように 相乗りで 命令が 0 の ものも 数で 見える）
+      function amount(e){ return (e.cost.drawCalls||0)+(e.units.n||0); }
+      for(i=0;i<L.elements.length;i++){
+        var e=L.elements[i];
+        if(!e.off){ continue; }
+        if(!e.drawn || (e.off.kind!=="cfg" && e.off.kind!=="cfgnum")){ notHere.push(e.id); continue; }
+        if(amount(e)===0){ notHere.push(e.id); continue; }
+        var was=cfg[e.off.key];
+        setKey(e.off.key, e.off.offValue); window.__tenkyu.stepFrames(1);
+        var off=elmGet(window.__tenkyu.elements(), e.id);
+        if(amount(off)!==0 || off.drawn!==false) bad.push(e.id+"→⚙"+e.off.key+" を 切っても 消えない");
+        setKey(e.off.key, was); window.__tenkyu.stepFrames(1);
+        var back=elmGet(window.__tenkyu.elements(), e.id);
+        if(amount(back)===0) bad.push(e.id+"→もどらない");
+        else cut.push(e.id);
+      }
+      cfg=savedCfg; saveCfg(); updateComfort(); syncTidyUI(); applyHudVisibility(); window.__tenkyu.stepFrames(1);
+      d.push("⚙キーが 実在しない="+(bad.length?"":"なし"));
+      d.push("★変異注入（でたらめな ⚙キーに 書きかえ）→ 落ちた="+mutCaught);
+      d.push("実際に 切れた="+(cut.join(",")||"なし")+"／この世界では 出ていない="+(notHere.join(",")||"なし"));
+      if(bad.length) d.push("だめだった="+bad.join(","));
+      return { pass:(bad.length===0)&&mutCaught, detail:d.join(" / ") };
+    }
+
+    // T38e: 番人欄の テストIDが 実在する（存在しない T番号を 書けない）／世界欄が その場の 実測と 一致する。
+    function t_T38e(){
+      var L=window.__tenkyu.elements(), d=[], i, j, ran={};
+      for(i=0;i<_ranResults.length;i++) ran[_ranResults[i].id]=true;
+      function guardMiss(list){ var m=[];
+        for(i=0;i<list.length;i++){ var g=list[i].guards||[];
+          for(j=0;j<g.length;j++) if(!ran[g[j]]) m.push(list[i].id+"→"+g[j]); }
+        return m; }
+      var miss=guardMiss(L.elements);
+      var mutG=JSON.parse(JSON.stringify(L.elements));
+      mutG[0].guards=mutG[0].guards.concat(["T999z"]);
+      var mutGuardCaught=(guardMiss(mutG).length>0);
+      // 世界欄＝台帳が「この世界に 出る」と 書いているか と、その場の 実測（available）が 一致する
+      function worldMiss(list){ var m=[];
+        for(i=0;i<list.length;i++){ var e=list[i];
+          if((e.worlds.indexOf(ENVID)>=0)!==!!e.available) m.push(e.id+"（台帳="+(e.worlds.indexOf(ENVID)>=0)+" 実測="+!!e.available+"）"); }
+        return m; }
+      var wmiss=worldMiss(L.elements);
+      var mutW=JSON.parse(JSON.stringify(L.elements)), wi=-1;
+      for(i=0;i<mutW.length;i++){ if(mutW[i].worlds.indexOf(ENVID)>=0){ mutW[i].worlds=mutW[i].worlds.filter(function(x){ return x!==ENVID; }); wi=i; break; } }
+      var mutWorldCaught=(wi>=0)&&(worldMiss(mutW).length>0);
+      d.push("いま="+ENVID+"／走ったテスト="+_ranResults.length+"件");
+      d.push("実在しない 番人="+(miss.join(",")||"なし")+"／★変異注入(T999zを 足す)→ 落ちた="+mutGuardCaught);
+      d.push("世界欄の 食いちがい="+(wmiss.join(",")||"なし")+"／★変異注入(この世界を 1つ 消す)→ 落ちた="+mutWorldCaught);
+      return { pass:(miss.length===0)&&(wmiss.length===0)&&mutGuardCaught&&mutWorldCaught, detail:d.join(" / ") };
+    }
+
+    // ---------- 弾31 §R25: 1種＝部品表＋パターン表（T39a〜T39f） ----------
+    // ★干場の 指示（2026-08-04）＝「1つのモブに いくつかの パターン登録が 要る。まず 1つのモブを 作り上げる」。
+    //   だから ここで 見るのは「型が ちゃんと 散らばるか」だけでは ない。
+    //   **型を 増やしても えがく命令と 毎フレームの 転送が 1つも 増えていないか**＝この弾の 生き死にを 分ける 所。
+    //   ★「かわいいか」「生きものらしいか」は 干場の 実機でしか 決まらない＝ここでは 数を 出すだけで 断定しない。
+    var T39_PAT_N = 4;     // ✎ 登録した パターンの 数（ふつう／こども／ずんぐり／ほそなが）
+    var T39_MAX_Y = 1.0;   // ✎ 頭は ここを こえない（弾27の 箱の たて＝作品星より 小さく 保つ 不変条件）
+
+    // T39a: 表の 形＝部品7・パターン4・欠けが ない・名前が かぶらない・器の 大きさと 合っている。
+    function t_T39a(){
+      var P=window.__tenkyu.mobPatterns(), d=[], bad=[], i, j;
+      var partsOk=(P.parts.length===MB_PAT_STRIDE)&&(P.parts.length===7);
+      var patOk=(P.patterns.length===T39_PAT_N);
+      // ①どの パターンも「全部品ぶんの 倍率」を 持つ（欠けが 1つも ない・数で ある・0以上）
+      for(i=0;i<P.patterns.length;i++){ var M=P.patterns[i].mul;
+        if(M.length!==P.parts.length){ bad.push(P.patterns[i].name+"の 倍率が "+M.length+"個"); continue; }
+        for(j=0;j<M.length;j++){
+          if(M[j].length!==3) bad.push(P.patterns[i].name+"×"+P.parts[j]+" が 3つ そろっていない");
+          for(var k=0;k<3;k++) if(typeof M[j][k]!=="number" || !isFinite(M[j][k]) || M[j][k]<0)
+            bad.push(P.patterns[i].name+"×"+P.parts[j]+" の 倍率が 数で ない"); } }
+      var fullOk=(bad.length===0);
+      // ②名前が かぶらない（部品も パターンも）
+      function dup(a){ var s={}, r=[]; for(var q=0;q<a.length;q++){ if(s[a[q]]) r.push(a[q]); s[a[q]]=1; } return r; }
+      var dupPart=dup(P.parts), dupPat=dup(P.patterns.map(function(x){ return x.name; }));
+      var nameOk=(dupPart.length===0)&&(dupPat.length===0);
+      // ③型0（ふつう）は かならず 倍率1・ずらし0＝この器に 相乗りしている 敵・弾が 1ビットも 変わらない ことの 土台
+      var idOk=true;
+      for(j=0;j<P.patterns[0].mul.length;j++){
+        if(P.patterns[0].mul[j][0]!==1||P.patterns[0].mul[j][1]!==1||P.patterns[0].mul[j][2]!==1) idOk=false;
+        if(P.patterns[0].dy[j]!==0) idOk=false; }
+      // ④GPUへ 置いた 表が 上の 表と 1つずつ ぴったり 合う（手で 書き写した 数が 残らない）
+      var flatOk=(P.flat.length===P.slots*4)&&P.built;
+      for(i=0;i<P.patterns.length;i++) for(j=0;j<P.parts.length;j++){ var s=(i*P.stride+j)*4;
+        if(Math.abs(P.flat[s]-P.patterns[i].mul[j][0])>1e-6) flatOk=false;
+        if(Math.abs(P.flat[s+1]-P.patterns[i].mul[j][1])>1e-6) flatOk=false;
+        if(Math.abs(P.flat[s+2]-P.patterns[i].mul[j][2])>1e-6) flatOk=false;
+        if(Math.abs(P.flat[s+3]-P.patterns[i].dy[j])>1e-6) flatOk=false; }
+      var fitOk=(P.patterns.length*P.stride<=P.slots);
+      // ⑤「有無」が ほんとうに 表に ある（倍率0の 部品が すくなくとも 1つ）＝ずんぐりの しっぽ
+      var zero=[];
+      for(i=0;i<P.patterns.length;i++) for(j=0;j<P.parts.length;j++)
+        if(P.patterns[i].mul[j][0]===0&&P.patterns[i].mul[j][1]===0&&P.patterns[i].mul[j][2]===0)
+          zero.push(P.patterns[i].name+"×"+P.parts[j]);
+      var zeroOk=(zero.length>0);
+      d.push("部品="+P.parts.length+"個（"+P.parts.join("・")+"）＝7個="+partsOk);
+      d.push("パターン="+P.patterns.length+"個（"+P.patterns.map(function(x){return x.name;}).join("・")+"）＝"+T39_PAT_N+"個="+patOk);
+      d.push("全部品ぶんの 倍率が そろっている="+fullOk+(bad.length?("／欠け="+bad.join(",")):"")+
+             "／名前の かぶり なし="+nameOk+"（部品="+(dupPart.join(",")||"なし")+" 型="+(dupPat.join(",")||"なし")+"）");
+      d.push("型0は 倍率1・ずらし0="+idOk+"／GPUの 表と 一致="+flatOk+"（"+P.flat.length+"欄・器"+P.slots+"欄に 入る="+fitOk+"）");
+      d.push("★倍率0＝部品が 無い の 実演: "+(zero.join(",")||"なし")+"（ある="+zeroOk+"）");
+      return { pass:partsOk&&patOk&&fullOk&&nameOk&&idOk&&flatOk&&fitOk&&zeroOk, detail:d.join(" / ") };
+    }
+
+    // T39b: ★外がわの 約束＝全4パターンで 最小y==0（足もとが 地面に つく）・最大y<=1.0（頭が はみ出さない）。
+    //   ★変異注入＝わざと 倍率を 壊した 型を 入れて、この物差しが ちゃんと 見つけられる ことまで 見る
+    //     （壊しても 通る 番人は にせもの＝弾29 §R24の 作法を そのまま つかう）。
+    function t_T39b(){
+      var A=window.__tenkyu, P=A.mobPatterns(), d=[], rows=[], ok=true, i;
+      for(i=0;i<P.patterns.length;i++){
+        var B=A.mobPatBox(i);
+        var yOk=(Math.abs(B.minY)<1e-6)&&(B.maxY<=T39_MAX_Y+1e-6);
+        if(!yOk) ok=false;
+        rows.push(B.name+": 最小y="+B.minY.toFixed(4)+" 最大y="+B.maxY.toFixed(4)+
+                  " よこ幅="+B.wide.toFixed(3)+" x["+B.minX.toFixed(3)+","+B.maxX.toFixed(3)+
+                  "] z["+B.minZ.toFixed(3)+","+B.maxZ.toFixed(3)+"]"+(yOk?"":" ←だめ"));
+      }
+      // 参考＝よこ・おくゆきも 弾27の 箱（±0.5）に おさまっているか（合否には つかわない＝干場の 実機で 見る 所）
+      var envOk=true;
+      for(i=0;i<P.patterns.length;i++){ var C=A.mobPatBox(i);
+        if(C.minX<-0.5-1e-6||C.maxX>0.5+1e-6||C.minZ<-0.5-1e-6||C.maxZ>0.5+1e-6) envOk=false; }
+      // ★変異注入① あたまを 3倍に する → 最大y が 1.0を こえる
+      function copy(){ return P.patterns[0].mul.map(function(m){ return m.slice(); }); }
+      var m1=copy(); m1[1]=[1,3,1];
+      var X1=A.mobPatBox(null,m1), caught1=!(X1.maxY<=T39_MAX_Y+1e-6);
+      // ★変異注入② あしを ぜんぶ 無く する → 足もとが 地面から はなれる（最小y が 0で なくなる）
+      var m2=copy(); m2[2]=[0,0,0]; m2[3]=[0,0,0]; m2[4]=[0,0,0]; m2[5]=[0,0,0];
+      var X2=A.mobPatBox(null,m2), caught2=!(Math.abs(X2.minY)<1e-6);
+      var mutOk=caught1&&caught2;
+      d.push("★外がわの 約束（最小y=0・最大y<="+T39_MAX_Y+"）: "+rows.join(" ／ ")+"（ぜんぶ 合格="+ok+"）");
+      d.push("参考＝よこ・おくゆきも ±0.5に おさまる="+envOk+"（弾27の 箱から はみ出さない）");
+      d.push("★変異注入① あたま3倍 → 最大y="+X1.maxY.toFixed(4)+"（見つけた="+caught1+"）");
+      d.push("★変異注入② あし ぜんぶ 無し → 最小y="+X2.minY.toFixed(4)+"（見つけた="+caught2+"）");
+      if(!mutOk) return { pass:false, skip:true,
+        detail:"判定不能(SKIP): 壊した 型を 見つけられない＝この物差しは 死んでいる。 "+d.join(" / ") };
+      return { pass:ok&&mutOk, detail:d.join(" / ") };
+    }
+
+    // T39c: ★予算＝パターンを 入れる 前（段3を 切った 状態）と 後で
+    //   ドローコール +0 ／ 毎フレームの GPU転送 +0 ／ 三角形の 増分は 数で 出す（+30,000以内）。
+    function t_T39c(){
+      var st=vlgSetup(), d=[];
+      var at=t37Stand();
+      window.__tenkyu.mobRich(true);
+      // 弾28の 物差し t37Cost を そのまま つかう（新しい 物差しを 増やさない）
+      var PRE =t37Cost(t37Set(true,true,false,true));   // 型を 入れる 前＝段3(個体差) OFF＝ぜんぶ ふつう
+      var POST=t37Cost(t37Set(true,true,true, true));   // 型を 入れた 後
+      var dcOk=(POST.dc===PRE.dc), byteOk=(Math.abs(POST.bytes-PRE.bytes)<1e-9), triSame=(POST.tri===PRE.tri);
+      // 三角形の 増分は 弾27（作り込み OFF）を もとに 数える＝§R23の 予算表と 同じ 見かた
+      window.__tenkyu.mobRich(false); stepFrames(3); var OFF=t37Shot();
+      window.__tenkyu.mobRich(true);  stepFrames(3); var ON =t37Shot();
+      var triDelta=ON.tri-OFF.tri, triOk=(triDelta<=T37_TRI_MAX);
+      // 1体あたりの 三角形＝部品の 数×12（★型を 増やしても ここは 増えない＝つぶれて 見えなくなるだけ）
+      var RP=window.__tenkyu.richParts();
+      var perOk=(ON.mPer===12*RP.mobParts.length)&&(OFF.mPer===12);
+      vlgRestore(st); stepFrames(1);
+      d.push("★型の 前後: ドローコール "+PRE.dc+"→"+POST.dc+"（増分 "+(POST.dc-PRE.dc)+"＝0="+dcOk+"）／"+
+             "毎フレームの GPU転送 "+PRE.bytes+"→"+POST.bytes+"B/f（増分 "+(POST.bytes-PRE.bytes)+"＝0="+byteOk+"）／"+
+             "三角形 "+PRE.tri+"→"+POST.tri+"（同じ="+triSame+"）");
+      d.push("三角形の 増分（弾27を もと）: OFF="+OFF.tri+" → ON="+ON.tri+"（増分 "+triDelta+"／上限 +"+T37_TRI_MAX+"＝"+
+             (triDelta/T37_TRI_MAX*100).toFixed(1)+"%・="+triOk+"）1体あたり "+OFF.mPer+"→"+ON.mPer+
+             "（部品"+RP.mobParts.length+"個×12="+perOk+"）生きもの"+ON.mobs+"体・鳥"+ON.birds+"体×"+ON.bPer);
+      d.push("★型を 増やしても 三角形は 減らない＝倍率0の 部品は つぶれて 見えなくなるだけ（正直に 書いておく）"+
+             " 立った所=街"+at.join(","));
+      return { pass:dcOk&&byteOk&&triSame&&triOk&&perOk, detail:d.join(" / ") };
+    }
+
+    // T39d: ★決定論と 散らばり＝同じidなら いつでも 同じ型／2000体で 4つの 型が ぜんぶ 出る／
+    //   体数を 変えても 同じidの 型は 変わらない（乱数を 引いていない ことの 数の 証拠）。
+    function t_T39d(){
+      var st=vlgSetup(), d=[], A=window.__tenkyu, i;
+      var at=t37Stand();
+      A.mobStage({shape:true,motion:true,variety:true,action:true});
+      // ①同じidなら 何度でも 同じ
+      var pureOk=true;
+      for(i=0;i<200;i++){ if(A.mobPatRaw(i)!==A.mobPatRaw(i)) pureOk=false; }
+      // ②2000体で 4つの 型が ぜんぶ 出る（1つの 型に かたよらない）
+      var cnt=[]; for(i=0;i<T39_PAT_N;i++) cnt.push(0);
+      for(i=0;i<2000;i++) cnt[A.mobPatRaw(i)]++;
+      var allOk=true, evenOk=true, lo=2000/T39_PAT_N*0.6, hi=2000/T39_PAT_N*1.4;
+      for(i=0;i<T39_PAT_N;i++){ if(cnt[i]===0) allOk=false; if(cnt[i]<lo||cnt[i]>hi) evenOk=false; }
+      // 既定の 体数（50体）でも 4つとも 出る＝ふだん 見える 場面で 型が そろう
+      var c50=[]; for(i=0;i<T39_PAT_N;i++) c50.push(0);
+      for(i=0;i<CFG_DEFAULTS.mobs;i++) c50[A.mobPatRaw(i)]++;
+      var all50=true; for(i=0;i<T39_PAT_N;i++) if(c50[i]===0) all50=false;
+      // ③体数を 変えても 同じidの 型は 変わらない（GPUへ 送った 中みも 同じ）
+      var ids=[0,1,7,49,199,777,1999], before=ids.map(function(k){ return A.mobPatOf(k); });
+      var buf0=ids.map(function(k){ return A.mobPatBuf(k); });
+      A.mobCount(2000); stepFrames(2);
+      var mid=ids.map(function(k){ return A.mobPatOf(k); });
+      A.mobCount(50); stepFrames(2);
+      var after=ids.map(function(k){ return A.mobPatOf(k); });
+      var buf1=ids.map(function(k){ return A.mobPatBuf(k); });
+      var stableOk=(before.join(",")===mid.join(","))&&(before.join(",")===after.join(","));
+      // ④GPUへ 送った 中みと JS側の うつしが 一致する（画を 見ずに「同じ型で えがいている」ことを 数で 見る）
+      var bufOk=(buf0.join(",")===buf1.join(","));
+      for(i=0;i<ids.length;i++) if(buf0[i]!==A.mobPatRaw(ids[i])) bufOk=false;
+      vlgRestore(st); stepFrames(1);
+      d.push("同じidなら 同じ型="+pureOk+"／2000体の 内わけ="+cnt.join(",")+"（4つとも 出る="+allOk+
+             "・かたよらない="+evenOk+"）既定"+CFG_DEFAULTS.mobs+"体の 内わけ="+c50.join(",")+"（4つとも 出る="+all50+"）");
+      d.push("体数を 変えても 同じ: id"+ids.join(",")+" → "+before.join(",")+"（2000体で "+mid.join(",")+
+             "・50体に もどして "+after.join(",")+"）＝"+stableOk);
+      d.push("GPUへ 送った 型番号と JS側の うつしが 一致="+bufOk+"（"+buf0.join(",")+" → "+buf1.join(",")+"）立った所=街"+at.join(","));
+      return { pass:pureOk&&allOk&&evenOk&&all50&&stableOk&&bufOk, detail:d.join(" / ") };
+    }
+
+    // T39e: ★完全に もどれる＝個体差(段3)を 切ると どの個体も 型0（ふつう）に なり、
+    //   三角形・ドローコール・毎フレームの 転送が 弾28（型を 入れる前）と ぴったり 一致する。
+    function t_T39e(){
+      var st=vlgSetup(), d=[], A=window.__tenkyu, i;
+      var at=t37Stand();
+      A.mobRich(true);
+      // ①段3を 切ると ぜんぶ 型0
+      A.mobStage({shape:true,motion:true,variety:false,action:true}); stepFrames(2);
+      var zeroOk=true, seen={};
+      for(i=0;i<2000;i++){ var v=A.mobPatOf(i); seen[v]=1; if(v!==0) zeroOk=false; }
+      var offList=Object.keys(seen).join(",");
+      var OFFc=t37Cost(t37Set(true,true,false,true));
+      // ②戻すと また 散らばる（陽性対照＝これが 立たないと ①は 意味を 失う）
+      A.mobStage({shape:true,motion:true,variety:true,action:true}); stepFrames(2);
+      var seen2={}, nd=0;
+      for(i=0;i<2000;i++){ var w=A.mobPatOf(i); if(!seen2[w]){ seen2[w]=1; nd++; } }
+      var backOk=(nd===T39_PAT_N);
+      var ONc=t37Cost(t37Set(true,true,true,true));
+      // ③数は ぴったり 同じ（三角形・ドローコール・毎フレームの 転送）
+      var sameOk=(OFFc.tri===ONc.tri)&&(OFFc.dc===ONc.dc)&&(Math.abs(OFFc.bytes-ONc.bytes)<1e-9);
+      // ④親（作り込み）を 切れば 弾27の 箱1個に 完全に もどる＝しっぽを 足しても この性質は 壊れていない
+      A.mobRich(false); stepFrames(3); var B=t37Shot();
+      A.mobRich(true);  stepFrames(3); var C=t37Shot();
+      var backTo27=(B.mPer===12)&&(B.dc===C.dc)&&(B.rich===false);
+      vlgRestore(st); stepFrames(1);
+      d.push("★段3 OFF で ぜんぶ 型0="+zeroOk+"（出た 型="+offList+"）／もどすと また 4つ 出る="+backOk+"（"+nd+"通り）");
+      d.push("数は ぴったり 同じ: 三角形 "+OFFc.tri+"="+ONc.tri+" ドローコール "+OFFc.dc+"="+ONc.dc+
+             " 毎フレームの 転送 "+OFFc.bytes+"="+ONc.bytes+"B/f（="+sameOk+"）");
+      d.push("作り込みを 切ると 弾27の 箱1個へ: 1体あたり 三角形="+B.mPer+" えがく回数 OFF="+B.dc+" ON="+C.dc+"（="+backTo27+"）立った所=街"+at.join(","));
+      if(!backOk) return { pass:false, skip:true,
+        detail:"判定不能(SKIP): 陽性対照（段3を もどすと 型が 散らばる）が 立たない。 "+d.join(" / ") };
+      return { pass:zeroOk&&backOk&&sameOk&&backTo27, detail:d.join(" / ") };
+    }
+
+    // T39f: 回帰＝既存 T1〜T38e が 1件も 余分に 落ちていない（既知の 落ちは regKnown で 除く）。
+    //   ★既存テストの 判定基準は 動かしていない。ただ 1つだけ T37_PARTS_MAX を 6→7 に した
+    //     （しっぽを 足したため。司令塔へ 上げる 点として ここにも 数で 出す）。
+    function t_T39f(){
+      var need=["T1","T2","T2f","T2n","T3","T3c","T4","T5","T6","T7","T8","T9","T10","T11","T12","T13","T14",
+                "T15","T16","T17","T18","T19a","T19b","T19c","T19d","T20a","T20b","T20c","T20d","T20e",
+                "T21a","T21b","T21c","T21d","T21e","T21f","T21i","T21g","T22a","T22b","T22c",
+                "T23a","T23b","T23c","T23d","T23e","T25a","T25b","T25c","T25d","T25e","T25f",
+                "T24a","T24b","T24c","T24d","T24e","T24f","T26a","T27a","T27b","T27c","T27d","T27e","T27f",
+                "T28a","T28b","T28c","T28d","T28e","T28f","T29a","T29b","T29c","T29d","T29e",
+                "T30a","T30b","T30c","T30d","T30e","T31a","T31b","T31c","T31d","T31e","T31f",
+                "T32a","T32b","T32c","T32d","T32e","T33a","T33b","T33c","T33d","T33e","T33f",
+                "T34a","T34b","T34c","T34d","T34e","T34f","T35a","T35b","T35c","T35d","T35e","T35f",
+                "T36a","T36b","T36c","T36d","T36e","T36f","T37a","T37b","T37c","T37d","T37e","T37g","T37h","T37f",
+                "T38a","T38b","T38c","T38d","T38e","T39a","T39b","T39c","T39d","T39e"];
+      var missing=[], failed=[], skipped=[], i, j;
+      for(i=0;i<need.length;i++){
+        var r=null;
+        for(j=0;j<_ranResults.length;j++){ if(_ranResults[j].id===need[i]){ r=_ranResults[j]; break; } }
+        if(!r) missing.push(need[i]);
+        else if(r.skip) skipped.push(need[i]);
+        else if(!r.pass) failed.push(need[i]);
+      }
+      var known=regKnown(failed);
+      var realFails=failed.filter(function(x){ return known.indexOf(x)<0; });
+      // ★弾28の 4段は そのまま＝親を 切れば 弾27へ もどる 道も 4段の 入切も 1つも 消していない
+      var stg=window.__tenkyu.mobStage();
+      var keepOk=(typeof stg.on.shape==="boolean")&&(typeof stg.on.variety==="boolean")&&
+                 (CFG_DEFAULTS.mobRich===true)&&(document.querySelectorAll("#s-mob-rich").length===1);
+      for(i=0;i<STAGE_IDS.length;i++){ if(document.querySelectorAll("#s-rich-"+STAGE_IDS[i]).length!==1) keepOk=false; }
+      // ★保存の キーは 1文字も 変えていない（干場の 訪問記録・図鑑・自己ベストが 読めなく ならない）
+      var keyOk=(typeof CFG_KEY==="string")&&(CFG_KEY==="tenkyu_cfg_v1")&&(typeof SAVE_KEY==="string")&&(SAVE_KEY==="tenkyu_save_v1");
+      // ★乱数と 時計を 型の 決め方に 使っていない（本文の 文字で 見る＝fail-loud）
+      var src=String(mobPatRaw)+String(mobPatOf)+String(mobPatBake)+String(buildMobs);
+      var noRndOk=(src.indexOf("Math.random")<0)&&(src.indexOf("Date.now")<0);
+      return { pass:(missing.length===0)&&(realFails.length===0)&&keepOk&&keyOk&&noRndOk,
+        detail:"登録もれ="+(missing.join(",")||"なし")+" 既知以外の失敗="+(realFails.join(",")||"なし")+
+               " 既知の失敗="+(failed.join(",")||"なし")+" 判定不能="+(skipped.join(",")||"なし")+
+               " ／ 弾28の 4段は そのまま="+keepOk+" 保存キーは 不変="+keyOk+"（"+CFG_KEY+"／"+SAVE_KEY+"）"+
+               " 型の 決め方に 乱数・時計を 使っていない="+noRndOk+
+               " ／ ★動かした 既存の 数は T37_PARTS_MAX 6→7 の 1つだけ（しっぽを 足したため・要 司令塔判断）" };
+    }
+
+    // ---------- 弾32 §R26: 高い山と 山頂の 拠点（T40a〜T40f） ----------
+    // ★干場の 指示（2026-08-04）＝「HWの 開発状況を 見られる 場所を HWの 中に 作る。起動の 場所も そこに。
+    //   高い山を 作り、山頂に 拠点を 建てる。拠点は それなりの 大きさで よい。せっていも できたら いい」。
+    // ★この 弾で いちばん こわい 失敗＝**地形を さわった せいで 世界が 静かに ずれる**こと。
+    //   だから T40a は「海と陸の 境目」と「作品星の 帯」を、T40c は「村」を、数で 押さえる。
+    //   ★どの 検査にも できるだけ **変異注入**（わざと 壊した 写しで 同じ 検査を する）を 付ける
+    //     ＝壊しても 通る 番人は にせもの（弾29 §R24の 作法）。
+    var T40_DAN31 = {
+      // 弾31（山を 入れる 前）に 実測した 村と 街の 座標＝指紋。ここが 動いたら 地形が 村を 動かしたということ。
+      vlg:"town:-122.782,24.176,629.436|village:-406.544,65.825,848.606|village:1045.624,61.154,80.858|"+
+          "village:90.421,62.278,1034.897|village:614.530,11.662,-700.423|village:-706.279,12.572,-646.866|"+
+          "village:574.125,22.594,-375.602|village:-392.596,30.007,-346.612|village:113.818,31.938,485.063",
+      maxH:175.93,        // 弾31の 世界で いちばん 高い 地面（半径50〜1150を 10きざみ・2度きざみで なめた 実測）
+      boxes:1062, city:306, shrub:236, vlgOnly:520   // 弾31の 箱の うちわけ（相乗りの 器の 中み）
+    };
+    function t40Fp(){
+      return window.__tenkyu.villagesNow().map(function(s){
+        return s.kind+":"+s.center[0].toFixed(3)+","+s.center[1].toFixed(3)+","+s.center[2].toFixed(3); }).join("|");
+    }
+    // 世界の いちばん 高い 地面（弾31の 指紋と 同じ なめ方＝物差しを 変えない）
+    function t40MaxGround(){
+      var m=-1e9, at=null;
+      for(var r=50;r<=1150;r+=10){ for(var a=0;a<360;a+=2){
+        var x=Math.cos(a*Math.PI/180)*r, z=Math.sin(a*Math.PI/180)*r, h=heightAt(x,z);
+        if(h>m){ m=h; at=[x,z]; } } }
+      return { h:m, at:at };
+    }
+
+    // T40a: 山＝①同じ座標なら いつでも 同じ高さ ②まわりより はっきり 高い
+    //   ③**海と陸の 境目が 弾31と 1ビットも 変わらない**（§G T29b と 同じ 見かた）
+    //   ④作品星の 帯（半径110〜470）に 1ミリも さわっていない（§G T30d の 指紋を 守る しくみ）
+    function t_T40a(){
+      var T=window.__tenkyu, M=T.mountConsts(), d=[], i, j;
+      // ①決定論＝同じ座標を 3回 読んで ぴったり 同じ
+      var pure=true, pts=[[M.X,M.Z],[M.X+40,M.Z-70],[M.X-150,M.Z+120],[300,-200],[0,0]];
+      for(i=0;i<pts.length;i++){ var a1=heightAt(pts[i][0],pts[i][1]);
+        if(a1!==heightAt(pts[i][0],pts[i][1]) || a1!==heightAt(pts[i][0],pts[i][1])) pure=false; }
+      var noRnd=(String(T.mountRise).indexOf("Math.random")<0)&&(String(T.mountRise).indexOf("Date.now")<0);
+      // ②高さ＝山頂は すそ野の 外の どこよりも 高い／世界の 最高地点に なった
+      var top=heightAt(M.X,M.Z);
+      var out=-1e9;
+      for(var rr=M.R; rr<=M.R+240; rr+=6){ for(var b=0;b<360;b+=3){
+        var h=heightAt(M.X+Math.cos(b*Math.PI/180)*rr, M.Z+Math.sin(b*Math.PI/180)*rr); if(h>out) out=h; } }
+      var G=t40MaxGround();
+      var tallOk=(top>out+20)&&(Math.abs(G.h-top)<1e-6)&&(top>T40_DAN31.maxH+20);
+      // ③海と陸の 境目＝**しくみで 保証する**。足す量は かならず 0以上・海と なぎさでは かならず 0。
+      //   この2つが 立てば「海が 陸に なる」ことも「陸が 海に なる」ことも 起こりえない。
+      var negBad=0, seaBad=0, sweep=0;
+      for(i=0;i<720;i+=3){ var ang=i*Math.PI/180;
+        for(var dd=0; dd<=M.R+40; dd+=10){
+          var x=M.X+Math.cos(ang)*dd, z=M.Z+Math.sin(ang)*dd;
+          for(var bv=-140; bv<=240; bv+=20){ sweep++;
+            var rs=T.mountRise(x,z,bv);
+            if(!(rs>=0)) negBad++;
+            if(bv<=SEA_Y+M.LAND_LO && rs!==0) seaBad++;
+          } } }
+      // ④実測の 裏づけ＝地形メッシュの 格子ぜんぶで「海の 点が 持ちあがっていない」ことを 数える
+      var N=FIELD_GRID, W=N+1, S=FIELD_SIZE, half=S/2, step=S/N, seaLift=0, band=0, gridSea=0;
+      for(j=0;j<W;j++){ var gz=-half+j*step;
+        for(i=0;i<W;i++){ var gx=-half+i*step, y=heightRawAt(gx,gz);
+          if(y<SEA_Y){ gridSea++; if(T.mountRise(gx,gz,y)!==0) seaLift++; }
+          if(gx*gx+gz*gz <= 470*470 && T.mountRise(gx,gz,y)!==0) band++; } }
+      // ★変異注入＝海ぎわの 止め(gate)を 外した 写しでは、海の 点が 持ちあがる＝この物差しは 生きている
+      function riseNoGate(x,z,base){
+        if(x*x+z*z <= M.KEEP_R*M.KEEP_R) return 0;
+        var ddx=x-M.X, ddz=z-M.Z, dd2=Math.sqrt(ddx*ddx+ddz*ddz);
+        if(dd2>=M.R) return 0;
+        var t=(dd2<=M.FLAT)?0:((dd2-M.FLAT)/(M.R-M.FLAT));
+        var cone=M.TOP_Y+(M.BOT_Y-M.TOP_Y)*(t*t*(3-2*t));
+        return (cone-base>0)?(cone-base):0;
+      }
+      var mutLift=0;
+      for(j=0;j<W;j++){ var mz=-half+j*step;
+        for(i=0;i<W;i++){ var mx=-half+i*step, my=heightRawAt(mx,mz);
+          if(my<SEA_Y && riseNoGate(mx,mz,my)>0) mutLift++; } }
+      var mutCaught=(mutLift>0);
+      // ④作品星の 帯＝どんな 高さを 入れても 0（＝帯の 中では 山が いっさい 効かない）
+      var bandBad=0;
+      for(var r2=0; r2<=470; r2+=10){ for(var a2=0;a2<360;a2+=5){
+        var bx=Math.cos(a2*Math.PI/180)*r2, bz=Math.sin(a2*Math.PI/180)*r2;
+        for(var bb=-100; bb<=250; bb+=25) if(T.mountRise(bx,bz,bb)!==0) bandBad++; } }
+      var seaOk=(negBad===0)&&(seaBad===0)&&(seaLift===0);
+      var bandOk=(bandBad===0)&&(band===0)&&(M.KEEP_R>=470)&&(Math.hypot(M.X,M.Z)-M.R>M.KEEP_R);
+      d.push("①決定論: 同じ座標は いつも 同じ="+pure+"／乱数・時計を つかっていない="+noRnd);
+      d.push("②高さ: 山頂="+top.toFixed(2)+" ／ すそ野の外("+M.R+"〜"+(M.R+240)+")の 最高="+out.toFixed(2)+
+             " ／ 世界の 最高="+G.h.toFixed(2)+"（弾31は "+T40_DAN31.maxH+"）＝はっきり 高い="+tallOk);
+      d.push("③海と陸: 足す量が マイナスに なった="+negBad+"／海と なぎさで 0で なかった="+seaBad+
+             "（しらべた 組み合わせ "+sweep+"）／地形の 格子で 海の点 "+gridSea+"のうち 持ちあがった="+seaLift+"＝"+seaOk);
+      d.push("★変異注入（海ぎわの 止めを 外す）→ 持ちあがった 海の点="+mutLift+"（見つけた="+mutCaught+"）");
+      d.push("④作品星の 帯(〜470): 山が 効いた 場所="+bandBad+"／格子でも "+band+
+             "／KEEP_R="+M.KEEP_R+"・山の 内がわの ふち="+(Math.hypot(M.X,M.Z)-M.R).toFixed(1)+"＝"+bandOk);
+      if(!mutCaught) return { pass:false, skip:true,
+        detail:"判定不能(SKIP): 壊した 写しを 見つけられない＝この物差しは 死んでいる。 "+d.join(" / ") };
+      return { pass:pure&&noRnd&&tallOk&&seaOk&&bandOk&&mutCaught, detail:d.join(" / ") };
+    }
+
+    // T40b: 山頂と 拠点＝①山頂が きっかり たいら（拠点の 底面ぶんの 範囲で）
+    //   ②箱が 地面に 接している（浮き・埋まり 0）／屋根と 見はり台は すぐ下の 面に ぴったり
+    //   ③箱の 場所・大きさが 定数どおり（手で 書いた 数が どこにも 残っていない）
+    function t_T40b(){
+      var T=window.__tenkyu, M=T.mountConsts(), H=T.homeConsts(), B=T.homeBoxesNow(), d=[], i;
+      // ①たいら＝屋根の 出まで ふくめた 四角＋入口の 前の 縁台まで
+      var exX=H.W/2+H.EAVE, exZ=H.D/2+H.EAVE, deckZ=H.D/2+H.DECK;
+      var mn=1e9, mx=-1e9, n=0;
+      for(var x=-exX; x<=exX; x+=0.5){ for(var z=-deckZ; z<=Math.max(exZ,deckZ); z+=0.5){
+        if(z>exZ && Math.abs(x)>(H.DOOR+4)/2) continue;       // 縁台の 外は 見ない
+        var h=heightAt(M.X+x, M.Z+z); n++;
+        if(h<mn) mn=h; if(h>mx) mx=h; } }
+      var flatOk=(n>0)&&((mx-mn)<=1e-6)&&(Math.abs(mn-M.TOP_Y)<1e-6);
+      // 山頂の たいらな 台が 拠点より ひろい（はみ出していない）
+      var coverOk=(M.FLAT >= Math.hypot(exX,exZ)) && (M.FLAT >= Math.hypot((H.DOOR+4)/2, deckZ));
+      // ②地面に 接している／積み重ね
+      var gWorst=0, gWho="", nG=0, topBad=[];
+      var wallTop=M.TOP_Y+H.H, roofTop=wallTop+H.ROOF;
+      for(i=0;i<B.length;i++){ var b=B[i];
+        if(b.ground){ nG++;
+          var g=Math.abs(b.pos[1]-heightAt(b.pos[0],b.pos[2]));
+          if(g>gWorst){ gWorst=g; gWho=b.kind+"#"+i; } }
+        else if(b.kind==="homeroof"){ if(Math.abs(b.pos[1]-wallTop)>1e-9) topBad.push("屋根#"+i); }
+        else if(b.kind==="hometower"){ if(Math.abs(b.pos[1]-roofTop)>1e-9) topBad.push("見はり台#"+i); }
+        if(!(b.size[0]>0&&b.size[1]>0&&b.size[2]>0)) topBad.push("大きさが 0以下 #"+i);
+        if(!isFinite(b.pos[0])||!isFinite(b.pos[1])||!isFinite(b.pos[2])) topBad.push("座標が 数でない #"+i); }
+      var standOk=(B.length>0)&&(nG>0)&&(gWorst<=1e-6)&&(topBad.length===0);
+      // ③かべの 高さが 人より 高い・入口が 人より ひろい（中に 入れる ことの 数の 証拠）
+      var P=window.__tenkyu.plrConsts ? window.__tenkyu.plrConsts() : null;
+      var manW=(P?P.R:0.62)*2, manH=(P?P.H:2.60);
+      var roomOk=(H.H>manH+0.5)&&(H.DOOR>manW*2)&&(H.GAP>manW*2)&&(H.DECK_H<(P?P.STEP:1.70));
+      // 中の ひろさ（干場の「それなりの 大きさ」）を 数で 出す
+      var area=(H.W-H.T*2)*(H.D-H.T*2);
+      d.push("①山頂の たいら: しらべた点="+n+" 高さ "+mn.toFixed(6)+"〜"+mx.toFixed(6)+
+             "（差 "+(mx-mn).toExponential(2)+"・山頂の 値 "+M.TOP_Y+"と 一致="+flatOk+"）"+
+             "／たいらな 台 半径"+M.FLAT+" が 拠点より ひろい="+coverOk);
+      d.push("②箱="+B.length+"（地面に つく "+nG+"）地面との いちばんの ずれ="+gWorst.toExponential(2)+
+             (gWho?("("+gWho+")"):"")+"／積み重ねの ずれ="+(topBad.join(",")||"なし")+"＝"+standOk);
+      d.push("③中に 入れる: かべ "+H.H+" ＞ 人 "+manH+"／入口 "+H.DOOR+" ＞ 人の はば "+manW.toFixed(2)+
+             "／中の すきま "+H.GAP+"／縁台 "+H.DECK_H+" ＜ またげる 段差 "+(P?P.STEP:1.70)+"＝"+roomOk);
+      d.push("拠点の 中の ひろさ＝"+area.toFixed(1)+"㎡（外のり "+H.W+"×"+H.D+"・部屋2つ）三角形="+(B.length*12));
+      return { pass:flatOk&&coverOk&&standOk&&roomOk, detail:d.join(" / ") };
+    }
+
+    // T40c: 村への 影響＝①村の 数・街1つ・たがいの 距離・場所の 条件が ぜんぶ 保たれている
+    //   ②座標が 弾31の 指紋と 1ビットも 変わらない ③山が 村を 飲みこんでいない
+    function t_T40c(){
+      var T=window.__tenkyu, M=T.mountConsts(), d=[], i;
+      var A=villagesFor(FIELD_SEED);
+      var townN=A.filter(function(v){ return v.kind==="town"; }).length;
+      var countOk=(A.length===VLG.COUNT+1)&&(townN===1);
+      // 場所の 条件（T23a と まったく 同じ 見かた＝物差しを 増やさない）
+      var condOk=true, worstSlope=0, worstFlat=0;
+      for(i=0;i<A.length;i++){ var g=groundProbe(A[i].center[0],A[i].center[2]);
+        var isT=(A[i].kind==="town"), lim=isT?VLG.SLOPE_TOWN:VLG.SLOPE_VLG;
+        var fl=siteFlatness(A[i].center[0],A[i].center[2],A[i].radius);
+        if(g.slope>worstSlope) worstSlope=g.slope;
+        if(fl>worstFlat) worstFlat=fl;
+        if(!(fl<=(isT?VLG.FLAT_TOWN:VLG.FLAT_VLG)+1e-9)) condOk=false;
+        if(!(g.slope<=lim+1e-9)) condOk=false;
+        if(!(g.h>=SEA_Y+VLG.Y_MIN-1e-9 && g.h<=SEA_Y+VLG.Y_MAX+1e-9)) condOk=false;
+        var rr=Math.hypot(A[i].center[0],A[i].center[2]);
+        if(!(rr>=VLG.R_MIN-1e-6 && rr<=VLG.R_MAX+1e-6)) condOk=false; }
+      var minD=Infinity;
+      for(i=0;i<A.length;i++){ for(var q=i+1;q<A.length;q++){
+        var dd=Math.hypot(A[i].center[0]-A[q].center[0], A[i].center[2]-A[q].center[2]);
+        if(dd<minD) minD=dd; } }
+      var pairOk=(minD>=VLG.MIN_DIST-1e-9);
+      // ②指紋
+      var fp=t40Fp(), fpOk=(fp===T40_DAN31.vlg);
+      // ③山が 村を 飲みこんでいない＝村の ふちが 山の すそ野の 外
+      var eat=[], nearest=Infinity;
+      for(i=0;i<A.length;i++){
+        var c=A[i].center, dm=Math.hypot(c[0]-M.X, c[2]-M.Z);
+        if(dm-A[i].radius <= M.R) eat.push(A[i].kind+"("+dm.toFixed(0)+")");
+        if(dm<nearest) nearest=dm; }
+      var eatOk=(eat.length===0);
+      // 相乗りの 中み＝弾31＋拠点の 箱（低木は 山の せいで 減りうる＝その ぶんも 数で 出す）
+      var P=T.boxParts(), HB=T.homeBoxesNow().length;
+      var sumOk=(P.instances===P.village+P.city+P.shrub);
+      d.push("①か所="+A.length+"（街"+townN+"）="+countOk+"／場所の条件="+condOk+
+             "（いちばん急な傾斜 "+worstSlope.toFixed(4)+"・ばらつき最大 "+worstFlat.toFixed(2)+"）"+
+             "／村どうし いちばん近い "+minD.toFixed(1)+"≧"+VLG.MIN_DIST+"="+pairOk);
+      d.push("②弾31の 指紋と 一致="+fpOk+(fpOk?"":("／いま="+fp)));
+      d.push("③山の まん中から いちばん近い 村まで "+nearest.toFixed(0)+"（すそ野 "+M.R+"）飲みこんだ村="+
+             (eat.join(",")||"なし")+"＝"+eatOk);
+      d.push("相乗りの 中み: 村と街と拠点 "+P.village+"（うち 拠点 "+HB+"）＋市街地 "+P.city+"＋低木 "+P.shrub+
+             " ＝ "+P.instances+"（一致="+sumOk+"）弾31は "+T40_DAN31.vlgOnly+"／"+T40_DAN31.city+"／"+
+             T40_DAN31.shrub+"＝"+T40_DAN31.boxes+"（低木の 増減 "+(P.shrub-T40_DAN31.shrub)+"＝山の 斜面に 生えなくなった ぶん）");
+      return { pass:countOk&&condOk&&pairOk&&fpOk&&eatOk&&sumOk, detail:d.join(" / ") };
+    }
+
+    // T40d: 起動位置＝①アプリを ひらいた とき 拠点の 前に 立つ ②埋まらない・浮かない
+    //   ③拠点の 箱の 中に 立っていない ④**battleDown() の 帰還先(0,0,0)が 1ビットも 変わっていない**
+    function t_T40d(){
+      var T=window.__tenkyu, M=T.mountConsts(), H=T.homeConsts(), d=[], i;
+      var S=T.homeStart(), boot=T.bootAt();
+      // ①場所＝入口の 前（-z がわ）で、拠点の ほうを むいている（進む むき＝[sin(yaw), -cos(yaw)]）
+      var wantX=M.X, wantZ=M.Z-H.FRONT;
+      var placeOk=(Math.abs(S.x-wantX)<1e-9)&&(Math.abs(S.z-wantZ)<1e-9);
+      var fx=Math.sin(S.yaw), fz=-Math.cos(S.yaw);
+      var faceOk=(fz>0.99)&&(Math.abs(fx)<0.01);       // +z＝拠点の ほうを むく
+      var atOk=T.atHomeAt(S.x,S.y,S.z);
+      // ②地面に 立っている＝床(fieldFloorY)と ぴったり／地面からの 高さは FIELD_CLEAR ちょうど
+      var g=heightAt(S.x,S.z), clr=S.y-g;
+      var standOk=(Math.abs(clr-FIELD_CLEAR)<1e-9)&&(Math.abs(g-M.TOP_Y)<1e-9);
+      // ③拠点の 箱の 中に 立っていない（人の はんけいぶん ふくらませて 見る）
+      var Bx=T.homeBoxesNow(), inBox=[];
+      for(i=0;i<Bx.length;i++){ var b=Bx[i];
+        var hx=b.size[0]/2+0.62, hz=b.size[2]/2+0.62;
+        if(Math.abs(S.x-b.pos[0])<hx && Math.abs(S.z-b.pos[2])<hz &&
+           S.y>b.pos[1]-0.01 && S.y<b.pos[1]+b.size[1]) inBox.push(b.kind+"#"+i); }
+      var freeOk=(inBox.length===0);
+      // ★ほんとうに そこから 始まったか＝起動の 写し（BOOT_AT）で 見る。
+      //   セーブが ある 状態で ひらいた ときは 従来どおりなので、その ときは「はかれない」と 正直に 書く。
+      var bootOk=true, bootNote;
+      if(boot.fresh && boot.env==="field"){
+        bootOk=(Math.abs(boot.pos[0]-S.x)<1e-9)&&(Math.abs(boot.pos[1]-S.y)<1e-9)&&
+               (Math.abs(boot.pos[2]-S.z)<1e-9)&&(Math.abs(boot.yaw-S.yaw)<1e-9);
+        bootNote="初回起動の 立ち位置=("+boot.pos.map(function(v){return v.toFixed(2);}).join(",")+
+                 ") むき="+boot.yaw.toFixed(3)+"＝拠点の 前="+bootOk;
+      } else bootNote="この 読みこみは 初回起動では ない（セーブあり）＝起動位置は はかれない（fresh="+boot.fresh+" env="+boot.env+"）";
+      // ④★battleDown の 帰還先は 世界の まんなか(0,*,0) のまま＝1ビットも 変えていない。
+      //   ★実物と 同じ 1本の 道（battleHurt）で いのちを 0に して たしかめる＝テストだけの 近道を 作らない。
+      var st={ pos:camPos.slice(), vel:camVel.slice(), env:ENVID, battle:!!cfg.battle };
+      setEnv("field"); window.__tenkyu.setBattle(true,false); window.__tenkyu.battleReset();
+      camPos=[M.X, M.TOP_Y+3, M.Z-H.FRONT]; camVel=[0,0,0]; stepFrames(1);
+      var downs0=window.__tenkyu.battleState().downs;
+      window.__tenkyu.battleHurtTest(9999);
+      var downPos=camPos.slice(), downs1=window.__tenkyu.battleState().downs, fy0=floorYAt(0,0);
+      var downOk=(downs1===downs0+1)&&(Math.abs(downPos[0])<1e-9)&&(Math.abs(downPos[2])<1e-9)&&
+                 (Math.abs(downPos[1]-fy0)<=2.0);
+      var srcOk=(String(battleDown).indexOf("camPos[0]=0; camPos[1]=fy; camPos[2]=0;")>=0)&&
+                (String(battleDown).indexOf("floorYAt(0,0)")>=0);
+      window.__tenkyu.battleReset(); window.__tenkyu.setBattle(st.battle,false);
+      camPos=st.pos; camVel=st.vel; setEnv(st.env); stepFrames(1);
+      d.push("①立ち位置=("+S.x.toFixed(2)+","+S.y.toFixed(2)+","+S.z.toFixed(2)+")＝入口の 前="+placeOk+
+             "／拠点の ほうを むく="+faceOk+"（むき ["+fx.toFixed(3)+","+fz.toFixed(3)+"]）／拠点に 居る="+atOk);
+      d.push("②地面 "+g.toFixed(3)+"（山頂 "+M.TOP_Y+"）目の 高さ +"+clr.toFixed(3)+"＝きっかり "+FIELD_CLEAR+"="+standOk);
+      d.push("③箱の 中に 立っていない="+freeOk+(inBox.length?("／"+inBox.join(",")):""));
+      d.push(bootNote);
+      d.push("④★battleDown の 帰還先=("+downPos.map(function(v){return v.toFixed(3);}).join(",")+
+             ") 世界の まんなかのまま="+downOk+"（やられた 回数 "+downs0+"→"+downs1+"・床 "+
+             (fy0==null?"-":fy0.toFixed(2))+"）／本文の 1行も そのまま="+srcOk);
+      return { pass:placeOk&&faceOk&&atOk&&standOk&&freeOk&&bootOk&&downOk&&srcOk, detail:d.join(" / ") };
+    }
+
+    // T40e: 🏠きょてんの ばん＝①拠点の 外では ひらけない ②拠点なら ひらく
+    //   ③ひらいている 間は 世界が 動かない ④Escapeで とじて フォーカスが 入口へ もどる
+    //   ⑤**章は 台帳(DEV_TABS)から 描かれている** ⑥キーボードだけで 章を うつれる ⑦ドローコールの 増分 0
+    function t_T40e(){
+      var T=window.__tenkyu, M=T.mountConsts(), H=T.homeConsts(), d=[], i;
+      var st=vlgSetup();
+      setEnv("field"); T.devClose(); closeSheets(); clearHeld(); moveVec={f:0,s:0};
+      // ①外では ひらけない（世界の まんなか）
+      grndPlace(0,0,0); stepFrames(1);
+      var farOpen=T.devOpen(), farOn=T.devBoard().on;
+      T.devClose();
+      // ②拠点なら ひらく
+      var S=T.homeStart();
+      camPos=[S.x,S.y,S.z]; camVel=[0,0,0]; yaw=S.yaw; pitch=0; stepFrames(2);
+      var dcClosed=T.getState().drawCalls;
+      var nearOpen=T.devOpen(), nearOn=T.devBoard().on;
+      stepFrames(2);
+      var dcOpen=T.getState().drawCalls;
+      var dcOk=(dcOpen===dcClosed);
+      // ③ひらいている 間は 世界が 動かない（w を おしても・v/c/h を おしても 何も 変わらない）
+      var p0=camPos.slice(), y0=yaw, view0=cfg.view, cru0=!!cfg.autocruise, tidy0=!!cfg.tidy;
+      keys["w"]=true; stepFrames(30); keys={};
+      ["v","c","h"].forEach(function(k){
+        window.dispatchEvent(new KeyboardEvent("keydown",{key:k,bubbles:true,cancelable:true}));
+        window.dispatchEvent(new KeyboardEvent("keyup",{key:k,bubbles:true,cancelable:true})); });
+      stepFrames(2);
+      var moved=Math.hypot(camPos[0]-p0[0],camPos[1]-p0[1],camPos[2]-p0[2]);
+      var frozenOk=(moved<1e-9)&&(yaw===y0)&&(cfg.view===view0)&&(!!cfg.autocruise===cru0)&&(!!cfg.tidy===tidy0);
+      // ⑤章は 台帳から＝ボタンの 数・中みの 数・ことばが 台帳と ぴったり／作る コードに 章の 名前が 書かれていない
+      var L=T.devTabsLedger(), tabs=document.querySelectorAll("#dev-tabs button"), pans=document.querySelectorAll("#dev-panels .dev-panel");
+      var ledgerOk=(L.length>=2)&&(tabs.length===L.length)&&(pans.length===L.length);
+      for(i=0;i<L.length;i++){
+        if(!tabs[i] || tabs[i].textContent!==L[i].label) ledgerOk=false;
+        if(!tabs[i] || tabs[i].getAttribute("role")!=="tab") ledgerOk=false;
+        if(!tabs[i] || tabs[i].getAttribute("aria-controls")!=="dev-panel-"+L[i].id) ledgerOk=false;
+        if(!pans[i] || pans[i].getAttribute("role")!=="tabpanel") ledgerOk=false; }
+      var src=T.devBuilderSrc(), hard=[];
+      for(i=0;i<L.length;i++) if(src.indexOf('"'+L[i].id+'"')>=0 || src.indexOf(L[i].label)>=0) hard.push(L[i].id);
+      var noHardOk=(src.indexOf("DEV_TABS")>=0)&&(src.indexOf("createElement")>=0)&&(hard.length===0);
+      // ⑥キーボードだけで 章を うつれる（← → Home End）
+      var kb=true, before=T.devBoard().tab;
+      function tabKey(k){ var b=document.querySelectorAll("#dev-tabs button")[T.devBoard().tab];
+        b.dispatchEvent(new KeyboardEvent("keydown",{key:k,bubbles:true,cancelable:true})); }
+      T.devSelectTab(0);
+      tabKey("ArrowRight"); if(T.devBoard().tab!==1) kb=false;
+      tabKey("ArrowLeft");  if(T.devBoard().tab!==0) kb=false;
+      tabKey("End");        if(T.devBoard().tab!==L.length-1) kb=false;
+      tabKey("Home");       if(T.devBoard().tab!==0) kb=false;
+      // えらばれた 章だけ tabindex=0（フォーカスの 順が 1つに 決まる＝WAI-ARIA の タブの 作法）
+      var roving=0; for(i=0;i<tabs.length;i++) if(tabs[i].getAttribute("tabindex")==="0") roving++;
+      var selN=0; for(i=0;i<tabs.length;i++) if(tabs[i].getAttribute("aria-selected")==="true") selN++;
+      var ariaOk=(roving===1)&&(selN===1);
+      // ④Escapeで とじる → フォーカスが 入口(🏠)へ もどる
+      var entry=document.getElementById("btn-home");
+      T.devClose();                       // いったん とじてから 入口を 押した ことに する（順番が だいじ）
+      try{ entry.focus(); }catch(e){}
+      T.devOpen();
+      window.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true,cancelable:true}));
+      var escOk=(T.devBoard().on===false);
+      var backOk=(document.activeElement===entry);
+      T.devClose(); clearHeld(); moveVec={f:0,s:0};
+      vlgRestore(st); stepFrames(1);
+      d.push("①拠点の 外(0,0)では ひらけない="+(farOpen===false&&farOn===false)+
+             "／②拠点なら ひらく="+(nearOpen===true&&nearOn===true));
+      d.push("③ひらいている 間は 世界が 動かない: うごいた きょり="+moved.toExponential(2)+
+             "・むき/見え方/オートクルーズ/すっきり すべて 不変="+frozenOk);
+      d.push("④Escapeで とじる="+escOk+" ★フォーカスが 入口(🏠)へ もどる="+backOk);
+      d.push("⑤章は 台帳から: 台帳"+L.length+"章（"+L.map(function(t){return t.id;}).join("・")+
+             "）＝ボタン"+tabs.length+"・中み"+pans.length+"="+ledgerOk+
+             "／作る コードに 章の 名前が 書かれていない="+noHardOk+(hard.length?("／"+hard.join(",")):"")+
+             "／えらばれた章だけ tabindex=0="+ariaOk);
+      d.push("⑥キーボード（← → Home End）だけで 章を うつれる="+kb);
+      d.push("⑦★ドローコール とじた"+dcClosed+"→ひらいた"+dcOpen+"（増分 "+(dcOpen-dcClosed)+
+             "＝0="+dcOk+"／板は DOM なので 3Dの 仕事は ふえない）");
+      return { pass:(farOpen===false)&&(farOn===false)&&(nearOpen===true)&&(nearOn===true)&&
+                    frozenOk&&escOk&&backOk&&ledgerOk&&noHardOk&&ariaOk&&kb&&dcOk, detail:d.join(" / ") };
+    }
+
+    // T40f: 回帰＝既存 T1〜T39f が 1件も 余分に 落ちていない。
+    //   ★既存テストの 判定基準は 1ビットも 動かしていない（数を 動かしたのは TUI.HIDE_N 8→9 の 1つだけ＝
+    //     🏠を 足した ぶん。T36f が「TOOL_IDS と PANEL_IDS と HIDE_N の つじつま」を そのまま 見張っている）。
+    function t_T40f(){
+      var need=["T1","T2","T2f","T2n","T3","T3c","T4","T5","T6","T7","T8","T9","T10","T11","T12","T13","T14",
+                "T15","T16","T17","T18","T19a","T19b","T19c","T19d","T20a","T20b","T20c","T20d","T20e",
+                "T21a","T21b","T21c","T21d","T21e","T21f","T21i","T21g","T22a","T22b","T22c",
+                "T23a","T23b","T23c","T23d","T23e","T25a","T25b","T25c","T25d","T25e","T25f",
+                "T24a","T24b","T24c","T24d","T24e","T24f","T26a","T27a","T27b","T27c","T27d","T27e","T27f",
+                "T28a","T28b","T28c","T28d","T28e","T28f","T29a","T29b","T29c","T29d","T29e",
+                "T30a","T30b","T30c","T30d","T30e","T31a","T31b","T31c","T31d","T31e","T31f",
+                "T32a","T32b","T32c","T32d","T32e","T33a","T33b","T33c","T33d","T33e","T33f",
+                "T34a","T34b","T34c","T34d","T34e","T34f","T35a","T35b","T35c","T35d","T35e","T35f",
+                "T36a","T36b","T36c","T36d","T36e","T36f","T37a","T37b","T37c","T37d","T37e","T37g","T37h","T37f",
+                "T38a","T38b","T38c","T38d","T38e","T39a","T39b","T39c","T39d","T39e","T39f",
+                "T40a","T40b","T40c","T40d","T40e"];
+      var missing=[], failed=[], skipped=[], i, j;
+      for(i=0;i<need.length;i++){
+        var r=null;
+        for(j=0;j<_ranResults.length;j++){ if(_ranResults[j].id===need[i]){ r=_ranResults[j]; break; } }
+        if(!r) missing.push(need[i]);
+        else if(r.skip) skipped.push(need[i]);
+        else if(!r.pass) failed.push(need[i]);
+      }
+      var known=regKnown(failed);
+      var realFails=failed.filter(function(x){ return known.indexOf(x)<0; });
+      // ★保存の キーは 1文字も 変えていない（干場の 訪問記録・図鑑・自己ベストが 読めなく ならない）
+      var keyOk=(CFG_KEY==="tenkyu_cfg_v1")&&(SAVE_KEY==="tenkyu_save_v1");
+      // ★乱数と 時計を 山にも 拠点にも つかっていない（本文の 文字で 見る＝fail-loud）
+      var T=window.__tenkyu;
+      var src=String(T.mountRise)+String(T.homeStart)+String(T.atHomeAt)+String(T.devBuilderSrc());
+      var noRndOk=(src.indexOf("Math.random")<0)&&(src.indexOf("Date.now")<0);
+      // ★えがく命令は 弾31のまま＝拠点は 村と 同じ 1つの 器に 相乗り（新しい VAO を 作っていない）
+      var L=T.elements(), owner=null;
+      for(i=0;i<L.elements.length;i++) if(L.elements[i].id==="village") owner=L.elements[i];
+      var rideOk=!!owner && owner.vao.length===1 && owner.vao[0]==="vlVAO" &&
+                 (L.drawVaoNames.indexOf("homeVAO")<0) && (String(drawScene).indexOf("homeVAO")<0);
+      // ★画像・音・外から よむ ものを 1つも 足していない（拠点の 色も 板の 中みも ぜんぶ 文字と 数）
+      var devHtml=document.getElementById("devboard").innerHTML;
+      var noAssetOk=(document.querySelectorAll("script[src]").length===1)&&   // 弾31と 同じ＝stars.js 1本だけ
+                    (devHtml.indexOf("<img")<0)&&(devHtml.indexOf("<audio")<0)&&(devHtml.indexOf("<video")<0)&&
+                    (devHtml.indexOf("url(")<0)&&(devHtml.indexOf("http")<0)&&
+                    (String(T.devBuilderSrc()).indexOf("src")<0)&&(String(T.mountRise).indexOf("fetch")<0);
+      // ★弾27の つじつま（判定基準は T36f のまま・ここでは 数だけ 出す）
+      var uiOk=(TOOL_IDS.length===TUI.HIDE_N)&&(PANEL_IDS.length===TUI.HIDE_N-1)&&
+               (PANEL_IDS.indexOf("btn-home")>=0)&&(document.querySelectorAll("#devboard").length===1);
+      return { pass:(missing.length===0)&&(realFails.length===0)&&keyOk&&noRndOk&&rideOk&&noAssetOk&&uiOk,
+        detail:"登録もれ="+(missing.join(",")||"なし")+" 既知以外の失敗="+(realFails.join(",")||"なし")+
+               " 既知の失敗="+(failed.join(",")||"なし")+" 判定不能="+(skipped.join(",")||"なし")+
+               " ／ 保存キーは 不変="+keyOk+"（"+CFG_KEY+"／"+SAVE_KEY+"）"+
+               " 乱数・時計を つかっていない="+noRndOk+
+               " 拠点は 村と 同じ 器に 相乗り（新しい VAO なし）="+rideOk+
+               " 画像・音を 足していない="+noAssetOk+
+               " 道具の つじつま（TOOL_IDS="+TOOL_IDS.length+"／PANEL_IDS="+PANEL_IDS.length+"／HIDE_N="+TUI.HIDE_N+"）="+uiOk+
+               " ／ ★動かした 既存の 数は 2つだけ（どちらも 🏠を 1つ 足したため・要 司令塔判断）＝"+
+               "①TUI.HIDE_N 8→9 ②T36d の 行の数 7→PANEL_IDS.length（決めうちを やめて 出どころを 1つに した）" };
+    }
+
     window.__tenkyu.runAll = async function(){
       if(!window.__testErrCount){ window.__testErrCount=0;
         var _ce=console.error.bind(console);
@@ -12079,6 +13661,18 @@
       // ★干場の 目的＝4段が 成立するか。段ごとの 費用と 合否（T37f より 前に 置く＝T37f が 結果を 見る）
       await run("T37g",t_T37g); await run("T37h",t_T37h);
       await run("T37f",t_T37f);
+      // 弾29 §R24（要素台帳の 番人。★T37f を ふくむ 前の 網の 判定基準は 1ビットも 動かしていない
+      //   ＝T37f の 後ろに 置く。T38e は 走った テストの 一覧を 見るので ここでなければ ならない）
+      await run("T38a",t_T38a); await run("T38b",t_T38b); await run("T38c",t_T38c);
+      await run("T38d",t_T38d); await run("T38e",t_T38e);
+      // 弾31 §R25（1種＝部品表＋パターン表。★T39f は 前の 網を ぜんぶ 見るので 必ず いちばん最後。
+      //   T38e を ふくむ 前の 網の 判定基準は 動かしていない＝T38e の 後ろに 置く）
+      await run("T39a",t_T39a); await run("T39b",t_T39b); await run("T39c",t_T39c);
+      await run("T39d",t_T39d); await run("T39e",t_T39e); await run("T39f",t_T39f);
+      // 弾32 §R26（高い山と 山頂の 拠点。★T40f は 前の 網を ぜんぶ 見るので 必ず いちばん最後。
+      //   T39f を ふくむ 前の 網の 判定基準は 動かしていない＝T39f の 後ろに 置く）
+      await run("T40a",t_T40a); await run("T40b",t_T40b); await run("T40c",t_T40c);
+      await run("T40d",t_T40d); await run("T40e",t_T40e); await run("T40f",t_T40f);
       // 復元＝本当のプレイヤー進行・設定・カメラを一切壊さない
       swooshCount=snapSwoosh.count; swooshLast=snapSwoosh.last;   // persistSave()のnearMiss焼き込み前に実行順を戻す
       save=snapSave; persistSave(); syncVisitedBuffer(); completedConstellations=recomputeCompletedConstellations(); buildLines();
