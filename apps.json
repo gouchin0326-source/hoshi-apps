@@ -23,11 +23,11 @@
       "date": "2026-07-14"
     },
     {
-      "id": "tenkyu",
-      "title": "🌌 星天球 ─ ほしてんきゅう",
-      "desc": "つくった作品を星にして、3Dで飛びながら観る美術館（公開版は完成作品のみ）",
-      "icon": "🌌",
-      "path": "tenkyu/index.html",
+      "id": "hoshi_world",
+      "title": "🌏 HOSHI-WORLD",
+      "desc": "いろんなワールドを歩いて・跳んで・飛んで探索する3Dアクション（作品が星になって置いてある）",
+      "icon": "🌏",
+      "path": "hoshi-world/index.html",
       "badge": "NEW",
       "biz": "作品ギャラリー",
       "date": "2026-07-11"

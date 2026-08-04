@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>🌌 星天球 ─ ほしてんきゅう</title>
+<title>🌏 HOSHI-WORLD</title>
 <style>
   :root{ --fg:#eef2ff; --dim:#9fb0d8; --panel:rgba(10,14,30,.86); --line:rgba(150,180,255,.25); --accent:#8fb8ff; }
   *{ box-sizing:border-box; }
@@ -316,7 +316,7 @@
 <body>
 <canvas id="gl" aria-label="星の海。左半分で うごき、右半分で 見まわし、星にふれると 作品がひらきます。"></canvas>
 
-<div id="brand" aria-hidden="true"><b>🌌 星天球</b><span>つくった作品の海を、飛ぶ</span></div>
+<div id="brand" aria-hidden="true"><b>🌏 HOSHI-WORLD</b><span>いろんな世界を、歩いて 跳んで 飛ぶ</span></div>
 <div id="swoosh-hud" role="status" aria-live="polite">✨ すれ星 <b id="swoosh-count">0</b></div>
 <div id="course-hud" aria-hidden="true"></div>
 <div id="quest-hud" role="status" aria-live="polite"></div>
@@ -6137,7 +6137,7 @@
     var pct = total>0 ? Math.round(visitedCount/total*100) : 0;
     // 弾19 §R16: 画面から どけた じょうほう（🌌だいめい・✨すれ星・🧭今日の航路）の 置き場は ここ。
     //   ★消したのでは なく うつした＝画面が すっきりしても、見たい時は 📖ずかん を ひらけば かならず ある。
-    var html = "<p class='log-rate'><b>🌌 星天球</b>（ほしてんきゅう）<br>つくった作品の海を、飛ぶ</p>";
+    var html = "<p class='log-rate'><b>🌏 HOSHI-WORLD</b>（ほし わーるど）<br>いろんな世界を、歩いて 跳んで 飛ぶ</p>";
     html += "<p class='log-rate'>たっせい率 <b>"+visitedCount+" / "+total+"</b>（"+pct+"%）<br>称号：<b>"+esc(rankTitle(save.rankXp))+"</b>（xp "+esc(String(save.rankXp||0))+"）</p>";
     html += "<h4>🧭 今日の航路</h4><div id='log-quests'></div>";
     html += "<p class='hint'>✨ すれ星（きょう すれちがった かず）：<b>"+esc(String(swooshCount))+"</b>／これまで：<b>"+esc(String(+save.nearMiss||0))+"</b></p>";
@@ -6400,7 +6400,7 @@
   sMap.onchange=function(){ cfg.map=sMap.checked; saveCfg(); applyHudVisibility(); };
   document.getElementById("s-export").onclick=function(){
     var blob=new Blob([JSON.stringify(cfg,null,2)],{type:"application/json"});
-    var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="星天球_設定.json";
+    var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="HOSHI-WORLD_設定.json";
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(a.href); },1000); };
 
   if(window.__starsMissing){ console.info("stars.js が見つからないため、埋め込みの作品でひらいています。tenkyu_build.py を実行すると本物の作品になります。"); }
@@ -8569,7 +8569,9 @@
       // ★どけた じょうほうは 📖ずかん の中に ある＝消したのでは なく うつした
       renderLogbook();
       var lb=document.getElementById("log-body"), lbTxt=lb?(lb.textContent||""):"";
-      var inLog=(lbTxt.indexOf("星天球")>=0)&&(lbTxt.indexOf("すれ星")>=0)&&(lbTxt.indexOf("今日の航路")>=0);
+      // 2026-08-04 改名（星天球NEXT→HOSHI-WORLD）: 見るのは「だいめいが ずかんの中に ある」ことで、
+      //   だいめいの 文字そのものでは ない＝ここは 画面に 出る 名前と 対に なっている 1か所。
+      var inLog=(lbTxt.indexOf("HOSHI-WORLD")>=0)&&(lbTxt.indexOf("すれ星")>=0)&&(lbTxt.indexOf("今日の航路")>=0);
       // 道具ボタンは 既定で のこる＝すっきりしても さわれなくならない
       var toolsOk=true; for(i=0;i<TOOL_IDS.length;i++){ if(!t27Clickable(document.getElementById(TOOL_IDS[i]))) toolsOk=false; }
       t28Restore(st);
