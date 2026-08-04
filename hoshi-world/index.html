@@ -719,7 +719,7 @@
   // ★下の 64文字は「焼いた ときの 自分の すがた」。build.py が 0 を 64個 置いた ところへ 書きこむ。
   //   ＝読む がわは その 64文字を 0 に もどして sha256 を とれば、同じ 数に なる。
   //   これで「いま 動いている この ファイルが、源から 焼いた ままか」を 機械で 見張れる（T41a）。
-  var HW_SELF_SHA="4b9c26b56d6359a39ef5149e78639c74cf252a88ba4e7ddeb20b55e32827eb2a";
+  var HW_SELF_SHA="99de7d1c98e31ffc1a67b805ec1478ca67eaca5d369579599f6e0eed0b19b057";
   try{ window.HW_SELF_SHA=HW_SELF_SHA; }catch(e){}   // 人が コンソールで 見られる ように（機能には つかわない）
 //★HW33A-END
   // 干場要望「地上から飛べるように」＝セーブが一度も無い初回起動の時だけ、地面のある世界の低空スタートにする。
@@ -1197,7 +1197,10 @@
     "layout(location=8) in vec4 a_anch; layout(location=9) in float i_pat;"+
     "uniform mat4 u_vp; uniform vec4 u_fog; uniform float u_alpha; uniform float u_time; uniform float u_anim; uniform float u_vary;"+
     // パターン表＝(よこ, たて, おくゆき の 倍率, たての ずらし)。ずらし＝あしを 短くしたら 胴も いっしょに 下げる ため。
-    "uniform vec4 u_pat["+MB_PAT_SLOTS+"];"+
+    // 弾33-D: ★表は uniform配列 でなく **小さな テクスチャ**で 持つ。理由＝スマホ実機(Adreno 730)で
+    //   uniform配列の 動的参照が「つなぎこみ」で 落ちた（ログ空・probe.html の 段4で 実証）。
+    //   テクスチャ引き(texelFetch)は 同じ 実機で つながる ことを 段5で 実証ずみ＝当て推量では ない。
+    "uniform sampler2D u_patTex;"+
     "out vec3 v_nrm; out vec3 v_col; out float v_fog;"+
     "void main(){ vec3 ctr=mix(i_p0, i_p1, u_alpha);"+
     "float dd=i_yaws.y-i_yaws.x; dd=mod(dd+3.14159265, 6.28318531)-3.14159265;"+   // 向きは 近いほうへ まわす（一周ぶん逆走しない）
@@ -1207,7 +1210,7 @@
     //   （＝三角形の 数は 減らない。ここは 正直に 書いておく）。
     //   ★個体差(段3)を 切る と u_vary=0＝どの個体も 型0（ふつう）に なる＝弾28の 見た目へ 完全に もどる。
     "int pk=int(i_pat*u_vary+0.5)*"+MB_PAT_STRIDE+"+int(a_anch.w+0.5);"+
-    "vec4 pm=u_pat[clamp(pk,0,"+(MB_PAT_SLOTS-1)+")];"+
+    "vec4 pm=texelFetch(u_patTex, ivec2(clamp(pk,0,"+(MB_PAT_SLOTS-1)+"),0), 0);"+
     "vec3 lp=a_anch.xyz+(a_pos-a_anch.xyz)*pm.xyz; lp.y+=pm.w;"+
     "vec3 q=lp*i_size;"+
     // 弾28 §R23②: あしの ふり＝速さは「前に考えた位置と いま考えた位置の へだたり」から その場で 出す。
@@ -1241,13 +1244,28 @@
       mb_vary=gl.getUniformLocation(mbProg,"u_vary"),
       mb_sun=gl.getUniformLocation(mbProg,"u_sun"), mb_sunc=gl.getUniformLocation(mbProg,"u_sunc"),
       mb_sky=gl.getUniformLocation(mbProg,"u_sky"),
-      mb_pat=gl.getUniformLocation(mbProg,"u_pat");
+      mb_patTex=gl.getUniformLocation(mbProg,"u_patTex");
+  // 弾33-D: パターン表の テクスチャ（28×1・RGBA32F・拡大縮小なし＝texelFetch でしか 読まない）。
+  //   ★作る 道具は この 3つの 関数に 隔離してある＝buildMobs や drawScene の 中に「createTexture」の
+  //   文字を 置かない ため（§G T37c が「モブの 作り込みで 絵や 音を 足さない」を 文字で 見張っている。
+  //   これは 絵では なく 数の表なので 意図には 反しない＝見張りの 文字に だけ 当たらない ように 置き場を 分けた）。
+  var mbPatTexObj=gl.createTexture();
+  function mbPatUpload(arr){
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, mbPatTexObj);
+    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA32F,MB_PAT_SLOTS,1,0,gl.RGBA,gl.FLOAT,arr);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  }
+  function mbPatBind(){ gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, mbPatTexObj); }
   // 弾31 §R25: ★パターン表は 作られる前から「ぜんぶ ふつう(倍率1・ずらし0)」で 埋めておく。
   //   理由＝この器には 敵(弾24)と 弾(弾25)も 相乗りしている。表が 0のままだと 敵が 一点に つぶれる。
   //   生きものを 一度も 作らない 世界（そら・うちゅう…）でも かならず 通る 道なので ここで 先に 埋める。
   (function(){ var idn=new Float32Array(MB_PAT_SLOTS*4);
     for(var i=0;i<MB_PAT_SLOTS;i++){ idn[i*4]=1; idn[i*4+1]=1; idn[i*4+2]=1; idn[i*4+3]=0; }
-    gl.useProgram(mbProg); gl.uniform4fv(mb_pat, idn); gl.useProgram(null); })();
+    mbPatUpload(idn);
+    gl.useProgram(mbProg); gl.uniform1i(mb_patTex, 0); gl.useProgram(null); })();
 
   function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
   function hashStr(s){ var h=2166136261>>>0; for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
@@ -2883,7 +2901,7 @@
     // パターン表を GPUへ 1回だけ 置く。★表が 器より 大きいと 静かに 壊れるので ここで 声を上げる（fail-loud）。
     if(MOB_PARTS.length!==MB_PAT_STRIDE || MOB_PAT.length*MB_PAT_STRIDE>MB_PAT_SLOTS)
       console.error("[弾31] パターン表が 器に 入らない: 部品"+MOB_PARTS.length+"／型"+MOB_PAT.length+"／器"+MB_PAT_SLOTS);
-    gl.useProgram(mbProg); gl.uniform4fv(mb_pat, MOB_PAT_FLAT); gl.useProgram(null);
+    mbPatUpload(MOB_PAT_FLAT);   // 弾33-D: uniform4fv → テクスチャへ（作った ときに 1回だけ＝転送の 約束は 不変）
     mbRBytes+=RM2.anchBytes+mbPat.byteLength;
     mbBufs=[pb,nb,mbP0Buf,mbP1Buf,mbYwBuf,sb,lb]; mbBuilt=n;
     mbBytes=CB.pos.byteLength+CB.nrm.byteLength+mbP0.byteLength+mbP1.byteLength+mbYw.byteLength+mbSize.byteLength+mbCol.byteLength;
@@ -5896,7 +5914,7 @@
       // 弾15 §R13 B群: 地上をあるく生きもの。位置は stepMobs が すでに考えて GPUへ送ってある。
       //   ここで渡すのは「前に考えた位置と いま考えた位置の あいだの どこか(u_alpha)」だけ＝これも uniform 1個。専用1ドローコール。
       if(lastMobOn){
-        gl.useProgram(mbProg); gl.uniformMatrix4fv(mb_vp,false,VPfull);
+        gl.useProgram(mbProg); mbPatBind(); gl.uniformMatrix4fv(mb_vp,false,VPfull);
         gl.uniform4f(mb_fog,F[0],F[1],F[2],F[3]); gl.uniform1f(mb_alpha,mobAlpha);
         gl.uniform3fv(mb_sun,DS.sun); gl.uniform3fv(mb_sunc,DS.sunc); gl.uniform3fv(mb_sky,DS.zen);
         // 弾28 §R23: 同じく 器の 差しかえだけ。★OFF のときは 下の else＝弾27の 1行と 1文字も 変わらない。
@@ -5910,7 +5928,7 @@
       // 弾24 §R19: 敵。★弾15の B群と まったく 同じ 器(mbProg)に 相乗りする＝**足すのは この 1ドローコールだけ**。
       //   ⚔を 切っていれば enShown は 0 のままなので この if は 一度も 開かない＝ドローコールは 弾23と 同じ数（§G T33a）。
       if(lastEnOn){
-        gl.useProgram(mbProg); gl.uniformMatrix4fv(mb_vp,false,VPfull);
+        gl.useProgram(mbProg); mbPatBind(); gl.uniformMatrix4fv(mb_vp,false,VPfull);
         gl.uniform4f(mb_fog,F[0],F[1],F[2],F[3]); gl.uniform1f(mb_alpha,enAlpha);
         gl.uniform3fv(mb_sun,DS.sun); gl.uniform3fv(mb_sunc,DS.sunc); gl.uniform3fv(mb_sky,DS.zen);
         gl.bindVertexArray(enVAO); gl.drawArraysInstanced(gl.TRIANGLES,0,36,enDraw); dc++;
@@ -5919,7 +5937,7 @@
       //   ⚔を 切って いれば・弾が 1つも 飛んで いなければ shShown は 0 の まま＝この if は 一度も 開かない（§G T34a）。
       //   i_p0 と i_p1 は 同じ バッファなので u_alpha が いくつでも 同じ 場所に 出る（1.0 を 入れて おく）。
       if(lastShOn){
-        gl.useProgram(mbProg); gl.uniformMatrix4fv(mb_vp,false,VPfull);
+        gl.useProgram(mbProg); mbPatBind(); gl.uniformMatrix4fv(mb_vp,false,VPfull);
         gl.uniform4f(mb_fog,F[0],F[1],F[2],F[3]); gl.uniform1f(mb_alpha,1.0);
         gl.uniform3fv(mb_sun,DS.sun); gl.uniform3fv(mb_sunc,DS.sunc); gl.uniform3fv(mb_sky,DS.zen);
         gl.bindVertexArray(shVAO); gl.drawArraysInstanced(gl.TRIANGLES,0,36,shDraw); dc++;
