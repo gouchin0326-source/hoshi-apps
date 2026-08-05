@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-08-05 19:37:14",
+  "generated_at": "2026-08-05 19:43:07",
   "gpu": {
-    "occupant": "メディア生成（画像/音楽）",
-    "note": "生成モデルがVRAMを使用中",
-    "vram_used_gb": 5.8,
+    "occupant": "コード開発（ローカルLLM）",
+    "note": "qwen3:14b",
+    "vram_used_gb": 10.4,
     "vram_total_gb": 15.9,
-    "util": 0,
+    "util": 97,
     "lock": {
       "locked": false,
       "holder": null,
@@ -41,7 +41,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-05 19:36",
+    "updated": "2026-08-05 19:42",
     "current": null
   },
   "queue": [
@@ -128,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 139
+    "push_today": 140
   },
   "ai_works": [
     {
@@ -205,10 +205,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 6,
-    "mem_pct": 44,
+    "cpu_pct": 13,
+    "mem_pct": 47,
     "mem_total_gb": 31.7,
     "disk_used_gb": 398.8,
-    "disk_free_gb": 1463.0
+    "disk_free_gb": 1462.9
   }
 }
