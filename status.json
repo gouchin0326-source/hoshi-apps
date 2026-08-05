@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-08-05 15:37:06",
+  "generated_at": "2026-08-05 15:43:08",
   "gpu": {
     "occupant": "slot_bench（hoshi-brain-slotbench）",
-    "note": "経過41s / 目安あと約44分",
+    "note": "経過402s / 目安あと約38分",
     "vram_used_gb": 10.4,
     "vram_total_gb": 15.9,
     "util": 97,
@@ -13,7 +13,7 @@
         "session": "hoshi-brain-slotbench",
         "job": "slot_bench",
         "started_at": "2026-08-05T15:36:24+0900",
-        "age_sec": 41,
+        "age_sec": 402,
         "alive": true,
         "est_minutes": 45
       },
@@ -49,7 +49,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-05 15:34",
+    "updated": "2026-08-05 15:40",
     "current": null
   },
   "queue": [
@@ -136,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 99
+    "push_today": 100
   },
   "ai_works": [
     {
@@ -213,10 +213,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 6,
-    "mem_pct": 44,
+    "cpu_pct": 10,
+    "mem_pct": 52,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 396.7,
-    "disk_free_gb": 1465.1
+    "disk_used_gb": 397.1,
+    "disk_free_gb": 1464.6
   }
 }
