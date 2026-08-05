@@ -1,22 +1,14 @@
 {
-  "generated_at": "2026-08-05 17:37:07",
+  "generated_at": "2026-08-05 17:43:07",
   "gpu": {
-    "occupant": "factory_pilot_hakosu（hoshi-brain-0805）",
-    "note": "経過104s / 目安あと約28分",
-    "vram_used_gb": 9.7,
+    "occupant": "空き（アイドル）",
+    "note": "誰も使っていません",
+    "vram_used_gb": 0.9,
     "vram_total_gb": 15.9,
-    "util": 94,
+    "util": 0,
     "lock": {
-      "locked": true,
-      "holder": {
-        "pid": 40720,
-        "session": "hoshi-brain-0805",
-        "job": "factory_pilot_hakosu",
-        "started_at": "2026-08-05T17:35:22+0900",
-        "age_sec": 104,
-        "alive": true,
-        "est_minutes": 30
-      },
+      "locked": false,
+      "holder": null,
       "stale": false
     }
   },
@@ -49,7 +41,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-05 17:35",
+    "updated": "2026-08-05 17:41",
     "current": null
   },
   "queue": [
@@ -136,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 119
+    "push_today": 120
   },
   "ai_works": [
     {
@@ -213,8 +205,8 @@
     }
   ],
   "resources": {
-    "cpu_pct": 10,
-    "mem_pct": 43,
+    "cpu_pct": 17,
+    "mem_pct": 42,
     "mem_total_gb": 31.7,
     "disk_used_gb": 397.8,
     "disk_free_gb": 1463.9
