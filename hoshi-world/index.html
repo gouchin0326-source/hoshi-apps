@@ -776,7 +776,7 @@
   // ★下の 64文字は「焼いた ときの 自分の すがた」。build.py が 0 を 64個 置いた ところへ 書きこむ。
   //   ＝読む がわは その 64文字を 0 に もどして sha256 を とれば、同じ 数に なる。
   //   これで「いま 動いている この ファイルが、源から 焼いた ままか」を 機械で 見張れる（T41a）。
-  var HW_SELF_SHA="c0c2ddd5a5e807cb6a94bc45f99a38eec179352348a7ae14da6eea1ebcd51c21";
+  var HW_SELF_SHA="b1abd99d9be42b11534d5cd322dba0f446ecfbf7a71be0ed6b6b3933575f5901";
   try{ window.HW_SELF_SHA=HW_SELF_SHA; }catch(e){}   // 人が コンソールで 見られる ように（機能には つかわない）
 //★HW33A-END
   // 干場要望「地上から飛べるように」＝セーブが一度も無い初回起動の時だけ、地面のある世界の低空スタートにする。
@@ -4633,6 +4633,110 @@
             MAP:80, MAP_EDGE:14, MAP_B:6,
             CENTER_X:0.30, CENTER_Y0:0.20, CENTER_Y1:0.58,
             rects:null };
+
+  // ---------- 弾38 §R33: 操作を「意味」で 持つ（ワープホール契約 段3の 土台） ----------
+  // ★干場（2026-08-05）「今の HWの 操作性を 生かしつつ、視点変更や アクション追加のように
+  //   ジャンルにより 動きに 拡張性を 持たせたい（アクション・シューティング・RPG・パズル等）」。
+  //   その 土台が これ＝**操作を キーで 持たず「意味」で 持つ**（§R31 規律2／§R33 ①）。
+  // ★この弾の 性格＝**作らない。移すだけ**。新しい 操作も 新しい ボタンも 新しい 見た目も 1つも 足していない。
+  //   いま キーや ボタンに むすびついて いる ものを **のこらず この表へ 移した**だけ。
+  // ★PCの キーも スマホの 盤も **この 1つの 表から 生える**＝ジャンルを 足す ときは 行を 足すだけで、
+  //   盤を 手で 並べ直さなくて よい（押しどころ 44pxの 検査は 1本のまま 効く＝§R22の 約束を 崩さない）。
+  // ★「同じ物は 同じ場所」も 崩さない＝すすむ・とぶ・👁 の 置き場は 1pxも 動かない
+  //   （置き場を 決める 式＝padGeom/padBase は 1つも さわらず、**どの 行が どの 席に すわるか**だけを 表に した）。
+  //
+  // 1行の 読み方:
+  //   id     … 機械が つかう 名まえ            name  … やさしい日本語（人が 読む）
+  //   icon   … しるし                          kind  … hold(押している間)／press(押した その場で)／tap(押した 1回)
+  //   keys   … PCの キー（小文字。ない ものは []）＝**ここに ない キーは 効かない／効く キーは かならず ここに ある**
+  //   pd     … ブラウザの 既定の 動き（画面送り）を 止める キー（keys の 一部だけ）
+  //   dbl    … 2回つづけて 押して 押しっぱなし＝ブースト（いまは w だけ）
+  //   auto   … 押したら オートクルーズを 止めるか
+  //   sheet  … ⚙や 板が ひらいている 間は 効かない（anySheet）
+  //   mod    … Ctrl／⌘／Alt と 一緒なら 何も しない（ページ内けんさく等を 横取りしない）
+  //   once   … 押しっぱなしの くり返しでは 1回しか 出さない
+  //   down/up/tap … 何を するか（ACT_DO の 名まえ。★中みは 1行も 新しく 書いていない＝既存の 関数を 呼ぶだけ）
+  //   btn    … 実物の ボタンの id（ない ものは null）
+  //   touch  … スマホの 盤の 席: stick／look／pad:down|up|right|left／menu／menu-back／tool／null
+  //   padKey … ひし形の 席の 名まえ（padGeom が 返す 四角の 名まえ＝弾27のまま）
+  //   hide   … 「すっきり（段階3）」で かくす ならびに 入るか
+  //   when   … 出す 条件（always ／ battle＝⚙「⚔ たたかう」の 入切に したがう）
+  //★HW38-ACTIONS-BEGIN
+  var ACTIONS = [
+    { id:"move", name:"すすむ", icon:"🕹", kind:"hold",
+      keys:["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"],
+      pd:["arrowup","arrowdown","arrowleft","arrowright"], dbl:"w", auto:true,
+      btn:null, touch:"stick", when:"always" },
+    { id:"updown", name:"のぼる・さがる（はやく はしる）", icon:"↕", kind:"hold",
+      keys:["shift","q","e"], auto:true, btn:null, touch:null, when:"always" },
+    { id:"look", name:"見まわす", icon:"👀", kind:"hold",
+      keys:[], btn:null, touch:"look", when:"always" },   // PCは マウス／スマホは 右スティック（キーは 使わない）
+    { id:"jump", name:"とぶ", icon:"🦘", kind:"press",
+      keys:[" "], pd:[" "], auto:true, once:true, down:"jumpDown", up:"jumpUp",
+      btn:"btn-jump", touch:"pad:down", padKey:"jump", pw:TUI.JUMP_W, ph:TUI.JUMP_H, disp:"flex", when:"always" },
+    { id:"melee", name:"ちかくを ふる", icon:"⚔", kind:"tap",
+      keys:["f"], sheet:true, mod:true, once:true, tap:"melee",
+      btn:"btn-atk-melee", touch:"pad:right", padKey:"atkM", when:"battle" },
+    { id:"shoot", name:"とおくへ うつ", icon:"✨", kind:"tap",
+      keys:["r"], sheet:true, mod:true, once:true, tap:"shoot",
+      btn:"btn-atk-shot", touch:"pad:left", padKey:"atkR", when:"battle" },
+    { id:"tools", name:"どうぐ", icon:"☰", kind:"tap",
+      keys:[], btn:"btn-tools", touch:"menu", when:"always" },
+    { id:"peek", name:"道具を もどす", icon:"⊕", kind:"tap",
+      keys:[], btn:"btn-peek", touch:"menu-back", when:"always" },
+    { id:"settings", name:"せってい", icon:"⚙", kind:"tap", keys:[], btn:"btn-settings", touch:"tool", hide:true, when:"always" },
+    { id:"help",     name:"つかいかた", icon:"？", kind:"tap", keys:[], btn:"btn-help",     touch:"tool", hide:true, when:"always" },
+    { id:"search",   name:"さがす",     icon:"🔍", kind:"tap", keys:[], btn:"btn-search",   touch:"tool", hide:true, when:"always" },
+    { id:"tour",     name:"めぐる",     icon:"🎬", kind:"tap", keys:[], btn:"btn-tour",     touch:"tool", hide:true, when:"always" },
+    { id:"course",   name:"ひかりの輪", icon:"🔆", kind:"tap", keys:[], btn:"btn-course",   touch:"tool", hide:true, when:"always" },
+    { id:"log",      name:"ずかん",     icon:"📖", kind:"tap", keys:[], btn:"btn-log",      touch:"tool", hide:true, when:"always" },
+    { id:"cruise",   name:"じどうで すすむ", icon:"🛩", kind:"tap",
+      keys:["c"], sheet:true, once:true, tap:"cruise", btn:"btn-cruise", touch:"tool", hide:true, when:"always" },
+    { id:"view",     name:"見え方", icon:"👁", kind:"tap",
+      keys:["v"], sheet:true, once:true, tap:"viewCycle",
+      btn:"btn-view", touch:"pad:up", padKey:"view", hide:true, when:"always" },
+    { id:"home",     name:"きょてん", icon:"🏠", kind:"tap",
+      keys:["b"], sheet:true, mod:true, once:true, tap:"homeBoard", btn:"btn-home", touch:"tool", hide:true, when:"always" },
+    { id:"tidy",     name:"すっきり", icon:"🙈", kind:"tap",
+      keys:["h"], sheet:true, once:true, tap:"tidy", btn:null, touch:null, when:"always" }   // 入口は ⚙の 中（s-tidy）と Hキー
+  ];
+  //★HW38-ACTIONS-END
+  // ★何を するか＝**既存の 関数を 呼ぶだけ**（1つも 新しい 動きを 作っていない）。
+  //   遅く 引く（呼ばれた ときに 中を 見る）＝この 表を 上の ほうに 置いても 順番の 事故が 起きない。
+  var ACT_DO = {
+    jumpDown : function(){ onJumpDown(); },
+    jumpUp   : function(){ onJumpUp(); },
+    melee    : function(){ atkMelee(); },
+    shoot    : function(){ atkShoot(); },
+    viewCycle: function(){ cycleViewMode(); },
+    cruise   : function(){ cfg.autocruise=!cfg.autocruise; saveCfg(); syncCruiseUI(); },
+    tidy     : function(){ tidyToggle(); },
+    homeBoard: function(){ openDevBoard(); }
+  };
+  // ★表から 生える もの（ここが 唯一の 生え口＝手で 並べた ならびは 1つも 無い）。
+  //   KEY_ACT   … PCの キー→意味（keydown は これを 1回 引くだけ＝キーの 名まえを 本体に 書かない）
+  //   PAD_LIST  … ひし形の 席（padGeom が この ならびで 四角を 作る）
+  //   PANEL_IDS … ☰の板の 行（弾27／弾32のまま）      TOOL_IDS … 「すっきり」で かくす ならび（弾18／弾26／弾32のまま）
+  //   MENU_LIST … いつも 出ている 道具（☰）           PEEK_LIST … ☰と 同じ 四角を 借りる もの（⊕）
+  var KEY_ACT=null, PAD_LIST=[], PANEL_LIST=[], PANEL_IDS=[], TOOL_IDS=[], MENU_LIST=[], PEEK_LIST=[];
+  function actionsBuild(){
+    KEY_ACT=Object.create(null); PAD_LIST=[]; PANEL_LIST=[]; PANEL_IDS=[]; TOOL_IDS=[]; MENU_LIST=[]; PEEK_LIST=[];
+    for(var i=0;i<ACTIONS.length;i++){ var a=ACTIONS[i], ks=a.keys||[], j;
+      for(j=0;j<ks.length;j++) KEY_ACT[ks[j]]={ a:a, pd:((a.pd||[]).indexOf(ks[j])>=0), dbl:(a.dbl===ks[j]) };
+      var t=a.touch||"";
+      if(t.slice(0,4)==="pad:") PAD_LIST.push(a);
+      else if(t==="tool"){ PANEL_LIST.push(a); PANEL_IDS.push(a.btn); }
+      else if(t==="menu") MENU_LIST.push(a);
+      else if(t==="menu-back") PEEK_LIST.push(a);
+      if(a.hide) TOOL_IDS.push(a.btn);
+    }
+    _padMemo={k:"", v:null}; _tuiEls=null;   // 表が 変わったら 覚えた 置き場も ボタンの 引きも 捨てる
+    return { keys:Object.keys(KEY_ACT).length, pad:PAD_LIST.length, panel:PANEL_IDS.length, hide:TOOL_IDS.length };
+  }
+  actionsBuild();
+  // 表を 組み直して 盤も 置きなおす（★T46b／T46e の 変異注入で つかう 唯一の 入口）
+  function actRebuild(){ var d=actionsBuild();
+    layoutTouchUI(TUI.rects?TUI.rects.W:null, TUI.rects?TUI.rects.H:null); return d; }
   function _r(x,y,w,h){ return {x:x, y:y, w:w, h:h}; }
   function _rc(cx,cy,w,h){ return {x:Math.round(cx-w/2), y:Math.round(cy-h/2), w:w, h:h}; }
   function _hit(a,b){ var x=Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x), y=Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y);
@@ -4693,11 +4797,17 @@
           if(cy-topH < TUI.PAD_EDGE) continue;
           for(xi=0; xi<cxs.length; xi++){
             var cx=cxs[xi];
-            var g={ b:b, shape:nm+(ai?"-shita":""), cx:cx, cy:cy, Rx:Rx, Ry:Ry,
-              jump:_rc(cx, cy+Ry, JW, JH), view:_rc(cx, cy-Ry, b, b),
-              atkM:_rc(cx+Rx, cy, b, b), atkR:_rc(cx-Rx, cy, b, b) };
+            // 弾38 §R33: ★席の わりあては **ACTIONS の表から 生える**（下・右・左・上を 手で 書かない）。
+            //   四角の 作り方（_rc・Rx/Ry・大きさ）は 弾27から 1文字も 変えていない＝出る 数は 同じ。
+            var g={ b:b, shape:nm+(ai?"-shita":""), cx:cx, cy:cy, Rx:Rx, Ry:Ry };
+            var mine=[], pi;
+            for(pi=0; pi<PAD_LIST.length; pi++){ var pa=PAD_LIST[pi], sl=pa.touch.slice(4);
+              var pcx=(sl==="right")?(cx+Rx):((sl==="left")?(cx-Rx):cx);
+              var pcy=(sl==="down")?(cy+Ry):((sl==="up")?(cy-Ry):cy);
+              var prc=_rc(pcx, pcy, pa.pw||b, pa.ph||b);
+              g[pa.padKey]=prc; mine.push(prc); }
             last=g;
-            var mine=[g.jump,g.view,g.atkM,g.atkR], ok=true;
+            var ok=true;
             for(i=0;i<mine.length&&ok;i++){
               var r=mine[i];
               if(r.x<0||r.y<0||r.x+r.w>W||r.y+r.h>H) ok=false;
@@ -4750,7 +4860,9 @@
       stick:B.stick,
       lookstick:B.lookstick,
       jump:P.jump,                 // 🦘＝ひし形の いちばん 下（大きさは 弾16のまま 96x72）
-      tools:[B.menu],              // ☰ だけ（⊕は この 四角を そのまま 借りる＝弾18のまま）
+      // 弾38 §R33: いつも 出ている 道具の 数も **表から 生える**（MENU_LIST＝touch:"menu" の 行）。
+      //   ☰ だけ＝弾27のまま（⊕は この 四角を そのまま 借りる＝弾18のまま）。
+      tools:MENU_LIST.map(function(){ return B.menu; }),
       gauge:B.gauge,
       map:B.map,
       center:B.center };
@@ -4766,18 +4878,38 @@
   // 弾27 §R22: 道具の 7つは ☰の板の 中へ 畳んだので、tuiEls().tools（＝いつも 出ている 道具）は **☰ 1つだけ**。
   //   👁は ひし形の 一員に なったので view で 持つ（TOOL_IDS＝「すっきり」で かくす ならびには 弾26のまま 入っている）。
   // 弾32 §R26: 🏠 きょてんの ばん を いちばん うしろへ 足した（既存7つの 並びは 1つも 動かしていない）。
-  var PANEL_IDS=["btn-settings","btn-help","btn-search","btn-tour","btn-course","btn-log","btn-cruise","btn-home"];
+  // 弾38 §R33: PANEL_IDS／TOOL_IDS は **ACTIONS の表から 生える**（actionsBuild が 組み立てる）。
+  //   ならびは 弾27／弾32と 1つも 変わらない＝表の 行の 順が そのまま 板の 行の 順に なる。
+  // 弾38 §R33: ★表に 行を 足したら ボタンが **ひとりでに 生える**（盤を 手で 並べない＝§R33の 床）。
+  //   すでに ある ものは そのまま 使う＝今ある ボタンは 1つも 作り直さない（見た目は 1ビットも 変わらない）。
+  var ACT_MADE={};   // ★この しくみが 生やした ボタンの id（もとから ある ものと 見わける ため）
+  function actBtn(a){
+    if(!a || !a.btn) return null;
+    var b=document.getElementById(a.btn);
+    if(b) return b;
+    b=document.createElement("button"); b.id=a.btn; b.className="toolbtn"; ACT_MADE[a.btn]=true;
+    b.setAttribute("aria-label", a.name);   // やさしい日本語（読み上げにも とどく）
+    var s1=document.createElement("span"); s1.setAttribute("aria-hidden","true"); s1.textContent=a.icon||"";
+    var s2=document.createElement("span"); s2.className="tlab"; s2.setAttribute("aria-hidden","true"); s2.textContent=a.name;
+    b.appendChild(s1); b.appendChild(s2);
+    b.onclick=function(){ if(a.tap && ACT_DO[a.tap]) ACT_DO[a.tap](); };
+    document.body.appendChild(b);
+    return b;
+  }
   function tuiEls(){
     if(!_tuiEls) _tuiEls={ stick:document.getElementById("stick"), lookstick:document.getElementById("lookstick"),
       jump:document.getElementById("btn-jump"),
       atkM:document.getElementById("btn-atk-melee"), atkR:document.getElementById("btn-atk-shot"),   // 弾25 §R20
       view:document.getElementById("btn-view"),      // 弾27 §R22: ひし形の いちばん 上
       gauge:document.getElementById("fly-hud"), map:document.getElementById("map"),
-      peek:document.getElementById("btn-peek"),   // 弾18 §R15: ⊕（道具を かくした時の 帰り道）
+      // 弾18 §R15: ⊕（道具を かくした時の 帰り道）は 弾38から peeks（表の ならび）で 持つ
       sheet:document.getElementById("toolsheet"), back:document.getElementById("toolback"),
       close:document.getElementById("ts-close"),
-      panel:PANEL_IDS.map(function(id){ return document.getElementById(id); }),
-      tools:[document.getElementById("btn-tools")] };   // 弾27 §R22: いつも 出ている 道具ボタン＝☰ だけ
+      // 弾38 §R33: ★盤の ボタンは ぜんぶ 表から 引く（下の layoutTouchUI は この ならびを 回すだけ）
+      padBtns:PAD_LIST.map(actBtn),
+      panel:PANEL_LIST.map(actBtn),
+      peeks:PEEK_LIST.map(actBtn),
+      tools:MENU_LIST.map(actBtn) };   // 弾27 §R22: いつも 出ている 道具ボタン＝☰ だけ
     return _tuiEls;
   }
   function tuiPlace(el,r,disp){ if(!el) return; var s=el.style;
@@ -4789,12 +4921,14 @@
   function layoutTouchUI(fw,fh){
     var E=tuiEls(), i;
     if(!tuiOn){ TUI.rects=null; TUI.atk=null; TUI.pad=null; TUI.sheet=null;
-      tuiClear(E.atkM); tuiClear(E.atkR); if(typeof applyAtkButtons==="function") applyAtkButtons();   // 弾25 §R20
-      tuiClear(E.stick); tuiClear(E.lookstick); tuiClear(E.jump); tuiClear(E.gauge); tuiClear(E.map);
-      tuiClear(E.peek);   // 弾18: PCでは ⊕も CSSの位置（右上）へ もどす。出す/出さないは クラスが 決めるので ここでは さわらない。
+      // 弾38 §R33: ★ひし形（🦘⚔✨👁）は **表の ならびを 回して** かたづける（名まえを 手で 書かない）。
+      for(i=0;i<E.padBtns.length;i++) tuiClear(E.padBtns[i]);
+      if(typeof applyAtkButtons==="function") applyAtkButtons();   // 弾25 §R20
+      tuiClear(E.stick); tuiClear(E.lookstick); tuiClear(E.gauge); tuiClear(E.map);
+      for(i=0;i<E.peeks.length;i++) tuiClear(E.peeks[i]);   // 弾18: PCでは ⊕も CSSの位置（右上）へ もどす。出す/出さないは クラスが 決める。
       // 弾27 §R22: PCでは ひし形も ☰の板も 1つも 出さない＝道具は 右がわの たて1列（弾26のまま）へ 帰る。
       if(typeof closeToolSheet==="function") closeToolSheet(true);
-      tuiClear(E.view); tuiClear(E.sheet); tuiClear(E.close);
+      tuiClear(E.sheet); tuiClear(E.close);
       for(i=0;i<E.panel.length;i++){ tuiClear(E.panel[i]); if(E.panel[i]) E.panel[i].classList.remove("tuck"); }
       for(i=0;i<E.tools.length;i++){ tuiClear(E.tools[i]); if(E.tools[i]) E.tools[i].classList.remove("on"); }
       return null; }
@@ -4802,7 +4936,6 @@
     var R=touchLayout(W,H); TUI.rects=R;
     tuiPlace(E.stick,R.stick,"block");
     tuiPlace(E.lookstick,R.lookstick);
-    tuiPlace(E.jump,R.jump,"flex");
     if(E.gauge){ var g=E.gauge.style; g.left=R.gauge.x+"px"; g.top=R.gauge.y+"px"; g.right="auto"; g.bottom="auto";
       g.transform="none"; g.minWidth="0"; g.maxWidth=R.gauge.w+"px"; g.width=R.gauge.w+"px"; }
     if(E.map) tuiPlace(E.map,R.map);
@@ -4812,14 +4945,15 @@
     // 弾18 §R15: ⊕は 道具ボタンの 1つめと 同じ場所へ置く＝すでに「重ならない・画面の中・44px」が
     //   T25dで 確かめてある 四角を そのまま 借りる（新しい置き場を 増やして 検算を 増やさない）。
     //   display は クラス(.show)が 決めるので ここでは 書かない（tuiPlaceの第3引数を わたさない）。
-    if(E.peek) tuiPlace(E.peek,R.tools[0]);
-    // 弾27 §R22: ひし形（🦘は 上の R.jump で すでに 置いた／👁・⚔・✨は ここ）。
-    //   ★👁も 出す/出さないは クラス（.gone）が 決めるので inline の display は 書かない。
+    for(i=0;i<E.peeks.length;i++) tuiPlace(E.peeks[i],R.tools[0]);
+    // 弾27 §R22 → 弾38 §R33: ひし形（🦘⚔✨👁）は **表の ならびを 回して 置く**＝手で 並べる 行は 1つも 無い。
+    //   ★大きさも 席も 表の 欄（padKey／pw／ph／disp）が 決める＝弾27の 数と 1pxも 変わらない。
+    //   ★👁も ⚔✨も 出す/出さないは クラス（.gone）と applyAtkButtons が 決めるので inline の display は 書かない
+    //     （🦘だけ 弾16から flex を 書いている＝表の disp 欄）。
     var P=padGeom(W,H); TUI.pad=P;
-    tuiPlace(E.view,P.view);
+    for(i=0;i<E.padBtns.length;i++) tuiPlace(E.padBtns[i], P[PAD_LIST[i].padKey], PAD_LIST[i].disp);
     // 弾25 §R20: ⚔／✨は 置き場だけ あてて、出す/出さないは applyAtkButtons（＝⚔たたかう の 入切）が 決める。
     TUI.atk=atkLayout(R);
-    tuiPlace(E.atkM,TUI.atk.atkM); tuiPlace(E.atkR,TUI.atk.atkR);
     if(typeof applyAtkButtons==="function"){ _atkBtnShown=null; applyAtkButtons(); }
     // 弾27 §R22: ☰の板（ひらいた時だけ 出る）。中みの 7つは .tuck を つけて **大きな行**に なる。
     var SH=toolSheetLayout(W,H); TUI.sheet=SH;
@@ -4991,6 +5125,10 @@
     var Vr=mul(rotX(pitch),rotY(yaw)); var fw=tDir(Vr,0,0,-1); var s=-Math.sign(e.deltaY)*speedCap()*PHYS.WHEEL_KICK;
     camVel[0]+=fw[0]*s; camVel[1]+=fw[1]*s; camVel[2]+=fw[2]*s; },{passive:false});
 
+  //★HW38-KEYS-BEGIN
+  // 弾38 §R33: ★この しるしの 中に、表(ACTIONS)に ある キーの 名まえが 1つでも 直に 書いてあったら
+  //   それは「表に 載っていない 抜け道」＝T46a が 数えて 落とす（登録もれの 番人）。
+  //   ここに のこってよい 文字は 板を とじる escape／中を まわる tab／打ちこみ中を 見わける input 類だけ。
   window.addEventListener("keydown",function(e){ var k=e.key.toLowerCase();
     // 弾32 §R26: 🏠きょてんの ばんが ひらいている間の 道（★とじている間は if を 1つ 通るだけ）。
     //   Escape で とじる → フォーカスは 入口へ もどる（openDevBoard が 覚えている）。
@@ -5007,48 +5145,35 @@
           e.preventDefault(); try{ f[nx].focus(); }catch(_e){} }
         return; }
     }
-    if([" ","arrowup","arrowdown","arrowleft","arrowright"].indexOf(k)>=0 &&
+    // ---- 弾38 §R33: ★ここから 下は **意味の表（ACTIONS）を 1回 引くだけ** ----
+    //   弾37までは キーの 名まえが 本体に 直に 書いてあった（14の キーぶん）。
+    //   それを のこらず 表へ 移した＝**表に ない キーは 効かない／効く キーは かならず 表に ある**（T46a／T46d）。
+    //   ★手ざわりは 1ビットも 変えていない: 順番（画面送りを 止める→オートクルーズを 止める→ブースト→わざ）も、
+    //     押しっぱなしの はじき方（once）も、⚙が ひらいている間の 止め方（sheet）も、
+    //     Ctrl/⌘/Alt を 横取りしない こと（mod）も 弾37の まま。表の 欄に 名前が ついただけ。
+    //   ★毎フレームの 速さには 触れない＝ここは キーを 押した ときだけ 通る 道（毎フレームは keys[...] を 読むだけ）。
+    var KA=KEY_ACT[k], A=KA?KA.a:null;
+    if(KA && KA.pd &&
        ["input","textarea","select"].indexOf((e.target.tagName||"").toLowerCase())<0) e.preventDefault();
-    if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"," ","shift","q","e"].indexOf(k)>=0) stopAuto();
+    if(A && A.auto) stopAuto();
     // ブースト＝Wを2回つづけて押して、2回目を押しっぱなし（設定パネルを開いている間は無効）
-    if(k==="w" && !keys[k]){ var tn=e.timeStamp/1000;
+    if(KA && KA.dbl && !keys[k]){ var tn=e.timeStamp/1000;
       if(tn-lastWTap < PHYS.BOOST_DBL && !anySheet()) boostOn=true;
       lastWTap=tn; }
-    // 弾8: Cキー1回＝オートクルーズON/OFF切り替え（右上🛩️ボタンと同じ1操作トグル）
-    if(k==="c" && !keys[k] && !anySheet()){ cfg.autocruise=!cfg.autocruise; saveCfg(); syncCruiseUI(); }
-    // 弾18 §R15: Hキー1回＝「🙈 すっきり」の 入切（Cキーと まったく同じ作法）。
-    // ★衝突の確認（着手前に実測）: いま つかっている キーは w/a/s/d・矢印・Space・Shift・q・e・c だけ＝h は 空いている。
-    //   ⚙や 🔍を ひらいている間は 効かない（!anySheet()）＝なまえを 打つ時に 画面が 消えない。
-    if(k==="h" && !keys[k] && !anySheet()){ tidyToggle(); }
-    // 弾22 §R19: Vキー1回＝見え方（一人称⇔三人称）の 入切（C・Hと まったく同じ作法）。
-    // ★衝突の確認（着手前に grep で 実測）: いま つかっている キーは w/a/s/d・矢印・Space・Shift・q・e・c・h だけ。
-    //   v は どこにも 無い＝空いている。えらんだ 理由＝view（見え方）の 頭文字で、W/A/S/D の となりに あって 押しやすい。
-    //   ⚙や 🔍を ひらいている間は 効かない（!anySheet()）＝なまえを 打つ時に 視点が 変わらない。
-    // 弾26 §R21: Vキーは 3つの 状態を 👁ボタンと 同じ順で 巡る（作法は 弾22の まま＝押した1回で 1つ すすむ）。
-    if(k==="v" && !keys[k] && !anySheet()){ cycleViewMode(); }
-    // 弾25 §R20: F＝ちかくを ふる／R＝とおくへ うつ（C・H・Vと まったく 同じ 作法）。
-    // ★衝突の 確認（着手前に grep で 実測）: いま つかって いる キーは w/a/s/d・矢印・Space・Shift・q・e・c・h・v だけ。
-    //   f と r は どこにも 無い＝空いている。えらんだ 理由＝左手が W/A/S/D に 置かれた まま とどく となりの キーで、
-    //   右手の マウス視点を はなさずに 撃てる。
-    // ★★左クリックは ぜったいに 取らない＝作品星を えらぶ 既存操作と 視点ドラッグの 入口（この 作品の 主役は「訪ねる」）。
-    //   右クリックも 取らない（ブラウザの メニュー抑止＝環境差の 温床）。
-    // ★Ctrl+F（ページ内けんさく）や Ctrl+R（読みこみ直し）を 横取りしない＝押しくらべの キーが 押されて いたら 何も しない。
-    if(!e.ctrlKey && !e.metaKey && !e.altKey && !anySheet()){
-      if(k==="f" && !keys[k]) atkMelee();
-      if(k==="r" && !keys[k]) atkShoot();
-      // 弾32 §R26: B キー1回＝🏠きょてんの ばん（C・H・V・F・R と まったく 同じ 作法）。
-      // ★衝突の 確認（着手前に grep で 実測）: いま つかって いる キーは
-      //   w/a/s/d・矢印・Space・Shift・q・e・c・h・v・f・r だけ。b は どこにも 無い＝空いている。
-      //   えらんだ 理由＝b は「ばん（＝board）」の 頭文字で、攻撃の f/r から はなれていて 押しまちがえにくい。
-      // ★★左クリックは ぜったいに 取らない＝作品星を えらぶ 既存操作（この作品の 主役は「訪ねる」）。
-      // ★Ctrl+B など 押しくらべの キーが 押されて いたら 何も しない（上の if が それを 見ている）。
-      if(k==="b" && !keys[k]) openDevBoard();
-    }
-    // 弾12 §R10: Space＝押した その場で ジャンプ（キーリピートは !keys[k] ではじく）。しきい値を待ってから跳ぶことは しない。
-    if(k===" " && !keys[k]) onJumpDown();
+    // わざ（tap＝押した1回／down＝押した その場で）。★中みは ACT_DO＝既存の 関数を 呼ぶだけ。
+    //   ・once  … 押しっぱなしの くり返しでは 出さない（弾12の !keys[k] と 同じ）
+    //   ・sheet … ⚙や 🔍が ひらいている間は 効かない（なまえを 打つ時に 画面が 変わらない）
+    //   ・mod   … Ctrl+F（ページ内けんさく）や Ctrl+R（読みこみ直し）を 横取りしない
+    //   ★★左クリック・右クリックは ぜったいに 取らない＝作品星を えらぶ 既存操作（この 作品の 主役は「訪ねる」）。
+    if(A && (A.down || A.tap) && !(A.once && keys[k]) && !(A.sheet && anySheet()) &&
+       !(A.mod && (e.ctrlKey || e.metaKey || e.altKey))) ACT_DO[A.down || A.tap]();
     keys[k]=true; });
   window.addEventListener("keyup",function(e){ var k=e.key.toLowerCase();
-    keys[k]=false; if(k==="w") boostOn=false; if(k===" ") onJumpUp(); });
+    keys[k]=false;
+    var KA=KEY_ACT[k];                                  // 弾38 §R33: はなす ときも 表を 1回 引くだけ
+    if(KA && KA.dbl) boostOn=false;
+    if(KA && KA.a.up) ACT_DO[KA.a.up](); });
+  //★HW38-KEYS-END
   // 弾12 §R10: とぶ ボタン（Space／スマホの🦘）の押し始め・離し。ここが「跳ぶ」と「とぶ」の唯一の入口。
   // ★押した瞬間に camVel[1] を立てる＝しきい値を待たない＝入力の遅れゼロ（§G T21b）。
   //   おしっぱなしで しきい値をこえたら、跳んだ いきおいの上に 上昇が乗る（ジャンプは取り消さない）。
@@ -5610,7 +5735,8 @@
   //   ⊕は PCでも スマホでも 出る・44pxより 大きい・押すと 道具が もどる。PCは Hキーでも もどる。
   // 弾26 §R21: 👁見え方も 同じ ならびへ 足す＝「すっきり」で 他の道具と 一緒に かくれる（＋⊕で もどる）。
   // 弾32 §R26: 「すっきり」で かくす ならびにも 🏠 を 足す（かくれないボタンを 作らない＝T27の 約束）。
-  var TOOL_IDS=["btn-settings","btn-help","btn-search","btn-tour","btn-course","btn-log","btn-cruise","btn-view","btn-home"];
+  // 弾38 §R33: ★この ならびは もう 手で 書かない＝ACTIONS の hide の 欄から 生える（actionsBuild）。
+  //   出る 中みは 弾32のまま＝⚙？🔍🎬🔆📖🛩️👁🏠 の 9つ（T35f が TUI.HIDE_N と 突き合わせて 見張る）。
   var _toolsHidden=null, peekEl=null;
   function applyToolsVisibility(){
     if(!peekEl) peekEl=document.getElementById("btn-peek");
@@ -6198,6 +6324,17 @@
 
       { id:"tui", name:"操作盤（スマホの DOM）", stage:"—（WebGLで 描かない）",
         vao:[], owns:[], units:{ label:"押せる 器", n:tuiN, built:tuiN },
+        // 弾38 §R33: ★操作を「意味」で 持つ 台帳（ACTIONS）の 実測。★見込みの 数は 1つも 書かない（§G T38c）。
+        //   PCの キーも スマホの 盤も この 表から 生える＝ジャンルを 足す ときは 行を 足すだけ。
+        //   絵を 1つも 増やしていない＝三角形・えがく回数・毎フレーム転送・毎フレームJS は ぜんぶ 増分0
+        //   （毎フレームの 道は この 表を 1度も 読まない＝T46f が 本文の 文字で 見張る）。
+        ops:{ actions:ACTIONS.length, keys:Object.keys(KEY_ACT).length,
+              pad:PAD_LIST.length, menu:MENU_LIST.length, peek:PEEK_LIST.length,
+              panel:PANEL_IDS.length, hide:TOOL_IDS.length,
+              ids:ACTIONS.map(function(a){ return a.id; }),
+              keyMap:Object.keys(KEY_ACT).sort().map(function(k){ return k+"→"+KEY_ACT[k].a.id; }),
+              grownByTable:Object.keys(ACT_MADE).length,
+              trianglesAdded:0, drawCallsAdded:0, gpuBytesPerFrameAdded:0, jsMsPerFrameAdded:0 },
         cost:C({ triangles:0, drawCalls:0, points:0, lines:0, bytes:0, gpuUploads:0, gpuBytes:0,
                  gpuBytesPerFrame:0 }),
         costWhy:W({ triangles:ELM_WHY.dom, drawCalls:ELM_WHY.dom, bytes:ELM_WHY.dom,
@@ -6840,6 +6977,29 @@
     topConsts:function(){ return Object.assign({},TOPV); },
     cycleView:function(){ return cycleViewMode(); },
     viewModes:function(){ return VIEW_MODES.slice(); },
+    // 弾38 §R33: 意味の台帳（操作を キーで 持たず 意味で 持つ）を 外から 見る 口。
+    //   ★写しを 返す＝外から 書きかえられない（台帳を 変えるのは actionsAdd／actionsDrop だけ）。
+    actions:function(){ return ACTIONS.map(function(a){ return Object.assign({},a); }); },
+    actionsDerived:function(){ return { keys:Object.keys(KEY_ACT).slice(), pad:PAD_LIST.map(function(a){ return a.id; }),
+      panel:PANEL_IDS.slice(), hide:TOOL_IDS.slice(), menu:MENU_LIST.map(function(a){ return a.id; }),
+      peek:PEEK_LIST.map(function(a){ return a.id; }) }; },
+    actionOf:function(k){ var KA=KEY_ACT[k]; return KA ? { id:KA.a.id, run:(KA.a.down||KA.a.tap||null),
+      pd:KA.pd, dbl:KA.dbl, auto:!!KA.a.auto, sheet:!!KA.a.sheet, mod:!!KA.a.mod, once:!!KA.a.once,
+      up:(KA.a.up||null) } : null; },
+    // ★★拡張の 実演（T46e）＝表に 1行 足すと PCの キーも スマホの ボタンも ひとりでに 生える。
+    //   もどす ときは 作った ボタンごと 消す＝本番の 見た目は 1つも 変わらない。
+    actionsAdd:function(row, run, at){ if(run) ACT_DO[row.tap||row.down]=run;
+      if(typeof at==="number") ACTIONS.splice(at,0,row); else ACTIONS.push(row);
+      return actRebuild(); },
+    actionsDrop:function(id){ var i, gone=null, at=-1;
+      for(i=ACTIONS.length-1;i>=0;i--) if(ACTIONS[i].id===id){ at=i; gone=ACTIONS.splice(i,1)[0]; break; }
+      if(gone){
+        // ★消すのは「この しくみが 生やした ボタン」だけ＝もとから ある ボタンは 1つも こわさない。
+        if(gone.btn && ACT_MADE[gone.btn]){ var b=document.getElementById(gone.btn);
+          if(b && b.parentNode) b.parentNode.removeChild(b); delete ACT_MADE[gone.btn];
+          if(gone.tap && ACT_DO[gone.tap]) delete ACT_DO[gone.tap]; }
+      }
+      var d=actRebuild(); d.at=at; d.row=gone; return d; },
     caveOutside:caveOutside,
     caveCenterAt:function(t){ return caveCenter(t).slice(); },
     caveConsts:function(){ return { R:CAVE_R, MIN:CAVE_MIN, SPAN:CAVE_SPAN, TURNS:CAVE_TURNS }; },
@@ -16504,6 +16664,439 @@
                "台帳に 欄を 足しただけ＝T44a は 欄の もれだけを 見る 作り）" };
     }
 //★HW37-END
+//★HW38-BEGIN
+    // ---------- 弾38 §R33: 操作を「意味」で 持つ（ワープホール契約 段3の 土台。T46a〜T46f） ----------
+    // ★干場（2026-08-05）「今の HWの 操作性を 生かしつつ、視点変更や アクション追加のように
+    //   ジャンルにより 動きに 拡張性を 持たせたい（アクション・シューティング・RPG・パズル等）」。
+    // ★この弾は **作らない。移すだけ**＝新しい 操作も ボタンも 見た目も 1つも 足していない。
+    //   だから ここで 見るのは「便利に なったか」では ない。**1ビットも 変わって いない ことの 証明**である:
+    //   ①表と 実物が 合っている（T46a） ②盤が 表から 生えている（T46b） ③押しどころの 床（T46c）
+    //   ④PCの キーが 弾37と 完全一致（T46d） ⑤1行 足すと ひとりでに 生える（T46e） ⑥回帰帳簿（T46f）
+    //
+    // ✎ 弾37の キーの 対応表（★実装より **先に** 弾37の src\body.part から 手で 書き写した もの）。
+    //   ならび＝[意味の id, 何を するか, 画面送りを 止める, オートクルーズを 止める,
+    //            ⚙が ひらいている間は 効かない, Ctrl/⌘/Altで 何も しない, 押しっぱなしで くり返さない,
+    //            2回つづけ押しで ブースト, はなした ときの しごと]
+    var T46_DAN37_KEYS = {
+      "w":          ["move",   null,        0,1,0,0,0,1, null],
+      "a":          ["move",   null,        0,1,0,0,0,0, null],
+      "s":          ["move",   null,        0,1,0,0,0,0, null],
+      "d":          ["move",   null,        0,1,0,0,0,0, null],
+      "arrowup":    ["move",   null,        1,1,0,0,0,0, null],
+      "arrowdown":  ["move",   null,        1,1,0,0,0,0, null],
+      "arrowleft":  ["move",   null,        1,1,0,0,0,0, null],
+      "arrowright": ["move",   null,        1,1,0,0,0,0, null],
+      "shift":      ["updown", null,        0,1,0,0,0,0, null],
+      "q":          ["updown", null,        0,1,0,0,0,0, null],
+      "e":          ["updown", null,        0,1,0,0,0,0, null],
+      " ":          ["jump",   "jumpDown",  1,1,0,0,1,0, "jumpUp"],
+      "f":          ["melee",  "melee",     0,0,1,1,1,0, null],
+      "r":          ["shoot",  "shoot",     0,0,1,1,1,0, null],
+      "v":          ["view",   "viewCycle", 0,0,1,0,1,0, null],
+      "c":          ["cruise", "cruise",    0,0,1,0,1,0, null],
+      "h":          ["tidy",   "tidy",      0,0,1,0,1,0, null],
+      "b":          ["home",   "homeBoard", 0,0,1,1,1,0, null]
+    };
+    // ✎ 弾37の 盤（★§R22 の 実測表から 手で 書き写した。390x844 の 四角）
+    var T46_DAN37_PAD = { jump:[248,538,96,72], view:[274,490,44,44], atkM:[346,521,44,44],
+                          atkR:[202,521,44,44], menu:[20,558,52,52] };
+    var T46_VPS=[[320,568],[360,640],[375,812],[390,844],[414,896],[768,1024],[568,320],[780,360],[844,390]];
+    var T46_TAP=44;
+    // ✎ 弾37の「意味の数」（表へ 移す 前に 数えた もの）
+    var T46_N={ actions:18, keys:18, pad:4, menu:1, peek:1, panel:8, hide:9 };
+    // ★しるしの 文字は 組み立てて 持つ＝この テストの 文字じたいが 本体の しるしに 化けない ように
+    var T46_MK={ k0:"//"+"★HW38-KEYS-BEGIN", k1:"//"+"★HW38-KEYS-END" };
+    function t46BodySlice(b,e){
+      var sc=document.querySelectorAll("script"), s=null, i;
+      for(i=0;i<sc.length;i++) if(!sc[i].getAttribute("src")){ s=sc[i]; break; }
+      if(!s) return null;
+      var src=s.textContent||"", a=src.indexOf(b), z=src.indexOf(e);
+      if(a<0||z<=a) return null;
+      return src.slice(a,z);
+    }
+    // 意味の 台帳の いまの すがた（数と ならび）＝もどせた ことの 突き合わせに つかう
+    function t46Snap(){
+      var T=window.__tenkyu, D=T.actionsDerived(), A=T.actions(), i, r=[];
+      for(i=0;i<A.length;i++) r.push(A[i].id+":"+(A[i].keys||[]).join("|")+":"+(A[i].touch||"-")+":"+(A[i].hide?1:0));
+      return { rows:r.join(" "), keys:D.keys.slice().sort().join(","), pad:D.pad.join(","),
+               panel:D.panel.join(","), hide:D.hide.join(","), n:A.length };
+    }
+    // 盤の 実物の 四角（inline の px で 見る＝窓の 大きさに よらない＝0802の 教訓）
+    var T46_BTN=["btn-jump","btn-view","btn-atk-melee","btn-atk-shot","btn-tools","btn-peek",
+                 "btn-settings","btn-help","btn-search","btn-tour","btn-course","btn-log","btn-cruise","btn-home"];
+    function t46Rects(){
+      var out={}, i;
+      for(i=0;i<T46_BTN.length;i++){ var el=document.getElementById(T46_BTN[i]);
+        out[T46_BTN[i]] = el ? [el.style.left,el.style.top,el.style.width,el.style.height].join(",") : "なし"; }
+      return out;
+    }
+    function t46RectStr(){ var R=t46Rects(), i, o=[];
+      for(i=0;i<T46_BTN.length;i++) o.push(T46_BTN[i]+"="+R[T46_BTN[i]]); return o.join(" "); }
+    // キーを 1回 押して はなす（本物の イベント＝テストだけの 近道を 通らない）
+    function t46Press(k, mods){
+      var o={key:k, bubbles:true, cancelable:true};
+      if(mods){ o.ctrlKey=!!mods.ctrl; o.metaKey=!!mods.meta; o.altKey=!!mods.alt; }
+      var ev=new KeyboardEvent("keydown",o);
+      window.dispatchEvent(ev);
+      window.dispatchEvent(new KeyboardEvent("keyup",{key:k,bubbles:true,cancelable:true}));
+      return ev.defaultPrevented;
+    }
+    // その キーが「効いた」か＝目に 見える 何かが 動いたか（意味ごとの 見どころ）。★ためした あとは 元へ もどす。
+    function t46Effect(id, k){
+      var T=window.__tenkyu, a, r;
+      if(id==="cruise"){ var b0=!!cfg.autocruise; t46Press(k); r=(!!cfg.autocruise!==b0); cfg.autocruise=b0; syncCruiseUI(); return r; }
+      if(id==="tidy"){ var t0=!!cfg.tidy, h0=!!cfg.hideTools; t46Press(k);
+        r=((!!cfg.tidy!==t0)||(!!cfg.hideTools!==h0)); cfg.tidy=t0; cfg.hideTools=h0; syncTidyUI(); applyHudVisibility(); return r; }
+      if(id==="view"){ var v0=cfg.view; t46Press(k); r=(cfg.view!==v0); setViewMode(v0,false); return r; }
+      if(id==="melee"){ a=T.atkStats().melee.use; t46Press(k); return T.atkStats().melee.use>a; }
+      if(id==="shoot"){ a=T.atkStats().shot.use; t46Press(k); return T.atkStats().shot.use>a; }
+      if(id==="home"){ var o0=T.devBoard().on; t46Press(k); r=(T.devBoard().on!==o0);
+        if(T.devBoard().on) closeDevBoard(); return r; }
+      if(id==="jump"){ clearHeld();
+        window.dispatchEvent(new KeyboardEvent("keydown",{key:k,bubbles:true,cancelable:true}));
+        var on=!!jumpHeldRaw;
+        window.dispatchEvent(new KeyboardEvent("keyup",{key:k,bubbles:true,cancelable:true}));
+        var off=!jumpHeldRaw; clearHeld(); return on&&off; }
+      return null;   // 押している間の もの（すすむ／のぼる）＝下の keys[] で 見る
+    }
+    // 「⚙が ひらいている間は 効かない」を ためす ための ふた（本物の ⚙を ひらく）
+    function t46Sheet(on){ var p=document.getElementById("settings");
+      if(!p) return false; p.classList.toggle("show", !!on); return anySheet()===!!on; }
+    // 山頂の きょてんへ そっと 立つ（★歩かせない＝見たいのは キーの 道であって 歩き方では ない）
+    function t46StandAtHome(){ var S=window.__tenkyu.homeStart();
+      t43Put(S.x, S.z, S.y-FIELD_CLEAR); yaw=S.yaw; pitch=0; stepFrames(2); return S; }
+
+    // T46a: 表と 実物の 一致＝★表に ある キーは ぜんぶ 効く／効く キーは ぜんぶ 表に ある
+    //   ①表の キーを 1つずつ 本当に 押して、意味どおりの ことが 起きるか 見る（式を 読まない）
+    //   ②本体の キーの 道（しるしの 中）に **表の キーの 名まえが 直に 書かれて いない**＝抜け道 0（fail-loud）
+    //   ③変異注入＝表から 1行 消すと その キーは 効かなく なる（歯が ある ことの 実証）→ かならず もどす
+    function t_T46a(){
+      var T=window.__tenkyu, d=[], st=tuiSetup(390,844), snap0=t46Snap(), bad=[], i, j;
+      var bat0=!!cfg.battle; T.setBattle(true,false); T.battleReset();
+      t46StandAtHome();
+      // ① 表の キーは ぜんぶ 効く
+      var A=T.actions(), tried=0, worked=0, holdOk=[];
+      for(i=0;i<A.length;i++){ var a=A[i], ks=a.keys||[];
+        for(j=0;j<ks.length;j++){ var k=ks[j];
+          if(a.down||a.tap){ tried++;
+            var got=t46Effect(a.id, k);
+            if(got===true) worked++; else bad.push("効かない "+k+"→"+a.id+"("+got+")");
+          } else {
+            window.dispatchEvent(new KeyboardEvent("keydown",{key:k,bubbles:true,cancelable:true}));
+            var up=!!keys[k];
+            window.dispatchEvent(new KeyboardEvent("keyup",{key:k,bubbles:true,cancelable:true}));
+            var dn=!keys[k];
+            if(up&&dn) holdOk.push(k); else bad.push("押しっぱなしが 立たない "+k);
+          }
+        } }
+      clearHeld();
+      // ② 本体の キーの 道に 表の キーの 名まえが 直に 書かれて いない（＝抜け道 0）
+      var blk=t46BodySlice(T46_MK.k0, T46_MK.k1), leak=[];
+      if(blk==null) leak.push("しるしが 無い（測れないので FAIL）");
+      else { var kk=T.actionsDerived().keys;
+        for(i=0;i<kk.length;i++){ var q=kk[i];
+          if(blk.indexOf('"'+q+'"')>=0 || blk.indexOf("'"+q+"'")>=0) leak.push(q); } }
+      // ③ 変異注入＝表から「じどうで すすむ（c）」を 消すと c が 効かなく なる
+      T.actionsDrop("cruise");
+      var goneNoKey=(T.actionsDerived().keys.indexOf("c")<0);
+      var b0=!!cfg.autocruise; t46Press("c"); var goneNoAct=(!!cfg.autocruise===b0); cfg.autocruise=b0; syncCruiseUI();
+      // もどす（消した 行を 同じ 場所へ 入れなおす）
+      T.actionsAdd({ id:"cruise", name:"じどうで すすむ", icon:"🛩", kind:"tap",
+        keys:["c"], sheet:true, once:true, tap:"cruise", btn:"btn-cruise", touch:"tool", hide:true, when:"always" },
+        null, 14);
+      var snap1=t46Snap();
+      var backOk=(snap1.rows===snap0.rows)&&(snap1.keys===snap0.keys)&&(snap1.panel===snap0.panel)&&(snap1.hide===snap0.hide);
+      var b1=!!cfg.autocruise; t46Press("c"); var backAct=(!!cfg.autocruise!==b1); cfg.autocruise=b1; syncCruiseUI();
+      T.setBattle(bat0,false); T.battleReset(); tuiRestore(st);
+      d.push("表の キー "+T.actionsDerived().keys.length+"個＝押して たしかめた わざ "+worked+"/"+tried+
+             "・押している間の もの "+holdOk.length+"個（"+holdOk.join(" ")+"）だめ="+(bad.join(" ")||"なし"));
+      d.push("★本体の キーの 道に 直に 書かれた キーの 名まえ="+(leak.join(",")||"0個（＝抜け道 なし）"));
+      d.push("★変異注入: 表から「じどうで すすむ」を 1行 消す→表から 消えた="+goneNoKey+"・c が 効かなく なった="+goneNoAct+
+             " ／ もどした→表が 元どおり="+backOk+"・c が また 効く="+backAct);
+      return { pass:(bad.length===0)&&(leak.length===0)&&goneNoKey&&goneNoAct&&backOk&&backAct&&(worked===tried),
+               detail:d.join(" / ") };
+    }
+
+    // T46b: 盤が 表から 生えている＝★手で 並べた 操作ボタンが 0
+    //   ①置き場を あてる 道に、ボタンの 名まえが 1つも 書かれて いない（ならびを 回すだけ）
+    //   ②表の 行の 数と 実物の 四角の 数が 合う
+    //   ③変異注入＝表から 1行 消すと ボタンも 盤から 消える → かならず もどす（四角は 1文字も 変わらない）
+    //   ④弾37（§R22の 実測）と 390x844で 1pxも 同じ
+    function t_T46b(){
+      var T=window.__tenkyu, d=[], st=tuiSetup(390,844), snap0=t46Snap(), i;
+      var bat0=!!cfg.battle; T.setBattle(true,false); layoutTouchUI(390,844);
+      var r0=t46RectStr();
+      // ① 置き場を あてる 道に 名まえが 無い（★弾37では E.jump／E.view／E.atkM／E.atkR／E.peek と 手で 書いていた）
+      var src=String(layoutTouchUI), named=[/E\.jump\b/,/E\.view\b/,/E\.atkM\b/,/E\.atkR\b/,/E\.peek\b/], hand=[];
+      var nmTxt=["E.jump","E.view","E.atkM","E.atkR","E.peek"];
+      for(i=0;i<named.length;i++) if(named[i].test(src)) hand.push(nmTxt[i]);
+      // ② 表の 行の 数＝実物に 四角が 書かれた ものの 数
+      var D=T.actionsDerived(), fromTable=D.pad.length+D.menu.length+D.peek.length+D.panel.length;
+      var placed=0, R0=t46Rects();
+      for(i=0;i<T46_BTN.length;i++){ var v=R0[T46_BTN[i]];
+        if(v!=="なし" && v.split(",")[0]!=="" && v.split(",")[2]!=="") placed++; }
+      // ③ 変異注入＝「ちかくを ふる（⚔）」を 表から 消す
+      var dropped=T.actionsDrop("melee");
+      var padGone=(D.pad.indexOf("melee")>=0)&&(T.actionsDerived().pad.indexOf("melee")<0)&&
+                  (T.actionsDerived().pad.length===T46_N.pad-1);
+      var geo=padGeom(390,844), noSeat=(geo.atkM===undefined);
+      var mEl=document.getElementById("btn-atk-melee");
+      var stale=mEl?[mEl.style.left,mEl.style.top].join(","):"なし";
+      layoutTouchUI(390,844);
+      var stale2=mEl?[mEl.style.left,mEl.style.top].join(","):"なし";
+      var notMoved=(stale===stale2);   // 表から 消えた ボタンは もう 置きなおされない
+      // もどす（消した 行を 同じ 場所へ 入れなおす）
+      T.actionsAdd({ id:"melee", name:"ちかくを ふる", icon:"⚔", kind:"tap",
+        keys:["f"], sheet:true, mod:true, once:true, tap:"melee",
+        btn:"btn-atk-melee", touch:"pad:right", padKey:"atkM", when:"battle" }, null, dropped.at);
+      layoutTouchUI(390,844);
+      var r1=t46RectStr(), snap1=t46Snap();
+      var backOk=(r1===r0)&&(snap1.rows===snap0.rows)&&(snap1.pad===snap0.pad);
+      // ④ 弾37の 実測（§R22）と 1pxも 同じ
+      var P=padGeom(390,844), B=TUI.rects, wrong=[];
+      function same(nm,r,w){ if(!r||r.x!==w[0]||r.y!==w[1]||r.w!==w[2]||r.h!==w[3])
+        wrong.push(nm+"="+(r?[r.x,r.y,r.w,r.h].join(","):"なし")+"≠"+w.join(",")); }
+      same("🦘",P.jump,T46_DAN37_PAD.jump); same("👁",P.view,T46_DAN37_PAD.view);
+      same("⚔",P.atkM,T46_DAN37_PAD.atkM); same("✨",P.atkR,T46_DAN37_PAD.atkR);
+      same("☰",B.tools[0],T46_DAN37_PAD.menu);
+      T.setBattle(bat0,false); tuiRestore(st);
+      d.push("手で 並べた ボタン="+(hand.join(",")||"0個（置き場は ぜんぶ 表の ならびを 回すだけ）"));
+      d.push("表から 生える ボタン "+fromTable+"個（ひし形"+D.pad.length+"＋☰"+D.menu.length+"＋⊕"+D.peek.length+
+             "＋板の行"+D.panel.length+"）＝実物に 四角が 書かれた もの "+placed+"個");
+      d.push("★変異注入: ⚔を 1行 消す→ひし形から 消えた="+padGone+"・席も 無くなった="+noSeat+"・置きなおされない="+notMoved+
+             " ／ もどした→四角が 1文字も 同じ="+backOk);
+      d.push("★弾37（§R22の 実測）と 390x844で 完全一致="+(wrong.length===0)+"（ちがい="+(wrong.join(" ")||"なし")+"）");
+      return { pass:(hand.length===0)&&(fromTable===placed)&&padGone&&noSeat&&notMoved&&backOk&&(wrong.length===0),
+               detail:d.join(" / ") };
+    }
+
+    // T46c: 押しどころ 44px・重なり0・キーボードで 全部 とどく（弾27の 床を 表駆動でも 守る）
+    function t_T46c(){
+      var T=window.__tenkyu, d=[], st=tuiSetup(390,844), bad=[], rows=[], i, j, v;
+      var bat0=!!cfg.battle; T.setBattle(true,false);
+      var AA=T.actions();
+      function findById(id){ for(var q=0;q<AA.length;q++) if(AA[q].id===id) return AA[q]; return null; }
+      function findByBtn(b){ for(var q=0;q<AA.length;q++) if(AA[q].btn===b) return AA[q]; return null; }
+      for(v=0; v<T46_VPS.length; v++){
+        var W=T46_VPS[v][0], H=T46_VPS[v][1];
+        T.touchUiForce(true,W,H);
+        var R=TUI.rects, P=padGeom(W,H), D=T.actionsDerived(), set=[], mn=1e9;
+        for(i=0;i<D.pad.length;i++){ var a=findById(D.pad[i]); set.push([a.icon, P[a.padKey]]); }
+        for(i=0;i<D.menu.length;i++) set.push([findById(D.menu[i]).icon, R.tools[i]]);
+        for(i=0;i<set.length;i++){ var r=set[i][1];
+          if(!r){ bad.push(W+"x"+H+" "+set[i][0]+"＝四角が 無い"); continue; }
+          mn=Math.min(mn, r.w, r.h);
+          if(r.w<T46_TAP||r.h<T46_TAP) bad.push(W+"x"+H+" "+set[i][0]+" 44px わり("+r.w+"x"+r.h+")");
+          if(r.x<0||r.y<0||r.x+r.w>W||r.y+r.h>H) bad.push(W+"x"+H+" "+set[i][0]+" 画面の 外");
+          for(j=i+1;j<set.length;j++) if(set[j][1] && rectHit(r,set[j][1])) bad.push(W+"x"+H+" "+set[i][0]+"×"+set[j][0]+" 重なり");
+          if(rectHit(r,R.center)) bad.push(W+"x"+H+" "+set[i][0]+" まん中の 帯");
+        }
+        // 板の 行も 44pxの 床（ひらいた ときだけ 出る ものなので、常設の ものとは 分けて 見る＝弾27の 作法）
+        var SH=toolSheetLayout(W,H);
+        for(i=0;i<SH.rows.length;i++){ var rr=SH.rows[i];
+          if(rr.h<T46_TAP||rr.w<T46_TAP) bad.push(W+"x"+H+" 板の行"+i+" 44px わり("+rr.w+"x"+rr.h+")");
+          for(j=i+1;j<SH.rows.length;j++) if(rectHit(rr,SH.rows[j])) bad.push(W+"x"+H+" 板の行 重なり"); }
+        rows.push(W+"x"+H+":最小"+mn+"px");
+      }
+      // キーボードで 全部 とどく＝表から 生えた ボタンは ぜんぶ <button>・tabindex で 外されて いない・ことばが ある
+      T.touchUiForce(true,390,844);
+      var D2=T.actionsDerived(), all=[], reach=0, noReach=[];
+      for(i=0;i<D2.pad.length;i++) all.push(findById(D2.pad[i]));
+      for(i=0;i<D2.menu.length;i++) all.push(findById(D2.menu[i]));
+      for(i=0;i<D2.peek.length;i++) all.push(findById(D2.peek[i]));
+      for(i=0;i<D2.panel.length;i++) all.push(findByBtn(D2.panel[i]));
+      for(i=0;i<all.length;i++){ var aa=all[i], el=aa?document.getElementById(aa.btn):null;
+        if(el && el.tagName==="BUTTON" && el.tabIndex>=0 && ((el.getAttribute("aria-label")||"")+(el.textContent||"")).length>0) reach++;
+        else noReach.push(aa?aa.id:"?"); }
+      T.setBattle(bat0,false); tuiRestore(st);
+      d.push("9通りの 画面＝"+rows.join(" "));
+      d.push("44px わり・画面の 外・重なり・まん中の 帯="+(bad.join(" ")||"0件"));
+      d.push("キーボードで とどく "+reach+"/"+all.length+"（とどかない="+(noReach.join(",")||"なし")+"）");
+      return { pass:(bad.length===0)&&(noReach.length===0)&&(reach===all.length)&&(all.length===T46_N.pad+T46_N.menu+T46_N.peek+T46_N.panel),
+               detail:d.join(" / ") };
+    }
+
+    // T46d: ★PC不変＝キーの 対応が 弾37と 完全一致（テストの 中に 弾37の 対応表を 数として 持つ）
+    function t_T46d(){
+      var T=window.__tenkyu, d=[], bad=[], i;
+      var want=Object.keys(T46_DAN37_KEYS).sort(), got=T.actionsDerived().keys.slice().sort();
+      if(want.join(",")!==got.join(",")) bad.push("キーの ならびが ちがう: 弾37="+want.join(",")+" いま="+got.join(","));
+      for(i=0;i<want.length;i++){ var k=want[i], w=T46_DAN37_KEYS[k], a=T.actionOf(k);
+        if(!a){ bad.push(k+"＝表に 無い"); continue; }
+        var mine=[a.id, String(a.run), a.pd?1:0, a.auto?1:0, a.sheet?1:0, a.mod?1:0, a.once?1:0, a.dbl?1:0, String(a.up)];
+        var them=[w[0], String(w[1]), w[2], w[3], w[4], w[5], w[6], w[7], String(w[8])];
+        if(mine.join("|")!==them.join("|")) bad.push(k+": いま["+mine.join(",")+"]≠弾37["+them.join(",")+"]");
+      }
+      // ★ほんとうに 押して 見る＝⚙が ひらいている間の 止め方と Ctrl の 横取り しない ことも 実測
+      var st=tuiSetup(390,844), bat0=!!cfg.battle; T.setBattle(true,false); T.battleReset();
+      var live=[], b0=!!cfg.autocruise;
+      var lidOk=t46Sheet(true); t46Press("c"); var sheetBlocked=lidOk&&(!!cfg.autocruise===b0); t46Sheet(false);
+      cfg.autocruise=b0; syncCruiseUI();
+      var m0=T.atkStats().melee.use; t46Press("f",{ctrl:true}); var ctrlBlocked=(T.atkStats().melee.use===m0);
+      var m1=T.atkStats().melee.use; t46Press("f"); var plainWorks=(T.atkStats().melee.use>m1);
+      // ★押しっぱなしの くり返しでは 1回しか 出ない（once）
+      //   ★⚔では 測らない＝⚔には「つぎまでの 待ち」が あって、2回目が 待ちで 落ちたのか
+      //     くり返しで 落ちたのか 見分けが つかない（＝物差しに ならない）。待ちの 無い
+      //     オートクルーズ（c）で 測る＝2回 押しても 入切は 1回ぶんしか 進まない。
+      var c0=!!cfg.autocruise;
+      window.dispatchEvent(new KeyboardEvent("keydown",{key:"c",bubbles:true}));
+      window.dispatchEvent(new KeyboardEvent("keydown",{key:"c",bubbles:true}));
+      window.dispatchEvent(new KeyboardEvent("keyup",{key:"c",bubbles:true}));
+      var onceOk=(!!cfg.autocruise===!c0);   // 2回 出ていたら 元へ もどって しまう
+      cfg.autocruise=c0; syncCruiseUI();
+      // ★画面送りを 止める キーは 弾37と 同じ 5つ（本物の イベントで 見る）
+      var pdGot=[], ks=T.actionsDerived().keys;
+      for(i=0;i<ks.length;i++) if(t46Press(ks[i])) pdGot.push(ks[i]);
+      clearHeld();
+      var pdWant=[" ","arrowdown","arrowleft","arrowright","arrowup"];
+      var pdOk=(pdGot.slice().sort().join(",")===pdWant.slice().sort().join(","));
+      T.setBattle(bat0,false); T.battleReset(); tuiRestore(st);
+      live.push("⚙が ひらいている間は 効かない="+sheetBlocked);
+      live.push("Ctrl+F を 横取りしない="+ctrlBlocked+"（ただの F は 効く="+plainWorks+"）");
+      live.push("押しっぱなしで くり返さない="+onceOk);
+      live.push("画面送りを 止める キー "+pdGot.length+"個="+pdGot.join(" ")+"（弾37と 同じ="+pdOk+"）");
+      d.push("★弾37の 対応表 "+want.length+"キーと 突き合わせ: ちがい="+(bad.length?bad.join(" / "):"0件（完全一致）"));
+      d.push("実測: "+live.join(" ／ "));
+      return { pass:(bad.length===0)&&sheetBlocked&&ctrlBlocked&&plainWorks&&onceOk&&pdOk, detail:d.join(" / ") };
+    }
+
+    // T46e: ★1行 足せば 生える（拡張性の 実演）。かならず 元に もどす。
+    //   これが 通れば、以後の ジャンル追加（ねらう・うつ／はなす・えらぶ／うごかす・もどす）は
+    //   **表に 行を 足すだけ**に なる（盤を 手で 並べない＝§R33の 床）。
+    function t_T46e(){
+      var T=window.__tenkyu, d=[], st=tuiSetup(390,844);
+      layoutTouchUI(390,844);
+      var snap0=t46Snap(), r0=t46RectStr(), rows0=toolSheetLayout(390,844).rows.length;
+      var btn0=document.querySelectorAll("button").length, fired=0;
+      var row={ id:"tameshi", name:"ためしの わざ", icon:"◆", kind:"tap",
+                keys:["8"], sheet:true, once:true, tap:"tameshi",
+                btn:"btn-tameshi", touch:"tool", hide:true, when:"always" };
+      T.actionsAdd(row, function(){ fired++; }, null);
+      layoutTouchUI(390,844);
+      // ①PCの キーが 生えた（本当に 押して 出る）
+      var got=T.actionOf("8"), keyGrew=!!got && got.id==="tameshi";
+      t46Press("8");
+      var keyFires=(fired===1);
+      // ②スマホの ボタンが 生えた（実物の DOM＋置き場）
+      var nb=document.getElementById("btn-tameshi");
+      var SH1=toolSheetLayout(390,844), rows1=SH1.rows.length;
+      var btnGrew=!!nb && nb.tagName==="BUTTON" && nb.style.left!=="" && nb.style.width!=="";
+      var placedLast=!!nb && (nb.style.top===(SH1.rows[rows1-1].y+"px")) && (nb.style.left===(SH1.rows[rows1-1].x+"px"));
+      var sheetGrew=(rows1===rows0+1);
+      var d1=T.actionsDerived();
+      var listGrew=(d1.panel.length===T46_N.panel+1)&&(d1.hide.length===T46_N.hide+1)&&(d1.keys.length===T46_N.keys+1);
+      // ③押しどころの 床は 生えた ボタンにも かかる
+      var rr=SH1.rows[rows1-1], tapOk=(rr.h>=T46_TAP)&&(rr.w>=T46_TAP);
+      var ariaOk=!!nb && (nb.getAttribute("aria-label")||"")===row.name;
+      // ★かならず 元に もどす
+      T.actionsDrop("tameshi");
+      layoutTouchUI(390,844);
+      var snap1=t46Snap(), r1=t46RectStr(), btn1=document.querySelectorAll("button").length;
+      var back=(snap1.rows===snap0.rows)&&(snap1.keys===snap0.keys)&&(snap1.panel===snap0.panel)&&
+               (snap1.hide===snap0.hide)&&(r1===r0)&&(btn1===btn0)&&
+               (document.getElementById("btn-tameshi")===null)&&(T.actionOf("8")===null)&&
+               (toolSheetLayout(390,844).rows.length===rows0);
+      var f2=fired; t46Press("8"); var noFire=(fired===f2);
+      tuiRestore(st);
+      d.push("★1行 足した→PCの キーが 生えた="+keyGrew+"・押すと 出る="+keyFires+
+             " ／ スマホの ボタンが 生えた="+btnGrew+"・板の 行が "+rows0+"→"+rows1+"="+sheetGrew+
+             "・いちばん 下の 行に ついた="+placedLast+"・ならびも のびた="+listGrew);
+      d.push("生えた ボタンにも 床が かかる: 押しどころ "+rr.w+"x"+rr.h+"（44px 以上="+tapOk+"）ことば="+ariaOk);
+      d.push("★もどした→表も 盤も ボタンの 数("+btn0+")も 1文字も 元どおり="+back+"・8 は もう 効かない="+noFire);
+      return { pass:keyGrew&&keyFires&&btnGrew&&sheetGrew&&placedLast&&listGrew&&tapOk&&ariaOk&&back&&noFire,
+               detail:d.join(" / ") };
+    }
+
+    // T46f: 回帰帳簿＝既存 T1〜T45f が 1件も 余分に 落ちていない（★前の 網を ぜんぶ 見るので 必ず いちばん最後）
+    //   ＋ 5つの 環境の「既知の 落ち」の 表が 弾37と 完全一致（＝失敗IDの 集合が 動いていない）
+    function t_T46f(){
+      var need=["T1","T2","T2f","T2n","T3","T3c","T4","T5","T6","T7","T8","T9","T10","T11","T12","T13","T14",
+                "T15","T16","T17","T18","T19a","T19b","T19c","T19d","T20a","T20b","T20c","T20d","T20e",
+                "T21a","T21b","T21c","T21d","T21e","T21f","T21i","T21g","T22a","T22b","T22c",
+                "T23a","T23b","T23c","T23d","T23e","T25a","T25b","T25c","T25d","T25e","T25f",
+                "T24a","T24b","T24c","T24d","T24e","T24f","T26a","T27a","T27b","T27c","T27d","T27e","T27f",
+                "T28a","T28b","T28c","T28d","T28e","T28f","T29a","T29b","T29c","T29d","T29e",
+                "T30a","T30b","T30c","T30d","T30e","T31a","T31b","T31c","T31d","T31e","T31f",
+                "T32a","T32b","T32c","T32d","T32e","T33a","T33b","T33c","T33d","T33e","T33f",
+                "T34a","T34b","T34c","T34d","T34e","T34f","T35a","T35b","T35c","T35d","T35e","T35f",
+                "T36a","T36b","T36c","T36d","T36e","T36f","T37a","T37b","T37c","T37d","T37e","T37g","T37h","T37f",
+                "T38a","T38b","T38c","T38d","T38e","T39a","T39b","T39c","T39d","T39e","T39f",
+                "T40a","T40b","T40c","T40d","T40e","T40f","T41a","T41b",
+                "T42a","T42b","T42c","T42d","T42e","T42f",
+                "T43a","T43b","T43c","T43d","T43e","T43f",
+                "T44a","T44b","T44c","T44d","T44e","T44f",
+                "T45a","T45b","T45c","T45d","T45e","T45f",
+                "T46a","T46b","T46c","T46d","T46e"];
+      var missing=[], failed=[], skipped=[], i, j;
+      for(i=0;i<need.length;i++){
+        var r=null;
+        for(j=0;j<_ranResults.length;j++){ if(_ranResults[j].id===need[i]){ r=_ranResults[j]; break; } }
+        if(!r) missing.push(need[i]);
+        else if(r.skip) skipped.push(need[i]);
+        else if(!r.pass) failed.push(need[i]);
+      }
+      var known=regKnown(failed);
+      var realFails=failed.filter(function(x){ return known.indexOf(x)<0; });
+      var T=window.__tenkyu;
+      // ★5つの 環境の「既知の 落ち」の 表が 弾37と 1文字も 同じ（＝失敗IDの 集合を 動かしていない）
+      var regBad=[], ks=Object.keys(T45_DAN36.reg);
+      if(Object.keys(REG_BASE).length!==ks.length) regBad.push("環境の 数");
+      for(i=0;i<ks.length;i++){
+        var a=(REG_BASE[ks[i]]||[]).slice().sort().join(","), b=T45_DAN36.reg[ks[i]].slice().sort().join(",");
+        if(a!==b) regBad.push(ks[i]+":"+a+"≠"+b); }
+      if(REG_CASCADE.join(",")!==T45_DAN36.cascade.join(",")) regBad.push("ぶらさがり");
+      var regOk=(regBad.length===0);
+      // ★保存の キーは 1文字も 変えていない
+      var keyOk=(CFG_KEY==="tenkyu_cfg_v1")&&(SAVE_KEY==="tenkyu_save_v1");
+      // ★毎フレームの 道は 表を 1度も 読まない＝毎フレームJSの 増分 0（本文の 文字で 見る＝fail-loud）
+      var per=String(frame)+String(stepGrounded);
+      var perOk=(per.indexOf("ACTIONS")<0)&&(per.indexOf("KEY_ACT")<0)&&(per.indexOf("ACT_DO")<0)&&
+                (per.indexOf("PAD_LIST")<0)&&(per.indexOf("actionsBuild")<0)&&(per.indexOf("actBtn")<0);
+      // ★表は ひらいた ときに 1回 組むだけ・乱数と 時計を つかっていない
+      var tblOk=(String(actionsBuild).indexOf("Math.random")<0)&&(String(actionsBuild).indexOf("Date.now")<0)&&
+                (JSON.stringify(T.actions()).indexOf("Math.random")<0)&&
+                (typeof KEY_ACT==="object")&&(KEY_ACT!==null);
+      // ★数は 弾37の 実測どおり（意味の 数・キーの 数・席の 数）
+      var D=T.actionsDerived(), nBad=[];
+      if(T.actions().length!==T46_N.actions) nBad.push("意味の 数 "+T.actions().length+"≠"+T46_N.actions);
+      if(D.keys.length!==T46_N.keys) nBad.push("キーの 数 "+D.keys.length+"≠"+T46_N.keys);
+      if(D.pad.length!==T46_N.pad) nBad.push("ひし形 "+D.pad.length+"≠"+T46_N.pad);
+      if(D.menu.length!==T46_N.menu) nBad.push("☰ "+D.menu.length+"≠"+T46_N.menu);
+      if(D.peek.length!==T46_N.peek) nBad.push("⊕ "+D.peek.length+"≠"+T46_N.peek);
+      if(D.panel.length!==T46_N.panel) nBad.push("板の行 "+D.panel.length+"≠"+T46_N.panel);
+      if(D.hide.length!==T46_N.hide) nBad.push("かくす "+D.hide.length+"≠"+T46_N.hide);
+      if(D.hide.length!==TUI.HIDE_N) nBad.push("かくす 数が 宣言(TUI.HIDE_N)と ちがう");
+      if(D.menu.length!==TUI.TB_N) nBad.push("いつも 出ている 道具の 数が 宣言(TUI.TB_N)と ちがう");
+      if(D.panel.join(",")!==PANEL_IDS.join(",")) nBad.push("板の ならびが 表と ちがう");
+      if(D.hide.join(",")!==TOOL_IDS.join(",")) nBad.push("かくす ならびが 表と ちがう");
+      var numOk=(nBad.length===0);
+      // ★要素台帳が 実測で 更新されている（増分は ぜんぶ 0）
+      var L=T.elements(), owner=null;
+      for(i=0;i<L.elements.length;i++) if(L.elements[i].id==="tui") owner=L.elements[i];
+      var ledOk=!!owner && !!owner.ops &&
+                (owner.ops.actions===T.actions().length)&&(owner.ops.keys===D.keys.length)&&
+                (owner.ops.pad===D.pad.length)&&(owner.ops.panel===D.panel.length)&&(owner.ops.hide===D.hide.length)&&
+                (owner.ops.keyMap.length===D.keys.length)&&
+                (owner.ops.trianglesAdded===0)&&(owner.ops.drawCallsAdded===0)&&
+                (owner.ops.gpuBytesPerFrameAdded===0)&&(owner.ops.jsMsPerFrameAdded===0)&&
+                (owner.ops.grownByTable===0);   // ★本番では 1つも 生やしていない（生えるのは T46e の あいだだけ）
+      // ★絵も 音も 1バイトも 足していない／ポストエフェクト 0
+      var noAssetOk=(document.querySelectorAll("script[src]").length===1)&&
+                    (JSON.stringify(T.actions()).indexOf("data:")<0)&&(JSON.stringify(T.actions()).indexOf("http")<0);
+      var noFboOk=(String(drawScene).indexOf("createFramebuffer")<0);
+      return { pass:(missing.length===0)&&(realFails.length===0)&&regOk&&keyOk&&perOk&&tblOk&&numOk&&ledOk&&noAssetOk&&noFboOk,
+        detail:"登録もれ="+(missing.join(",")||"なし")+" 既知以外の失敗="+(realFails.join(",")||"なし")+
+               " 既知の失敗="+(failed.join(",")||"なし")+" 判定不能="+(skipped.join(",")||"なし")+
+               " ／ ★5つの 環境の 既知の 落ちの 表＝弾37と 完全一致="+regOk+"（合わない="+(regBad.join(" ")||"なし")+"）"+
+               " 保存キーは 不変="+keyOk+
+               " ★毎フレームの 道は 表を 1度も 読まない（毎フレームJSの 増分 0）="+perOk+
+               " 表は ひらいた ときに 1回 組むだけ・乱数と 時計なし="+tblOk+
+               " 数は 弾37どおり="+numOk+"（合わない="+(nBad.join(" ")||"なし")+"）"+
+               " 要素台帳が 実測で 更新（三角形・えがく回数・毎フレーム転送・毎フレームJS の 増分 ぜんぶ 0）="+ledOk+
+               " 絵・音を 足していない="+noAssetOk+" ポストエフェクト 0="+noFboOk+
+               " ／ ★弾38で 動かした 既存テストの 判定基準＝0個（T45a〜T45f は 1文字も 書きかえていない）" };
+    }
+//★HW38-END
     window.__tenkyu.runAll = async function(){
       if(!window.__testErrCount){ window.__testErrCount=0;
         var _ce=console.error.bind(console);
@@ -16627,6 +17220,12 @@
       await run("T45a",t_T45a); await run("T45b",t_T45b); await run("T45c",t_T45c);
       await run("T45d",t_T45d); await run("T45e",t_T45e); await run("T45f",t_T45f);
 //★HW37-RUN-END
+//★HW38-RUN-BEGIN
+      // 弾38 §R33（操作を「意味」で 持つ。★T46f は 前の 網を ぜんぶ 見るので 必ず いちばん最後。
+      //   T45f を ふくむ 前の 網の 判定基準は 1ビットも 動かしていない＝T45f の 後ろに 置く）
+      await run("T46a",t_T46a); await run("T46b",t_T46b); await run("T46c",t_T46c);
+      await run("T46d",t_T46d); await run("T46e",t_T46e); await run("T46f",t_T46f);
+//★HW38-RUN-END
       // 復元＝本当のプレイヤー進行・設定・カメラを一切壊さない
       swooshCount=snapSwoosh.count; swooshLast=snapSwoosh.last;   // persistSave()のnearMiss焼き込み前に実行順を戻す
       save=snapSave; persistSave(); syncVisitedBuffer(); completedConstellations=recomputeCompletedConstellations(); buildLines();
