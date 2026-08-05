@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-08-05 10:01:07",
+  "generated_at": "2026-08-05 10:07:07",
   "gpu": {
     "occupant": "qwen3_variance（opus5-20260805-qwen3）",
-    "note": "経過134s / 目安あと約47分",
+    "note": "経過494s / 目安あと約41分",
     "vram_used_gb": 9.9,
     "vram_total_gb": 15.9,
-    "util": 97,
+    "util": 96,
     "lock": {
       "locked": true,
       "holder": {
@@ -13,7 +13,7 @@
         "session": "opus5-20260805-qwen3",
         "job": "qwen3_variance",
         "started_at": "2026-08-05T09:58:53+0900",
-        "age_sec": 134,
+        "age_sec": 494,
         "alive": true,
         "est_minutes": 50
       },
@@ -49,7 +49,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-05 09:58",
+    "updated": "2026-08-05 10:04",
     "current": null
   },
   "queue": [
@@ -136,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 43
+    "push_today": 44
   },
   "ai_works": [
     {
@@ -213,8 +213,8 @@
     }
   ],
   "resources": {
-    "cpu_pct": 15,
-    "mem_pct": 44,
+    "cpu_pct": 17,
+    "mem_pct": 45,
     "mem_total_gb": 31.7,
     "disk_used_gb": 395.0,
     "disk_free_gb": 1466.7
