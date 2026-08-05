@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-08-05 10:49:07",
+  "generated_at": "2026-08-05 10:55:09",
   "gpu": {
     "occupant": "gate_vram_probe（brain-gatefix）",
-    "note": "排他ロック保持中 / 経過598s",
+    "note": "排他ロック保持中 / 経過958s",
     "vram_used_gb": 3.2,
     "vram_total_gb": 15.9,
     "util": 0,
@@ -13,7 +13,7 @@
         "session": "brain-gatefix",
         "job": "gate_vram_probe",
         "started_at": "2026-08-05T10:39:09+0900",
-        "age_sec": 598,
+        "age_sec": 958,
         "alive": true,
         "est_minutes": null
       },
@@ -49,7 +49,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-05 10:46",
+    "updated": "2026-08-05 10:52",
     "current": null
   },
   "queue": [
@@ -136,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 51
+    "push_today": 52
   },
   "ai_works": [
     {
@@ -213,7 +213,7 @@
     }
   ],
   "resources": {
-    "cpu_pct": 7,
+    "cpu_pct": 2,
     "mem_pct": 43,
     "mem_total_gb": 31.7,
     "disk_used_gb": 395.2,
