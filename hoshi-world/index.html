@@ -195,6 +195,21 @@
   #atk-hud .ab{ width:52px; height:6px; border-radius:3px; background:rgba(255,255,255,.18); overflow:hidden; }
   #atk-hud .ab i{ display:block; height:100%; width:100%; background:var(--accent); transition:width .10s linear; }
   @media (pointer: fine){ #atk-hud{ left:14px; bottom:82px; transform:none; } }
+  /* 弾40 §R36: ゲーム内時計の じかん帯＝⚡❤⚔と まったく 同じ 様式の 細い表示 1つ。
+     ★色だけで 伝えない＝<☀🌙の 形>＋<棒の 長さ(1日の 進み)>＋<「◯にちめ」の 数字と ことば> の 3つが 同じことを 言う。
+       ことばは #wk-word（読み上げ専用）にも 出す。
+     ★点滅を 1つも 作らない（WCAG 2.3.1）＝棒は「幅が すうっと のびる」だけ・入切する 部品は 無い。
+     ★siege 欄の 無い 世界では 一度も show に ならない＝弾39までの 画面と 1ビットも 同じ。 */
+  #wk-hud{ position:fixed; left:50%; transform:translateX(-50%); bottom:364px; z-index:6;
+    display:none; align-items:center; gap:8px; padding:5px 10px; border-radius:11px;
+    background:var(--panel); border:1px solid var(--line); backdrop-filter:blur(4px);
+    font-size:12px; color:var(--fg); pointer-events:none; }
+  #wk-hud.show{ display:flex; }
+  #wk-hud .num{ font-weight:700; font-variant-numeric:tabular-nums; min-width:44px; text-align:right; }
+  #wk-icon{ font-size:13px; }
+  #wk-bar{ flex:1 1 auto; width:80px; height:6px; border-radius:3px; background:rgba(255,255,255,.18); overflow:hidden; }
+  #wk-bar i{ display:block; height:100%; width:0%; background:var(--accent); transition:width .12s linear; }
+  @media (pointer: fine){ #wk-hud{ left:14px; bottom:116px; transform:none; } }
   /* 弾25 §R20: スマホの ⚔ふる／✨うつ。★🦘と まったく 同じ 作り（44px床を こえる 56×56・タップ専用）。
      置き場は touchLayout が 決める（9通りの 画面で 重なり0を §G T34d が 機械で 見張る）。
      ⚔たたかう を 切ると display:none＝押せる ものが 1つも 出ない。 */
@@ -441,6 +456,15 @@
   <b class="ic" aria-hidden="true">✨</b><div class="ab" aria-hidden="true"><i id="atk-r-bar"></i></div>
   <b class="num" id="atk-r-num" aria-hidden="true">24</b>
   <p class="sr-say" id="atk-word" role="status" aria-live="polite">ふれます・うてます</p>
+</div>
+<!-- 弾40 §R36: ゲーム内時計の じかん帯。★台帳に siege 欄の ある 世界でだけ show が つく。
+     siege の 無い 世界では この行は 一度も 出ない＝弾39までと 同じ 画面。 -->
+<div id="wk-hud">
+  <b id="wk-icon" aria-hidden="true">☀</b>
+  <b class="num" id="wk-day" aria-hidden="true">1にちめ</b>
+  <div id="wk-bar" aria-hidden="true"><i id="wk-bar-in"></i></div>
+  <b id="wk-phase" aria-hidden="true">ひる</b>
+  <p class="sr-say" id="wk-word" role="status" aria-live="polite">ひる です</p>
 </div>
 <!-- 弾25 §R20: スマホの 攻撃ボタン。どちらも タップ専用（押しっぱなし 不要）＝
      右親指が 視点スティックを 一瞬 はなれるだけで 撃てる。PCでは 出ない（F／R キー）。 -->
@@ -776,7 +800,7 @@
   // ★下の 64文字は「焼いた ときの 自分の すがた」。build.py が 0 を 64個 置いた ところへ 書きこむ。
   //   ＝読む がわは その 64文字を 0 に もどして sha256 を とれば、同じ 数に なる。
   //   これで「いま 動いている この ファイルが、源から 焼いた ままか」を 機械で 見張れる（T41a）。
-  var HW_SELF_SHA="9c532f0a6c2f81759d30674da2d45095a76d85735e3e617a8fe8cd23bf5913ae";
+  var HW_SELF_SHA="dd6a486753879eeb47de053c4f64012a24c5755dce1c1de6fa1bf6230474cd2b";
   try{ window.HW_SELF_SHA=HW_SELF_SHA; }catch(e){}   // 人が コンソールで 見られる ように（機能には つかわない）
 //★HW33A-END
   // 干場要望「地上から飛べるように」＝セーブが一度も無い初回起動の時だけ、地面のある世界の低空スタートにする。
@@ -3760,6 +3784,10 @@
     //   ★人の えらび（cfg.battle）は さわらない＝世界が ONでも 人は OFFに できるし、
     //     たたかいの 無い 世界から もどれば その ままの 入切で 遊べる。
     ENVS.field.battle = !!P.battle;
+    // 弾40 §R36: ゲーム内時計＝台帳の siege 欄の **有無だけ** を 見る（世界の id は 見ない＝黄信号は そのまま）。
+    //   siege の 無い 世界では 時計を 切って もどすだけ＝空も HUD も 弾39までと 1ビットも 同じ。
+    if(wclockOn) wclockStore();   // まえの 世界が 時計の ある 世界なら、日数と 時刻を 書きとめてから うつる
+    wclockApply(P);
     if(ENVID==="field"){
       gl.clearColor(ENV.clear[0], ENV.clear[1], ENV.clear[2], 1);
       wpRebuild();
@@ -3790,6 +3818,113 @@
     return P.id;
   }
   // ================= 弾36 ここまで（つづきは 🌀の 板・⚙の 入切） =================
+
+  // ================= 弾40 §R36: ゲーム内時計と 昼夜（襲撃の世界の 土台） =================
+  // ★干場の 発注（2026-08-05）＝「決められた 時間ごとに 拠点が 襲われる 世界」（SPEC_HW_WORLD_SIEGE §3.1）。
+  //   この弾で 作るのは **時計だけ**＝もちもの・つくる・襲撃は あとの 弾（設計書 §6 の 弾割り）。
+  // ★契約の 守り方（§R31）＝本体は 台帳の **siege 欄の 有無だけ** を 見る。世界の id は 見ない
+  //   （T45d の 黄信号は そのまま 見張る）。siege の 無い 世界では wclockOn が false のまま＝
+  //   毎フレームは boolean を 1つ 見て 帰るだけ・空も HUD も 弾39までと 1ビットも 同じ。
+  // ★空の 変え方＝**新しい シェーダー 0・ドローコール 増分 0・毎フレームGPU転送 増分 0**。
+  //   えがく 直前に もともと 毎フレーム わたしている 数（clear／fog の 色・dome.sun の 向き）を
+  //   時刻で 補間して 書きかえるだけ（uniform は 弾11から 毎フレーム 送っている＝送る 数は ふえない）。
+  // ★書きかえるのは **写し**＝siege の 世界に 入る とき clear/fog/dome を 写して から つかう。
+  //   台帳の 配列には 指 1本 ふれない＝siege の 無い 世界へ もどれば かならず 台帳の 数そのもの。
+  // ★時計は rAF の dt積算（frame() と 同じ 作法）。壁の 時計は つかわない（決定論の 床・S8）。
+  var WCLOCK = {
+    DAY_END:  0.625,   // ✎ 昼の おわり（1日の 62.5%＝daySec 240 なら 150秒）
+    DUSK_END: 0.75,    // ✎ 夕の おわり＝夜の はじまり（75%＝180秒。夕は 30秒）
+    DAWN_LEN: 0.125,   // ✎ 朝がえりの ながさ（夜の おわりがわ 12.5%＝30秒かけて 空が 昼へ もどる）
+    NIGHT_MUL: 0.15,   // ✎ 夜の くらさ（clear/fog の 色に かける 数。0.15＝昼の 15%の 明るさ）
+    SUN_NIGHT_Y: -0.55 // ✎ 夜の 太陽の たかさ（地平線の 下へ しずむ）
+  };
+  var wclockOn=false;          // siege の ある 世界に いるか（frame() は この boolean 1つしか 見ない）
+  var wclockSpec=null;         // いまの 世界の siege 欄の 写し（毎フレーム 台帳を 読まない ため）
+  var wclockDay=1, wclockT=0;  // ☀何にちめ・その日の 経過秒（保存の 出入りは save.siege）
+  var wclockBase=null;         // 昼の 空の もとの 数（clear/fog/dome.sun）＝補間の 出どころ
+  var wclockBlendLast=-1;      // 空を 塗った ときの 混ぜ具合（変わった ときだけ 塗り直す）
+  // 混ぜ具合＝昼 0 → 夕で 0→1 → 夜 1 → 朝がえりで 1→0。
+  //   ★両はしが 0 で つながる＝日づけが かわる 瞬間に 空が 飛ばない（純関数＝テストが 直接 たたける）。
+  function wclockBlendAt(u){
+    if(u<WCLOCK.DAY_END) return 0;
+    if(u<WCLOCK.DUSK_END) return (u-WCLOCK.DAY_END)/(WCLOCK.DUSK_END-WCLOCK.DAY_END);
+    var a=1-WCLOCK.DAWN_LEN;
+    if(u<a) return 1;
+    return 1-(u-a)/WCLOCK.DAWN_LEN;
+  }
+  function wclockPhaseAt(u){ return (u<WCLOCK.DAY_END)?"hiru":(u<WCLOCK.DUSK_END)?"yuu":"yoru"; }
+  // 日数と 時刻を 保存へ 書きとめる。★書くのは「日が かわった とき」「世界を はなれる とき」
+  //   「画面を とじる とき」の 3回だけ＝毎フレーム 書かない（弾4からの 作法）。
+  //   bestDay は この弾では 器だけ 用意（ふやす しくみは 弾43の 襲撃と いっしょに 入る）。
+  function wclockStore(){
+    if(!wclockOn) return;
+    if(!save.siege) save.siege={ day:1, t:0, bestDay:0 };
+    save.siege.day=wclockDay; save.siege.t=wclockT;
+    persistSave();
+  }
+  // 世界に あてる（wpApply から 呼ばれる）。siege が 無ければ ぜんぶ 切って もどるだけ。
+  function wclockApply(P){
+    var S=P.siege;
+    if(!S){ wclockOn=false; wclockSpec=null; wclockBase=null; wclockBlendLast=-1; updateWkHud(); return; }
+    wclockSpec={ daySec:+S.daySec, raidEvery:(+S.raidEvery)|0, smallRaid:!!S.smallRaid, graceDays:(+S.graceDays)|0 };
+    // ★昼の 空を 写す＝台帳の 配列は 書きかえない（もどれば かならず 台帳の 数に もどる）。
+    //   dome は sun だけ 写しに する（zen/hor/low/sunc は この弾では さわらない＝設計書 §3.1 の とおり）。
+    wclockBase={ clear:P.clear.slice(), fog:P.fog.slice(), sun:P.dome.sun.slice() };
+    ENVS.field.clear=P.clear.slice(); ENVS.field.fog=P.fog.slice();
+    ENVS.field.dome={ zen:P.dome.zen, hor:P.dome.hor, low:P.dome.low, sun:P.dome.sun.slice(), sunc:P.dome.sunc };
+    var sv=(save&&save.siege)||{ day:1, t:0, bestDay:0 };
+    wclockDay=Math.max(1,(+sv.day)||1);
+    wclockT=Math.max(0, Math.min((+sv.t)||0, wclockSpec.daySec-1e-3));   // 閉じて 開いても つづきから（§5）
+    wclockOn=true; wclockBlendLast=-1;
+    wclockStep(0);   // その場で 空と HUD を いまの 時刻に 合わせる
+  }
+  // 毎フレームの 1歩（★frame() は wclockOn の boolean を 1つ 見て 呼ぶだけ）
+  function wclockStep(dt){
+    if(!wclockOn || ENVID!=="field") return;
+    wclockT+=dt;
+    var S=wclockSpec;
+    if(wclockT>=S.daySec){
+      wclockT-=S.daySec; wclockDay++;
+      if(wclockT>=S.daySec) wclockT=S.daySec-1e-3;   // dt は 0.05 で 頭打ち＝ふつうは 来ない 番人
+      wclockStore();                                  // ★日が かわった ときだけ 書く
+    }
+    var u=wclockT/S.daySec, b=wclockBlendAt(u);
+    if(wclockBlendLast<0 || Math.abs(b-wclockBlendLast)>=0.004){   // ✎ 塗り直しは 変わった ときだけ（およそ250段）
+      wclockBlendLast=b;
+      var k=1-b*(1-WCLOCK.NIGHT_MUL), B=wclockBase;
+      var C=ENVS.field.clear, F=ENVS.field.fog, SU=ENVS.field.dome.sun;
+      C[0]=B.clear[0]*k; C[1]=B.clear[1]*k; C[2]=B.clear[2]*k;
+      F[0]=B.fog[0]*k; F[1]=B.fog[1]*k; F[2]=B.fog[2]*k;          // こさ(F[3])は さわらない
+      SU[1]=B.sun[1]*(1-b)+WCLOCK.SUN_NIGHT_Y*b;                   // 太陽は しずむ（左右は そのまま）
+      gl.clearColor(C[0],C[1],C[2],1);
+    }
+    updateWkHud();
+  }
+  // ---------- HUD の じかん帯（⚡❤⚔と 同じ 様式・同じ ふた hudOn("fly")） ----------
+  // ★siege の 無い 世界では want が かならず false＝一度も show に ならない（弾39までの 画面の まま）。
+  //   書きかえは 変わった ときだけ（弾18の 作法＝かくしている 間は DOM を 1回も さわらない）。
+  var _wkEl=null,_wkIconEl=null,_wkDayEl=null,_wkBarEl=null,_wkPhaseEl=null,_wkWordEl=null;
+  var _wkShown=null,_wkDayShown=0,_wkPctShown=-1,_wkPhaseShown="";
+  function updateWkHud(){
+    if(!_wkEl){ _wkEl=document.getElementById("wk-hud"); _wkIconEl=document.getElementById("wk-icon");
+      _wkDayEl=document.getElementById("wk-day"); _wkBarEl=document.getElementById("wk-bar-in");
+      _wkPhaseEl=document.getElementById("wk-phase"); _wkWordEl=document.getElementById("wk-word"); }
+    if(!_wkEl) return;
+    var want = wclockOn && ENVID==="field" && hudOn("fly");
+    if(_wkShown!==want){ _wkShown=want; _wkEl.classList.toggle("show", want); }
+    if(!want) return;
+    var u=wclockT/wclockSpec.daySec, ph=wclockPhaseAt(u);
+    if(_wkDayShown!==wclockDay){ _wkDayShown=wclockDay; _wkDayEl.textContent=wclockDay+"にちめ"; }
+    var pct=Math.round(u*100);
+    if(pct!==_wkPctShown){ _wkPctShown=pct; _wkBarEl.style.width=pct+"%"; }
+    if(_wkPhaseShown!==ph){ _wkPhaseShown=ph;
+      _wkIconEl.textContent=(ph==="yoru")?"🌙":"☀";
+      _wkPhaseEl.textContent=(ph==="hiru")?"ひる":(ph==="yuu")?"ゆうがた":"よる";
+      // ★夕は「もうすぐ よるが きます」＝やさしい 日本語で つぎに 起きる ことを 先に 言う（設計書 §2）
+      _wkWordEl.textContent=(ph==="hiru")?"ひる です":(ph==="yuu")?"もうすぐ よるが きます":"よる です";
+    }
+  }
+  // ================= 弾40 ここまで（siege 欄を 持つ 世界は まだ 台帳に 無い＝弾44で p4 を 足す） =================
 
   // ================= 弾24 §R19: 敵と 戦闘の 芯（★改訂後の 不変条件5の 実装） =================
   // ★この かたまりの 一番大事な 約束は「⚔たたかう を 切れば、弾23と まったく 同じ 世界に なる」ことである。
@@ -5258,6 +5393,10 @@
   window.addEventListener("pagehide", clearHeld);
   window.addEventListener("pointercancel", clearHeld);   // 電話の着信・システムのジェスチャなどで指が奪われた時
   document.addEventListener("visibilitychange", function(){ if(document.hidden) clearHeld(); });
+  // 弾40 §R36: 画面を とじる とき・かくれる とき、ゲーム内時計の 日数と 時刻を 書きとめる
+  //   （「閉じて 開くと つづきから」＝設計書 §5。siege の 無い 世界では wclockStore は 何も しない）。
+  window.addEventListener("pagehide", function(){ wclockStore(); });
+  document.addEventListener("visibilitychange", function(){ if(document.hidden) wclockStore(); });
   // 弾19 §R16: ▲▼を 撤去したので holdBtn（押しっぱなしの 器）も つかう相手が いなくなった＝まるごと 外した。
   // 弾16 §R14: スマホの🦘＝入切式（弾12は holdBtn で 押しっぱなしだった）。押し時間の判定は 弾12と同じ1本を通す。
   (function(){ var b=document.getElementById("btn-jump"); if(!b) return;
@@ -5592,7 +5731,9 @@
 
   // ---------- 弾4: セーブ基盤+今日の航路（§C-3/§C-4） ----------
   var SAVE_KEY = "tenkyu_save_v1";
-  function defaultSave(){ return { v:1, visited:{}, questDay:null, questDone:[false,false,false], questTotal:0, rankXp:0, nearMiss:0, bests:{} }; }
+  // 弾40 §R36: siege＝襲撃の 世界の 袋（日数・その日の 経過秒・最長記録の 器）。キーの 名まえは 不変。
+  //   ふるい 保存（siege 項目なし）は 初期値で 読める（下の loadSave が ならす）＝保存は 1つも 壊れない。
+  function defaultSave(){ return { v:1, visited:{}, questDay:null, questDone:[false,false,false], questTotal:0, rankXp:0, nearMiss:0, bests:{}, siege:{ day:1, t:0, bestDay:0 } }; }
   function loadSave(){
     try{
       var raw = localStorage.getItem(SAVE_KEY); if(!raw) return defaultSave();
@@ -5606,7 +5747,10 @@
         questTotal: (+obj.questTotal)||0,
         rankXp: (+obj.rankXp)||0,
         nearMiss: (+obj.nearMiss)||0,
-        bests: (obj.bests && typeof obj.bests==="object") ? obj.bests : {}
+        bests: (obj.bests && typeof obj.bests==="object") ? obj.bests : {},
+        // 弾40 §R36: 欠けていれば 初期値・マイナスや 文字は ならす（bestDay は「絶対に 減らさない」器＝ふやす しくみは 弾43）
+        siege: (function(s){ if(!s || typeof s!=="object") s={};
+          return { day: Math.max(1, (+s.day)||1), t: Math.max(0, (+s.t)||0), bestDay: Math.max(0, (+s.bestDay)||0) }; })(obj.siege)
       };
     }catch(e){ console.warn("tenkyu save: 読み込みに失敗（fail-open・初期値でつづける）", e); return defaultSave(); }
   }
@@ -5751,6 +5895,7 @@
     if(typeof updateFlyHud==="function") updateFlyHud();   // 弾12 §R10: とぶ ちから も同じ⚙で 出す/止める
     if(typeof updateHpHud==="function") updateHpHud();     // 弾24 §R19: ❤いのち も ⚡と 同じ ふたで 出す/止める
     if(typeof updateAtkHud==="function") updateAtkHud();   // 弾25 §R20: ⚔/✨の つぎまで も 同じ ふた
+    if(typeof updateWkHud==="function") updateWkHud();     // 弾40 §R36: じかん帯 も 同じ ふた
     applyMapVisibility();      // 弾18: ミニマップ
     applyToolsVisibility();    // 弾18: 道具ボタン7個＋⊕
   }
@@ -7292,6 +7437,18 @@
       tris:{ terrain:trTris, village:vlTris, boxes:vlCount } }; },
     worldGo:function(id){ return wpGo(id); },
     worldApply:function(id){ return wpApply(id); },
+    // ---------- 弾40 §R36のテスト用フック（ゲーム内時計） ----------
+    wclock:function(){ var u=(wclockOn&&wclockSpec)?(wclockT/wclockSpec.daySec):0;
+      return { on:wclockOn, day:wclockDay, t:wclockT,
+        spec:wclockSpec?Object.assign({},wclockSpec):null,
+        base:wclockBase?{ clear:wclockBase.clear.slice(), fog:wclockBase.fog.slice(), sun:wclockBase.sun.slice() }:null,
+        blend:wclockOn?wclockBlendAt(u):0, phase:wclockOn?wclockPhaseAt(u):null }; },
+    wclockSet:function(day,t){ if(!wclockOn) return null;
+      wclockDay=Math.max(1,day|0); wclockT=Math.max(0,+t||0); wclockBlendLast=-1; wclockStep(0);
+      return { day:wclockDay, t:wclockT }; },
+    wclockConsts:function(){ return Object.assign({},WCLOCK); },
+    wclockBlendAt:function(u){ return wclockBlendAt(+u); },
+    wclockStoreNow:function(){ wclockStore(); return !!wclockOn; },
     worldRebuild:function(){ return wpRebuild(); },
     worldsOn:function(v, persist){ return setWorldsOn(v, !!persist); },
     warpConsts:function(){ return Object.assign({},WARP); },
@@ -7885,6 +8042,9 @@
     // 弾24 §R19: ★敵と いのち。⚔を 切っていれば この中で if を 1つ 通って すぐ 帰る
     //   ＝弾23の 毎フレームの JS と 1ビットも 変わらない（§G T33a／既存4環境も ENV.battle が 無いので 同じ道）。
     stepBattle(dt);
+    // 弾40 §R36: ゲーム内時計。siege欄の 無い 世界（と 既存の 4つの 世界）では この boolean を 1つ 見て 帰るだけ
+    //   ＝毎フレームJSの 増分は それだけ（台帳は ここでは 読まない）。
+    if(wclockOn) wclockStep(dt);
     var _logicRaw = performance.now()-_t0;   // 弾13: なましていない生値（分布を見るのに使う。logicMs自体は従来どおりのなまし）
     logicMs += (_logicRaw-logicMs)*0.1;
     // 弾15 §R13: ★「かんがえる(JS)」だけの時間を ためていく。えがく仕事は 1ミリも 入っていない。
@@ -17475,6 +17635,285 @@
                " ／ ★弾39で 動かした 既存テストの 判定基準＝0個（T45a〜T46f は 1文字も 書きかえていない）" };
     }
 //★HW39-END
+//★HW40-BEGIN
+    // ---------- 弾40 §R36: ゲーム内時計と 昼夜（襲撃の世界の 土台。T48a〜T48d） ----------
+    // ★干場の 発注（2026-08-05）＝SPEC_HW_WORLD_SIEGE §3.1。この弾は **時計だけ**。
+    // ★台帳には siege 欄を 持つ 世界を まだ 足さない（p4 は 弾44）。かわりに テストの 中で
+    //   「siege 欄つきの ためしの 世界」を 台帳に 1行 足して 検証し、終わったら かならず 抜く
+    //   ＝T44a（★はじまりの 世界の 完全一致）・T45e（床の 検査ループ）などの 既存の 番人を
+    //   1ビットも 動かさない（T48 は ぜんぶ それらの **後ろ**で 走り、台帳を 元に もどしてから 帰る）。
+    // ★ためしの 世界の 見た目の 数は「きょてんの 無い 歩く 世界の 1行め」の あさい写し＝
+    //   clear などは **台帳と 同じ 配列を 指したまま** 時計を 回す。時計が 台帳を 書きかえて
+    //   いたら 写しもとの 世界の 数が 割れて T48a が 落ちる（＝台帳を 汚さない ことの 実測）。
+    var T48_SIEGE={ daySec:240, raidEvery:7, smallRaid:true, graceDays:2 };   // ✎ 設計書 §1 の 数
+    var T48_DT=16.6667/1000;   // stepFrames の 1フレーム（秒）＝dt積算の 突きあわせに つかう
+    function t48World(){
+      var base=null, i;
+      for(i=0;i<WORLD_PATTERNS.length;i++)
+        if(!WORLD_PATTERNS[i].home && WORLD_PATTERNS[i].move==="grounded"){ base=WORLD_PATTERNS[i]; break; }
+      var W={}; for(var k in base) W[k]=base[k];   // ★あさい写し＝clear等は 台帳と 同じ 配列を 指す
+      W.id="t48"; W.name="ためしの よるの せかい";
+      W.siege={ daySec:T48_SIEGE.daySec, raidEvery:T48_SIEGE.raidEvery,
+                smallRaid:T48_SIEGE.smallRaid, graceDays:T48_SIEGE.graceDays };
+      return { world:W, baseId:base.id };
+    }
+    function t48Setup(){
+      var st=t45Setup();
+      st.rawSave=localStorage.getItem(SAVE_KEY);
+      st.memSave=JSON.stringify(save);
+      st.n=WORLD_PATTERNS.length;
+      st.tidy=cfg.tidy; st.showHud=cfg.showHud; st.hudFly=cfg.hudFly;
+      cfg.tidy=false; cfg.showHud=true; cfg.hudFly=true;   // じかん帯の ふた（hudOn("fly")）を あけて 測る
+      var mk=t48World(); st.baseId=mk.baseId;
+      WORLD_PATTERNS.push(mk.world);
+      return st;
+    }
+    function t48Restore(st){
+      // ①ためしの 世界から はなれる（★ここで 時計が 保存へ 書く＝保存は ③で 元に もどす）
+      window.__tenkyu.worldApply("p0"); stepFrames(1);
+      // ②台帳から ためしの 世界を 抜く（足した ぶんだけ・かならず 元の 行数へ）
+      while(WORLD_PATTERNS.length>st.n) WORLD_PATTERNS.pop();
+      // ③保存を テスト前へ（中みも 置き場も）
+      localStorage.setItem(SAVE_KEY, st.memSave); window.__tenkyu.saveReload();
+      if(st.rawSave==null) localStorage.removeItem(SAVE_KEY); else localStorage.setItem(SAVE_KEY, st.rawSave);
+      cfg.tidy=st.tidy; cfg.showHud=st.showHud; cfg.hudFly=st.hudFly;
+      t45Restore(st);
+    }
+
+    // T48a: siege欄の 有無＝①ためしの 世界では 時計で 空が 変わる（陽性対照＝物差しが 生きている）
+    //   ②siege の 無い 世界（ぜんぶ）は 台帳の 数と 1ビットも 違わない・時計は 止まる・じかん帯は 出ない
+    //   ③台帳そのものも 汚れていない ④夜に しても えがく回数は 増えない（時計は 数だけ）
+    function t_T48a(){
+      var T=window.__tenkyu, d=[], i;
+      var st=t48Setup();
+      var P=T.worldPatterns();            // ★写し（最後の 1つが ためしの 世界）
+      var norm=P.slice(0,P.length-1);
+      // ①陽性対照＝夜に すると 空が くらく・太陽が しずむ・じかん帯が 出る
+      T.worldApply("t48"); stepFrames(2);
+      var base=T.wclock().base;
+      T.wclockSet(1, T48_SIEGE.daySec*0.8);   // 夜の まん中（混ぜ具合 1）
+      var night=T.worldLive();
+      var darker=(night.clear[0]<base.clear[0]-1e-6)&&(night.fog[1]<base.fog[1]-1e-6)&&
+                 (night.dome.sun[1]<base.sun[1]-1e-6);
+      var hudNight=document.getElementById("wk-hud").classList.contains("show");
+      // ④えがく回数＝同じ 立ち位置で 昼と 夜を くらべる（増分 0 の 実測）
+      var M=T.mountConsts(); t43Put(M.X+30, M.Z, M.TOP_Y);
+      T.wclockSet(1, T48_SIEGE.daySec*0.3); stepFrames(2); var dcDay=lastDrawCalls;
+      T.wclockSet(1, T48_SIEGE.daySec*0.8); stepFrames(2); var dcNight=lastDrawCalls;
+      var dcOk=(dcDay===dcNight)&&(dcDay>0);
+      // ②siege の 無い 世界＝台帳の 数 そのもの・時計 停止・じかん帯 なし
+      var skyBad=[], ckBad=[], hudBad=[];
+      for(i=0;i<norm.length;i++){
+        T.worldApply(norm[i].id); stepFrames(3);
+        var L=T.worldLive(), W=T.wclock();
+        if(!t44Eq(L.clear,norm[i].clear,0)||!t44Eq(L.fog,norm[i].fog,0)||!t44Eq(L.dome.sun,norm[i].dome.sun,0))
+          skyBad.push(norm[i].id);
+        if(W.on) ckBad.push(norm[i].id);
+        if(document.getElementById("wk-hud").classList.contains("show")) hudBad.push(norm[i].id);
+      }
+      // ③台帳そのものが 汚れていない（ためしの 世界は 台帳と 同じ 配列を 指したまま 夜まで 回した）
+      var P2=T.worldPatterns(), ledBad=[];
+      for(i=0;i<norm.length;i++){
+        if(!t44Eq(P2[i].clear,norm[i].clear,0)||!t44Eq(P2[i].fog,norm[i].fog,0)||
+           !t44Eq(P2[i].dome.sun,norm[i].dome.sun,0)) ledBad.push(norm[i].id);
+      }
+      t48Restore(st);
+      var posOk=darker&&hudNight;
+      d.push("①陽性対照＝夜の ためしの 世界で 空が くらい "+darker+"（clear "+night.clear[0].toFixed(3)+"<"+base.clear[0].toFixed(3)+
+             "・太陽の たかさ "+night.dome.sun[1].toFixed(2)+"）・じかん帯が 出る "+hudNight);
+      d.push("②siege の 無い 世界 "+norm.length+"つ＝空が 台帳と ちがう="+(skyBad.join(",")||"なし")+
+             "・時計が 動いた="+(ckBad.join(",")||"なし")+"・じかん帯が 出た="+(hudBad.join(",")||"なし"));
+      d.push("③台帳が 汚れた 世界="+(ledBad.join(",")||"なし"));
+      d.push("④えがく回数＝昼 "+dcDay+"・夜 "+dcNight+"（同じ="+dcOk+"＝時計は 数だけ）");
+      return { pass:posOk&&(skyBad.length===0)&&(ckBad.length===0)&&(hudBad.length===0)&&
+                    (ledBad.length===0)&&dcOk, detail:d.join(" / ") };
+    }
+
+    // T48b: 時計＝①dt積算で ちょうど すすむ ②昼→夕→夜→翌日が 設計書の 秒数どおり
+    //   ③昼は 空が 台帳と 完全一致・夜は 決めた くらさ ④HUD の ことば（夕＝「もうすぐ よるが きます」）
+    //   ⑤壁の 時計を つかっていない ⑥★変異注入＝境の 数を ずらすと 物差しが 落とす
+    function t_T48b(){
+      var T=window.__tenkyu, d=[], K=T.wclockConsts();
+      var st=t48Setup();
+      T.worldApply("t48"); stepFrames(2);
+      var S=T.wclock().spec;
+      var specOk=!!S&&(S.daySec===240)&&(S.raidEvery===7)&&(S.smallRaid===true)&&(S.graceDays===2);
+      // ①dt積算＝60フレーム（16.6667ms）で ちょうど 1秒（Date の 時計なら ここが 一瞬で ずれる）
+      T.wclockSet(2, 10);
+      var t0=T.wclock().t; stepFrames(60); var t1=T.wclock().t;
+      var adv=t1-t0, advOk=Math.abs(adv-60*T48_DT)<1e-6;
+      // ②境の 秒数＝昼の おわり 150秒・夜の はじまり 180秒・1日 240秒（daySec から 導いた 数）
+      var e1=S.daySec*K.DAY_END, e2=S.daySec*K.DUSK_END;
+      T.wclockSet(1, e1-0.5); var pA=T.wclock().phase; stepFrames(60); var pB=T.wclock().phase;
+      T.wclockSet(1, e2-0.5); var pC=T.wclock().phase; stepFrames(60); var pD=T.wclock().phase;
+      T.wclockSet(5, S.daySec-0.3); stepFrames(60);
+      var W=T.wclock(), savedDay=save.siege.day;   // ★もどす前に 写す（もどした あとの 数を 出さない）
+      var rollOk=(W.day===6)&&(W.t<1.0)&&(W.phase==="hiru")&&(savedDay===6);   // ★日が かわった ときに 保存へ 書いた
+      var phOk=(pA==="hiru")&&(pB==="yuu")&&(pC==="yuu")&&(pD==="yoru")&&rollOk;
+      // ③昼の 空＝台帳の 数と 完全一致（混ぜ具合 0）／夜＝くらさ NIGHT_MUL・太陽は SUN_NIGHT_Y
+      var base=T.wclock().base;
+      T.wclockSet(1, S.daySec*0.3); var Ld=T.worldLive();
+      var noonOk=t44Eq(Ld.clear,base.clear,0)&&t44Eq(Ld.fog,base.fog,0)&&t44Eq(Ld.dome.sun,base.sun,0);
+      T.wclockSet(1, S.daySec*0.8); var Ln=T.worldLive();
+      var nightOk=(Math.abs(Ln.clear[0]-base.clear[0]*K.NIGHT_MUL)<1e-9)&&
+                  (Math.abs(Ln.fog[2]-base.fog[2]*K.NIGHT_MUL)<1e-9)&&
+                  (Math.abs(Ln.dome.sun[1]-K.SUN_NIGHT_Y)<1e-9)&&
+                  (Ln.fog[3]===base.fog[3]);   // こさは さわらない
+      // ④HUD の ことば（やさしい 日本語・夕は つぎに 起きる ことを 先に 言う）
+      T.wclockSet(1, S.daySec*0.3);
+      var hiru=document.getElementById("wk-word").textContent, ic1=document.getElementById("wk-icon").textContent;
+      T.wclockSet(1, (e1+e2)/2);
+      var yuu=document.getElementById("wk-word").textContent, ph1=document.getElementById("wk-phase").textContent;
+      T.wclockSet(1, S.daySec*0.8);
+      var yoru=document.getElementById("wk-phase").textContent, ic2=document.getElementById("wk-icon").textContent;
+      var dayTxt=document.getElementById("wk-day").textContent;
+      var hudOk=(hiru==="ひる です")&&(ic1==="☀")&&(yuu==="もうすぐ よるが きます")&&(ph1==="ゆうがた")&&
+                (yoru==="よる")&&(ic2==="🌙")&&(dayTxt==="1にちめ");
+      // ⑤壁の 時計を つかっていない（文字＝fail-loud。全体の 番人 S8 とは 別に、時計の 道 だけを 見る）
+      var src=String(wclockStep)+String(wclockApply)+String(wclockStore)+String(updateWkHud)+String(wclockBlendAt);
+      var noClock=(src.indexOf("Date"+".now")<0)&&(src.indexOf("new "+"Date")<0)&&(src.indexOf("Math"+".random")<0);
+      // ⑥★変異注入＝昼の おわりの 数を ずらすと、昼の はずの 時刻で 混ぜ具合が 0 で なくなる（歯の 確認）
+      var was=WCLOCK.DAY_END; WCLOCK.DAY_END=0.5;
+      var mutCaught=(T.wclockBlendAt(0.6)!==0);
+      WCLOCK.DAY_END=was;
+      var mutBack=(T.wclockBlendAt(0.6)===0);
+      // 混ぜ具合の 形＝昼0・夕で 0→1・夜1・朝がえりで 1→0・両はしが つながる
+      var blOk=(T.wclockBlendAt(0)===0)&&(T.wclockBlendAt(0.6)===0)&&
+               (Math.abs(T.wclockBlendAt((K.DAY_END+K.DUSK_END)/2)-0.5)<1e-9)&&
+               (T.wclockBlendAt(K.DUSK_END)===1)&&(T.wclockBlendAt(1-K.DAWN_LEN)===1)&&
+               (Math.abs(T.wclockBlendAt(1-K.DAWN_LEN/2)-0.5)<1e-9)&&(T.wclockBlendAt(0.999999)<0.001);
+      t48Restore(st);
+      d.push("台帳の siege＝1日 "+S.daySec+"秒・大襲撃 "+S.raidEvery+"日ごと・小襲撃 "+S.smallRaid+"・猶予 "+S.graceDays+"日="+specOk);
+      d.push("①dt積算＝60フレームで "+adv.toFixed(6)+"秒（見込み "+(60*T48_DT).toFixed(6)+"）="+advOk);
+      d.push("②境＝昼のおわり "+e1+"秒（"+pA+"→"+pB+"）・夜のはじまり "+e2+"秒（"+pC+"→"+pD+
+             "）・翌日（5→"+W.day+"にちめ・のこり "+W.t.toFixed(2)+"秒・保存 "+savedDay+"）="+phOk);
+      d.push("③昼は 台帳と 完全一致="+noonOk+"／夜は くらさ "+K.NIGHT_MUL+"・太陽 "+K.SUN_NIGHT_Y+"・こさ 不変="+nightOk);
+      d.push("④HUD＝「"+hiru+"」☀／夕「"+yuu+"」（"+ph1+"）／「"+yoru+"」🌙・「"+dayTxt+"」="+hudOk);
+      d.push("⑤壁の 時計 なし="+noClock+"／混ぜ具合の 形="+blOk);
+      d.push("⑥★変異注入＝昼の おわりを 0.625→0.5 に ずらすと 門が 閉じた="+mutCaught+"・もどした="+mutBack);
+      return { pass:specOk&&advOk&&phOk&&noonOk&&nightOk&&hudOk&&noClock&&blOk&&mutCaught&&mutBack,
+               detail:d.join(" / ") };
+    }
+
+    // T48c: 保存＝①ふるい 保存（siege 項目なし）が 読める ②閉じて 開くと つづきから
+    //   ③bestDay の 器が ある・マイナスは ならされる ④キーの 名まえは 不変
+    function t_T48c(){
+      var T=window.__tenkyu, d=[];
+      var st=t48Setup();
+      // ①ふるい 保存＝siege を 消して 読ませる → 初期値（1にちめ・0秒・bestDay 0）・ほかの 欄は そのまま
+      var old=JSON.parse(st.memSave); delete old.siege;
+      localStorage.setItem(SAVE_KEY, JSON.stringify(old));
+      var s1=T.saveReload();
+      var oldOk=!!s1.siege&&(s1.siege.day===1)&&(s1.siege.t===0)&&(s1.siege.bestDay===0)&&
+                (s1.rankXp===((+old.rankXp)||0))&&
+                (Object.keys(s1.visited).length===Object.keys(old.visited||{}).length);
+      // ②つづきから＝すすめる→世界を はなれる（ここで 書きとめる・本番と 同じ 道）→読み直す→入り直す
+      T.worldApply("t48"); stepFrames(2);
+      T.wclockSet(3, 55.5); stepFrames(10);
+      var before=T.wclock();
+      T.worldApply("p0"); stepFrames(1);
+      var js=JSON.parse(localStorage.getItem(SAVE_KEY));
+      var wroteOk=!!js.siege&&(js.siege.day===before.day)&&(Math.abs(js.siege.t-before.t)<1e-9);
+      T.saveReload();                       // 閉じて 開いた つもり（読む道は 本番の loadSave 1本）
+      T.worldApply("t48"); stepFrames(1);
+      var after=T.wclock();
+      var resumeOk=(after.day===before.day)&&(Math.abs(after.t-before.t)<0.2);   // 入り直しの 1歩ぶんは ゆるす
+      // ③bestDay の 器（ふやす しくみは 弾43＝ここでは 器が 消えない・ならされる ことだけ 見る）
+      var js2=JSON.parse(localStorage.getItem(SAVE_KEY));
+      js2.siege.bestDay=9; localStorage.setItem(SAVE_KEY, JSON.stringify(js2));
+      var s3=T.saveReload(); var bestKeep=(s3.siege.bestDay===9);
+      js2.siege.bestDay=-4; js2.siege.t=-5; js2.siege.day=0;
+      localStorage.setItem(SAVE_KEY, JSON.stringify(js2));
+      var s4=T.saveReload();
+      var normOk=(s4.siege.bestDay===0)&&(s4.siege.t===0)&&(s4.siege.day===1);
+      // ④キーの 名まえは 不変
+      var keyOk=(SAVE_KEY==="tenkyu_save_v1")&&(CFG_KEY==="tenkyu_cfg_v1");
+      t48Restore(st);
+      d.push("①ふるい 保存（siege なし）＝初期値で 読めた="+oldOk);
+      d.push("②つづきから＝"+before.day+"にちめ "+before.t.toFixed(2)+"秒 → 書きとめ "+wroteOk+
+             " → 読み直して 入り直すと "+after.day+"にちめ "+after.t.toFixed(2)+"秒="+resumeOk);
+      d.push("③bestDay の 器＝9 が のこる "+bestKeep+"・マイナスや 0 は ならされる "+normOk);
+      d.push("④保存キー 不変="+keyOk);
+      return { pass:oldOk&&wroteOk&&resumeOk&&bestKeep&&normOk&&keyOk, detail:d.join(" / ") };
+    }
+
+    // T48d: 回帰帳簿＝既存 T1〜T47d が 1件も 余分に 落ちていない（★前の 網を ぜんぶ 見るので 必ず いちばん最後）
+    //   ＋ 5つの 環境の「既知の 落ち」の 表が 弾39と 完全一致 ＋ 黄信号（T45d）と 床の 検査（T45e）が 通っている
+    //   ＋ 台帳に siege の 世界は まだ 無い（この弾は 時計だけ）＋ 毎フレームの 道は 台帳を 読まない
+    function t_T48d(){
+      var need=["T1","T2","T2f","T2n","T3","T3c","T4","T5","T6","T7","T8","T9","T10","T11","T12","T13","T14",
+                "T15","T16","T17","T18","T19a","T19b","T19c","T19d","T20a","T20b","T20c","T20d","T20e",
+                "T21a","T21b","T21c","T21d","T21e","T21f","T21i","T21g","T22a","T22b","T22c",
+                "T23a","T23b","T23c","T23d","T23e","T25a","T25b","T25c","T25d","T25e","T25f",
+                "T24a","T24b","T24c","T24d","T24e","T24f","T26a","T27a","T27b","T27c","T27d","T27e","T27f",
+                "T28a","T28b","T28c","T28d","T28e","T28f","T29a","T29b","T29c","T29d","T29e",
+                "T30a","T30b","T30c","T30d","T30e","T31a","T31b","T31c","T31d","T31e","T31f",
+                "T32a","T32b","T32c","T32d","T32e","T33a","T33b","T33c","T33d","T33e","T33f",
+                "T34a","T34b","T34c","T34d","T34e","T34f","T35a","T35b","T35c","T35d","T35e","T35f",
+                "T36a","T36b","T36c","T36d","T36e","T36f","T37a","T37b","T37c","T37d","T37e","T37g","T37h","T37f",
+                "T38a","T38b","T38c","T38d","T38e","T39a","T39b","T39c","T39d","T39e","T39f",
+                "T40a","T40b","T40c","T40d","T40e","T40f","T41a","T41b",
+                "T42a","T42b","T42c","T42d","T42e","T42f",
+                "T43a","T43b","T43c","T43d","T43e","T43f",
+                "T44a","T44b","T44c","T44d","T44e","T44f",
+                "T45a","T45b","T45c","T45d","T45e","T45f",
+                "T46a","T46b","T46c","T46d","T46e","T46f",
+                "T47a","T47b","T47c","T47d",
+                "T48a","T48b","T48c"];
+      var missing=[], failed=[], skipped=[], i, j;
+      for(i=0;i<need.length;i++){
+        var r=null;
+        for(j=0;j<_ranResults.length;j++){ if(_ranResults[j].id===need[i]){ r=_ranResults[j]; break; } }
+        if(!r) missing.push(need[i]);
+        else if(r.skip) skipped.push(need[i]);
+        else if(!r.pass) failed.push(need[i]);
+      }
+      var known=regKnown(failed);
+      var realFails=failed.filter(function(x){ return known.indexOf(x)<0; });
+      // ★5つの 環境の「既知の 落ち」の 表が 弾39と 1文字も 同じ（＝失敗IDの 集合を 動かしていない）
+      var regBad=[], ks=Object.keys(T45_DAN36.reg);
+      if(Object.keys(REG_BASE).length!==ks.length) regBad.push("環境の 数");
+      for(i=0;i<ks.length;i++){
+        var a=(REG_BASE[ks[i]]||[]).slice().sort().join(","), b=T45_DAN36.reg[ks[i]].slice().sort().join(",");
+        if(a!==b) regBad.push(ks[i]+":"+a+"≠"+b); }
+      if(REG_CASCADE.join(",")!==T45_DAN36.cascade.join(",")) regBad.push("ぶらさがり");
+      var regOk=(regBad.length===0);
+      // ★黄信号（本体に 世界の id 0件）と 床の 検査ループ が どちらも 通っている（この弾の 要件）
+      var t45d=null, t45e=null;
+      for(i=0;i<_ranResults.length;i++){ if(_ranResults[i].id==="T45d") t45d=_ranResults[i];
+        if(_ranResults[i].id==="T45e") t45e=_ranResults[i]; }
+      var guardOk=!!t45d&&t45d.pass&&!!t45e&&t45e.pass;
+      // ★台帳に siege の 世界は まだ 無い（時計の しくみだけ 入れた＝p4 は 弾44）
+      var sgN=0; for(i=0;i<WORLD_PATTERNS.length;i++) if(WORLD_PATTERNS[i].siege!==undefined) sgN++;
+      var noSiegeOk=(sgN===0);
+      // ★毎フレームの 道＝frame() は boolean の 門 1つ・時計の 中も 台帳を 読まない
+      var gateOk=(String(frame).indexOf("if(wclockOn) wclockStep(dt)")>=0);
+      var pv=String(wclockStep)+String(updateWkHud);
+      var perOk=(pv.indexOf("WORLD_PATTERNS")<0)&&(pv.indexOf("wpPat")<0)&&(pv.indexOf("wpNow")<0);
+      // ★えがく 道は 時計を 知らない（新しい シェーダー 0・ポストエフェクト 0）
+      var drawOk=(String(drawScene).indexOf("wclock")<0)&&(String(drawScene).indexOf("createFramebuffer")<0);
+      // ★siege 欄は wpApply の 1か所から 時計へ わたる だけ（世界の id の 分岐は 書いていない）
+      var apOk=(String(wpApply).indexOf("wclockApply")>=0)&&(String(wclockApply).indexOf("P.siege")>=0);
+      // ★保存キー 不変・絵と 音 0バイト・乱数と 壁の時計 なし
+      var keyOk=(CFG_KEY==="tenkyu_cfg_v1")&&(SAVE_KEY==="tenkyu_save_v1");
+      var noAssetOk=(document.querySelectorAll("script[src]").length===1);
+      var src=String(wclockStep)+String(wclockApply)+String(wclockStore)+String(updateWkHud);
+      var noRndOk=(src.indexOf("Math"+".random")<0)&&(src.indexOf("Date"+".now")<0)&&(src.indexOf("new "+"Date")<0);
+      return { pass:(missing.length===0)&&(realFails.length===0)&&regOk&&guardOk&&noSiegeOk&&
+                    gateOk&&perOk&&drawOk&&apOk&&keyOk&&noAssetOk&&noRndOk,
+        detail:"登録もれ="+(missing.join(",")||"なし")+" 既知以外の失敗="+(realFails.join(",")||"なし")+
+               " 既知の失敗="+(failed.join(",")||"なし")+" 判定不能="+(skipped.join(",")||"なし")+
+               " ／ ★5つの 環境の 既知の 落ちの 表＝弾39と 完全一致="+regOk+"（合わない="+(regBad.join(" ")||"なし")+"）"+
+               " ★黄信号T45d と 床の検査T45e が 通っている="+guardOk+
+               " 台帳に siege の 世界は まだ 無い="+noSiegeOk+"（"+sgN+"件）"+
+               " frame は boolean の 門 1つ="+gateOk+
+               " 毎フレームの 道は 台帳を 読まない="+perOk+
+               " えがく 道は 時計を 知らない（新シェーダー0）="+drawOk+
+               " siege は wpApply の 1か所から わたる="+apOk+
+               " 保存キー 不変="+keyOk+" 絵・音を 足していない="+noAssetOk+" 乱数・壁の時計 なし="+noRndOk+
+               " ／ ★弾40で 動かした 既存テストの 判定基準＝0個（T45a〜T47d は 1文字も 書きかえていない）" };
+    }
+//★HW40-END
     window.__tenkyu.runAll = async function(){
       if(!window.__testErrCount){ window.__testErrCount=0;
         var _ce=console.error.bind(console);
@@ -17610,6 +18049,13 @@
       await run("T47a",t_T47a); await run("T47b",t_T47b);
       await run("T47c",t_T47c); await run("T47d",t_T47d);
 //★HW39-RUN-END
+//★HW40-RUN-BEGIN
+      // 弾40 §R36（ゲーム内時計と 昼夜。★T48d は 前の 網を ぜんぶ 見るので 必ず いちばん最後。
+      //   T47d を ふくむ 前の 網の 判定基準は 1ビットも 動かしていない＝T47d の 後ろに 置く。
+      //   T48a〜T48c は 台帳に「ためしの siege 世界」を 足して 測り、かならず 抜いてから 帰る）
+      await run("T48a",t_T48a); await run("T48b",t_T48b);
+      await run("T48c",t_T48c); await run("T48d",t_T48d);
+//★HW40-RUN-END
       // 復元＝本当のプレイヤー進行・設定・カメラを一切壊さない
       swooshCount=snapSwoosh.count; swooshLast=snapSwoosh.last;   // persistSave()のnearMiss焼き込み前に実行順を戻す
       save=snapSave; persistSave(); syncVisitedBuffer(); completedConstellations=recomputeCompletedConstellations(); buildLines();
