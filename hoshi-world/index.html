@@ -528,6 +528,8 @@
   <div class="chk"><input type="checkbox" id="s-rich-motion" checked><label for="s-rich-motion" style="margin:0">　②うごき（手足を ふる・はばたく・息をする）</label></div>
   <div class="chk"><input type="checkbox" id="s-rich-variety" checked><label for="s-rich-variety" style="margin:0">　③ひとりひとり ちがう（うごきの ずれ）</label></div>
   <div class="chk"><input type="checkbox" id="s-rich-action" checked><label for="s-rich-action" style="margin:0">　④気づく（近づくと こちらを 見て にげる）</label></div>
+  <!-- 弾34 §R28: ⑤すみか。切ると 弾33と おなじ「村の まわりだけ」に もどる（しゅるいも ぜんぶ 1つに なる）。 -->
+  <div class="chk"><input type="checkbox" id="s-rich-habitat" checked><label for="s-rich-habitat" style="margin:0">　⑤すみか（山・街・草原・水べで しゅるいが ちがう）</label></div>
   <div class="chk"><input type="checkbox" id="s-mob-near" checked><label for="s-mob-near" style="margin:0">近くの子だけ かんがえる（切ると おもくなります）</label></div>
   <div class="chk"><input type="checkbox" id="s-mob-tick" checked><label for="s-mob-tick" style="margin:0">毎フレームは かんがえない（切ると おもくなります）</label></div>
   <div class="chk"><input type="checkbox" id="s-mob-grid" checked><label for="s-mob-grid" style="margin:0">近くの相手だけ さがす（切ると おもくなります）</label></div>
@@ -719,7 +721,7 @@
   // ★下の 64文字は「焼いた ときの 自分の すがた」。build.py が 0 を 64個 置いた ところへ 書きこむ。
   //   ＝読む がわは その 64文字を 0 に もどして sha256 を とれば、同じ 数に なる。
   //   これで「いま 動いている この ファイルが、源から 焼いた ままか」を 機械で 見張れる（T41a）。
-  var HW_SELF_SHA="e5bbd3174b6915d1a819392ae677a3f90686e2a1eef47703d4495f09e464eee9";
+  var HW_SELF_SHA="56b3d0145c99f3d80f5e23a0205c7eb86c62058db387d5e3e7f6447992da0966";
   try{ window.HW_SELF_SHA=HW_SELF_SHA; }catch(e){}   // 人が コンソールで 見られる ように（機能には つかわない）
 //★HW33A-END
   // 干場要望「地上から飛べるように」＝セーブが一度も無い初回起動の時だけ、地面のある世界の低空スタートにする。
@@ -1181,7 +1183,14 @@
   //   えがく命令も 毎フレームの 転送も 1つも 増えない（これが この弾の いちばん 大事な 約束）。
   //   ★数は ここで 決める＝シェーダーの 文を 作るときに 要る（表を あとから 増やしたら 下の 見張りが 落ちる）。
   var MB_PAT_STRIDE = 7;    // ✎ 部品の 数（MOB_PARTS の 長さと 一致すること＝§G T39a が 見張る）
-  var MB_PAT_SLOTS  = 28;   // ✎ パターンの 数 × 部品の 数（4×7）
+  // 弾34 §R28: 28（型4×部品7）→ 112（**しゅるい4 × 型4 × 部品7**）。
+  //   ★シェーダーの 式は 1文字も 変えない＝i_pat に 焼く 数を「型番号」から
+  //     **「しゅるい番号×型の数 ＋ 型番号」（0〜15）** に 変えただけ。だから
+  //     ・インスタンス属性は 1本も 増えない（i_pat は いまも float 1本）
+  //     ・毎フレームの GPU転送は 増分 0
+  //     ・ドローコールも 三角形も 増分 0
+  //   ★u_vary=0（個体差OFF）の とき pk=0＝しゅるい0×ふつう＝弾33と 1ビットも 変わらない（陰性対照）。
+  var MB_PAT_SLOTS  = 112;  // ✎ しゅるいの 数 × 型の 数 × 部品の 数（4×4×7）
   var mbProg = prog(
     HEAD+"layout(location=0) in vec3 a_pos; layout(location=1) in vec3 a_nrm;"+
     "layout(location=2) in vec3 i_p0; layout(location=3) in vec3 i_p1; layout(location=4) in vec2 i_yaws;"+
@@ -2579,13 +2588,19 @@
   // ★干場の 目的（2026-08-03）＝「4段が 問題なく 作れるのか」。だから **4段は 1段ずつ 独立に 切れる**。
   //   全部入りで「予算内でした」では どの段が 効いて どの段が 危ないかが 分からない＝目的を 果たさない。
   //   ?debug=noshape,nomotion,novariety,noaction で 1段ずつ 切れる（⚙にも 4つ 出す）。
+  // 弾34 §R28: **5段目＝すみか（habitat）**。既定 ON。?debug=nohabitat で 切れる。
   var RICH = { shape:!dbgHas("noshape"), motion:!dbgHas("nomotion"),
-               variety:!dbgHas("novariety"), action:!dbgHas("noaction") };
+               variety:!dbgHas("novariety"), action:!dbgHas("noaction"),
+               habitat:!dbgHas("nohabitat") };
   //   ★段は かならず 親（作り込み全体）と かけ算する＝親を 切れば 4段とも 消えて 弾27に 完全に もどる。
   function rShape(){   return mobRich && RICH.shape; }
   function rMotion(){  return mobRich && RICH.motion; }
   function rVariety(){ return mobRich && RICH.variety; }
   function rAction(){  return mobRich && RICH.action; }
+  // ★すみか だけは 親（🧸 こまかく つくる）と かけ算しない。理由＝「からだを どこまで 作り込むか」と
+  //   「どこに 住んでいるか」は 別のこと だから。親を 切っても 山の子は 山に 居る（箱1個に なるだけ）。
+  //   ★切ると 生きものを 置き直す（種まき）＝この 1本だけが 置き場を 変える 入口（§G T42e が 陰性対照）。
+  function rHabitat(){ return RICH.habitat; }
   // ゆれの 深さ。★prefers-reduced-motion（動きを少なくする）では 0＝ぴたりと 止まる。
   function richAnim(){ return reduceActive ? 0 : (comfortActive ? 0.55 : 1); }
   // 段2（動き）と 段3（個体差）を シェーダーへ わたす 数。切れば 0＝式は そのまま で 効果だけ 消える。
@@ -2650,6 +2665,40 @@
     { name:"ずんぐり", mul:[[1.25,1.05,1.00],[1.05,1.00,1.00],[1.15,0.70,1.15],[1.15,0.70,1.15],[1.15,0.70,1.15],[1.15,0.70,1.15],[0.00,0.00,0.00]] },
     { name:"ほそなが", mul:[[0.78,0.90,1.00],[0.88,0.85,0.95],[0.80,1.25,0.80],[0.80,1.25,0.80],[0.80,1.25,0.80],[0.80,1.25,0.80],[1.00,1.45,1.30]] }
   ];
+  // ✎生きものの色（地面と村になじむ・作品星より暗い）
+  //   ★弾34 §R28 で ここへ 引っ越した（下の MOB_SPECIES が この並びを そのまま 受けつぐ ため）。
+  //     ならびは 1つも 変えていない＝しゅるい0（のはらの子）の 色は 弾33と 完全に 同じ。
+  var MOB_COL = [[0.55,0.47,0.35],[0.42,0.36,0.30],[0.62,0.58,0.50],[0.36,0.40,0.32],[0.50,0.42,0.42]];
+  // ================= 弾34 §R28: しゅるい台帳（種＝4つ） =================
+  // ★干場の 言葉（2026-08-05）＝「山には 山の、街には 街の 生きものが 居る」。
+  //   しゅるい＝**部品ごとの 倍率**（MOB_PAT と まったく 同じ 書き方）＋ **色の 組**。
+  //   最終の 倍率＝**しゅるいの 倍率 × 型(MOB_PAT)の 倍率**（成分ごとの かけ算）。
+  //   ＝型の 意味（ふつう／こども／ずんぐり／ほそなが）は しゅるいを またいで 変わらない。
+  // ★しゅるいを 1つ 足すのに 本体を 書き足さなくて よい（この表に 1行 足して MB_PAT_SLOTS を
+  //   しゅるい数×型数×部品数 に すれば よい＝§G T42a が 数で 見張る）。
+  // ★しゅるい0 は 倍率 ぜんぶ 1.0＝**弾33の 見た目 そのまま**（陰性対照の 土台）。色も MOB_COL を そのまま。
+  var MOB_SPECIES = [
+    { name:"のはらの子", cols:MOB_COL,
+      mul:[[1.00,1.00,1.00],[1.00,1.00,1.00],[1.00,1.00,1.00],[1.00,1.00,1.00],[1.00,1.00,1.00],[1.00,1.00,1.00],[1.00,1.00,1.00]] },
+    // やま＝ずんぐり寄り（胴 太め・脚 短め）。色は 灰茶系（岩と 枯れ草に なじむ）
+    { name:"やまの子",   cols:[[0.46,0.41,0.36],[0.38,0.34,0.31],[0.55,0.50,0.44]],
+      mul:[[1.18,1.10,1.05],[1.06,1.05,1.00],[1.10,0.80,1.10],[1.10,0.80,1.10],[1.10,0.80,1.10],[1.10,0.80,1.10],[1.00,0.90,1.00]] },
+    // まち＝ほっそり 背高。色は 青白系（家の 壁と 空に なじむ）
+    { name:"まちの子",   cols:[[0.62,0.66,0.72],[0.50,0.55,0.64],[0.72,0.76,0.80]],
+      mul:[[0.86,0.95,1.00],[0.92,0.95,0.96],[0.86,1.22,0.86],[0.86,1.22,0.86],[0.86,1.22,0.86],[0.86,1.22,0.86],[0.90,1.10,1.00]] },
+    // みずべ＝低く 長い・しっぽ 大きめ。色は 青緑系（なぎさに なじむ）
+    //   ★しっぽの おくゆきは 1.02 止まり＝「ほそなが」(1.30)と かけても 弾27の 箱(±0.5)から 出ない ため。
+    { name:"みずべの子", cols:[[0.34,0.52,0.50],[0.28,0.44,0.44],[0.44,0.62,0.56]],
+      mul:[[1.05,0.82,1.06],[0.98,0.88,1.00],[0.95,0.70,0.95],[0.95,0.70,0.95],[0.95,0.70,0.95],[0.95,0.70,0.95],[1.15,1.25,1.02]] }
+  ];
+  // しゅるい×型の 通し番号（0〜15）。★これを そのまま i_pat に 焼く＝属性を 1本も 増やさない。
+  function mobKeyOfSP(sp, pat){ return (sp|0)*MOB_PAT.length + (pat|0); }
+  // 成分ごとの かけ算＝最終の 倍率表（7×3）
+  function mobMulOf(sp, pat){
+    var S=MOB_SPECIES[sp].mul, P=MOB_PAT[pat].mul, out=[], j;
+    for(j=0;j<MOB_PARTS.length;j++) out.push([S[j][0]*P[j][0], S[j][1]*P[j][1], S[j][2]*P[j][2]]);
+    return out;
+  }
   // その部品が 見えるか（倍率が 1つでも 0なら 見えない＝無い）
   function mobPatVis(m){ return m[0]>0 && m[1]>0 && m[2]>0; }
   // ★倍率から「たての ずらし」を 計算して 焼く。なぜ 要るか＝あしだけ 短くすると 胴が 宙に うくから。
@@ -2672,12 +2721,20 @@
         if(a<lo[k]) lo[k]=a; if(b>hi[k]) hi[k]=b; } }
     return { dy:dy, lo:lo, hi:hi };
   }
-  // GPUへ 置く 表＝(よこ, たて, おくゆき の 倍率, たての ずらし) を パターン×部品の 順に ならべる。
+  // GPUへ 置く 表＝(よこ, たて, おくゆき の 倍率, たての ずらし) を **しゅるい×型×部品**の 順に ならべる。
+  //   弾34 §R28: 欄の 場所＝(しゅるい×型の 通し番号)×部品数 ＋ 部品番号。
+  //   ★しゅるい0 の 4欄（0〜3）は 倍率が ぜんぶ 1.0 なので **弾33の 表と 1つずつ ぴったり 同じ**
+  //     ＝§G T39a（弾31の 番人）が 判定基準を 1ビットも 変えずに そのまま 通る。
+  var MOB_KEY_BOX=[];   // 通し番号ごとの 外がわ（最小/最大）。★手で 書かず 焼いた ものから 出す。
   var MOB_PAT_FLAT=(function(){
-    var out=new Float32Array(MB_PAT_SLOTS*4), n=MOB_PARTS.length, i, j, B;
-    for(i=0;i<MOB_PAT.length;i++){ B=mobPatBake(MOB_PAT[i].mul); MOB_PAT[i].dy=B.dy; MOB_PAT[i].lo=B.lo; MOB_PAT[i].hi=B.hi;
-      for(j=0;j<n;j++){ var s=(i*MB_PAT_STRIDE+j)*4;
-        out[s]=MOB_PAT[i].mul[j][0]; out[s+1]=MOB_PAT[i].mul[j][1]; out[s+2]=MOB_PAT[i].mul[j][2]; out[s+3]=B.dy[j]; } }
+    var out=new Float32Array(MB_PAT_SLOTS*4), n=MOB_PARTS.length, sp, i, j, B, M;
+    for(sp=0;sp<MOB_SPECIES.length;sp++) for(i=0;i<MOB_PAT.length;i++){
+      M=mobMulOf(sp,i); B=mobPatBake(M);
+      if(sp===0){ MOB_PAT[i].dy=B.dy; MOB_PAT[i].lo=B.lo; MOB_PAT[i].hi=B.hi; }   // 弾31の 表は しゅるい0 そのもの
+      var key=mobKeyOfSP(sp,i);
+      MOB_KEY_BOX[key]={ sp:sp, pat:i, name:MOB_SPECIES[sp].name+"×"+MOB_PAT[i].name, mul:M, dy:B.dy, lo:B.lo, hi:B.hi };
+      for(j=0;j<n;j++){ var s=(key*MB_PAT_STRIDE+j)*4;
+        out[s]=M[j][0]; out[s+1]=M[j][1]; out[s+2]=M[j][2]; out[s+3]=B.dy[j]; } }
     return out;
   })();
   // ★個体番号から 決定論で 型を 決める（乱数は 引かない＝同じidなら いつでも 同じ型・体数を 変えても 変わらない）。
@@ -2688,6 +2745,27 @@
   // ★パターンは「個体差(段3)」に 属する＝段3を 切ると どの個体も 型0（ふつう）＝弾28の 見た目に 完全に もどる。
   //   （シェーダー側も 同じ 式＝i_pat*u_vary。JS側の これは その うつし＝テストが 画素を 見ずに 確かめる ため）
   function mobPatOf(i){ return rVariety() ? mobPatRaw(i) : 0; }
+  // ================= 弾34 §R28: すみか台帳（居る 場所＝4つ） =================
+  // ★割りあて（司令塔 2026-08-05）＝村・街まわり55%／山の すそ野20%／草原20%／水べ5%。
+  //   しゅるいは **すみかで 決まる**（決定論）。型(MOB_PAT)は いままで どおり 個体idの ハッシュ。
+  var MOB_HAB = [
+    { id:"village", name:"村・街の まわり",           sp:2, pct:55 },   // → まちの子
+    { id:"mount",   name:"山の すそ野",               sp:1, pct:20 },   // → やまの子
+    { id:"plain",   name:"草原（村から 遠い 平地）",  sp:0, pct:20 },   // → のはらの子
+    { id:"water",   name:"水べ（低い ところ）",       sp:3, pct: 5 }    // → みずべの子
+  ];
+  // ★20体を ひとまわりと して 順ぐりに 配る＝**体数を へらしても 4つの すみかが ぜんぶ 残る**
+  //   （先頭から 詰めると 50体の ときに 村しか 出ない＝弾15の「順ぐりに 割りあてる」と 同じ 考え）。
+  //   数えると 村11・山4・草原4・水べ1＝55/20/20/5%。端数は 村へ 寄せてある。
+  var MOB_HAB_CYCLE=[0,0,1,0,2,0,0,1,0,2,3,0,1,0,2,0,0,1,0,2];
+  function mobHabOf(i){ return rHabitat() ? MOB_HAB_CYCLE[(i|0)%MOB_HAB_CYCLE.length] : 0; }
+  // すみかから しゅるいへ（切って いれば ぜんぶ しゅるい0＝弾33）
+  function mobSpecRaw(i){ return rHabitat() ? MOB_HAB[MOB_HAB_CYCLE[(i|0)%MOB_HAB_CYCLE.length]].sp : 0; }
+  // ★GPUへ 焼く 数＝しゅるい×型の 通し番号。i_pat は これ 1本のまま（属性を 増やさない）。
+  function mobKeyRaw(i){ return mobKeyOfSP(mobSpecRaw(i), mobPatRaw(i)); }
+  // シェーダーの 式（int(i_pat*u_vary+0.5)）の JS側の うつし＝個体差を 切れば 0＝しゅるい0×ふつう。
+  function mobKeyOf(i){ return rVariety() ? mobKeyRaw(i) : 0; }
+  function mobSpecOf(i){ return rVariety() ? mobSpecRaw(i) : 0; }
   // ★頂点シェーダーと 同じ式の JS側の うつし（birdPosAt と 同じ 役目）。
   //   テストが「同じ (個体id, 時刻) なら 同じ 姿勢か」を 画素を 見ずに 確かめるために 使う。
   function birdFlapAt(i, t, dir){
@@ -2814,8 +2892,8 @@
     FLEE:      2.4,   // ✎ にげる 秒数
     FLEE_MUL:  1.7    // ✎ にげるときの 速さの 倍率
   };
-  // ✎生きものの色（地面と村になじむ・作品星より暗い）
-  var MOB_COL = [[0.55,0.47,0.35],[0.42,0.36,0.30],[0.62,0.58,0.50],[0.36,0.40,0.32],[0.50,0.42,0.42]];
+  // ✎生きものの色＝弾34 §R28 で **MOB_SPECIES[0].cols** へ 引っ越した（MOB_COL の 中みも ならびも 不変）。
+  //   ここに 置いたままだと しゅるい台帳より あとで 代入されて undefined を つかんで しまう ため。
   var mbVAO=null, mbBufs=[], mbP0Buf=null, mbP1Buf=null, mbYwBuf=null;
   var mbP0=null, mbP1=null, mbYw=null, mbSize=null, mbCol=null;
   var mobX=null, mobZ=null, mobH=null, mobSpd=null, mobPh=null, mobW=null, mobHx=null, mobHz=null;
@@ -2824,7 +2902,11 @@
   // 弾28 §R23: 箱の組の 器（弾27の 1箱の 器 mbVAO は そのまま 残す＝作り込みOFFで 完全に もどれる）
   var mbRVAO=null, mbRBufs=[], mbRVerts=0, mbRTris=0, mbRBytes=0, mbRParts=0;
   // 弾31 §R25: 個体ごとの パターン番号（作った ときに 1回 送るだけ）
+  //   弾34 §R28: 中みは **しゅるい×型の 通し番号(0〜15)** に なった。長さも 型（float 1本）も 不変。
   var mbPat=null;
+  // 弾34 §R28: 置き直し(種まき)で 書きかえる 静かな バッファ。★毎フレームでは 1度も さわらない。
+  var mbSizeBuf=null, mbColBuf=null, mbKeyBuf=null;
+  var mbSeeds=0, mbSeedBytes=0, mbSeedMs=0, mbHabN=[0,0,0,0];
   // 弾28 §R23④: アクション（状態を もつ 動き）＝0:ぶらぶら 1:きづいて こちらを 見る 2:にげる。
   //   ★NEAR の 中の さらに 近い 少数だけが これを 持つ＝遠い子は 純関数のまま（弾15の「近くだけ考える」に 相乗り）。
   var mobAct=null, mobActT=null, mobActive=0, mobRichSteps=0, mobActTick=0;
@@ -2835,23 +2917,92 @@
   var mobNear=!debugNoNear, mobTickSave=!debugNoTick, mobGrid=!debugNoGrid;
   // 近くの相手をよけるときの おし返し。1体ごとに物を作るとゴミが増えるので 置き場を使いまわす。
   var _sepX=0, _sepZ=0;
-  function buildMobs(){
-    if(mbVAO) return;
-    var t0=performance.now();
-    var rnd=mulberry32(hashStr("tenkyu-mob:"+FIELD_SEED)|0), n=MOB.MAX;
-    var CB=cube36();
-    mbP0=new Float32Array(n*3); mbP1=new Float32Array(n*3); mbYw=new Float32Array(n*2);
-    mbSize=new Float32Array(n*3); mbCol=new Float32Array(n*3);
-    mobX=new Float32Array(n); mobZ=new Float32Array(n); mobH=new Float32Array(n); mobSpd=new Float32Array(n);
-    mobAct=new Uint8Array(n); mobActT=new Float32Array(n);   // 弾28 §R23④
-
-    mobPh=new Float32Array(n); mobW=new Float32Array(n); mobHx=new Float32Array(n); mobHz=new Float32Array(n);
-    // 村のまわりに 順ぐりに 割りあてる＝体数を減らしても どの村にも まんべんなく残る（くらべるとき 場面が変わらない）
+  // ================= 弾34 §R28: すみかへ 置く（新しい 器も 新しい 命令も 1つも 作らない） =================
+  // いちばん 近い 村・街の 中心までの きょり（草原＝村から 遠い ことの 物差し）
+  function mobVlgDist(x,z,sites){
+    var best=1e9, i;
+    for(i=0;i<sites.length;i++){ var dx=x-sites[i].center[0], dz=z-sites[i].center[2];
+      var d=Math.sqrt(dx*dx+dz*dz); if(d<best) best=d; }
+    return best;
+  }
+  // ★「なぎさの ちず」と「草原の ちず」＝64方向ぶんを **1回だけ** さがして おぼえる。
+  //   ★1体ずつ さがすと 起動が おそくなる。しかも 二分探索は 使わない＝地面は 外へ 行くほど 低い とは
+  //     かぎらない（山も 内海も ある）ので、二分探索は **高い 尾根を なぎさと 見まちがえる**。
+  //     0805の 実測で 実際に そうなった（水べの 子が 海面+99 の 所に 立っていた）＝だから 素直に 端から 見る。
+  //   ★乱数も 時計も つかわない（同じ FIELD_SEED からは いつでも 同じ ちず）。
+  var MB_SHORE=null, MB_PLAIN=null, MB_PLAIN_OK=null, MB_TBL_SEED=null, MB_TBL_N=64;
+  function mobShoreTable(){
+    if(MB_SHORE && MB_TBL_SEED===FIELD_SEED) return MB_SHORE;
+    var N=MB_TBL_N, sh=new Float32Array(N*2), pl=new Float32Array(N*2), plOk=new Uint8Array(N), k, r, i;
     var sites=villages.length ? villages : [{center:[0,heightAt(0,0),0], radius:60}];
-    for(var i=0;i<n;i++){
+    for(k=0;k<N;k++){
+      var ang=k*Math.PI*2/N, ca=Math.cos(ang), sa=Math.sin(ang);
+      // ① 水べ＝外がわから 内へ 見ていって、はじめて 出あう「低い 陸」＝なぎさ
+      var bx=ca*300, bz=sa*300, bestH=1e9, got=false;
+      for(r=1150;r>=200;r-=12){
+        var h=heightRawAt(ca*r, sa*r);
+        if(h<=SEA_Y+0.5) continue;                                    // まだ 海
+        if(h<=SEA_Y+12){ bx=ca*r; bz=sa*r; got=true; break; }         // ★低い 陸＝ここが なぎさ
+        if(h<bestH){ bestH=h; bx=ca*r; bz=sa*r; }                     // ひかえ＝その向きで いちばん 低い 陸
+      }
+      sh[k*2]=bx; sh[k*2+1]=bz;
+      // ② 草原＝村から 遠くて 平らな 陸（きびしい 条件で さがし、見つからない ときだけ ゆるめる）
+      var px=ca*600, pz=sa*600, bs=-1e9;
+      for(r=380;r<=1000;r+=40){
+        var qx=ca*r, qz=sa*r;
+        if(heightRawAt(qx,qz)<=SEA_Y+10) continue;                    // 海・なぎさは 草原では ない
+        if(mobVlgDist(qx,qz,sites)<=260) continue;                    // ★村・街の そばは 草原では ない
+        var slope=Math.abs(heightAt(qx+9,qz)-heightAt(qx-9,qz))+Math.abs(heightAt(qx,qz+9)-heightAt(qx,qz-9));
+        var sc=-slope*30;                                             // 平らな ほど よい
+        if(sc>bs){ bs=sc; px=qx; pz=qz; }
+      }
+      plOk[k]=(bs>-1e8);
+      pl[k*2]=px; pl[k*2+1]=pz;
+    }
+    // ★その 向きには 草原が 無い（ぜんぶ 海／ぜんぶ 村の そば）ときは **となりの 向きの 草原を 借りる**。
+    //   ★ここを「ゆるめて いちばん マシな 所」で 済ませると、村の すぐ そばに 草原の 子が 立つ
+    //     （0805の 実測で 22体が そうなった＝村から 146 の 所に 居た）。基準を ゆるめず 場所を 借りる。
+    for(k=0;k<N;k++){
+      if(plOk[k]) continue;
+      for(i=1;i<=N>>1;i++){
+        var kp=(k+i)%N, km=(k-i+N)%N, src=plOk[kp]?kp:(plOk[km]?km:-1);
+        if(src>=0){ pl[k*2]=pl[src*2]; pl[k*2+1]=pl[src*2+1]; plOk[k]=2; break; }
+      }
+    }
+    MB_SHORE=sh; MB_PLAIN=pl; MB_PLAIN_OK=plOk; MB_TBL_SEED=FIELD_SEED; return MB_SHORE;
+  }
+  // すみかごとの 置き場所。★乱数は a と u の 2つ だけ（弾33の 村まわりと 同じ 数）＝
+  //   すみかを 切りかえても 個体ごとの 乱数の ならびが ずれない。
+  function mobHabSpot(hk, a, u, sites){
+    if(hk===1){                                            // 山の すそ野＝山の まわりの わっか
+      var rr=HOME_MT.FLAT+56+u*110;                        // 90〜200（すそ野の 半径 230 の 内がわ）
+      return [HOME_MT.X+Math.cos(a)*rr, HOME_MT.Z+Math.sin(a)*rr];
+    }
+    mobShoreTable();
+    var T=(hk===3)?MB_SHORE:MB_PLAIN, N=MB_TBL_N;
+    var kk=Math.floor(a/(Math.PI*2)*N)%N; if(kk<0) kk+=N;
+    var px=T[kk*2], pz=T[kk*2+1], L=Math.sqrt(px*px+pz*pz)||1;
+    var tx=-pz/L, tz=px/L;                                 // ちずの 点から 横へ すこし ずらす（1点に かたまらない ため）
+    var off=(u-0.5)*((hk===3)?44:80), qx=px+tx*off, qz=pz+tz*off;
+    if(hk===3) return (heightRawAt(qx,qz)>SEA_Y+0.5 && heightRawAt(qx,qz)<=SEA_Y+18) ? [qx,qz] : [px,pz];
+    return (heightRawAt(qx,qz)>SEA_Y+10 && mobVlgDist(qx,qz,sites)>240) ? [qx,qz] : [px,pz];
+  }
+  // ★種まき＝個体ごとの 中みを ぜんぶ 作り直す（位置・向き・速さ・大きさ・色・しゅるい×型）。
+  //   ★弾33との ちがいは「どこへ 置くか」と「どの 色の 組を 引くか」だけ＝すみかを 切れば
+  //     乱数の ならびも 式も 弾33と 1つ 残らず 同じ（§G T42e が 2000体 ぜんぶ 突き合わせる）。
+  function mobSeedAll(){
+    var s0=performance.now();
+    var rnd=mulberry32(hashStr("tenkyu-mob:"+FIELD_SEED)|0), n=MOB.MAX, i;
+    var sites=villages.length ? villages : [{center:[0,heightAt(0,0),0], radius:60}];
+    mbHabN=[0,0,0,0];
+    for(i=0;i<n;i++){
+      // 村のまわりに 順ぐりに 割りあてる＝体数を減らしても どの村にも まんべんなく残る（くらべるとき 場面が変わらない）
       var S=sites[i % sites.length], cx=S.center[0], cz=S.center[2];
-      var a=rnd()*Math.PI*2, rr=S.radius*(0.4+rnd()*1.3);
-      var x=cx+Math.cos(a)*rr, z=cz+Math.sin(a)*rr;
+      var a=rnd()*Math.PI*2, u=rnd();
+      var hk=mobHabOf(i), sp=mobSpecRaw(i), x, z;
+      mbHabN[hk]++;
+      if(hk===0){ var rr=S.radius*(0.4+u*1.3); x=cx+Math.cos(a)*rr; z=cz+Math.sin(a)*rr; }
+      else { var P=mobHabSpot(hk,a,u,sites); x=P[0]; z=P[1]; cx=x; cz=z; }   // 村いがいは 生まれた 所を すみかに する
       mobHx[i]=cx; mobHz[i]=cz; mobX[i]=x; mobZ[i]=z;
       mobH[i]=rnd()*Math.PI*2; mobSpd[i]=MOB.SPD_MIN+rnd()*MOB.SPD_SPAN;
       mobPh[i]=rnd()*Math.PI*2; mobW[i]=0.5+rnd()*1.1;
@@ -2861,9 +3012,41 @@
       mbYw[i*2]=mobH[i]; mbYw[i*2+1]=mobH[i];
       var sz=MOB.SIZE_MIN+rnd()*MOB.SIZE_SPAN;
       mbSize[i*3]=sz*0.85; mbSize[i*3+1]=sz*1.05; mbSize[i*3+2]=sz*1.5;   // よこ・たて・おくゆき＝四つ足のけもの風の箱
-      var cl=MOB_COL[Math.floor(rnd()*MOB_COL.length)%MOB_COL.length], k=(rnd()-0.5)*0.06;
+      var CL=MOB_SPECIES[sp].cols;
+      var cl=CL[Math.floor(rnd()*CL.length)%CL.length], k=(rnd()-0.5)*0.06;
       mbCol[i*3]=Math.max(0,Math.min(1,cl[0]+k)); mbCol[i*3+1]=Math.max(0,Math.min(1,cl[1]+k)); mbCol[i*3+2]=Math.max(0,Math.min(1,cl[2]+k));
+      mbPat[i]=mobKeyRaw(i);
     }
+    mbSeedMs=+(performance.now()-s0).toFixed(2);
+  }
+  // ★すみかを 切りかえた ときだけ 走る 置き直し。**1回きり**の 転送＝毎フレームの 転送は 1バイトも 増えない
+  //   （数は mbSeedBytes に 別勘定で 出す＝§G T42c が「毎フレーム」と 混ぜずに 見る）。
+  function mobReseed(){
+    if(!mbVAO || !mbPat) return false;
+    mobSeedAll();
+    function up(buf, arr, usage){ if(!buf) return; gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+      gl.bufferData(gl.ARRAY_BUFFER,arr,usage); mbSeedBytes+=arr.byteLength; }
+    up(mbSizeBuf, mbSize, gl.STATIC_DRAW); up(mbColBuf, mbCol, gl.STATIC_DRAW); up(mbKeyBuf, mbPat, gl.STATIC_DRAW);
+    up(mbP0Buf, mbP0, gl.DYNAMIC_DRAW);   up(mbP1Buf, mbP1, gl.DYNAMIC_DRAW); up(mbYwBuf, mbYw, gl.DYNAMIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER,null);
+    if(mobAct){ mobAct.fill(0); mobActT.fill(0); } mobActive=0; mobAcc=0;
+    mbSeeds++;
+    return true;
+  }
+  function buildMobs(){
+    if(mbVAO) return;
+    var t0=performance.now();
+    var n=MOB.MAX;
+    var CB=cube36();
+    mbP0=new Float32Array(n*3); mbP1=new Float32Array(n*3); mbYw=new Float32Array(n*2);
+    mbSize=new Float32Array(n*3); mbCol=new Float32Array(n*3);
+    mobX=new Float32Array(n); mobZ=new Float32Array(n); mobH=new Float32Array(n); mobSpd=new Float32Array(n);
+    mobAct=new Uint8Array(n); mobActT=new Float32Array(n);   // 弾28 §R23④
+
+    mobPh=new Float32Array(n); mobW=new Float32Array(n); mobHx=new Float32Array(n); mobHz=new Float32Array(n);
+    // 弾31 §R25: 個体ごとの 型（弾34からは しゅるい×型の 通し番号）。★作った ときの 1回だけ 送る。
+    mbPat=new Float32Array(n);
+    mobSeedAll();
     MB_GW=Math.ceil(MOB.HALF*2/MOB.CELL);
     mbHead=new Int32Array(MB_GW*MB_GW); mbNext=new Int32Array(n);
     mbVAO=gl.createVertexArray(); gl.bindVertexArray(mbVAO);
@@ -2878,9 +3061,9 @@
     gl.enableVertexAttribArray(3); gl.vertexAttribPointer(3,3,gl.FLOAT,false,0,0); gl.vertexAttribDivisor(3,1);
     mbYwBuf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,mbYwBuf); gl.bufferData(gl.ARRAY_BUFFER,mbYw,gl.DYNAMIC_DRAW);
     gl.enableVertexAttribArray(4); gl.vertexAttribPointer(4,2,gl.FLOAT,false,0,0); gl.vertexAttribDivisor(4,1);
-    var sb=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,sb); gl.bufferData(gl.ARRAY_BUFFER,mbSize,gl.STATIC_DRAW);
+    var sb=gl.createBuffer(); mbSizeBuf=sb; gl.bindBuffer(gl.ARRAY_BUFFER,sb); gl.bufferData(gl.ARRAY_BUFFER,mbSize,gl.STATIC_DRAW);
     gl.enableVertexAttribArray(5); gl.vertexAttribPointer(5,3,gl.FLOAT,false,0,0); gl.vertexAttribDivisor(5,1);
-    var lb=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,lb); gl.bufferData(gl.ARRAY_BUFFER,mbCol,gl.STATIC_DRAW);
+    var lb=gl.createBuffer(); mbColBuf=lb; gl.bindBuffer(gl.ARRAY_BUFFER,lb); gl.bufferData(gl.ARRAY_BUFFER,mbCol,gl.STATIC_DRAW);
     gl.enableVertexAttribArray(6); gl.vertexAttribPointer(6,3,gl.FLOAT,false,0,0); gl.vertexAttribDivisor(6,1);
     gl.bindVertexArray(null);
     // 弾28 §R23: 箱の組の 器。★位置・向き(mbP0Buf/mbP1Buf/mbYwBuf)は 同じ バッファを そのまま 見る＝
@@ -2902,14 +3085,15 @@
     // 弾31 §R25: 部品の つけね と 番号（頂点ごと・一度きり）。★STATIC_DRAW＝二度と 書きかえない。
     var qa=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,qa); gl.bufferData(gl.ARRAY_BUFFER,RM2.anch,gl.STATIC_DRAW);
     gl.enableVertexAttribArray(8); gl.vertexAttribPointer(8,4,gl.FLOAT,false,0,0);
-    // 弾31 §R25: 個体ごとの パターン番号。★これも 作った ときの 1回だけ＝毎フレームの 転送(mbUpBytes)は 増えない。
-    mbPat=new Float32Array(n); for(var pi=0;pi<n;pi++) mbPat[pi]=mobPatRaw(pi);
-    var qt=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,qt); gl.bufferData(gl.ARRAY_BUFFER,mbPat,gl.STATIC_DRAW);
+    // 弾31 §R25: 個体ごとの パターン番号（弾34＝しゅるい×型の 通し番号）。
+    //   ★これも 作った ときの 1回だけ＝毎フレームの 転送(mbUpBytes)は 増えない。属性の 本数も 型も 不変。
+    var qt=gl.createBuffer(); mbKeyBuf=qt; gl.bindBuffer(gl.ARRAY_BUFFER,qt); gl.bufferData(gl.ARRAY_BUFFER,mbPat,gl.STATIC_DRAW);
     gl.enableVertexAttribArray(9); gl.vertexAttribPointer(9,1,gl.FLOAT,false,0,0); gl.vertexAttribDivisor(9,1);
     gl.bindVertexArray(null); mbRBufs=[qp,qn,qr,qa,qt];
     // パターン表を GPUへ 1回だけ 置く。★表が 器より 大きいと 静かに 壊れるので ここで 声を上げる（fail-loud）。
-    if(MOB_PARTS.length!==MB_PAT_STRIDE || MOB_PAT.length*MB_PAT_STRIDE>MB_PAT_SLOTS)
-      console.error("[弾31] パターン表が 器に 入らない: 部品"+MOB_PARTS.length+"／型"+MOB_PAT.length+"／器"+MB_PAT_SLOTS);
+    if(MOB_PARTS.length!==MB_PAT_STRIDE || MOB_SPECIES.length*MOB_PAT.length*MB_PAT_STRIDE>MB_PAT_SLOTS)
+      console.error("[弾34] パターン表が 器に 入らない: 部品"+MOB_PARTS.length+"／型"+MOB_PAT.length+
+                    "／しゅるい"+MOB_SPECIES.length+"／器"+MB_PAT_SLOTS);
     mbPatUpload(MOB_PAT_FLAT);   // 弾33-D: uniform4fv → テクスチャへ（作った ときに 1回だけ＝転送の 約束は 不変）
     mbRBytes+=RM2.anchBytes+mbPat.byteLength;
     mbBufs=[pb,nb,mbP0Buf,mbP1Buf,mbYwBuf,sb,lb]; mbBuilt=n;
@@ -3053,16 +3237,21 @@
     return mobRich;
   }
   // ★4段の 入切（検査からも ⚙からも 同じ 1本を 通る）。おぼえない＝はかるための ためし だから。
-  var STAGE_IDS=["shape","motion","variety","action"];
+  var STAGE_IDS=["shape","motion","variety","action","habitat"];   // 弾34 §R28: 5段目＝すみか
   function setMobStage(o){
-    if(o){ for(var i=0;i<STAGE_IDS.length;i++){ var k=STAGE_IDS[i]; if(k in o) RICH[k]=!!o[k]; } syncStageUi(); }
-    return { shape:RICH.shape, motion:RICH.motion, variety:RICH.variety, action:RICH.action,
-             on:{ shape:rShape(), motion:rMotion(), variety:rVariety(), action:rAction() } };
+    if(o){ var h0=rHabitat();
+      for(var i=0;i<STAGE_IDS.length;i++){ var k=STAGE_IDS[i]; if(k in o) RICH[k]=!!o[k]; } syncStageUi();
+      // ★すみかが 変わった ときだけ 置き直す（変わらない ときは 1バイトも 送らない）
+      if(rHabitat()!==h0) mobReseed();
+    }
+    return { shape:RICH.shape, motion:RICH.motion, variety:RICH.variety, action:RICH.action, habitat:RICH.habitat,
+             on:{ shape:rShape(), motion:rMotion(), variety:rVariety(), action:rAction(), habitat:rHabitat() } };
   }
   function syncStageUi(){
     for(var i=0;i<STAGE_IDS.length;i++){
-      var c=document.getElementById("s-rich-"+STAGE_IDS[i]);
-      if(c){ if(c.checked!==RICH[STAGE_IDS[i]]) c.checked=RICH[STAGE_IDS[i]]; c.disabled=!mobRich; }
+      var k=STAGE_IDS[i], c=document.getElementById("s-rich-"+k);
+      // ★すみか(⑤)だけは 親（🧸 こまかく つくる）に ぶら下がらない＝親を 切っても えらべる。
+      if(c){ if(c.checked!==RICH[k]) c.checked=RICH[k]; c.disabled=(k==="habitat")?false:!mobRich; }
     }
   }
   var bdWanted = (debugBirds!=null) ? Math.max(0,Math.min(BIRD.MAX,debugBirds|0)) : Math.max(0,Math.min(BIRD.MAX,(+cfg.birds)|0));
@@ -5142,7 +5331,7 @@
         // 弾28 §R23: 作り込みの 入切と、1体あたりの 箱の数・三角形の数（予算表を そのまま 数で 出す）
         mobRich:!!mobRich, mobRichAnim:richAnim(),
         // 弾28: 4段の 入切（干場の 目的＝段ごとの 成否を 数で 見る）と GPUへ 毎フレーム 送った バイト数
-        mobStages:{ shape:rShape(), motion:rMotion(), variety:rVariety(), action:rAction() },
+        mobStages:{ shape:rShape(), motion:rMotion(), variety:rVariety(), action:rAction(), habitat:rHabitat() },
         mobUpBytes:mbUpBytes|0, mobActTick:mobActTick|0,
         birdParts:(mobRich?bdRParts:1)|0, birdTriPer:birdTriPer()|0,
         mobParts:(mobRich?mbRParts:1)|0, mobTriPer:mobTriPer()|0,
@@ -5353,8 +5542,19 @@
         guards:["T24a","T24d","T37a","T37b","T37d"],
         worlds:["field"], available:!!ENV.terrain, drawn:!!lastBirdOn },
 
-      { id:"mob", name:"生きもの（状態を もつ モブ）", stage:"①形＋②動き＋③個体差＋④アクション（4段 ぜんぶ）",
+      { id:"mob", name:"生きもの（しゅるいと すみかを もつ モブ）",
+        stage:"①形＋②動き＋③個体差＋④アクション＋⑤すみか（5段 ぜんぶ）",
         vao:["mbVAO","mbRVAO"], owns:["mbVAO","mbRVAO"], units:{ label:"体", n:(lastMobOn?mbShown:0), built:mbBuilt },
+        // 弾34 §R28: ★ぜんぶ その場の 実測（見込みの 数は 1つも 書かない＝§G T38c/T42f）。
+        species:{ n:MOB_SPECIES.length, names:MOB_SPECIES.map(function(S){ return S.name; }),
+                  patterns:MOB_PAT.length, keys:MOB_SPECIES.length*MOB_PAT.length,
+                  texels:MB_PAT_SLOTS, texelsUsed:MOB_SPECIES.length*MOB_PAT.length*MB_PAT_STRIDE,
+                  attrs:1, attrNote:"i_pat＝float 1本のまま（しゅるい×型の 通し番号を 焼いた だけ）" },
+        habitat:{ on:rHabitat(), names:MOB_HAB.map(function(H){ return H.name; }),
+                  builtByHab:mbHabN.slice(), shownByHab:(function(){ var c=[0,0,0,0], q;
+                    for(q=0;q<mbShown;q++) c[mobHabOf(q)]++; return c; })(),
+                  seeds:mbSeeds, seedBytes:mbSeedBytes, seedMs:mbSeedMs,
+                  seedWhy:"すみかを 切りかえた ときだけ 1回 送る バイト＝毎フレームの 転送(gpuBytes)とは 別勘定。" },
         cost:C({ triangles:(lastMobOn?mbShown*mobTriPer():0), drawCalls:(lastMobOn?1:0), points:0, lines:0,
                  bytes:(mbBytes|0)+(mbRBytes|0), gpuUploads:mbUploads, gpuBytes:mbUpBytes,
                  jsMs:+mobThinkMs.toFixed(3) }),
@@ -5363,7 +5563,8 @@
                     gpuBytes:"生まれてから 今までに GPUへ 送った バイトの 累計＝実測。",
                     gpuUploads:"GPUへ 送った 回数の 累計＝実測。" }),
         off:{ text:"⚙ 地上を あるく生きものの かず ＝0（いない）", kind:"cfgnum", key:"mobs", offValue:0 },
-        deps:["地形の 高さ","空間分割（マス）","近くだけ 考える しくみ（NEAR）"],
+        deps:["地形の 高さ","空間分割（マス）","近くだけ 考える しくみ（NEAR）",
+              "村と 街の 場所（すみか①）","高い山の すそ野（すみか②）","なぎさ（すみか④）"],
         guards:["T24b","T24c","T24d","T24e","T37a","T37h"],
         worlds:["field"], available:!!ENV.terrain, drawn:!!lastMobOn },
 
@@ -6331,8 +6532,36 @@
       return { name:(mul?"(変異)":MOB_PAT[k].name), minY:B.lo[1], maxY:B.hi[1],
                minX:B.lo[0], maxX:B.hi[0], minZ:B.lo[2], maxZ:B.hi[2],
                wide:B.hi[0]-B.lo[0], dy:B.dy.slice() }; },
-    // GPUへ 実際に 送った 個体ごとの 型番号（作った ときの 1回きり。ここが 変わらない ことが 静かな 属性の 証拠）
-    mobPatBuf:function(i){ return mbPat ? mbPat[i|0] : null; },
+    // GPUへ 実際に 送った 個体ごとの **型番号**（作った ときの 1回きり。ここが 変わらない ことが 静かな 属性の 証拠）
+    //   ★弾34 §R28: GPUへ 焼く 数は「しゅるい×型の 通し番号」に なった。ここは その 中から **型を 取り出して**
+    //     返す（%型の数）。読んでいるのは いまも GPUへ 送った その 配列 そのもの＝作り話では ない。
+    //     通し番号を そのまま 見たい ときは 下の mobKeyBuf を つかう（§G T42a が 両方を 突き合わせる）。
+    mobPatBuf:function(i){ return mbPat ? (mbPat[i|0] % MOB_PAT.length) : null; },
+    // 弾34 §R28: しゅるいと すみかの 入口（★どれも 決定論＝乱数も 時計も 引かない）
+    mobSpecies:function(){ return { species:MOB_SPECIES.map(function(S){ return {
+        name:S.name, mul:S.mul.map(function(m){ return m.slice(); }), cols:S.cols.map(function(c){ return c.slice(); }) }; }),
+      patterns:MOB_PAT.map(function(P){ return P.name; }), parts:MOB_PARTS.map(function(p){ return p.name; }),
+      slots:MB_PAT_SLOTS, stride:MB_PAT_STRIDE, keys:MOB_SPECIES.length*MOB_PAT.length,
+      flat:Array.prototype.slice.call(MOB_PAT_FLAT), on:rVariety(), habitatOn:rHabitat() }; },
+    mobHabitats:function(){ return { habs:MOB_HAB.map(function(H){ return { id:H.id, name:H.name, sp:H.sp, pct:H.pct }; }),
+      cycle:MOB_HAB_CYCLE.slice(), on:rHabitat(), builtByHab:mbHabN.slice(),
+      shownByHab:(function(){ var c=[0,0,0,0], q; for(q=0;q<mbShown;q++) c[mobHabOf(q)]++; return c; })(),
+      shown:mbShown, built:mbBuilt, seeds:mbSeeds, seedBytes:mbSeedBytes, seedMs:mbSeedMs }; },
+    mobHabOf:function(i){ return mobHabOf(i|0); },
+    mobSpecRaw:function(i){ return mobSpecRaw(i|0); },
+    mobSpecOf:function(i){ return mobSpecOf(i|0); },
+    mobKeyRaw:function(i){ return mobKeyRaw(i|0); },
+    mobKeyOf:function(i){ return mobKeyOf(i|0); },
+    mobKeyBuf:function(i){ return mbPat ? mbPat[i|0] : null; },
+    mobHomeOf:function(i){ return (mobHx&&mobHz)?[mobHx[i|0], mobHz[i|0]]:null; },
+    // しゅるい×型の 外がわ。★倍率の 表を わたすと その表で 計算する＝わざと 壊した 値で 物差しを ためせる。
+    mobKeyBox:function(sp, pat, mul){
+      var m=mul || ((MOB_SPECIES[sp]&&MOB_PAT[pat])?mobMulOf(sp,pat):null); if(!m) return null;
+      var B=mobPatBake(m);
+      return { key:mobKeyOfSP(sp,pat), name:(mul?"(変異)":(MOB_SPECIES[sp].name+"×"+MOB_PAT[pat].name)),
+               minY:B.lo[1], maxY:B.hi[1], minX:B.lo[0], maxX:B.hi[0], minZ:B.lo[2], maxZ:B.hi[2],
+               half:Math.max(B.hi[0],-B.lo[0]), halfZ:Math.max(B.hi[2],-B.lo[2]),
+               wide:B.hi[0]-B.lo[0], dy:B.dy.slice() }; },
     // アクション（状態を もつ 動き）の 数えもの。★OFF のとき ここが ぜんぶ 0 のままである ことが「1回も 走っていない」証拠。
     mobActState:function(){ var c=[0,0,0];
       if(mobAct){ for(var i=0;i<mbShown;i++) c[mobAct[i]]++; }
@@ -13782,6 +14011,381 @@
         "（変わらなければ 見張りが 効いていない＝この しくみを 信じては いけない）"};
     }
 //★HW33A-END
+//★HW34-BEGIN
+    // ---------- 弾34 §R28: 生きものの しゅるいと すみか（T42a〜T42f） ----------
+    // ★干場の 言葉（2026-08-05）＝「山には 山の、街には 街の 生きものが 居る」。
+    //   だから ここで 見るのは「しゅるいが 増えたか」では ない。**増やしても 費用が 増えていないか**と、
+    //   **弾31が 守っている 外がわの 約束（足が 地面に つく）が 全16通りで 崩れていないか** である。
+    //   ★「かわいいか」「その場所らしいか」は 干場の 実機でしか 決まらない＝ここでは 数を 出すだけ。
+    var T42_SP_N   = 4;      // ✎ しゅるいの 数（のはら／やま／まち／みずべ）
+    var T42_MAX_Y  = 1.15;   // ✎ 頭の 上限（★弾31の 実測 0.979 から 広げた ぶんは 司令塔 承認ずみ）
+    var T42_HALF_X = 0.50;   // ✎ よこ 半幅の 上限（★弾31の 実測 0.3875 から 広げた ぶんも 承認ずみ）
+    var T42_HALF_Z = 0.50;   // ✎ おくゆき 半幅（弾27の 箱＝±0.5。★ここは 広げていない）
+    // 段を 組みあわせて 立てる（t37Set と 同じ 作りに、5段目の すみかだけ 足した もの）
+    function t42Set(hab){ return function(){
+      window.__tenkyu.mobRich(true);
+      window.__tenkyu.mobStage({shape:true, motion:true, variety:true, action:true, habitat:hab});
+      window.__tenkyu.birdCount(CFG_DEFAULTS.birds); window.__tenkyu.mobCount(CFG_DEFAULTS.mobs); }; }
+    // 置き直し（種まき）を 1回 走らせて「生まれた ばかりの すがた」に する＝frame を 進めない
+    function t42Reseed(){
+      var A=window.__tenkyu, was=A.mobStage().habitat;
+      A.mobStage({habitat:!was}); A.mobStage({habitat:was});
+      return was;
+    }
+
+    // T42a: 台帳と 焼きの 一致＝テクセルの 数・ぜんぶ 有限・通し番号の 作り方が 台帳と 合う。
+    function t_T42a(){
+      var A=window.__tenkyu, S=A.mobSpecies(), P=A.mobPatterns(), d=[], bad=[], i, j, k, sp, pt;
+      var spOk=(S.species.length===T42_SP_N)&&(S.patterns.length===MOB_PAT.length)&&(S.parts.length===MB_PAT_STRIDE);
+      // ①テクセルの 数＝しゅるい×型×部品（器の 大きさと ぴったり）
+      var want=S.species.length*S.patterns.length*S.parts.length;
+      var slotOk=(S.slots===want)&&(P.slots===want)&&(S.flat.length===want*4)&&(S.stride===S.parts.length);
+      // ②ぜんぶ 数で ある（NaN も 無限も 無い）／倍率は 0以上
+      var finOk=true;
+      for(i=0;i<S.flat.length;i++) if(typeof S.flat[i]!=="number"||!isFinite(S.flat[i])) finOk=false;
+      for(i=0;i<S.species.length;i++){ var M=S.species[i].mul;
+        if(M.length!==S.parts.length){ bad.push(S.species[i].name+"の 倍率が "+M.length+"個"); continue; }
+        for(j=0;j<M.length;j++){ if(M[j].length!==3){ bad.push(S.species[i].name+"×"+S.parts[j]); continue; }
+          for(k=0;k<3;k++) if(!(typeof M[j][k]==="number"&&isFinite(M[j][k])&&M[j][k]>0))
+            bad.push(S.species[i].name+"×"+S.parts[j]+"の 倍率が 0以下 か 数で ない"); }
+        if(!(S.species[i].cols&&S.species[i].cols.length>=3)) bad.push(S.species[i].name+"の 色の 組が 3つ 未満"); }
+      var mulOk=(bad.length===0);
+      // ③焼いた 表＝しゅるいの 倍率 × 型の 倍率（成分ごと）。1欄ずつ 突き合わせる。
+      var bakeOk=true, worst=0;
+      for(sp=0;sp<S.species.length;sp++) for(pt=0;pt<S.patterns.length;pt++){
+        var key=sp*S.patterns.length+pt;
+        for(j=0;j<S.parts.length;j++){ var s=(key*S.stride+j)*4;
+          for(k=0;k<3;k++){ var wantV=S.species[sp].mul[j][k]*P.patterns[pt].mul[j][k];
+            var e=Math.abs(S.flat[s+k]-wantV); if(e>worst) worst=e; if(e>1e-6) bakeOk=false; } } }
+      // ④しゅるい0 の 4欄は 弾31の 表と 1つずつ 同じ（＝T39a の 判定基準を 1ビットも 動かさずに 済む 土台）
+      //   ★くらべる はばは 1e-6＝弾31 T39a と 同じ（表は float32 で 持つので 0.78 などは 必ず まるまる。
+      //     ここを 1e-9 に すると「まるめ」を「ちがい」と 読みまちがえる＝物差しの ほうが まちがい）。
+      var legacyOk=true, legWorst=0;
+      for(pt=0;pt<S.patterns.length;pt++) for(j=0;j<S.parts.length;j++){ var s2=(pt*S.stride+j)*4;
+        for(k=0;k<3;k++){ var e3=Math.abs(S.flat[s2+k]-P.patterns[pt].mul[j][k]);
+          if(e3>legWorst) legWorst=e3; if(e3>1e-6) legacyOk=false; }
+        var e4=Math.abs(S.flat[s2+3]-P.patterns[pt].dy[j]); if(e4>legWorst) legWorst=e4; if(e4>1e-6) legacyOk=false; }
+      // ⑤通し番号の 作り方＝しゅるい番号×型の数 ＋ 型番号。JS側の うつしと GPUへ 焼いた 中みが 合う。
+      var keyOk=true, keyMax=-1, seen={};
+      for(i=0;i<MOB.MAX;i++){
+        var kr=A.mobKeyRaw(i), sr=A.mobSpecRaw(i), pr=A.mobPatRaw(i);
+        if(kr!==sr*S.patterns.length+pr) keyOk=false;
+        if(sr!==MOB_HAB[A.mobHabOf(i)].sp) keyOk=false;
+        if(kr>keyMax) keyMax=kr; seen[kr]=1;
+        var bufv=A.mobKeyBuf(i); if(bufv!==null && bufv!==kr) keyOk=false;
+        if(A.mobPatBuf(i)!==null && A.mobPatBuf(i)!==pr) keyOk=false;   // 弾31の 番人と 同じ 見かた
+      }
+      var rangeOk=(keyMax<S.keys)&&(S.keys===want/S.parts.length);
+      d.push("しゅるい="+S.species.length+"（"+S.species.map(function(x){return x.name;}).join("・")+"）"+
+             "×型="+S.patterns.length+"×部品="+S.parts.length+"＝テクセル "+S.slots+"（要る数 "+want+"・="+slotOk+"）形="+spOk);
+      d.push("倍率が ぜんぶ 正の数="+mulOk+(bad.length?("／だめ="+bad.slice(0,4).join(",")):"")+"／ぜんぶ 有限="+finOk);
+      d.push("焼き＝しゅるい×型 の かけ算="+bakeOk+"（いちばん 大きい ずれ "+worst.toExponential(2)+"）"+
+             "／しゅるい0 の 4欄は 弾31と 同一="+legacyOk+"（ずれ "+legWorst.toExponential(2)+"＝float32の まるめ ぶんだけ）");
+      d.push("通し番号＝しゅるい×"+S.patterns.length+"＋型="+keyOk+"（出た 通し番号 "+Object.keys(seen).length+"通り・最大 "+keyMax+
+             "／上限 "+S.keys+"＝"+rangeOk+"）");
+      return { pass:spOk&&slotOk&&finOk&&mulOk&&bakeOk&&legacyOk&&keyOk&&rangeOk, detail:d.join(" / ") };
+    }
+
+    // T42b: ★外がわの 約束＝全16通り（しゅるい4×型4）で 最小y==0／最大y<=1.15／よこ半幅<=0.50。
+    //   ★設計書 §R13 が「体型の 個体差」を 一度 捨案に した 理由が **足が 地面に つかなく なる おそれ** だった。
+    //     だから ここは 数を 出すだけ では すまない＝**壊した 倍率を ちゃんと 見つけられる** ことまで 見る。
+    function t_T42b(){
+      var A=window.__tenkyu, S=A.mobSpecies(), d=[], rows=[], ok=true, sp, pt;
+      var mY=0, mX=0, mZ=0, ng=[];
+      for(sp=0;sp<S.species.length;sp++) for(pt=0;pt<S.patterns.length;pt++){
+        var B=A.mobKeyBox(sp,pt);
+        var yOk=(Math.abs(B.minY)<1e-6)&&(B.maxY<=T42_MAX_Y+1e-6);
+        var xOk=(B.half<=T42_HALF_X+1e-6), zOk=(B.halfZ<=T42_HALF_Z+1e-6);
+        if(!(yOk&&xOk&&zOk)){ ok=false; ng.push(B.name); }
+        if(B.maxY>mY) mY=B.maxY; if(B.half>mX) mX=B.half; if(B.halfZ>mZ) mZ=B.halfZ;
+        rows.push(B.name+" 最小y="+B.minY.toFixed(4)+" 最大y="+B.maxY.toFixed(4)+
+                  " 半幅="+B.half.toFixed(4)+" 半奥="+B.halfZ.toFixed(4)+(yOk&&xOk&&zOk?"":" ←だめ"));
+      }
+      // ★変異注入① あたまを 3倍に した しゅるい → 最大y が 1.15 を こえる
+      function mut(sp2, part, comp, v){ var m=A.mobSpecies().species[sp2].mul.map(function(a){ return a.slice(); });
+        var P=A.mobPatterns().patterns[0].mul, out=[], j;
+        m[part][comp]=v;
+        for(j=0;j<m.length;j++) out.push([m[j][0]*P[j][0], m[j][1]*P[j][1], m[j][2]*P[j][2]]);
+        return out; }
+      var X1=A.mobKeyBox(0,0,mut(0,1,1,3.4)), caught1=!(X1.maxY<=T42_MAX_Y+1e-6);
+      // ★変異注入② あしを ぜんぶ 無く する → 足もとが 地面から はなれる（最小y が 0で なくなる）
+      var m2=A.mobSpecies().species[0].mul.map(function(a){ return a.slice(); });
+      m2[2]=[0,0,0]; m2[3]=[0,0,0]; m2[4]=[0,0,0]; m2[5]=[0,0,0];
+      var X2=A.mobKeyBox(0,0,m2), caught2=!(Math.abs(X2.minY)<1e-6);
+      // ★変異注入③ 胴を よこに 3倍 → よこ半幅が 0.50 を こえる
+      var X3=A.mobKeyBox(0,0,mut(0,0,0,3.0)), caught3=!(X3.half<=T42_HALF_X+1e-6);
+      var mutOk=caught1&&caught2&&caught3;
+      d.push("★全"+(S.species.length*S.patterns.length)+"通り: "+rows.join(" ／ "));
+      d.push("いちばん 悪い 値: 最大y="+mY.toFixed(4)+"（上限 "+T42_MAX_Y+"）よこ半幅="+mX.toFixed(4)+
+             "（上限 "+T42_HALF_X+"）おくゆき半幅="+mZ.toFixed(4)+"（弾27の 箱 "+T42_HALF_Z+"）ぜんぶ 合格="+ok+
+             (ng.length?("／だめ="+ng.join(",")):""));
+      d.push("★変異注入① あたま3.4倍→最大y="+X1.maxY.toFixed(4)+"（見つけた="+caught1+"）"+
+             " ② あし 全部 無し→最小y="+X2.minY.toFixed(4)+"（見つけた="+caught2+"）"+
+             " ③ 胴 よこ3倍→半幅="+X3.half.toFixed(4)+"（見つけた="+caught3+"）");
+      if(!mutOk) return { pass:false, skip:true,
+        detail:"判定不能(SKIP): 壊した 倍率を 見つけられない＝この物差しは 死んでいる。 "+d.join(" / ") };
+      return { pass:ok&&mutOk, detail:d.join(" / ") };
+    }
+
+    // T42c: ★予算＝すみかを 入れる 前（5段目 OFF）と 後で
+    //   ドローコール +0 ／ 毎フレームの GPU転送 +0 ／ 三角形 +0。（弾31 T39c と まったく 同じ 物差しを つかう）
+    function t_T42c(){
+      var st=vlgSetup(), A=window.__tenkyu, d=[];
+      var at=t37Stand();
+      var PRE =t37Cost(t42Set(false));   // すみか OFF＝弾33の 置きかた
+      var POST=t37Cost(t42Set(true));    // すみか ON＝世界へ 散らす
+      var dcOk=(POST.dc===PRE.dc), byteOk=(Math.abs(POST.bytes-PRE.bytes)<1e-9), triOk=(POST.tri===PRE.tri);
+      var mTriOk=(POST.mTri===PRE.mTri);
+      // ★インスタンス属性を 1本も 増やしていない＝**器そのものに 1本ずつ 聞く**（本文の 文字では なく 実測）。
+      //   ・つないである 属性＝10本（0〜9＝位置・法線・p0・p1・向き・大きさ・色・rig・つけね・i_pat）
+      //   ・そのうち「1体に 1回 読む（instanced）」＝6本（2,3,4,5,6,9）
+      //   ・10番いこうは 1本も つないでいない。i_pat は いまも float 1つぶん（size===1）。
+      //   ※ ACTIVE_ATTRIBUTES は 実装が gl_InstanceID を 数える ことが あるので 合否には つかわない（数だけ 出す）。
+      var nAttr=gl.getProgramParameter(mbProg, gl.ACTIVE_ATTRIBUTES);
+      var enN=0, instN=0, extra=[], patSize=-1;
+      gl.bindVertexArray(mbRVAO);
+      for(var q9=0;q9<16;q9++){
+        var en=gl.getVertexAttrib(q9, gl.VERTEX_ATTRIB_ARRAY_ENABLED);
+        if(!en) continue;
+        enN++;
+        if(gl.getVertexAttrib(q9, gl.VERTEX_ATTRIB_ARRAY_DIVISOR)>0) instN++;
+        if(q9>=10) extra.push(q9);
+        if(q9===9) patSize=gl.getVertexAttrib(9, gl.VERTEX_ATTRIB_ARRAY_SIZE);
+      }
+      gl.bindVertexArray(null);
+      var attrOk=(enN===10)&&(instN===6)&&(extra.length===0)&&(patSize===1)&&
+                 (String(buildMobs).indexOf("enableVertexAttribArray(10)")<0);
+      // ★毎フレームの 中で 置き直し(種まき)が 走っていない＝60フレーム 進めても seedBytes が 1バイトも 動かない
+      var h0=A.mobHabitats().seedBytes; stepFrames(60);
+      var h1=A.mobHabitats().seedBytes, seedOk=(h1===h0);
+      // ★1体あたりの 三角形は 部品の 数×12 のまま（しゅるいを 増やしても 部品は 7個）
+      var RP=A.richParts(), ON=t37Shot(), perOk=(ON.mPer===12*RP.mobParts.length)&&(RP.mobParts.length===MB_PAT_STRIDE);
+      vlgRestore(st); stepFrames(1);
+      d.push("★すみかの 前後: ドローコール "+PRE.dc+"→"+POST.dc+"（増分 "+(POST.dc-PRE.dc)+"＝0="+dcOk+"）／"+
+             "毎フレームの GPU転送 "+PRE.bytes+"→"+POST.bytes+"B/f（増分 "+(POST.bytes-PRE.bytes)+"＝0="+byteOk+"）／"+
+             "三角形 "+PRE.tri+"→"+POST.tri+"（増分 "+(POST.tri-PRE.tri)+"＝0="+triOk+"・生きものだけ "+PRE.mTri+"→"+POST.mTri+"＝"+mTriOk+"）");
+      d.push("属性＝器に 1本ずつ 聞いた 実測: つないである "+enN+"本（うち 1体1回 読む＝"+instN+"本）"+
+             "・10番いこう="+(extra.join(",")||"なし")+"・i_pat の 大きさ="+patSize+"（float 1つ）＝"+attrOk+
+             "（参考 ACTIVE_ATTRIBUTES="+nAttr+"＝実装が gl_InstanceID を 数える ぶんを ふくむ）"+
+             "／1体あたり 三角形 "+ON.mPer+"＝部品"+RP.mobParts.length+"×12="+perOk);
+      d.push("毎フレームに 置き直しは 走らない（60フレームで 種まきの バイト "+h0+"→"+h1+"）="+seedOk+
+             "／置き直しは 切りかえた ときの 1回きり（累計 "+A.mobHabitats().seeds+"回・"+A.mobHabitats().seedBytes+"B）立った所=街"+at.join(","));
+      return { pass:dcOk&&byteOk&&triOk&&mTriOk&&attrOk&&seedOk&&perOk, detail:d.join(" / ") };
+    }
+
+    // T42d: ★すみか＝①決定論（同じidは 何度でも 同じ しゅるい・同じ 場所）
+    //   ②4つの すみか それぞれに ほんとうに 体が 居る（0体の すみかを 作らない）
+    //   ③全個体が 地面の 上に 立っている（浮かない・めり込まない）
+    function t_T42d(){
+      var st=vlgSetup(), A=window.__tenkyu, d=[], i;
+      var at=t37Stand();
+      A.mobStage({shape:true,motion:true,variety:true,action:true,habitat:true});
+      // ①決定論＝置き直しを 2回 して 1つ 残らず 同じか
+      t42Reseed();
+      var s1=[mobX.slice(0), mobZ.slice(0), mobHx.slice(0), mbCol.slice(0), mbPat.slice(0)];
+      t42Reseed();
+      var s2=[mobX.slice(0), mobZ.slice(0), mobHx.slice(0), mbCol.slice(0), mbPat.slice(0)];
+      var detOk=true, dbad=0;
+      for(var q=0;q<s1.length;q++) for(i=0;i<s1[q].length;i++) if(s1[q][i]!==s2[q][i]){ detOk=false; dbad++; }
+      var pureOk=true;
+      for(i=0;i<400;i++){ if(A.mobHabOf(i)!==A.mobHabOf(i)||A.mobSpecRaw(i)!==A.mobSpecRaw(i)) pureOk=false; }
+      // ②4つの すみかに 体が 居る（既定の 体数でも・上限でも）
+      var H=A.mobHabitats(), cnt50=[0,0,0,0], cntAll=[0,0,0,0];
+      for(i=0;i<CFG_DEFAULTS.mobs;i++) cnt50[A.mobHabOf(i)]++;
+      for(i=0;i<MOB.MAX;i++) cntAll[A.mobHabOf(i)]++;
+      var all50=true, allMax=true;
+      for(i=0;i<4;i++){ if(cnt50[i]===0) all50=false; if(cntAll[i]===0) allMax=false; }
+      // 割りあての 割合が 台帳の とおりか（2000体で ぴったり 55/20/20/5）
+      var pctOk=true, pcts=[];
+      for(i=0;i<4;i++){ var p=cntAll[i]/MOB.MAX*100; pcts.push(p.toFixed(1)+"%"); if(Math.abs(p-MOB_HAB[i].pct)>0.01) pctOk=false; }
+      // ★場所が ほんとうに すみからしいか（ラベルだけ 変えて 同じ所に 置いていない ことの 証拠）
+      var okV=0,okM=0,okP=0,okW=0, ngPos=[], wMaxY=-99, pMinD=1e9;
+      for(i=0;i<MOB.MAX;i++){
+        var hk=A.mobHabOf(i), x=mobX[i], z=mobZ[i];
+        var dv=1e9, v; for(v=0;v<villages.length;v++){ var ddx=x-villages[v].center[0], ddz=z-villages[v].center[2];
+          var dd=Math.sqrt(ddx*ddx+ddz*ddz); if(dd<dv) dv=dd; }
+        if(hk===0){ if(dv<=200) okV++; else ngPos.push("村"+i); }
+        else if(hk===1){ var mx=x-HOME_MT.X, mz=z-HOME_MT.Z;
+          if(Math.sqrt(mx*mx+mz*mz)<HOME_MT.R) okM++; else ngPos.push("山"+i); }
+        else if(hk===2){ if(dv>200 && heightRawAt(x,z)>SEA_Y+8) okP++; else ngPos.push("草原"+i);
+          if(dv<pMinD) pMinD=dv; }
+        else { var wy=heightAt(x,z); if(wy>SEA_Y && wy<=SEA_Y+30) okW++; else ngPos.push("水べ"+i);
+          if(wy>wMaxY) wMaxY=wy; }
+      }
+      var posOk=(ngPos.length===0);
+      // ③ぜんぶ 地面の 上（生まれた すがた＝2000体 ぜんぶ）
+      //   ★くらべる はば＝0.01（世界の 高さは 海面-6〜山頂210。生きものの 背丈は およそ 1）。
+      //     0 に できない わけ＝位置は float32 で 覚えるので、しまう ときに x,z が わずかに まるまり、
+      //     その まるみの ぶんだけ 地面の 高さも 動く（0805の 実測で 最大 2.5e-4＝目には 見えない）。
+      //     ここを 0 に すると「まるめ」を「浮いている」と 読みまちがえる＝物差しの ほうが まちがい。
+      var T42_GND=0.01;
+      var gnd=0, gndMax=0;
+      for(i=0;i<MOB.MAX;i++){ var e=Math.abs(mbP1[i*3+1]-heightAt(mbP1[i*3], mbP1[i*3+2]));
+        if(e>gndMax) gndMax=e; if(e>T42_GND) gnd++; }
+      // ③-2 歩いた あとも 地面の 上（考えた 子＝mobThink を 通った 道）
+      A.mobCount(2000); stepFrames(30);
+      var gnd2=0, gnd2Max=0, n2=A.mobStats().shown;
+      for(i=0;i<n2;i++){ var e2=Math.abs(mbP1[i*3+1]-heightAt(mbP1[i*3], mbP1[i*3+2]));
+        if(e2>gnd2Max) gnd2Max=e2; if(e2>T42_GND) gnd2++; }
+      // ★変異注入＝1体だけ わざと 0.5 だけ 浮かせたら この物差しが 見つけるか（見つけない 物差しは にせもの）
+      var sv=mbP1[1]; mbP1[1]=sv+0.5;
+      var mutGnd=(Math.abs(mbP1[1]-heightAt(mbP1[0], mbP1[2]))>T42_GND); mbP1[1]=sv;
+      vlgRestore(st); stepFrames(1);
+      d.push("①決定論: 置き直し 2回で 食いちがい="+dbad+"（同じ="+detOk+"）／同じidは 同じ しゅるい="+pureOk);
+      d.push("②すみかの 内わけ 2000体="+cntAll.join(",")+"（"+pcts.join("／")+"・台帳どおり="+pctOk+"）"+
+             " 既定"+CFG_DEFAULTS.mobs+"体="+cnt50.join(",")+"（4つとも 居る="+all50+"／2000体でも="+allMax+"）"+
+             " 台帳の 数え="+H.builtByHab.join(","));
+      d.push("★場所が すみからしい="+posOk+"（村"+okV+"・山"+okM+"・草原"+okP+"・水べ"+okW+
+             "／草原の 村までの 最短="+pMinD.toFixed(0)+"・水べの いちばん 高い 地面="+wMaxY.toFixed(2)+
+             "（海面 "+SEA_Y+"）"+(ngPos.length?("／だめ="+ngPos.slice(0,5).join(",")):"")+"）");
+      d.push("③地面の 上に 立っている（はば "+T42_GND+"）: 生まれた すがた 2000体で はみ出し="+gnd+"体（最大 "+gndMax.toExponential(2)+"）"+
+             "／歩いた あと "+n2+"体で はみ出し="+gnd2+"体（最大 "+gnd2Max.toExponential(2)+"）"+
+             "／★変異注入（1体を 0.5 浮かせる）→ 見つけた="+mutGnd);
+      if(!mutGnd) return { pass:false, skip:true,
+        detail:"判定不能(SKIP): 浮かせても 見つけられない＝この物差しは 死んでいる。 "+d.join(" / ") };
+      return { pass:detOk&&pureOk&&all50&&allMax&&pctOk&&posOk&&(gnd===0)&&(gnd2===0), detail:d.join(" / ") };
+    }
+
+    // T42e: ★陰性対照＝⚙で「すみか」と「個体差」を 切ると **弾33と 完全に 一致**する。
+    //   ★数を くらべるのでは なく、**弾33の 式を ここに そのまま 書き写して 2000体 1つずつ 突き合わせる**
+    //     （乱数の 種も ならびも 同じ＝1ビットも ちがわない ことを 証明する）。
+    function t_T42e(){
+      var st=vlgSetup(), A=window.__tenkyu, d=[], i;
+      var at=t37Stand();
+      try{
+        A.mobStage({shape:true, motion:true, variety:false, action:true, habitat:false});   // ★ここで 置き直しが 走る
+        // ---- 弾33（すみかを 入れる 前）の 式 そのまま ----
+        var rnd=mulberry32(hashStr("tenkyu-mob:"+FIELD_SEED)|0), n=MOB.MAX;
+        var sites=villages.length ? villages : [{center:[0,heightAt(0,0),0], radius:60}];
+        var F=Math.fround, bad=[], nbad=0;
+        function eq(a,b,tag,idx){ if(a!==b){ nbad++; if(bad.length<6) bad.push(tag+"#"+idx+"（いま "+a+"／弾33 "+b+"）"); } }
+        for(i=0;i<n;i++){
+          var S=sites[i % sites.length], cx=S.center[0], cz=S.center[2];
+          var a=rnd()*Math.PI*2, rr=S.radius*(0.4+rnd()*1.3);
+          var x=cx+Math.cos(a)*rr, z=cz+Math.sin(a)*rr;
+          var eh=rnd()*Math.PI*2, esp=MOB.SPD_MIN+rnd()*MOB.SPD_SPAN;
+          var eph=rnd()*Math.PI*2, ew=0.5+rnd()*1.1;
+          var y=heightAt(x,z);
+          var sz=MOB.SIZE_MIN+rnd()*MOB.SIZE_SPAN;
+          var cl=MOB_COL[Math.floor(rnd()*MOB_COL.length)%MOB_COL.length], k=(rnd()-0.5)*0.06;
+          eq(mobX[i],F(x),"位置x",i); eq(mobZ[i],F(z),"位置z",i);
+          eq(mobHx[i],F(cx),"すみかx",i); eq(mobHz[i],F(cz),"すみかz",i);
+          eq(mobH[i],F(eh),"向き",i); eq(mobSpd[i],F(esp),"速さ",i);
+          eq(mobPh[i],F(eph),"位相",i); eq(mobW[i],F(ew),"ゆれ",i);
+          eq(mbP0[i*3+1],F(y),"高さ",i); eq(mbP1[i*3+1],F(y),"高さ2",i);
+          eq(mbYw[i*2],F(eh),"向きbuf",i);
+          eq(mbSize[i*3],F(sz*0.85),"大きさ",i);
+          eq(mbCol[i*3],  F(Math.max(0,Math.min(1,cl[0]+k))),"色r",i);
+          eq(mbCol[i*3+1],F(Math.max(0,Math.min(1,cl[1]+k))),"色g",i);
+          eq(mbCol[i*3+2],F(Math.max(0,Math.min(1,cl[2]+k))),"色b",i);
+          eq(mbPat[i], mobPatRaw(i), "通し番号", i);   // ★しゅるい0＝通し番号は 型番号 そのもの
+        }
+        var sameOk=(nbad===0);
+        // しゅるいは ぜんぶ 0／シェーダーへ わたる 数も ぜんぶ 0（個体差 OFF）
+        var spOk=true, keyOk=true, habOk=true;
+        for(i=0;i<n;i++){ if(A.mobSpecRaw(i)!==0) spOk=false; if(A.mobKeyOf(i)!==0) keyOk=false; if(A.mobHabOf(i)!==0) habOk=false; }
+        // ★陽性対照＝すみかを もどすと ちゃんと ちがう 場所・ちがう しゅるいに なる（立たなければ 上の 一致は 意味を 失う）
+        //   ★ここは frame を 進める 前に 見る（歩いた あとの 位置で くらべると「動いた」が 何も 言えなく なる）。
+        A.mobStage({habitat:true});
+        var moved=0, spSeen={};
+        for(i=0;i<n;i++){ spSeen[A.mobSpecRaw(i)]=1; }
+        var rnd2=mulberry32(hashStr("tenkyu-mob:"+FIELD_SEED)|0);
+        for(i=0;i<n;i++){ var S2=sites[i % sites.length];
+          var a2=rnd2()*Math.PI*2, r2=S2.radius*(0.4+rnd2()*1.3);
+          rnd2();rnd2();rnd2();rnd2();rnd2();rnd2();rnd2();
+          if(mobX[i]!==F(S2.center[0]+Math.cos(a2)*r2)) moved++; }
+        var backOk=(moved>0)&&(Object.keys(spSeen).length===T42_SP_N);
+        // 費用も 弾33と 同じ（ドローコール・毎フレームの 転送・三角形）＝ここから さきは frame を 進める
+        var OFFc=t37Cost(t42Set(false)), ONc=t37Cost(t42Set(true));
+        var costOk=(OFFc.dc===ONc.dc)&&(OFFc.tri===ONc.tri)&&(Math.abs(OFFc.bytes-ONc.bytes)<1e-9);
+        d.push("★弾33の 式を 書き写して 2000体 突き合わせ: 食いちがい="+nbad+"箇所（完全一致="+sameOk+"）"+
+               (bad.length?("／"+bad.join("、")):""));
+        d.push("しゅるいは ぜんぶ 0="+spOk+"／すみかは ぜんぶ 村="+habOk+"／シェーダーへ わたる 数も 0="+keyOk+
+               "（個体差 OFF＝u_vary=0 の うつし）");
+        d.push("費用も 同じ: ドローコール "+OFFc.dc+"="+ONc.dc+" 三角形 "+OFFc.tri+"="+ONc.tri+
+               " 毎フレームの 転送 "+OFFc.bytes+"="+ONc.bytes+"B/f（="+costOk+"）立った所=街"+at.join(","));
+        d.push("★陽性対照（すみかを もどす）→ 場所が 変わった 体="+moved+"・出た しゅるい="+Object.keys(spSeen).length+
+               "通り（立った="+backOk+"）");
+        if(!backOk) return { pass:false, skip:true,
+          detail:"判定不能(SKIP): 陽性対照が 立たない＝この 陰性対照は 何も 言っていない。 "+d.join(" / ") };
+        return { pass:sameOk&&spOk&&keyOk&&habOk&&costOk&&backOk, detail:d.join(" / ") };
+      } finally {
+        A.mobStage({shape:true, motion:true, variety:true, action:true, habitat:true});
+        vlgRestore(st); stepFrames(1);
+      }
+    }
+
+    // T42f: 回帰＝既存 T1〜T42e が 1件も 余分に 落ちていない（既知の 落ちは regKnown で 除く）。
+    //   ★前の 網の 判定基準は 1ビットも 動かしていない。★弾34で 動かした 既存の 数も 0個。
+    function t_T42f(){
+      var need=["T1","T2","T2f","T2n","T3","T3c","T4","T5","T6","T7","T8","T9","T10","T11","T12","T13","T14",
+                "T15","T16","T17","T18","T19a","T19b","T19c","T19d","T20a","T20b","T20c","T20d","T20e",
+                "T21a","T21b","T21c","T21d","T21e","T21f","T21i","T21g","T22a","T22b","T22c",
+                "T23a","T23b","T23c","T23d","T23e","T25a","T25b","T25c","T25d","T25e","T25f",
+                "T24a","T24b","T24c","T24d","T24e","T24f","T26a","T27a","T27b","T27c","T27d","T27e","T27f",
+                "T28a","T28b","T28c","T28d","T28e","T28f","T29a","T29b","T29c","T29d","T29e",
+                "T30a","T30b","T30c","T30d","T30e","T31a","T31b","T31c","T31d","T31e","T31f",
+                "T32a","T32b","T32c","T32d","T32e","T33a","T33b","T33c","T33d","T33e","T33f",
+                "T34a","T34b","T34c","T34d","T34e","T34f","T35a","T35b","T35c","T35d","T35e","T35f",
+                "T36a","T36b","T36c","T36d","T36e","T36f","T37a","T37b","T37c","T37d","T37e","T37g","T37h","T37f",
+                "T38a","T38b","T38c","T38d","T38e","T39a","T39b","T39c","T39d","T39e","T39f",
+                "T40a","T40b","T40c","T40d","T40e","T40f","T41a","T41b",
+                "T42a","T42b","T42c","T42d","T42e"];
+      var missing=[], failed=[], skipped=[], i, j;
+      for(i=0;i<need.length;i++){
+        var r=null;
+        for(j=0;j<_ranResults.length;j++){ if(_ranResults[j].id===need[i]){ r=_ranResults[j]; break; } }
+        if(!r) missing.push(need[i]);
+        else if(r.skip) skipped.push(need[i]);
+        else if(!r.pass) failed.push(need[i]);
+      }
+      var known=regKnown(failed);
+      var realFails=failed.filter(function(x){ return known.indexOf(x)<0; });
+      var T=window.__tenkyu;
+      // ★保存の キーは 1文字も 変えていない（干場の 訪問記録・図鑑・自己ベストが 読めなく ならない）
+      var keyOk=(CFG_KEY==="tenkyu_cfg_v1")&&(SAVE_KEY==="tenkyu_save_v1");
+      // ★乱数と 時計を しゅるい・すみか・置きかたの どこにも つかっていない（本文の 文字で 見る＝fail-loud）
+      var src=String(mobSeedAll)+String(mobHabSpot)+String(mobShoreTable)+String(mobSpecRaw)+
+              String(mobKeyRaw)+String(mobHabOf)+String(mobReseed)+String(buildMobs)+String(mobPatBake)+String(mobVlgDist);
+      var noRndOk=(src.indexOf("Math.random")<0)&&(src.indexOf("Date.now")<0)&&(src.indexOf("new Date")<0);
+      // ★体数の 上限と きざみは 1つも 変えていない（費用の 天井を 動かしていない）
+      var capOk=(MOB.MAX===2000)&&(MOB.STEPS.join(",")==="0,50,200,500,1000,2000");
+      // ★えがく 器を 1つも 増やしていない＝生きものは いまも mbVAO と mbRVAO の 2つだけ
+      var L=T.elements(), me=null;
+      for(i=0;i<L.elements.length;i++) if(L.elements[i].id==="mob") me=L.elements[i];
+      var vaoOk=!!me && me.owns.length===2 && me.owns[0]==="mbVAO" && me.owns[1]==="mbRVAO" &&
+                (me.cost.drawCalls===0 || me.cost.drawCalls===1);
+      // ★台帳（§R24⑦）が しゅるいと すみかを 実測で 持っている（見込みの 数を 書いていない）
+      var H=T.mobHabitats(), ledOk=!!me && !!me.species && !!me.habitat &&
+              (me.species.n===T42_SP_N)&&(me.species.texels===MB_PAT_SLOTS)&&(me.species.attrs===1)&&
+              (me.habitat.builtByHab.join(",")===H.builtByHab.join(","))&&
+              (me.habitat.shownByHab.join(",")===H.shownByHab.join(","));
+      // ★絵も 音も 1バイトも 足していない（しゅるい・すみかの 台帳は ぜんぶ 数と 文字）
+      var devHtml=document.getElementById("devboard").innerHTML;
+      var ledStr=JSON.stringify(T.mobSpecies())+JSON.stringify(T.mobHabitats());
+      var noAssetOk=(document.querySelectorAll("script[src]").length===1)&&
+                    (devHtml.indexOf("<img")<0)&&(devHtml.indexOf("<audio")<0)&&(devHtml.indexOf("<video")<0)&&
+                    (devHtml.indexOf("url(")<0)&&(devHtml.indexOf("http")<0)&&
+                    (ledStr.indexOf("data:")<0)&&(ledStr.indexOf("http")<0)&&
+                    (String(mobHabSpot).indexOf("fetch")<0);
+      // ★5段の 入切が ⚙に そろっている（5段目を 足しても 前の 4つを 1つも 消していない）
+      var uiOk=(STAGE_IDS.length===5)&&(STAGE_IDS[4]==="habitat");
+      for(i=0;i<STAGE_IDS.length;i++){ if(document.querySelectorAll("#s-rich-"+STAGE_IDS[i]).length!==1) uiOk=false; }
+      var stg=T.mobStage();
+      if(typeof stg.on.habitat!=="boolean"||typeof stg.on.variety!=="boolean") uiOk=false;
+      return { pass:(missing.length===0)&&(realFails.length===0)&&keyOk&&noRndOk&&capOk&&vaoOk&&ledOk&&noAssetOk&&uiOk,
+        detail:"登録もれ="+(missing.join(",")||"なし")+" 既知以外の失敗="+(realFails.join(",")||"なし")+
+               " 既知の失敗="+(failed.join(",")||"なし")+" 判定不能="+(skipped.join(",")||"なし")+
+               " ／ 保存キーは 不変="+keyOk+"（"+CFG_KEY+"／"+SAVE_KEY+"）"+
+               " 乱数・時計を つかっていない="+noRndOk+
+               " 体数の 上限・きざみは 不変="+capOk+"（MAX="+MOB.MAX+"／"+MOB.STEPS.join(",")+"）"+
+               " えがく 器は 2つのまま="+vaoOk+
+               " 要素台帳が 実測で 更新されている="+ledOk+
+               " 絵・音を 足していない="+noAssetOk+
+               " ⚙に 5段 そろっている="+uiOk+"（"+STAGE_IDS.join(",")+"）"+
+               " ／ ★弾34で 動かした 既存の 数＝0個（MB_PAT_SLOTS 28→112 は 弾31の 判定式に 出てこない 器の 大きさ）" };
+    }
+//★HW34-END
     window.__tenkyu.runAll = async function(){
       if(!window.__testErrCount){ window.__testErrCount=0;
         var _ce=console.error.bind(console);
@@ -13881,6 +14485,12 @@
       //   ＝T40f の 後ろに 置く。回帰の 網(T40f)の need にも 足していない）
       await run("T41a",t_T41a); await run("T41b",t_T41b);
 //★HW33A-END
+//★HW34-BEGIN
+      // 弾34 §R28（生きものの しゅるいと すみか。★T42f は 前の 網を ぜんぶ 見るので 必ず いちばん最後。
+      //   T41b を ふくむ 前の 網の 判定基準は 1ビットも 動かしていない＝T41b の 後ろに 置く）
+      await run("T42a",t_T42a); await run("T42b",t_T42b); await run("T42c",t_T42c);
+      await run("T42d",t_T42d); await run("T42e",t_T42e); await run("T42f",t_T42f);
+//★HW34-END
       // 復元＝本当のプレイヤー進行・設定・カメラを一切壊さない
       swooshCount=snapSwoosh.count; swooshLast=snapSwoosh.last;   // persistSave()のnearMiss焼き込み前に実行順を戻す
       save=snapSave; persistSave(); syncVisitedBuffer(); completedConstellations=recomputeCompletedConstellations(); buildLines();
