@@ -352,6 +352,13 @@
   #dev-panels h4{ font-size:14px; margin:6px 0 8px; color:var(--fg); }
   #dev-panels .dev-slot{ min-height:96px; border:1px dashed var(--line); border-radius:10px;
     padding:10px 12px; color:var(--dim); font-size:13px; line-height:1.8; }
+  #dev-panels .dev-slot ul{ margin:6px 0 0; padding-left:1.2em; }
+  /* 弾35 §R29: 👕きせかえの ボタン。★えらばれている ものは 色だけで 出さない（● と ふとじと aria-pressed）。 */
+  #dev-panels button.dev-suit{ min-height:44px; margin:0 6px 6px 0; padding:8px 12px; border-radius:11px;
+    cursor:pointer; border:1px solid var(--line); background:rgba(143,184,255,.10); color:var(--dim); font-size:14px; }
+  #dev-panels button.dev-suit[aria-pressed="true"]{ background:rgba(143,184,255,.30); color:var(--fg);
+    font-weight:700; border-color:var(--accent); }
+  #dev-panels button.dev-suit:focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }
 </style>
 </head>
 <body>
@@ -485,6 +492,10 @@
     <option value="top">まうえ（ななめ上から 見おろす）</option>
   </select>
   <p class="hint">パソコンは <b>V</b> キーでも 切りかえられます（右がわの <b>👁</b> ボタンでも 同じです）。</p>
+  <!-- 弾35 §R29: きせかえ（自機の ふく）。★中みは 台帳 AV_SUITS から 作る＝ここに 名前を 書きたさない。
+       ★入口は 2つ（ここと 拠点の 👕きせかえ）だが、通る道は setAvatarSuit 1本だけ＝じょうたいは かならず 1つ。 -->
+  <label for="s-suit">👕 じぶんの ふく（三人称・まうえの ときに 見えます）</label>
+  <select id="s-suit"></select>
   <label for="s-lookmode">パソコンの 見まわし方</label>
   <select id="s-lookmode">
     <option value="lock">クリックで固定（ずれない・3Dゲーム式）</option>
@@ -721,7 +732,7 @@
   // ★下の 64文字は「焼いた ときの 自分の すがた」。build.py が 0 を 64個 置いた ところへ 書きこむ。
   //   ＝読む がわは その 64文字を 0 に もどして sha256 を とれば、同じ 数に なる。
   //   これで「いま 動いている この ファイルが、源から 焼いた ままか」を 機械で 見張れる（T41a）。
-  var HW_SELF_SHA="56b3d0145c99f3d80f5e23a0205c7eb86c62058db387d5e3e7f6447992da0966";
+  var HW_SELF_SHA="373233135160993853a5ccbc192594867607c774195b7d83c3db3799f816a17f";
   try{ window.HW_SELF_SHA=HW_SELF_SHA; }catch(e){}   // 人が コンソールで 見られる ように（機能には つかわない）
 //★HW33A-END
   // 干場要望「地上から飛べるように」＝セーブが一度も無い初回起動の時だけ、地面のある世界の低空スタートにする。
@@ -756,6 +767,9 @@
       battle:true, battleLevel:"normal", battlePeace:false, battleTold:false, enemies:24,
       // 弾28 §R23: 箱に命を入れる（形＝箱の組・動きは ぜんぶ 頂点シェーダーの中）。★切ると 弾27と まったく 同じ 見た目と 数に もどる。
       mobRich:true,
+      // 弾35 §R29: きせかえ（自機の 見た目）。★新しい キーを 1つ 足しただけ＝既存の キーの 名前は 1文字も 変えていない。
+      //   既定 0＝「いつもの ふく」＝弾34の 自機と 1ビットも 同じ（着がえは えらぶ もの）。
+      avatarSuit:0,
       simpleScene:false };  // 弾11 §R9: 「けしきを かんたんにする」既定OFF＝地形は既定で出る（ONで地形の1ドローコールを飛ばす）
   var cfg = Object.assign({}, CFG_DEFAULTS,
     (function(){ try{ return JSON.parse(localStorage.getItem(CFG_KEY))||{}; }catch(e){ return {}; } })());
@@ -1429,9 +1443,14 @@
     TOP_Y: 210,  // ✎ 山頂の 高さ（★世界で いちばん 高い。弾31までの 最高は 175.9・雲は 240なので 雲の下）
     BOT_Y:   0,  // ✎ すそ野の 高さ（ここまで 下がったら もう 足さない＝まわりの 地面に とけこむ）
     R:     230,  // ✎ すそ野の 半径（★中心から R を ひくと 492＝KEEP_R=480 の 外がわに おさまること）
-    FLAT:   34,  // ✎ 山頂の たいらな 半径（★ここが 拠点の 建つ 台。屋根の かどまで15.9・立ち位置まで20＝余裕つき）
+    FLAT:   48,  // ✎ 山頂の たいらな 半径（★ここが 拠点の 建つ 台。屋根の かどまで20.1・立ち位置まで30＝余裕つき）
                  //   ★2026-08-04 26→34。実際の 起動画面を 撮って 見たら **かべしか 見えなかった**（縁台の
                  //   すぐ外に 立って かべを 正面に していた）。立ち位置を うしろへ 下げるには 台が 要る。
+                 //   ★2026-08-05（弾35 §R29）34→48。建物を W28×D24 へ 広げた ぶん 台も 広げる。
+                 //   すそ野の 半径 R=230 は 1ミリも 動かしていない＝**山が 村を 飲みこむ きょりは 不変**
+                 //   （山の まん中から いちばん近い 村まで 317.2・すそ野 230＝飲みこみ 0 のまま。§G T43e が 実測）。
+                 //   ★村・街・低木は 半径 KEEP_R=480 の 内がわにしか 置かれない＝FLAT を 動かしても
+                 //   村の 座標の 指紋（§G T40c）は 1ビットも 変わらない。
     KEEP_R:480,  // ✎ この 内がわには ぜったい 手を 出さない（弾21 BIOME.R_IN と 同じ数＝作品星の 帯を 守る）
     LAND_LO: 4, LAND_HI: 22   // ✎ 海面から これだけ 上がって はじめて 山が 立ちあがる（弾21 BIOME と 同じ数）
   };
@@ -2055,10 +2074,17 @@
   //     人の はば(R=0.62＝直径1.24)より ずっと ひろく とる＝詰みを 作らない。
   //   ③浮かない・埋まらない＝足もとは かならず 山頂の たいら(HOME_MT.TOP_Y)。屋根は 建物の 上面に ぴったり。
   //   ④乱数を 1回も 引かない＝場所も 大きさも 色も ぜんぶ 定数（決定論・§G T40b）。
+  // ---------- 弾35 §R29: 拠点を 広く 高く（2階を 足す）＋ くらしの ある へや ----------
+  // ★干場の 言葉（2026-08-05）＝「拠点の 建物 広く 高く 設計し、インテリアを 置いたりして 生活感をだす。
+  //   また PCを 配置し 近づくと HWの 開発状況が 見れる。クローゼットの 衣装を 変更できる。建物の 外の 面積も 少し 広くし…」
+  // ★守ること（弾32の ①〜④を そのまま つぎ、2つ 足す）:
+  //   ⑤**2階へは「階段」という 新しい しくみを 作らない**＝**のぼれる 段差(PLR.STEP=1.70)より 低い 箱を ならべる**だけ。
+  //     ＝弾23の 当たり判定が そのまま 受けとめる（「屋根も 床に なる」の 道を 1本も 増やさない）。
+  //   ⑥**人が 通れる 道を かならず 残す**＝入口から おくの へやまで、人の はば(1.24)で 通り抜けられること（§G T43a が 歩いて 見る）。
   var HOME = {
-    W:     22.0,  // ✎ 外のり よこ(x)
-    D:     18.0,  // ✎ 外のり おくゆき(z)
-    H:      4.0,  // ✎ かべの 高さ（★人の 高さ2.6より 高い＝中に 立てる）
+    W:     28.0,  // ✎ 外のり よこ(x)　★2026-08-05（弾35）22→28
+    D:     24.0,  // ✎ 外のり おくゆき(z)　★2026-08-05（弾35）18→24
+    H:      7.0,  // ✎ かべの 高さ（★2026-08-05（弾35）4.0→7.0＝2階が 入る 高さ）
     T:      0.7,  // ✎ かべの あつさ
     DOOR:   3.0,  // ✎ 入口の はば（人の はば1.24の 2倍より ひろい）
     GAP:    3.4,  // ✎ 中の しきりの すきま（部屋が 2つに 分かれても 行き来できる）
@@ -2068,45 +2094,152 @@
     DECK_H: 0.5,  // ✎ 縁台の 高さ（★PLR.STEP=1.70 より 低い＝またげる）
     TOWER:  2.4,  // ✎ 屋根の 上の 見はり台の はば
     TOWER_H:1.6,
-    NEAR_X:14.0,  // ✎ ここまで 近ければ「拠点に 居る」（よこ）＝建物の 外がわ11＋3
-    NEAR_Z:28.0,  // ✎ 同じく おくゆき＝建物の 外がわ9＋縁台3＋前庭16（★2026-08-04 14→28）
+    // 弾35 §R29: 2階（★「階段」では なく **のぼれる 段**を ならべる）
+    F2_Y:   3.4,  // ✎ 2階の 床の 下がわ（★人の 高さ2.6より 高い＝1階の 天井が 頭に あたらない）
+    F2_T:   0.3,  // ✎ 2階の 床の あつさ（★床の 上＝3.7 が 2階の 立つ 高さ）
+    F2_Z0: -0.5,  // ✎ 2階の 床の 手前の ふち（ここより 手前は ふきぬけ＝下から 見あげられる）
+    ST_X0:  7.0,  // ✎ のぼれる 段の 内がわの ふち（x）★ここから 右の かべまでが 段
+    ST_Z:  [[-9.5,-6.5,1.30],[-6.5,-4.0,2.50],[-4.0,-0.5,3.70]],
+                  // ✎ 段＝[おくの はじまり, おわり, 上の 高さ]。★どの 段差も PLR.STEP=1.70 以下
+                  //   （0→1.30→2.50→3.70＝1.30／1.20／1.20。§G T43a が 実際に 歩いて 見る）
+    RAIL_H: 2.0,  // ✎ 2階の てすり（★PLR.STEP より 高い＝ふきぬけへ 落ちない）
+    RAIL_T: 0.3,  // ✎ てすりの あつさ
+    NEAR_X:17.0,  // ✎ ここまで 近ければ「拠点に 居る」（よこ）＝建物の 外がわ14＋3（★2026-08-05 14→17）
+    NEAR_Z:44.0,  // ✎ 同じく おくゆき＝建物の 外がわ12＋縁台3＋前庭27（★2026-08-04 14→28／2026-08-05 28→42）
                   //   ★立ち位置を うしろへ 下げた ぶん、ここも のばさないと「拠点に 居る」から
                   //   はずれて **開いた とたん 板が ひらけない** ことに なる（立ち位置と 対で 動かす）。
     NEAR_Y: 8.0,  // ✎ 同じく 高さ（山頂から これ以上 はなれたら 居ないと みなす）
-    FRONT: 24.0,  // ✎ アプリを ひらいた とき 立つ 場所（入口の 前・-z がわ）
+    FURN_R: 3.0,  // ✎ 家具の 前に 立ったと みなす きょり（PC・クローゼットの 章が ひらく 半径）
+    FURN_Y: 2.6,  // ✎ 同じく たて（★2階から 1階の PCは ひらけない＝階が ちがえば とどかない）
+    FRONT: 40.0,  // ✎ アプリを ひらいた とき 立つ 場所（入口の 前・-z がわ）★2026-08-05 24→38
                   //   ★2026-08-04 12→24。**実際の 起動画面を 撮って 見たら かべしか 見えなかった**＝
                   //   縁台の すぐ外(かべから3)に 立って かべを 正面に していた。かべから15 まで 下がると
                   //   拠点ぜんたいと 空が 入る＝「山の てっぺんに 着いた」絵に なる。
                   //   ★数を 1つ 変えるだけで 寄り引きが 変わる（FLAT と NEAR_Z も 対で 見ること）。
-                  //   ★これ以上 引いては いけない＝平ら(FLAT=34)の 外へ 出て 画が 真っ白に なる（70で 実測）。
-    START_YAW: Math.PI * 0.70
+                  //   ★これ以上 引いては いけない＝平ら(FLAT)の 外へ 出て 画が 真っ白に なる（FLAT=34 の とき 70で 実測）。
+                  //   ★2026-08-05（弾35）24→38。**実際の 起動画面を 撮って 見たら 画面の 右はしに
+                  //     かべの 一部しか 写っていなかった**（建物が 22×18×4 → 28×24×7 に なった ぶん、
+                  //     弾32の 寄り引きでは 建物が 画面から はみ出した）。台(FLAT)を 48に 広げた ので 下がれる。
+                  //     ★下げたら NEAR_Z も 対で 動かす（34→42）＝でないと 開いた とたん 板が ひらけない。
+    START_PITCH: -0.10,
+                  // ✎ ひらいた とき 見ている 上下の かむき。★2026-08-05（弾35）新設。
+                  //   わけ＝山頂の たいらが 48に 広がった ことで、真っすぐ 前を 見ると **画面の 下半分が
+                  //   真っ白な 台だけ** に なる（画を 撮って 実測）。すこし 上を 向くと 拠点と 空が 入る。
+    START_YAW: Math.PI * 0.93
                   // ✎ アプリを ひらいた とき むいている むき（進む むき＝[sin(yaw), -cos(yaw)]）。
                   //   ★2026-08-05 干場裁定＝**斜め**（π＝拠点を 正面 から 変更）。
                   //   わけ＝正面だと 画面の 6割が かべに なり、山の てっぺんに 居ることが 読めなかった。
                   //   斜めだと **拠点（右）と 遠くの 山・街・草原（左）が 同時に 入る**。
                   //   ★「白い もや」は 原因では なかった＝かすみを 半分にしても 正面のままでは
                   //   1つも 変わらないことを 画で 実測（2026-08-05）。効くのは むき。
+                  //   ★2026-08-05（弾35）0.70π→0.86π。建物が 大きく なった ぶん、0.70π（54°よそ見）では
+                  //   建物が 画面から 出た＝**画を 撮って 見て 決めなおした**（25°よそ見＝拠点が まん中、
+                  //   遠くの 山と 海は 画面の 左に のこる）。
   };
   var HOME_WALL=[0.80,0.75,0.66], HOME_ROOF=[0.42,0.22,0.18],
-      HOME_DECK=[0.45,0.36,0.26], HOME_TOWER=[0.72,0.74,0.78];
+      HOME_DECK=[0.45,0.36,0.26], HOME_TOWER=[0.72,0.74,0.78],
+      HOME_FLR2=[0.66,0.58,0.46], HOME_STEP=[0.70,0.63,0.52], HOME_RAIL=[0.58,0.50,0.40];
+  // ================= 弾35 §R29: インテリア台帳（くらしの 気配＝色つきの 箱だけ） =================
+  // ★絵も 音も 1バイトも 足していない。ぜんぶ **色つきの 箱**＝新しい 絵の 素材は 0個のまま。
+  // ★家具を 1つ ふやすのに 本体を 書きたさない＝この 表に 1行 足すだけ（§G T43b が 数で 見張る）。
+  //   fl … 0＝1階／1＝2階（2階の 床の 上に 置く）
+  //   up … その階の 床から どれだけ 上か（0＝床に 直に 置く。つくえの 上の PC などは >0）
+  //   x,z… 拠点の まん中からの ずれ／sz＝[よこ, たて, おくゆき]
+  //   thin… ラグの ように **のぼれる 段差(PLR.STEP)より うんと 低い** 物＝通せんぼしない（歩いて 上を 通れる）
+  // ★通り道は わざと あけてある＝入口(x=0)から おくの へやまで、|x|<1.7 の すじに 家具を 1つも 置かない。
+  var HOME_WOOD=[0.52,0.38,0.24], HOME_CLOTH=[0.34,0.42,0.55], HOME_RUG=[0.58,0.34,0.30],
+      HOME_LAMP=[0.95,0.86,0.55], HOME_PC=[0.24,0.26,0.30], HOME_PCSCR=[0.36,0.64,0.74],
+      HOME_CLOSET=[0.62,0.50,0.38], HOME_CHEST=[0.46,0.34,0.24], HOME_PILLOW=[0.90,0.90,0.88];
+  var HOME_FURN = [
+    // ---- 1階 手前の へや（入って すぐ・くつろぐ ところ）----
+    { id:"rug1",   name:"ラグ",                 fl:0, up:0,    x: -7.5, z:-6.0, sz:[9.0,0.06,7.0], col:HOME_RUG,    thin:true },
+    { id:"desk",   name:"つくえ",               fl:0, up:0,    x:-10.5, z:-8.5, sz:[3.2,1.10,1.6], col:HOME_WOOD },
+    { id:"chair",  name:"いす",                 fl:0, up:0,    x:-10.5, z:-6.8, sz:[1.0,0.95,1.0], col:HOME_WOOD },
+    { id:"sofa",   name:"ソファ",               fl:0, up:0,    x: -7.0, z:-3.0, sz:[5.0,1.00,1.6], col:HOME_CLOTH },
+    { id:"table",  name:"ひくい つくえ",        fl:0, up:0,    x: -7.0, z:-5.2, sz:[2.4,0.70,1.4], col:HOME_WOOD },
+    { id:"shelf",  name:"たな",                 fl:0, up:0,    x:-12.9, z:-2.0, sz:[0.8,2.40,4.0], col:HOME_WOOD },
+    { id:"lamp",   name:"あかり",               fl:0, up:0,    x: -4.0, z:-9.5, sz:[0.5,2.20,0.5], col:HOME_LAMP },
+    // ---- 1階 おくの へや（しごとを する ところ）----
+    { id:"pcdesk", name:"PCの つくえ",          fl:0, up:0,    x: -8.0, z: 3.2, sz:[3.6,1.10,1.8], col:HOME_WOOD },
+    { id:"pc",     name:"PC（かいはつの ようす）",fl:0, up:1.10,x: -8.0, z: 3.6, sz:[1.4,0.95,0.35],col:HOME_PCSCR, near:true },
+    { id:"pcbody", name:"PCの ほんたい",        fl:0, up:1.10, x: -9.5, z: 3.2, sz:[0.5,0.70,0.9], col:HOME_PC },
+    { id:"closet", name:"クローゼット",         fl:0, up:0,    x:  7.0, z:10.3, sz:[4.6,3.20,1.6], col:HOME_CLOSET, near:true },
+    { id:"books",  name:"ほんだな",             fl:0, up:0,    x:-12.9, z: 8.0, sz:[0.8,3.00,5.0], col:HOME_WOOD },
+    { id:"rug2",   name:"ラグ（おくの へや）",   fl:0, up:0,    x:  3.0, z: 5.0, sz:[8.0,0.06,7.0], col:HOME_RUG,   thin:true },
+    { id:"rtable", name:"まるい つくえ",         fl:0, up:0,    x:  3.0, z: 5.0, sz:[2.0,0.80,2.0], col:HOME_WOOD },
+    // ---- 2階（やすむ ところ）----
+    { id:"bed",    name:"ベッド",               fl:1, up:0,    x: -8.0, z: 6.0, sz:[3.4,0.90,5.4], col:HOME_CLOTH },
+    { id:"pillow", name:"まくら",               fl:1, up:0.90, x: -8.0, z: 3.6, sz:[2.2,0.35,1.0], col:HOME_PILLOW },
+    { id:"chest",  name:"たんす",               fl:1, up:0,    x: 10.0, z: 8.0, sz:[3.0,2.60,1.6], col:HOME_CHEST },
+    { id:"rug3",   name:"ラグ（2かい）",        fl:1, up:0.02, x:  2.0, z: 6.0, sz:[7.0,0.06,6.0], col:HOME_RUG,   thin:true },
+    { id:"lamp2",  name:"あかり（2かい）",      fl:1, up:0,    x:  0.0, z: 1.5, sz:[0.5,2.00,0.5], col:HOME_LAMP }
+  ];
+  // 弾35 §R29: 外から 見た ときの まど。★これも 台帳＝1行 足すだけ。
+  //   わけ＝**画を 撮って 見たら「かべ 一面」に 見えた**（数は 合っていた）。2階が ある ことは
+  //   外から 見えないと つたわらない。うすい 板（あつさ0.12）を かべの 外面に そえるだけ＝中は 1ミリも 変えない。
+  var HOME_WINC=[0.55,0.72,0.82];
+  var HOME_WIN = [
+    { x:-9.0, y:1.6, w:3.0, h:1.6 }, { x:-4.6, y:1.6, w:3.0, h:1.6 },
+    { x: 4.6, y:1.6, w:3.0, h:1.6 }, { x: 9.0, y:1.6, w:3.0, h:1.6 },
+    { x:-9.0, y:4.6, w:3.0, h:1.6 }, { x:-4.6, y:4.6, w:3.0, h:1.6 },
+    { x: 4.6, y:4.6, w:3.0, h:1.6 }, { x: 9.0, y:4.6, w:3.0, h:1.6 }
+  ];
+  // その階の 床の 高さ（山頂からの 高さ）。★2階の 床の 上＝F2_Y+F2_T の 1か所からしか 出さない。
+  function homeFloorY(fl){ return (fl?(HOME.F2_Y+HOME.F2_T):0); }
+  // 家具の 中心（世界の 座標）。★PC・クローゼットの「前に 立ったか」も この 1本から 出す。
+  function homeFurnSpot(id){
+    for(var i=0;i<HOME_FURN.length;i++){ var F=HOME_FURN[i];
+      if(F.id!==id) continue;
+      return { x:HOME_MT.X+F.x, y:HOME_MT.TOP_Y+homeFloorY(F.fl)+F.up+F.sz[1]*0.5, z:HOME_MT.Z+F.z,
+               floorY:HOME_MT.TOP_Y+homeFloorY(F.fl), name:F.name }; }
+    return null;
+  }
+  // いま その家具の 前に 居るか（目の 高さで 呼ぶ＝足もとは FIELD_CLEAR ぶん 下）。
+  // ★階が ちがえば とどかない＝2階から 1階の PCは ひらけない（FURN_Y）。
+  function atFurnAt(id, x, y, z){
+    var S=homeFurnSpot(id); if(!S) return false;
+    var dx=x-S.x, dz=z-S.z;
+    if(dx*dx+dz*dz > HOME.FURN_R*HOME.FURN_R) return false;
+    return Math.abs((y-FIELD_CLEAR)-S.floorY) <= HOME.FURN_Y;
+  }
   // ★これが 拠点そのもの。村の 箱と まったく 同じ かたち（中心・大きさ・むき・色）で 返すだけ。
   function homeBoxesFor(){
-    var cx=HOME_MT.X, cz=HOME_MT.Z, gy=HOME_MT.TOP_Y, out=[];
+    var cx=HOME_MT.X, cz=HOME_MT.Z, gy=HOME_MT.TOP_Y, out=[], i;
     var W=HOME.W, D=HOME.D, H=HOME.H, T=HOME.T;
     function box(kind,gr,x,y,z,sx,sy,sz,col){
       out.push({ kind:kind, ground:gr, pos:[x,y,z], size:[sx,sy,sz], yaw:0, col:col }); }
+    var inX=W/2-T, inZ=D/2-T;                                                 // 中の ひろさ（かべの 内がわ）
     box("homewall",true, cx, gy, cz+(D/2-T/2), W, H, T, HOME_WALL);          // おく(+z)の かべ
     var segW=(W-HOME.DOOR)/2, segX=HOME.DOOR/2+segW/2;                        // 入口の ある 手前(-z)の かべ＝2枚に 分ける
     box("homewall",true, cx-segX, gy, cz-(D/2-T/2), segW, H, T, HOME_WALL);
     box("homewall",true, cx+segX, gy, cz-(D/2-T/2), segW, H, T, HOME_WALL);
     box("homewall",true, cx-(W/2-T/2), gy, cz, T, H, D-T*2, HOME_WALL);       // ひだり(-x)の かべ
     box("homewall",true, cx+(W/2-T/2), gy, cz, T, H, D-T*2, HOME_WALL);       // みぎ(+x)の かべ
-    var pW=(W-T*2-HOME.GAP)/2, pX=HOME.GAP/2+pW/2;                            // 中の しきり＝部屋を 2つに（まん中は あけておく）
-    box("homewall",true, cx-pX, gy, cz, pW, H, T, HOME_WALL);
-    box("homewall",true, cx+pX, gy, cz, pW, H, T, HOME_WALL);
+    // 中の しきり＝部屋を 2つに（まん中は あけておく）。★弾35からは **1階ぶんの 高さ**＝2階は 1つの 広間に なる。
+    var pW=(W-T*2-HOME.GAP)/2, pX=HOME.GAP/2+pW/2;
+    box("homewall",true, cx-pX, gy, cz, pW, HOME.F2_Y, T, HOME_WALL);
+    box("homewall",true, cx+pX, gy, cz, pW, HOME.F2_Y, T, HOME_WALL);
+    // 弾35 §R29: 2階の 床。★手前(F2_Z0 より 手前)は わざと あけて ふきぬけに する＝
+    //   下から 見あげると 2階が 見える／段を のぼる ところが ふさがらない。
+    var f2z0=HOME.F2_Z0, f2d=inZ-f2z0;
+    box("homefloor2",false, cx, gy+HOME.F2_Y, cz+(f2z0+f2d/2), inX*2, HOME.F2_T, f2d, HOME_FLR2);
+    // 弾35 §R29: **のぼれる 段**（階段という しくみは 作らない＝ただの 箱）。みぎの かべぎわに ならべる。
+    var stW=inX-HOME.ST_X0, stX=HOME.ST_X0+stW/2;
+    for(i=0;i<HOME.ST_Z.length;i++){ var S=HOME.ST_Z[i];
+      box("homestep",true, cx+stX, gy, cz+(S[0]+S[1])/2, stW, S[2], S[1]-S[0], HOME_STEP); }
+    // 弾35 §R29: 2階の てすり（ふきぬけの ふち・段を のぼる ところだけ あけてある）
+    var rW=HOME.ST_X0+inX, rX=(HOME.ST_X0-inX)/2;
+    box("homerail",false, cx+rX, gy+HOME.F2_Y+HOME.F2_T, cz+f2z0+HOME.RAIL_T/2, rW, HOME.RAIL_H, HOME.RAIL_T, HOME_RAIL);
     box("homeroof",false, cx, gy+H, cz, W+HOME.EAVE*2, HOME.ROOF, D+HOME.EAVE*2, HOME_ROOF);  // 屋根＝かべの 上面に ぴったり
     box("hometower",false, cx, gy+H+HOME.ROOF, cz, HOME.TOWER, HOME.TOWER_H, HOME.TOWER, HOME_TOWER); // 見はり台
     box("homedeck",true, cx, gy, cz-(D/2+HOME.DECK/2), HOME.DOOR+4, HOME.DECK_H, HOME.DECK, HOME_DECK); // 入口の 前の 縁台
+    // 弾35 §R29: 外の まど（台帳から そのまま）。手前(-z)の かべの 外面に そえる＝中の ひろさは 1ミリも 変わらない。
+    for(i=0;i<HOME_WIN.length;i++){ var Wd=HOME_WIN[i];
+      box("homewin",false, cx+Wd.x, gy+Wd.y, cz-D/2, Wd.w, Wd.h, 0.12, HOME_WINC); }
+    // 弾35 §R29: インテリア（台帳から そのまま）。★床に 直に 置く ものだけ ground:true
+    //   ＝「地面に ぴったり ついている」を 見る 既存の 番人（§G T40b②）の 判定基準を 1ビットも 動かさない。
+    for(i=0;i<HOME_FURN.length;i++){ var F=HOME_FURN[i], fy=gy+homeFloorY(F.fl)+F.up;
+      box("homefurn", (F.fl===0&&F.up===0), cx+F.x, fy, cz+F.z, F.sz[0], F.sz[1], F.sz[2], F.col); }
     return out;
   }
   // アプリを ひらいた ときに 立つ 場所（入口の 前・拠点を 斜めに 見る）。
@@ -2114,7 +2247,7 @@
   //   むきは HOME.START_YAW の 1か所だけで 決まる（2026-08-05 干場裁定＝斜め）。
   function homeStartPos(){
     var x=HOME_MT.X, z=HOME_MT.Z-HOME.FRONT;
-    return { x:x, y:fieldFloorY(x,z), z:z, yaw:HOME.START_YAW };
+    return { x:x, y:fieldFloorY(x,z), z:z, yaw:HOME.START_YAW, pitch:HOME.START_PITCH };
   }
   // いま「拠点に 居る」か＝中でも 入口の 前でも よい（四角で 見る＝建物の かたちに そっている）。
   function atHomeAt(x,y,z){
@@ -2315,7 +2448,8 @@
   var bxCos=null, bxSin=null;             // 箱の むきの cos/sin＝起動時に 1回だけ 出しておく（毎フレーム 三角関数を よばない）
   var bxPlrTested=0, bxSolveRuns=0, bxPushes=0, bxEscapes=0, bxUpEscapes=0, bxUnstuck=0;
   var _PSH=[0,0,0,0], _PSB=[0,0,0,0], _RNG=[0,0,0,0];
-  // 点の まわり 3×3ますだけ（弾22の boxSweepT と 同じ ちず。箱の いちばん大きな 半分の はば 13.9 ＜ ます26＝見のがさない）
+  // 点の まわり 3×3ますだけ（弾22の boxSweepT と 同じ ちず。箱の いちばん大きな 半分の はば
+  //   ＝拠点の 屋根 (28+1.2*2)/2 = **15.2** ＜ ます26＝見のがさない。★弾35で 22→28 に した ぶん 13.9→15.2）
   function bxCellRange(x,z,rng){
     var gx=(((x+BXG.HALF)/BXG.CELL)|0), gz=(((z+BXG.HALF)/BXG.CELL)|0);
     rng[0]=gx-1; rng[1]=gx+1; rng[2]=gz-1; rng[3]=gz+1;
@@ -2504,7 +2638,7 @@
   };
   // 足もとが原点・y は 上・前は −z。i_rig=(ふりの むき, 回る 高さ)。
   // かた／こし の ふりの むきは 左右で 逆＝人の 歩き方に 見える。
-  var AV_PARTS = (function(){
+  var AV_BASE = (function(){
     var H=AVC.H, L=H*0.415;                                  // 足の 長さ（せの およそ4割）
     var TY=L, TH=H*0.35, HY=L+TH+0.05, HH=H*0.175;           // 胴の 下端／胴の 高さ／頭の 下端／頭の 高さ
     var SK=[0.86,0.72,0.60], CL=[0.20,0.34,0.62], CL2=[0.26,0.41,0.70], PT=[0.24,0.24,0.30], HR=[0.17,0.14,0.13];
@@ -2519,20 +2653,123 @@
       { name:"ひだりあし",off:[-0.15, 0, 0],     size:[0.22, L, 0.24],        col:PT,  rig:[-1, L] }
     ];
   })();
+  // ================= 弾35 §R29: きせかえ台帳（衣装＝4着） =================
+  // ★干場の 言葉（2026-08-05）＝「クローゼットの 衣装を 変更できる」。
+  //   衣装＝**部品ごとの 倍率**＋**色の 組**（生きものの MOB_SPECIES と まったく 同じ 書き方）。
+  // ★衣装0 は 倍率 ぜんぶ 1.0・色も もとのまま＝**弾34の 自機 そのもの**（陰性対照の 土台）。
+  // ★外がわの 約束（§G T43d が 全4着を 機械で 見張る）:
+  //     足もとは y=0 ちょうど ／ 高さは 衣装0 を こえない ／ よこ・おくゆきの 半幅も 衣装0 を こえない。
+  // ★★ここが 弾35の 難所＝**自機の 姿は 頂点シェーダーの 中で 組み立てており、JS側に 同じ 計算の
+  //   うつし avPartWorld が ある**。だから 倍率を GPUの バッファ(i_off/i_size/i_col)へ 焼くと同時に、
+  //   **JS側の AV_PARTS も 同じ 中みへ 書きかえる**（＝うつしが 1つ しか 無い 状態を 保つ）。
+  //   片方だけ 直すと「足が 地面に つく」既存の 番人（§G T31a）が **静かに ずれる**。
+  var AV_SUITS = [
+    { id:"base", name:"いつもの ふく",
+      cols:null,   // ★null＝もとの 色を そのまま つかう（弾34と 1ビットも 同じ）
+      mul:[[1.00,1.00,1.00],[1.00,1.00,1.00],[1.00,1.00,1.00],[1.00,1.00,1.00],
+           [1.00,1.00,1.00],[1.00,1.00,1.00],[1.00,1.00,1.00],[1.00,1.00,1.00]] },
+    { id:"field", name:"たんけんの ふく",
+      cols:[[0.86,0.72,0.60],[0.22,0.17,0.14],[0.36,0.44,0.30],[0.78,0.62,0.28],
+            [0.42,0.50,0.34],[0.42,0.50,0.34],[0.30,0.30,0.26],[0.30,0.30,0.26]],
+      mul:[[1.00,1.00,1.00],[1.00,0.85,1.00],[1.05,1.00,1.00],[1.00,1.00,1.00],
+           [0.98,1.00,0.98],[0.98,1.00,0.98],[1.05,0.98,1.05],[1.05,0.98,1.05]] },
+    { id:"sky",  name:"そらの ふく",
+      cols:[[0.86,0.72,0.60],[0.32,0.30,0.36],[0.82,0.86,0.92],[0.50,0.72,0.86],
+            [0.72,0.80,0.90],[0.72,0.80,0.90],[0.46,0.52,0.62],[0.46,0.52,0.62]],
+      mul:[[0.96,1.00,0.96],[1.02,1.00,1.00],[0.92,0.98,0.94],[0.90,0.95,1.00],
+           [0.90,1.00,0.90],[0.90,1.00,0.90],[0.92,1.00,0.92],[0.92,1.00,0.92]] },
+    { id:"night",name:"よるの ふく",
+      cols:[[0.86,0.72,0.60],[0.14,0.13,0.16],[0.18,0.20,0.30],[0.72,0.66,0.30],
+            [0.24,0.26,0.38],[0.24,0.26,0.38],[0.16,0.17,0.22],[0.16,0.17,0.22]],
+      mul:[[1.02,0.98,1.02],[1.00,0.90,1.00],[1.08,1.00,1.05],[1.00,1.00,1.00],
+           [0.98,1.00,1.00],[0.98,1.00,1.00],[1.08,0.96,1.08],[1.08,0.96,1.08]] }
+  ];
+  // 部品の 名まえ→番号（手で 番号を 書かない＝部品を いじった ときに ずれない）
+  var AV_IX=(function(){ var m={}; for(var i=0;i<AV_BASE.length;i++) m[AV_BASE[i].name]=i; return m; })();
+  // ★「どこに 何が 乗っているか」の 数も 手で 書かない＝もとの 部品表から 逆算して 持つ。
+  var AV_LAY=(function(){
+    var TY0=AV_BASE[AV_IX["どう"]].off[1], TH0=AV_BASE[AV_IX["どう"]].size[1];
+    return { gap:AV_BASE[AV_IX["あたま"]].off[1]-(TY0+TH0),      // 胴の 上と 頭の 下の すきま
+             back:(AV_BASE[AV_IX["せなか"]].off[1]-TY0)/TH0,      // せなかが 胴の どのあたりに つくか
+             arm: TY0-AV_BASE[AV_IX["みぎうで"]].off[1] };        // うでが 胴より どれだけ 下から 出るか
+  })();
+  // 倍率から 部品表を 焼く。★あしを 短く すると 胴が 宙に うくので、**上の 部品は あしの 上に 積む**
+  //   ＝足もとは いつでも y=0 ちょうど（生きものの mobPatBake と まったく 同じ 考え方）。
+  function avSuitBake(mul){
+    var i, P, legY=0;
+    for(i=0;i<AV_BASE.length;i++){ P=AV_BASE[i];
+      if(P.off[1]===0 && P.size[1]*mul[i][1]>legY) legY=P.size[1]*mul[i][1]; }
+    var torsoY=AV_BASE[AV_IX["どう"]].size[1]*mul[AV_IX["どう"]][1];
+    var headY =AV_BASE[AV_IX["あたま"]].size[1]*mul[AV_IX["あたま"]][1];
+    var TT=legY+torsoY, HY=TT+AV_LAY.gap, HT=HY+headY;
+    var out=[], lo=[9,9,9], hi=[-9,-9,-9], k;
+    for(i=0;i<AV_BASE.length;i++){ P=AV_BASE[i];
+      var sz=[P.size[0]*mul[i][0], P.size[1]*mul[i][1], P.size[2]*mul[i][2]], oy;
+      if(P.off[1]===0)                oy=0;                        // あし＝床に つく
+      else if(i===AV_IX["どう"])      oy=legY;
+      else if(i===AV_IX["せなか"])    oy=legY+torsoY*AV_LAY.back;
+      else if(i===AV_IX["あたま"])    oy=HY;
+      else if(i===AV_IX["かみ"])      oy=HT;
+      else                            oy=legY-AV_LAY.arm;          // うで
+      var rig1=(P.rig[1]===0)?0:((P.off[1]===0)?legY:TT);          // 股＝あしの 上／肩＝胴の 上
+      out.push({ name:P.name, off:[P.off[0],oy,P.off[2]], size:sz, col:P.col.slice(), rig:[P.rig[0],rig1] });
+      for(k=0;k<3;k++){
+        var a=(k===1)?oy:(P.off[k]-sz[k]*0.5), b=(k===1)?(oy+sz[1]):(P.off[k]+sz[k]*0.5);
+        if(a<lo[k]) lo[k]=a; if(b>hi[k]) hi[k]=b; } }
+    return { parts:out, lo:lo, hi:hi };
+  }
+  // 衣装ごとの 外がわ（最小/最大）。★手で 書かず 焼いた ものから 出す（§G T43d が これを 見る）。
+  var AV_SUIT_BOX=(function(){ var out=[], i;
+    for(i=0;i<AV_SUITS.length;i++){ var B=avSuitBake(AV_SUITS[i].mul);
+      out.push({ id:AV_SUITS[i].id, name:AV_SUITS[i].name,
+                 minY:B.lo[1], maxY:B.hi[1], half:Math.max(-B.lo[0],B.hi[0]), halfZ:Math.max(-B.lo[2],B.hi[2]) }); }
+    return out; })();
+  // ★これが「いま 着ている すがた」＝GPU も avPartWorld も **この 1つの 配列**しか 見ない。
+  var AV_PARTS=avSuitBake(AV_SUITS[0].mul).parts;
+  var avSuitIdx=0, avUploads=0;
   // 弾25 §R20: 腕を 回す 高さ（肩）＝この 数より 上で 回る 部品だけが「腕」＝近距離の ふりに ついてくる。
   //   ★数を 手で 書き写さない＝AV_PARTS そのものから 取り出す（見た目を いじった ときに ずれない）。
-  var AV_ARM_PIVOT=(function(){ var m=0; for(var i=0;i<AV_PARTS.length;i++){ if(AV_PARTS[i].rig[1]>m) m=AV_PARTS[i].rig[1]; } return m; })();
+  //   ★弾35: きせかえで 肩の 高さも 動く＝着がえる たびに 出しなおす（avApplySuit）。
+  function avArmPivotOf(){ var m=0; for(var i=0;i<AV_PARTS.length;i++){ if(AV_PARTS[i].rig[1]>m) m=AV_PARTS[i].rig[1]; } return m; }
+  var AV_ARM_PIVOT=avArmPivotOf();
   var avVAO=null, avBufs=[], avBytes=0, avBuildMs=0;
-  function buildAvatar(){
-    if(avVAO) return;
-    var t0=performance.now(), n=AV_PARTS.length;
-    var CB=cube36(), pos36=CB.pos, nrm36=CB.nrm;
+  // 部品表→GPUへ 送る 4つの 配列（作る ときと 着がえた ときに だけ 呼ぶ＝毎フレームでは 1度も 呼ばない）
+  function avArrays(){
+    var n=AV_PARTS.length;
     var ioff=new Float32Array(n*3), isz=new Float32Array(n*3), icol=new Float32Array(n*3), irig=new Float32Array(n*2);
     for(var i=0;i<n;i++){ var p=AV_PARTS[i];
       ioff[i*3]=p.off[0]; ioff[i*3+1]=p.off[1]; ioff[i*3+2]=p.off[2];
       isz[i*3]=p.size[0]; isz[i*3+1]=p.size[1]; isz[i*3+2]=p.size[2];
       icol[i*3]=p.col[0]; icol[i*3+1]=p.col[1]; icol[i*3+2]=p.col[2];
       irig[i*2]=p.rig[0]; irig[i*2+1]=p.rig[1]; }
+    return { off:ioff, sz:isz, col:icol, rig:irig };
+  }
+  // ★着がえる＝**JS側の 部品表と GPUの バッファを 同じ 1回で 書きかえる**（片方だけに ならない 作り）。
+  function avApplySuit(k){
+    k=(k|0); if(k<0||k>=AV_SUITS.length) k=0;
+    avSuitIdx=k;
+    var B=avSuitBake(AV_SUITS[k].mul), C=AV_SUITS[k].cols, i;
+    for(i=0;i<AV_PARTS.length;i++){ var s=B.parts[i], t=AV_PARTS[i];
+      t.off[0]=s.off[0]; t.off[1]=s.off[1]; t.off[2]=s.off[2];
+      t.size[0]=s.size[0]; t.size[1]=s.size[1]; t.size[2]=s.size[2];
+      t.rig[0]=s.rig[0]; t.rig[1]=s.rig[1];
+      var c=C?C[i]:AV_BASE[i].col; t.col[0]=c[0]; t.col[1]=c[1]; t.col[2]=c[2]; }
+    AV_ARM_PIVOT=avArmPivotOf();
+    if(avVAO){                                  // ★もう 器が ある ときだけ 送り直す（送るのは 着がえた ときの 1回きり）
+      var A=avArrays();
+      gl.bindBuffer(gl.ARRAY_BUFFER,avBufs[2]); gl.bufferData(gl.ARRAY_BUFFER,A.off,gl.STATIC_DRAW);
+      gl.bindBuffer(gl.ARRAY_BUFFER,avBufs[3]); gl.bufferData(gl.ARRAY_BUFFER,A.sz,gl.STATIC_DRAW);
+      gl.bindBuffer(gl.ARRAY_BUFFER,avBufs[4]); gl.bufferData(gl.ARRAY_BUFFER,A.col,gl.STATIC_DRAW);
+      gl.bindBuffer(gl.ARRAY_BUFFER,avBufs[5]); gl.bufferData(gl.ARRAY_BUFFER,A.rig,gl.STATIC_DRAW);
+      gl.bindBuffer(gl.ARRAY_BUFFER,null); avUploads++;
+    }
+    return avSuitIdx;
+  }
+  function buildAvatar(){
+    if(avVAO) return;
+    var t0=performance.now(), n=AV_PARTS.length;
+    var CB=cube36(), pos36=CB.pos, nrm36=CB.nrm;
+    var A=avArrays(), ioff=A.off, isz=A.sz, icol=A.col, irig=A.rig;
     avVAO=gl.createVertexArray(); gl.bindVertexArray(avVAO);
     var pb=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,pb); gl.bufferData(gl.ARRAY_BUFFER,pos36,gl.STATIC_DRAW);
     gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,3,gl.FLOAT,false,0,0);
@@ -5505,8 +5742,15 @@
 
       // 弾32 §R26: 山頂の 拠点の 箱も この 要素に まとめて 数えている（別の 要素に すると
       //   台帳の 合計と 器の 箱の数が ずれ、弾29の 番人 T38b が 落ちる＝既存の 判定基準を 動かせない ため）。
-      { id:"village", name:"村と 街と 山頂の 拠点（家・塀・屋根・ビル・きょてん）", stage:"①形",
+      { id:"village", name:"村と 街と 山頂の 拠点（家・塀・屋根・ビル・きょてん・2階・インテリア）", stage:"①形",
         vao:["vlVAO"], owns:["vlVAO"], units:{ label:"箱", n:vlgN+cityN, built:vlgOnlyCount+cityBoxes.length },
+        // 弾35 §R29: ★ぜんぶ その場の 実測（見込みの 数は 1つも 書かない＝§G T38c/T43f）。
+        home:{ boxes:homeBoxes.length, furniture:HOME_FURN.length, windows:HOME_WIN.length,
+               thin:HOME_FURN.filter(function(F){ return !!F.thin; }).length,
+               steps:HOME.ST_Z.length, floors:2,
+               w:HOME.W, d:HOME.D, h:HOME.H, area:+((HOME.W-HOME.T*2)*(HOME.D-HOME.T*2)).toFixed(1),
+               floor2Y:HOME.F2_Y+HOME.F2_T, flat:HOME_MT.FLAT,
+               triangles:homeBoxes.length*ELM_CUBE_TRI },
         cost:C({ triangles:Math.round((vlgN+cityN)*vlTriPer), drawCalls:(villageOn?1:0), points:0, lines:0,
                  bytes:vlBytes }),
         costWhy:W({ bytes:"村・街・低木を ぜんぶ ふくむ 1つの 器の バイト（低木の 欄には 二重に 書かない）＝実測。" }),
@@ -5589,8 +5833,15 @@
         guards:["T34a","T34b","T34c","T34d","T34e"],
         worlds:["field"], available:!!(ENV.terrain&&ENV.battle), drawn:!!lastShOn },
 
-      { id:"avatar", name:"自機の すがた", stage:"①形＋②動き（腕・あしの ふりは シェーダーの 中）",
+      { id:"avatar", name:"自機の すがた（きせかえ 4着）", stage:"①形＋②動き（腕・あしの ふりは シェーダーの 中）",
         vao:["avVAO"], owns:["avVAO"], units:{ label:"箱", n:(avDrawn?AV_PARTS.length:0), built:AV_PARTS.length },
+        // 弾35 §R29: ★ぜんぶ その場の 実測（見込みの 数は 1つも 書かない＝§G T38c/T43f）。
+        suits:{ n:AV_SUITS.length, now:avSuitIdx, parts:AV_PARTS.length, attrs:4,
+                uploads:avUploads, uploadsPerFrame:0,
+                minY:AV_SUIT_BOX.map(function(b){ return +b.minY.toFixed(6); }),
+                maxY:AV_SUIT_BOX.map(function(b){ return +b.maxY.toFixed(4); }),
+                half:AV_SUIT_BOX.map(function(b){ return +b.half.toFixed(4); }),
+                halfZ:AV_SUIT_BOX.map(function(b){ return +b.halfZ.toFixed(4); }) },
         cost:C({ triangles:(avDrawn?AV_PARTS.length*ELM_CUBE_TRI:0), drawCalls:(avDrawn?1:0), points:0, lines:0,
                  bytes:(avVAO?avBytes:null) }),
         costWhy:W({ bytes:avVAO?"作った ときに GPUへ 送った 配列の 合計＝実測。"
@@ -6031,7 +6282,7 @@
   if(ENVID===FRESH_ENV){
     var _hs0=homeStartPos();
     if(_hs0 && isFinite(_hs0.y)){
-      camPos=[_hs0.x, _hs0.y, _hs0.z]; yaw=_hs0.yaw; pitch=0;
+      camPos=[_hs0.x, _hs0.y, _hs0.z]; yaw=_hs0.yaw; pitch=_hs0.pitch||0;
       takenOff=true;   // 高さ210の 山頂から 始めるので、りりくの おいわいが 1フレーム目に 出ないよう 先に すませる
       _homeSet=true;
     }
@@ -6282,6 +6533,16 @@
     avParts:function(){ return AV_PARTS.map(function(p){ return { name:p.name, off:p.off.slice(),
       size:p.size.slice(), col:p.col.slice(), rig:p.rig.slice() }; }); },
     avPartWorld:avPartWorld,
+    // 弾35 §R29のテスト用フック（きせかえ＝衣装台帳）
+    avSuits:function(){ return { n:AV_SUITS.length, now:avSuitIdx, uploads:avUploads,
+      suits:AV_SUITS.map(function(S){ return { id:S.id, name:S.name,
+        mul:S.mul.map(function(a){ return a.slice(); }), cols:S.cols?S.cols.map(function(a){ return a.slice(); }):null }; }),
+      boxes:AV_SUIT_BOX.map(function(b){ return Object.assign({},b); }) }; },
+    // ★えらんだ 衣装から 外がわの 箱を その場で 焼く（テストが 壊した 倍率を 入れて 物差しの 生死を 見るため）
+    avSuitBox:function(k, mul){ var B=avSuitBake(mul||AV_SUITS[k|0].mul);
+      return { minY:B.lo[1], maxY:B.hi[1], half:Math.max(-B.lo[0],B.hi[0]), halfZ:Math.max(-B.lo[2],B.hi[2]) }; },
+    avSuit:function(k){ if(k!==undefined) setAvatarSuit(k); return avSuitIdx; },
+    avSuitSrc:function(){ return String(avApplySuit)+String(avSuitBake); },
     viewMode:function(){ return cfg.view; },
     setView:function(m,persist){ return setViewMode(m,persist); },
     viewState:function(){ return { mode:cfg.view, pos:viewPos.slice(), dist:viewDist, want:viewWant,
@@ -6488,7 +6749,17 @@
     devOpen:function(){ return openDevBoard(); },
     devClose:function(){ closeDevBoard(); return devBoardOn; },
     devSelectTab:function(k){ devSelect(k,false); return devTabIdx; },
-    devTabsLedger:function(){ return DEV_TABS.map(function(t){ return { id:t.id, label:t.label, head:t.head }; }); },
+    devTabsLedger:function(){ return DEV_TABS.map(function(t){ return { id:t.id, label:t.label, head:t.head,
+      near:t.near||null, far:t.far||null, ready:devTabReady(t) }; }); },
+    devFill:function(){ devFillPanels(); return devPanelEls.length; },
+    // 弾35 §R29のテスト用フック（インテリアと 家具の 前）
+    homeFurnLedger:function(){ return HOME_FURN.map(function(F){ return { id:F.id, name:F.name, fl:F.fl, up:F.up,
+      x:F.x, z:F.z, sz:F.sz.slice(), thin:!!F.thin, near:!!F.near }; }); },
+    homeFurnSpot:function(id){ var S=homeFurnSpot(id); return S?Object.assign({},S):null; },
+    // ✎定数を 一時的に 変える（テストだけ・かならず 元へ 戻す）＝近さの 物差しが 生きている ことの 確かめに つかう
+    homeTune:function(o){ if(o) for(var k in o){ if(HOME[k]!==undefined) HOME[k]=o[k]; } return Object.assign({},HOME); },
+    atFurnAt:function(id,x,y,z){ return atFurnAt(id,x,y,z); },
+    homeFloorY:function(fl){ return homeFloorY(fl); },
     devBuilderSrc:function(){ return String(devBuildTabs); },   // 章を 台帳から 作っている ことを 文字で たしかめる用
     bootAt:function(){ return { fresh:BOOT_AT.fresh, env:BOOT_AT.env, pos:BOOT_AT.pos.slice(),
       yaw:BOOT_AT.yaw, pitch:BOOT_AT.pitch }; },
@@ -7143,11 +7414,19 @@
   //   わけ＝0723に 業務データを 3Dで 見せる「課の 星図」を 作り、干場の 実機判定で
   //   「見にくさが 勝つ」で 不合格に なった。インクルーシブの 床（WCAG 2.2 AA・やさしい日本語・
   //   キーボードだけで とどく・低スペックPC）は 平面の HTML でしか 守れない。**山と 家は「場所」、中みは「文字」**。
+  // ★弾35 §R29: 章に **near（どの 家具の 前で ひらくか）** を 足した。
+  //   ＝干場の「PCを 配置し 近づくと HWの 開発状況が 見れる」「クローゼットの 衣装を 変更できる」。
+  //   遠い ときは とじるのでは なく **やさしい 日本語の 案内**を 出す（何も 起きない を 作らない）。
+  //   ★board を ひらく 条件（拠点に 居る）は 1ビットも 変えていない＝弾32の 番人 T40e が そのまま 通る。
   var DEV_TABS = [
-    { id:"status", label:"📋 開発の ようす", head:"📋 開発の ようす",
-      note:"ここに HOSHI-WORLD を どこまで 作ったかが 出ます。（弾33で 中みを 入れます）" },
+    { id:"status", label:"📋 開発の ようす", head:"📋 開発の ようす", near:"pc",
+      far:"PCの まえまで 行くと ひらけます。おくの へやの ひだりがわに PCが あります。",
+      note:"ここに HOSHI-WORLD を どこまで 作ったかが 出ます。", body:devBodyStatus },
+    { id:"suit",   label:"👕 きせかえ",       head:"👕 きせかえ", near:"closet",
+      far:"クローゼットの まえまで 行くと ひらけます。おくの へやの みぎおくに あります。",
+      note:"ここで じぶんの ふくを えらべます。", body:devBodySuit, wire:devWireSuit },
     { id:"config", label:"⚙ せってい",       head:"⚙ せってい",
-      note:"ここで 自機の 見た目などを かえられるように します。（弾34で 中みを 入れます）" }
+      note:"こまかい せっては ⚙（右がわの ボタン）で かえられます。ふくは 👕きせかえ の しょうで えらべます。" }
   ];
   var devEl=document.getElementById("devboard"), devBoardOn=false, devTabIdx=0, devOpener=null;
   var devTabBtns=[], devPanelEls=[];
@@ -7165,12 +7444,65 @@
       var p=document.createElement("div");
       p.id="dev-panel-"+t.id; p.className="dev-panel"; p.setAttribute("role","tabpanel");
       p.setAttribute("aria-labelledby", b.id); p.setAttribute("tabindex","0");
-      p.innerHTML="<h4>"+esc(t.head)+"</h4><div class='dev-slot'>"+esc(t.note)+"</div>";
       panBox.appendChild(p); devPanelEls.push(p);
       (function(k){ b.onclick=function(){ devSelect(k, true); }; })(i);
       b.addEventListener("keydown", devTabKey);
     }
+    devFillPanels();
     devSelect(0, false);
+  }
+  // 弾35 §R29: 章の 中みを 入れなおす。★ひらいた ときと 着がえた ときだけ 呼ぶ
+  //   ＝毎フレームの しごとは 1つも ふえない（§G T43c が えがく回数で 見張る）。
+  function devFillPanels(){
+    // ★入れなおすと 中の ボタンは 作り直される＝**さわっていた ところへ フォーカスを もどす**
+    //   （もどさないと 押した とたん フォーカスが どこにも 無く なる＝WCAG 2.2 SC2.4.3 に 反する）。
+    var a=document.activeElement, keep=(a&&a.classList&&a.classList.contains("dev-suit"))?a.getAttribute("data-k"):null;
+    for(var i=0;i<DEV_TABS.length && i<devPanelEls.length;i++){
+      var t=DEV_TABS[i], p=devPanelEls[i];
+      p.innerHTML="<h4>"+esc(t.head)+"</h4><div class='dev-slot'>"+devPanelBody(t)+"</div>";
+      if(t.wire) t.wire(p);
+    }
+    if(keep!=null){ var b=document.querySelector("#dev-panels button.dev-suit[data-k='"+keep+"']");
+      if(b){ try{ b.focus(); }catch(e){} } }
+  }
+  // その章が いま ひらけるか＝near が 無ければ いつでも／あれば その家具の 前に 立っている ときだけ。
+  function devTabReady(t){ return !t.near || atFurnNow(t.near); }
+  function devPanelBody(t){
+    if(!devTabReady(t)) return "<p class='hint'>"+esc(t.far)+"</p>";
+    return t.body ? t.body() : esc(t.note);
+  }
+  // 📋 開発の ようす＝**その場の 実測**から 組み立てる（見込みの 数を 手で 書かない＝§R24①と 同じ 作法）。
+  function devBodyStatus(){
+    var L=elementsLedger({probe:0}), i, n=0, tri=0, dc=0;
+    for(i=0;i<L.elements.length;i++){ var e=L.elements[i]; n++;
+      tri+=(e.cost.triangles||0); dc+=(e.cost.drawCalls||0); }
+    var h="<p>"+esc("いまの 世界＝")+"<b>"+esc((ENV&&ENV.name)||ENVID)+"</b>"+
+          esc("／えがく 要素 "+n+"種・三角形 "+tri+"・えがく回数 "+dc)+"</p>";
+    h+="<p class='hint'>"+esc("★この 数は いま この 器で はかった ものです（書いて おいた 数では ありません）。"+
+       "おなじ 表は ⚙の 📤 かきだし にも 出ます。")+"</p><ul>";
+    for(i=0;i<L.elements.length;i++){ var q=L.elements[i];
+      h+="<li>"+esc(q.name+"＝"+(q.units?(q.units.n+q.units.label):"—")+
+                    "（三角形 "+((q.cost.triangles==null)?"—":q.cost.triangles)+
+                    "・えがく回数 "+((q.cost.drawCalls==null)?"—":q.cost.drawCalls)+"）")+"</li>"; }
+    h+="</ul>";
+    return h;
+  }
+  // 👕 きせかえ＝台帳(AV_SUITS)から ボタンを ならべる（ここに ふくの 名前を 書きたさない）
+  function devBodySuit(){
+    var h="<p>"+esc("いま きている ふく＝")+"<b>"+esc(AV_SUITS[avSuitIdx].name)+"</b></p><p>";
+    for(var i=0;i<AV_SUITS.length;i++){
+      h+="<button type='button' class='dev-suit' data-k='"+i+"' aria-pressed='"+
+         ((i===avSuitIdx)?"true":"false")+"'>"+((i===avSuitIdx)?"● ":"○ ")+esc(AV_SUITS[i].name)+"</button> ";
+    }
+    h+="</p><p class='hint'>"+esc("ふくは おぼえます。⚙（せってい）からも 同じ ものを えらべます。"+
+       "じぶんの すがたは 👁 の 見え方を「じぶんが 見える」か「まうえ」に すると 見えます。")+"</p>";
+    return h;
+  }
+  function devWireSuit(p){
+    var bs=p.querySelectorAll("button.dev-suit");
+    for(var i=0;i<bs.length;i++){
+      (function(b){ b.onclick=function(){ setAvatarSuit(+b.getAttribute("data-k")); }; })(bs[i]);
+    }
   }
   // いま どの 章か＝色だけで つたえない（aria-selected＋ふとじ＋下線）。
   // ★フォーカスの 順も 1つに する（えらばれた 章だけ tabindex=0＝WAI-ARIA の タブの 作法）。
@@ -7200,6 +7532,26 @@
     if(!ENV || !ENV.village) return false;
     return atHomeAt(camPos[0], camPos[1], camPos[2]);
   }
+  // 弾35 §R29: いま その家具（PC・クローゼット）の 前に 立っているか。
+  //   ★近さを 測るのは **板を ひらく／入れなおす とき だけ**＝毎フレームの しごとは 1つも ふえない。
+  function atFurnNow(id){
+    if(!ENV || !ENV.village) return false;
+    return atFurnAt(id, camPos[0], camPos[1], camPos[2]);
+  }
+  // ★きせかえの 入口は 2つ（⚙と 拠点の 👕）だが、通る道は **この 1本だけ**＝じょうたいは かならず 1つ
+  //   （弾26の setViewMode と まったく 同じ 作法）。
+  function setAvatarSuit(k){
+    k=(k|0); if(k<0||k>=AV_SUITS.length) k=0;
+    if(cfg.avatarSuit!==k){ cfg.avatarSuit=k; saveCfg(); }
+    avApplySuit(k);
+    syncSuitUI();
+    return avSuitIdx;
+  }
+  // ⚙の えらぶ ところと 拠点の 章を 同じ 1つの じょうたいに そろえる（しゃべらない）。
+  function syncSuitUI(){
+    var s=document.getElementById("s-suit"); if(s) s.value=String(avSuitIdx);
+    if(devBoardOn) devFillPanels();
+  }
   function devSay(m){ var el=document.getElementById("dev-say"); if(el) el.textContent=m; }
   function openDevBoard(){
     if(devBoardOn) return false;
@@ -7208,6 +7560,7 @@
     if(typeof closeToolSheet==="function") closeToolSheet(true);
     devOpener=document.activeElement;    // ★とじたら ここへ フォーカスを もどす
     devBuildTabs();
+    devFillPanels();                     // 弾35 §R29: ひらく たびに 中みを 入れなおす（PC・クローゼットの 近さは ここで 1回だけ 測る）
     devEl.classList.add("show"); devBoardOn=true;
     var hb=document.getElementById("btn-home"); if(hb) hb.setAttribute("aria-expanded","true");
     devSelect(devTabIdx, true);
@@ -7497,6 +7850,16 @@
   if(btnView) btnView.onclick=function(){ cycleViewMode(); };
   if(VIEW_MODES.indexOf(cfg.view)<0) cfg.view="first";   // 知らない 値が 入っていたら 今までどおりへ（黙って 世界の 見え方を 変えない）
   syncViewUI();   // 読み込み直後＝保存されていた 見え方に ⚙も 👁の 絵と ことばも そろえる（しゃべらない）
+  // 弾35 §R29: 👕きせかえ。★えらぶ ところの 中みは **台帳(AV_SUITS)から 作る**＝ふくを 1着 ふやすのに ここは 書きたさない。
+  var sSuit=document.getElementById("s-suit");
+  if(sSuit && !sSuit.options.length){
+    for(var _si=0;_si<AV_SUITS.length;_si++){
+      var _o=document.createElement("option"); _o.value=String(_si); _o.textContent=AV_SUITS[_si].name; sSuit.appendChild(_o); }
+  }
+  if(sSuit) sSuit.onchange=function(){ setAvatarSuit(+sSuit.value); };
+  // 知らない 値が 入っていたら 「いつもの ふく」へ（黙って すがたを 変えない）＝見え方と まったく 同じ 作法
+  if(!(cfg.avatarSuit>=0 && cfg.avatarSuit<AV_SUITS.length)) cfg.avatarSuit=0;
+  avApplySuit(cfg.avatarSuit|0); syncSuitUI();
   var sTouchLook=document.getElementById("s-touchlook");
   if(sTouchLook){ sTouchLook.value=(cfg.touchLook==="drag")?"drag":"stick";
     sTouchLook.onchange=function(){ cfg.touchLook=(sTouchLook.value==="drag")?"drag":"stick"; saveCfg(); updateTouchLookUI(); }; }
@@ -14386,6 +14749,445 @@
                " ／ ★弾34で 動かした 既存の 数＝0個（MB_PAT_SLOTS 28→112 は 弾31の 判定式に 出てこない 器の 大きさ）" };
     }
 //★HW34-END
+//★HW35-BEGIN
+    // ---------- 弾35 §R29: 拠点を 広く 高く・くらしの ある へや（T43a〜T43f） ----------
+    // ★干場の 言葉（2026-08-05）＝「拠点の 建物 広く 高く 設計し、インテリアを 置いたりして 生活感をだす。
+    //   また PCを 配置し 近づくと HWの 開発状況が 見れる。クローゼットの 衣装を 変更できる。建物の 外の 面積も 少し 広くし…」
+    // ★ここで 見るのは「広く なったか」では ない。**広く しても 通れるか・のぼれるか・
+    //   弾22から 守っている 外がわの 約束（足が 地面に つく）が 全4着で 崩れていないか** である。
+    //   「くらしの 気配が 出たか」は 干場の 実機でしか 決まらない＝ここでは 数と 通り道だけ 出す。
+    var T43_DAN34 = { W:22.0, D:18.0, H:4.0, FLAT:34, FRONT:24, NEAR_Z:28 };  // ✎ 弾34まで の 数（広がった ことの 対照）
+    // 拠点の 中を **実際に 歩く**＝ねらいへ 顔を むけて w を おす だけ（テストだけの 近道を 作らない）。
+    function t43WalkTo(tx, tz, maxF, stop){
+      var best=1e9, i=0, lim=(maxF==null)?900:maxF, near=(stop==null)?0.9:stop;
+      keys={}; keys["w"]=true; moveVec={f:0,s:0};
+      for(i=0;i<lim;i++){
+        yaw=Math.atan2(tx-camPos[0], -(tz-camPos[2]));
+        stepFrames(1);
+        var dd=Math.hypot(camPos[0]-tx, camPos[2]-tz);
+        if(dd<best) best=dd;
+        if(dd<=near) break;
+      }
+      keys={}; moveVec={f:0,s:0};
+      return { dist:Math.hypot(camPos[0]-tx, camPos[2]-tz), best:best, frames:i,
+               foot:camPos[1]-FIELD_CLEAR, pos:camPos.slice() };
+    }
+    // そっと 置く（その階の 床の 高さを 自分で 指定する＝2階の 家具も 同じ 1本で 見られる）
+    function t43Put(x, z, footY){
+      clearHeld(); moveVec={f:0,s:0};
+      camPos=[x, footY+FIELD_CLEAR, z]; camVel=[0,0,0];
+      if(window.__tenkyu.setGauge) window.__tenkyu.setGauge(GRND_T.GAUGE_MAX);
+      stepFrames(4);
+    }
+    // 拠点の 中の 座標（拠点の まん中からの ずれ→世界の 座標）
+    function t43P(x,z){ var M=window.__tenkyu.mountConsts(); return [M.X+x, M.Z+z]; }
+    // 拠点まわりの したごしらえ（世界を だいちに して 板も シートも とじる）
+    function t43Setup(){
+      var st=vlgSetup();
+      setEnv("field"); window.__tenkyu.devClose(); closeSheets(); clearHeld(); moveVec={f:0,s:0};
+      return st;
+    }
+
+    // T43a: 建物＝①広さ・高さ・2階の 床が 台帳の 数どおり ②のぼれる 段が すべて PLR.STEP 以下
+    //   ③入口から 中まで **人の はばで 通れる 道が ある**（★実際に 歩かせて 確かめる）
+    //   ④その 道の まま 2階まで のぼれる
+    function t_T43a(){
+      var A=window.__tenkyu, M=A.mountConsts(), H=A.homeConsts(), B=A.homeBoxesNow(), d=[], i;
+      var st=t43Setup();
+      var f2=null, steps=[], rail=null, furn=[], walls=[];
+      for(i=0;i<B.length;i++){ var b=B[i];
+        if(b.kind==="homefloor2") f2=b;
+        else if(b.kind==="homestep") steps.push(b);
+        else if(b.kind==="homerail") rail=b;
+        else if(b.kind==="homefurn") furn.push(b);
+        else if(b.kind==="homewall") walls.push(b); }
+      // ①広く 高く なった（弾34の 数と くらべる＝「新しい 数」を 決めうちで 書かない）
+      var bigOk=(H.W>T43_DAN34.W)&&(H.D>T43_DAN34.D)&&(H.H>T43_DAN34.H);
+      var area=(H.W-H.T*2)*(H.D-H.T*2), area34=(T43_DAN34.W-H.T*2)*(T43_DAN34.D-H.T*2);
+      // 2階の 床＝台帳の 数どおり（下がわ F2_Y・あつさ F2_T・よこは 中の はばいっぱい）
+      var inX=H.W/2-H.T, inZ=H.D/2-H.T, f2top=M.TOP_Y+H.F2_Y+H.F2_T;
+      var f2Ok=!!f2 && (Math.abs(f2.pos[1]-(M.TOP_Y+H.F2_Y))<1e-9) && (Math.abs(f2.size[1]-H.F2_T)<1e-9) &&
+               (Math.abs(f2.size[0]-inX*2)<1e-9) && (Math.abs(f2.size[2]-(inZ-H.F2_Z0))<1e-9);
+      var P=A.plrConsts();
+      var headOk=(H.F2_Y>P.H)&&((M.TOP_Y+H.H)-f2top>P.H);   // 1階も 2階も 人が 立てる 高さが ある
+      // ②のぼれる 段＝地面 0 → 段の 上 …→ 2階の 床の 上 の どの 差も PLR.STEP 以下
+      var tops=[0], bad=[];
+      for(i=0;i<steps.length;i++) tops.push(steps[i].pos[1]+steps[i].size[1]-M.TOP_Y);
+      tops.sort(function(a,b){ return a-b; });
+      tops.push(H.F2_Y+H.F2_T);
+      var worst=0;
+      for(i=1;i<tops.length;i++){ var g=tops[i]-tops[i-1];
+        if(g>worst) worst=g;
+        if(g>P.STEP+1e-9) bad.push("("+tops[i-1].toFixed(2)+"→"+tops[i].toFixed(2)+")"); }
+      var stepOk=(steps.length>=2)&&(bad.length===0)&&
+                 (Math.abs(tops[tops.length-1]-tops[tops.length-2])<1e-9 ||
+                  tops[tops.length-1]-tops[tops.length-2]<=P.STEP+1e-9);
+      // ③入口から 中まで 歩く（★人の はば 1.24 で 通れる ことの 実測）
+      var e0=t43P(0,-(H.D/2+H.DECK+2)), w1=t43P(0,-9), w2=t43P(0,-2), w3=t43P(0,4);
+      t43Put(e0[0], e0[1], M.TOP_Y);
+      var r1=t43WalkTo(w1[0], w1[1], 700), r2=t43WalkTo(w2[0], w2[1], 700), r3=t43WalkTo(w3[0], w3[1], 700);
+      var inOk=(r1.best<=1.0)&&(r2.best<=1.0)&&(r3.best<=1.0);
+      // ④その まま 2階へ のぼる（段を 1つずつ ふむ＝新しい しくみは つかっていない ことの 実測）
+      var s0=t43P(0,-8.5), s1=t43P(H.ST_X0+(inX-H.ST_X0)/2,-8.5), s2=t43P(H.ST_X0+(inX-H.ST_X0)/2,-5.2),
+          s3=t43P(H.ST_X0+(inX-H.ST_X0)/2,-2.2), s4=t43P(H.ST_X0+(inX-H.ST_X0)/2,2.0), s5=t43P(2,6);
+      t43WalkTo(s0[0], s0[1], 700);
+      var u1=t43WalkTo(s1[0], s1[1], 700), u2=t43WalkTo(s2[0], s2[1], 700),
+          u3=t43WalkTo(s3[0], s3[1], 700), u4=t43WalkTo(s4[0], s4[1], 700), u5=t43WalkTo(s5[0], s5[1], 700);
+      var upFoot=u5.foot-M.TOP_Y;
+      var upOk=(u5.best<=1.2)&&(Math.abs(upFoot-(H.F2_Y+H.F2_T))<=0.15);
+      vlgRestore(st); stepFrames(1);
+      d.push("①外のり "+H.W+"×"+H.D+"×高さ"+H.H+"（弾34は "+T43_DAN34.W+"×"+T43_DAN34.D+"×"+T43_DAN34.H+
+             "）＝広く 高く="+bigOk+"／中の ひろさ "+area.toFixed(1)+"㎡（弾34は "+area34.toFixed(1)+"㎡）");
+      d.push("②2階の 床＝下"+H.F2_Y+"・あつさ"+H.F2_T+"・よこ"+(f2?f2.size[0].toFixed(1):"-")+
+             "・おくゆき"+(f2?f2.size[2].toFixed(1):"-")+"＝台帳どおり="+f2Ok+
+             "／1階の 天井 "+H.F2_Y+"・2階の 天井 "+((M.TOP_Y+H.H)-f2top).toFixed(2)+" ＞ 人 "+P.H+"="+headOk+
+             "／てすり="+(rail?"あり":"なし")+"（高さ "+(rail?rail.size[1]:0)+" ＞ またげる "+P.STEP+"）");
+      d.push("③のぼれる 段 "+steps.length+"つ: 高さ "+tops.map(function(v){return v.toFixed(2);}).join("→")+
+             "／いちばん 大きい 段差 "+worst.toFixed(2)+" ≦ "+P.STEP+"="+stepOk+(bad.length?("／だめ="+bad.join(",")):""));
+      d.push("④★歩いて たしかめた: 入口の 外→中("+r1.best.toFixed(2)+")→ろうか("+r2.best.toFixed(2)+
+             ")→おくの へや("+r3.best.toFixed(2)+")＝通れる="+inOk);
+      d.push("⑤★歩いて 2階へ: 段1("+u1.best.toFixed(2)+")段2("+u2.best.toFixed(2)+")段3("+u3.best.toFixed(2)+
+             ")床("+u4.best.toFixed(2)+")おくまで("+u5.best.toFixed(2)+")／足もとの 高さ "+upFoot.toFixed(2)+
+             "＝2階の 床 "+(H.F2_Y+H.F2_T)+"="+upOk);
+      return { pass:bigOk&&f2Ok&&headOk&&stepOk&&inOk&&upOk, detail:d.join(" / ") };
+    }
+
+    // T43b: 家具＝①数が 台帳と 一致 ②**人が 家具の 中に 立てない**（うすい 物を のぞく）
+    //   ③うすい 物（ラグ）は 通せんぼ しない＝上を そのまま 歩いて わたれる
+    function t_T43b(){
+      var A=window.__tenkyu, M=A.mountConsts(), H=A.homeConsts(), d=[], i;
+      var st=t43Setup();
+      var F=A.homeFurnLedger(), B=A.homeBoxesNow(), furn=[];
+      for(i=0;i<B.length;i++) if(B[i].kind==="homefurn") furn.push(B[i]);
+      var nOk=(furn.length===F.length)&&(F.length>=10)&&(F.length<=20);
+      // 台帳の 1行ずつが そのまま 箱に なっている（場所・大きさ）
+      var mism=[];
+      for(i=0;i<F.length && i<furn.length;i++){ var f=F[i], b=furn[i];
+        var fy=M.TOP_Y+A.homeFloorY(f.fl)+f.up;
+        if(Math.abs(b.pos[0]-(M.X+f.x))>1e-9||Math.abs(b.pos[2]-(M.Z+f.z))>1e-9||Math.abs(b.pos[1]-fy)>1e-9) mism.push(f.id+":場所");
+        if(Math.abs(b.size[0]-f.sz[0])>1e-9||Math.abs(b.size[1]-f.sz[1])>1e-9||Math.abs(b.size[2]-f.sz[2])>1e-9) mism.push(f.id+":大きさ"); }
+      var mapOk=(mism.length===0);
+      // ②中に 立てない（★うすい 物は のぞく＝上に 乗るのが 正しい すがた）
+      var inside=[], rows=[];
+      for(i=0;i<F.length;i++){ var g=F[i];
+        if(g.thin) continue;
+        var flY=M.TOP_Y+A.homeFloorY(g.fl), bot=flY+g.up, top=bot+g.sz[1];
+        t43Put(M.X+g.x, M.Z+g.z, flY);
+        var fy2=camPos[1]-FIELD_CLEAR, dx=Math.abs(camPos[0]-(M.X+g.x)), dz=Math.abs(camPos[2]-(M.Z+g.z));
+        var over=(dx<g.sz[0]/2-1e-3)&&(dz<g.sz[2]/2-1e-3);
+        var isIn=over&&(fy2>bot+1e-3)&&(fy2<top-1e-3);
+        if(isIn) inside.push(g.id);
+        rows.push(g.id+(isIn?"←中に 居る":"")); }
+      var solidOk=(inside.length===0);
+      // ③うすい 物は 通せんぼ しない＝**ラグの 上を まっすぐ 歩いて わたれる**（持ちあがるのは あつさ ぶんだけ）
+      //   ★歩く すじは **自分で さがす**＝ラグの 上を ますに 切って「ほかの 家具に じゃま されない ます」を
+      //     見つけ、まっすぐ つづく いちばん 長い ならびを 通る。手で 線を 書くと 家具を 動かした とたん うそに なる。
+      var BOX=A.homeBoxesNow(), Pc=A.plrConsts();
+      function t43Free(x,z,footY,maxLift){
+        for(var q=0;q<BOX.length;q++){ var b=BOX[q];
+          var bot=b.pos[1], top=bot+b.size[1];
+          if(top<=footY+maxLift+1e-9) continue;          // ふんでも ほとんど 持ちあがらない＝じゃま しない
+          if(bot>=footY+Pc.H) continue;                  // 頭より 上＝当たらない
+          if(Math.abs(x-b.pos[0])<b.size[0]/2+Pc.R && Math.abs(z-b.pos[2])<b.size[2]/2+Pc.R) return false; }
+        return true;
+      }
+      var thinIds=[], thinOk=true, thinDet=[], walked=0, GS=0.5;
+      for(i=0;i<F.length;i++){ var t=F[i]; if(!t.thin) continue; thinIds.push(t.id);
+        var flY2=M.TOP_Y+A.homeFloorY(t.fl), lift0=t.up+t.sz[1];
+        var nx=Math.floor((t.sz[0]-0.8)/GS)+1, nz=Math.floor((t.sz[2]-0.8)/GS)+1, gx, gz, fr=[];
+        for(gx=0;gx<nx;gx++){ fr.push([]);
+          for(gz=0;gz<nz;gz++){
+            var wx=M.X+t.x-t.sz[0]/2+0.4+gx*GS, wz=M.Z+t.z-t.sz[2]/2+0.4+gz*GS;
+            fr[gx].push(t43Free(wx,wz,flY2,lift0)?[wx,wz]:null); } }
+        // まっすぐ つづく いちばん 長い ならび（たて・よこ の 両方から さがす）
+        var a0=null, a1=null, fd=0;
+        function runScan(get, n1, n2){
+          for(var u=0;u<n1;u++){ var s=-1;
+            for(var v=0;v<=n2;v++){ var c=(v<n2)?get(u,v):null;
+              if(c){ if(s<0) s=v; }
+              else if(s>=0){ var p0=get(u,s), p1=get(u,v-1);
+                var L=Math.hypot(p1[0]-p0[0],p1[1]-p0[1]);
+                if(L>fd){ fd=L; a0=p0; a1=p1; } s=-1; } } }
+        }
+        runScan(function(u,v){ return fr[u][v]; }, nx, nz);
+        runScan(function(u,v){ return fr[v][u]; }, nz, nx);
+        if(!a0 || fd<2.0){ thinDet.push(t.id+"＝歩ける すじが 見つからない（"+nx+"×"+nz+"ます）"); continue; }
+        t43Put(a0[0], a0[1], flY2);
+        var w=t43WalkTo(a1[0], a1[1], 700, 0.8);
+        var lift=w.foot-flY2;
+        var crossed=(w.best<=1.0), liftOk=(lift<=lift0+1e-3);
+        if(!(crossed&&liftOk)) thinOk=false; else walked++;
+        thinDet.push(t.id+"＝すじ "+fd.toFixed(1)+" を 歩いた: わたれた "+crossed+"（のこり "+w.best.toFixed(2)+
+                     "）持ちあがり "+lift.toFixed(3)+" ≦ あつさ "+lift0.toFixed(2)+"="+liftOk); }
+      // ★どの ラグも 通せんぼ しない ことは **1つの ものさし**からも 出る＝あつさ ≦ またげる 段差(PLR.STEP)
+      var ruleOk=true, ruleDet=[];
+      for(i=0;i<F.length;i++){ if(!F[i].thin) continue;
+        if(!(F[i].sz[1]<=Pc.STEP)) ruleOk=false;
+        ruleDet.push(F[i].id+" "+F[i].sz[1]); }
+      thinOk=thinOk&&ruleOk&&(walked>=1);
+      vlgRestore(st); stepFrames(1);
+      d.push("①家具＝台帳 "+F.length+"つ／箱 "+furn.length+"つ（10〜20の 中）="+nOk+
+             "／1行ずつ 場所と 大きさが 合う="+mapOk+(mism.length?("／"+mism.join(",")):""));
+      d.push("②★中に 立てた 家具="+(inside.join(",")||"なし")+"＝"+solidOk+"（しらべた "+rows.length+"つ）");
+      d.push("③うすい 物 "+thinIds.length+"つ（"+thinIds.join(",")+"）: "+(thinDet.join(" ／ ")||"—")+
+             "／歩いて たしかめた "+walked+"つ／あつさ ≦ またげる 段差 "+Pc.STEP+"（"+ruleDet.join("・")+"）="+ruleOk+
+             "＝"+thinOk);
+      return { pass:nOk&&mapOk&&solidOk&&thinOk, detail:d.join(" / ") };
+    }
+
+    // T43c: PC＝①前に 立つと **開発の ようすが ひらく** ②離れると ひらかず **やさしい 日本語の 案内**が 出る
+    //   ③ひらいて いる 間は w/v/c/h で 世界が 1ミリも 動かない ④Escapeで とじて フォーカスが もどる
+    //   ⑤えがく回数の 増分 0（板は DOM＝3Dの しごとは ふえない）
+    function t_T43c(){
+      var A=window.__tenkyu, M=A.mountConsts(), H=A.homeConsts(), d=[], i;
+      var st=t43Setup();
+      function tabOf(id){ var L=A.devTabsLedger(); for(var k=0;k<L.length;k++) if(L[k].id===id) return L[k]; return null; }
+      function panelText(id){ var p=document.getElementById("dev-panel-"+id); return p?(p.textContent||""):""; }
+      var pcT=tabOf("status"), pcSpot=A.homeFurnSpot("pc");
+      var nearOk=!!pcT && pcT.near==="pc" && !!pcSpot;
+      // ②まず 遠く（起動の 立ち位置＝拠点の 前）＝板は ひらくが **章は ひらかない**
+      var S=A.homeStart(); t43Put(S.x, S.z, S.y-FIELD_CLEAR); yaw=S.yaw; pitch=0; stepFrames(2);
+      var dcClosed=A.getState().drawCalls;
+      var openFar=A.devOpen();
+      var farReady=tabOf("status").ready, farTxt=panelText("status");
+      var farOk=(openFar===true)&&(farReady===false)&&(farTxt.indexOf(pcT.far)>=0);
+      // ★やさしい 日本語＝みじかい・かんじが すくない（案内は ひらがなと かたかなで 8割 以上）
+      var kanji=(pcT.far.match(/[一-龯]/g)||[]).length, kana=pcT.far.length-kanji;
+      var easyOk=(pcT.far.length<=60)&&(kana/pcT.far.length>=0.8);
+      A.devClose();
+      // ①つぎに PCの 前＝章が ひらく（その場の 実測が 出る）
+      t43Put(pcSpot.x, pcSpot.z-1.6, pcSpot.floorY); stepFrames(2);
+      var openNear=A.devOpen();
+      var nearReady=tabOf("status").ready, nearTxt=panelText("status");
+      var atOk=A.atFurnAt("pc", camPos[0], camPos[1], camPos[2]);
+      var openOk=(openNear===true)&&(nearReady===true)&&(nearTxt.indexOf(pcT.far)<0)&&(nearTxt.indexOf("えがく")>=0);
+      // ⑤えがく回数の 増分 0
+      stepFrames(2); var dcOpen=A.getState().drawCalls;
+      var dcOk=(dcOpen===dcClosed);
+      // ③ひらいて いる 間は 世界が 動かない
+      var p0=camPos.slice(), y0=yaw, view0=cfg.view, cru0=!!cfg.autocruise, tidy0=!!cfg.tidy;
+      keys["w"]=true; stepFrames(30); keys={};
+      ["v","c","h"].forEach(function(k){
+        window.dispatchEvent(new KeyboardEvent("keydown",{key:k,bubbles:true,cancelable:true}));
+        window.dispatchEvent(new KeyboardEvent("keyup",{key:k,bubbles:true,cancelable:true})); });
+      stepFrames(2);
+      var moved=Math.hypot(camPos[0]-p0[0],camPos[1]-p0[1],camPos[2]-p0[2]);
+      var frozenOk=(moved<1e-9)&&(yaw===y0)&&(cfg.view===view0)&&(!!cfg.autocruise===cru0)&&(!!cfg.tidy===tidy0);
+      // ④Escapeで とじる → フォーカスが 入口(🏠)へ もどる
+      var entry=document.getElementById("btn-home");
+      A.devClose(); try{ entry.focus(); }catch(e){}
+      A.devOpen();
+      window.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true,cancelable:true}));
+      var escOk=(A.devBoard().on===false), backOk=(document.activeElement===entry);
+      A.devClose(); clearHeld(); moveVec={f:0,s:0};
+      // ★変異注入＝半径を 0 に すると PCの 前でも ひらかなく なる（この物差しが 生きている ことの 証拠）
+      var keepR=H.FURN_R; var mutCaught=false;
+      try{ A.homeTune({FURN_R:0}); t43Put(pcSpot.x, pcSpot.z-1.6, pcSpot.floorY); stepFrames(1);
+           mutCaught=(A.atFurnAt("pc", camPos[0], camPos[1], camPos[2])===false); }
+      finally{ A.homeTune({FURN_R:keepR}); }
+      vlgRestore(st); stepFrames(1);
+      d.push("①PCの 前(のこり 1.6)＝章が ひらく="+openOk+"（近い="+atOk+"・板="+openNear+"）");
+      d.push("②遠く（起動の 立ち位置）＝章は ひらかず 案内が 出る="+farOk+"／やさしい 日本語（"+
+             pcT.far.length+"字・かんじ "+kanji+"字）="+easyOk+"／「"+pcT.far+"」");
+      d.push("③ひらいて いる 間は 世界が 動かない: うごいた きょり="+moved.toExponential(2)+"・むき/見え方/クルーズ/すっきり 不変="+frozenOk);
+      d.push("④Escapeで とじる="+escOk+" フォーカスが 入口へ もどる="+backOk);
+      d.push("⑤★えがく回数 とじた"+dcClosed+"→ひらいた"+dcOpen+"（増分 "+(dcOpen-dcClosed)+"＝0="+dcOk+"）");
+      d.push("★変異注入（近さの 半径を 0に する）→ ひらかなく なった="+mutCaught);
+      if(!mutCaught) return { pass:false, skip:true,
+        detail:"判定不能(SKIP): 半径を 0に しても 近いと 言う＝この物差しは 死んでいる。 "+d.join(" / ") };
+      return { pass:nearOk&&openOk&&farOk&&easyOk&&frozenOk&&escOk&&backOk&&dcOk&&mutCaught, detail:d.join(" / ") };
+    }
+
+    // T43d: きせかえ＝①全4着で **足もと y=0 ちょうど／高さ・よこ半幅・おくゆき半幅は 衣装0 を こえない**
+    //   ②★JS側の うつし(avPartWorld)も 同じ 数を 返す（＝シェーダーと 写しが ずれていない）
+    //   ③えらんだ ふくは おぼえ、読み直しても 同じ ④⚙と 板が 同じ 1つの じょうたいを さす
+    function t_T43d(){
+      var A=window.__tenkyu, d=[], i, k;
+      var st=t43Setup();
+      var was=A.avSuit(), S=A.avSuits(), BX=S.boxes, base=BX[0];
+      var rows=[], ok=true, ng=[];
+      for(k=0;k<BX.length;k++){ var b=BX[k];
+        var yOk=(Math.abs(b.minY)<1e-9), hOk=(b.maxY<=base.maxY+1e-9),
+            xOk=(b.half<=base.half+1e-9), zOk=(b.halfZ<=base.halfZ+1e-9);
+        if(!(yOk&&hOk&&xOk&&zOk)){ ok=false; ng.push(b.name); }
+        rows.push(b.name+" 最小y="+b.minY.toFixed(6)+" 高さ="+b.maxY.toFixed(4)+
+                  " よこ半幅="+b.half.toFixed(4)+" おく半幅="+b.halfZ.toFixed(4)+(yOk&&hOk&&xOk&&zOk?"":" ←だめ")); }
+      // ②★JS側の うつしでも 足もとは y=0（ここを 直し忘れると 既存の 番人が 静かに ずれる）
+      var mirror=[], mirrorOk=true;
+      for(k=0;k<S.n;k++){
+        A.avSuit(k);
+        var parts=A.avParts(), root=[10,20,30], yw=0.7, low=1e9;
+        for(i=0;i<parts.length;i++){
+          var w=A.avPartWorld(i, root, yw, 0, 0);
+          var y0=w[1]-parts[i].size[1]*0.5;
+          if(y0<low) low=y0; }
+        var mOk=(Math.abs(low-root[1])<1e-9);
+        if(!mOk) mirrorOk=false;
+        mirror.push(A.avSuits().suits[k].name+"＝"+(low-root[1]).toExponential(2)+(mOk?"":" ←ずれ")); }
+      // ★変異注入① あしを ぜんぶ 無くす → 足もとが y=0 で なくなる
+      var m1=S.suits[0].mul.map(function(a){ return a.slice(); });
+      m1[6]=[0.001,0.001,0.001]; m1[7]=[0.001,0.001,0.001];
+      var X1=A.avSuitBox(0,m1), caught1=!(Math.abs(X1.minY)<1e-9)||!(X1.maxY<=base.maxY+1e-9);
+      // ★変異注入② かみを 3倍 → 高さが 衣装0 を こえる
+      var m2=S.suits[0].mul.map(function(a){ return a.slice(); }); m2[1][1]=3.0;
+      var X2=A.avSuitBox(0,m2), caught2=!(X2.maxY<=base.maxY+1e-9);
+      // ★変異注入③ うでを よこ3倍 → よこ半幅が 衣装0 を こえる
+      var m3=S.suits[0].mul.map(function(a){ return a.slice(); }); m3[4][0]=3.0;
+      var X3=A.avSuitBox(0,m3), caught3=!(X3.half<=base.half+1e-9);
+      var mutOk=caught1&&caught2&&caught3;
+      // ③おぼえる＝cfg に 入り、しまってある ものを 読み直しても 同じ
+      A.avSuit(2);
+      var stored=-1; try{ stored=(JSON.parse(localStorage.getItem(CFG_KEY))||{}).avatarSuit; }catch(e){}
+      var memCfg=cfg.avatarSuit, memOk=(cfg.avatarSuit===2)&&(stored===2)&&(A.avSuit()===2);
+      // ④⚙と 板が 同じ 1つの じょうたい
+      var sel=document.getElementById("s-suit");
+      var selOk=!!sel && (sel.options.length===S.n) && (sel.value==="2");
+      var M=A.mountConsts(), spot=A.homeFurnSpot("closet");
+      t43Put(spot.x, spot.z-2.0, spot.floorY); stepFrames(2);
+      A.devOpen();
+      var pans=document.getElementById("dev-panel-suit"), btns=pans?pans.querySelectorAll("button.dev-suit"):[];
+      var pressed=-1; for(i=0;i<btns.length;i++) if(btns[i].getAttribute("aria-pressed")==="true") pressed=i;
+      var boardOk=(btns.length===S.n)&&(pressed===2);
+      // 板から えらぶ → ⚙も 変わる（入口は 2つ・じょうたいは 1つ）
+      if(btns.length>1){ btns[1].click(); }
+      var bothOk=(A.avSuit()===1)&&(cfg.avatarSuit===1)&&(sel.value==="1");
+      A.devClose();
+      A.avSuit(was);
+      vlgRestore(st); stepFrames(1);
+      d.push("★全"+S.n+"着: "+rows.join(" ／ "));
+      d.push("上限＝衣装0（高さ "+base.maxY.toFixed(4)+"・よこ半幅 "+base.half.toFixed(4)+
+             "・おく半幅 "+base.halfZ.toFixed(4)+"）ぜんぶ 合格="+ok+(ng.length?("／だめ="+ng.join(",")):""));
+      d.push("②★JS側の うつし(avPartWorld)の 足もとの ずれ: "+mirror.join(" ／ ")+"＝"+mirrorOk);
+      d.push("★変異注入① あし ほぼ 0→最小y="+X1.minY.toFixed(4)+"（見つけた="+caught1+"）"+
+             " ② かみ3倍→高さ="+X2.maxY.toFixed(4)+"（見つけた="+caught2+"）"+
+             " ③ うで よこ3倍→半幅="+X3.half.toFixed(4)+"（見つけた="+caught3+"）");
+      d.push("③おぼえる="+memOk+"（えらんだ ときの cfg.avatarSuit="+memCfg+"・しまってある="+stored+
+             "／テストの あとは "+cfg.avatarSuit+"へ もどした）"+
+             "／④⚙="+selOk+"・板の ボタン "+btns.length+"つ・えらばれ="+pressed+"＝"+boardOk+
+             "／板から えらぶと ⚙も 変わる="+bothOk);
+      if(!mutOk) return { pass:false, skip:true,
+        detail:"判定不能(SKIP): 壊した 倍率を 見つけられない＝この物差しは 死んでいる。 "+d.join(" / ") };
+      return { pass:ok&&mirrorOk&&mutOk&&memOk&&selOk&&boardOk&&bothOk, detail:d.join(" / ") };
+    }
+
+    // T43e: 外＝①山頂の たいらが 広がった・高低差 0 ②**山から いちばん近い 村までの きょり**が 変わっていない
+    //   ③起動の 立ち位置が たいらの 内がわで、ひらいた とたんに 板が ひらける
+    function t_T43e(){
+      var A=window.__tenkyu, M=A.mountConsts(), H=A.homeConsts(), d=[], i;
+      var st=t43Setup();
+      // ①たいら＝半径 FLAT の 中は きっかり TOP_Y（外へ 1歩 出ると 下がる）
+      var mn=1e9, mx=-1e9, n=0;
+      for(var r=0; r<=M.FLAT; r+=2){ for(var a=0; a<360; a+=6){
+        var h=heightAt(M.X+Math.cos(a*Math.PI/180)*r, M.Z+Math.sin(a*Math.PI/180)*r); n++;
+        if(h<mn) mn=h; if(h>mx) mx=h; } }
+      var flatOk=(n>0)&&((mx-mn)<=1e-6)&&(Math.abs(mn-M.TOP_Y)<1e-6);
+      var wideOk=(M.FLAT>T43_DAN34.FLAT);
+      var outH=heightAt(M.X+M.FLAT+6, M.Z), edgeOk=(outH<M.TOP_Y-1e-6);
+      // ②村を 飲みこんでいない（すそ野 R は 1ミリも 動かしていない ことの 実測）
+      var V=villagesFor(FIELD_SEED), nearest=Infinity, eat=[];
+      for(i=0;i<V.length;i++){ var c=V[i].center, dm=Math.hypot(c[0]-M.X, c[2]-M.Z);
+        if(dm-V[i].radius<=M.R) eat.push(V[i].kind+"("+dm.toFixed(0)+")");
+        if(dm<nearest) nearest=dm; }
+      var eatOk=(eat.length===0)&&(M.R===230);
+      // ③起動の 立ち位置＝たいらの 内がわ／地面に 立つ／その場で 板が ひらける
+      var S=A.homeStart(), rr=Math.hypot(S.x-M.X, S.z-M.Z);
+      var inFlat=(rr<M.FLAT-1e-9), backOk=(H.FRONT>T43_DAN34.FRONT), nearZOk=(H.NEAR_Z>T43_DAN34.NEAR_Z);
+      t43Put(S.x, S.z, S.y-FIELD_CLEAR); yaw=S.yaw; pitch=0; stepFrames(2);
+      var standOk=(Math.abs((camPos[1]-FIELD_CLEAR)-M.TOP_Y)<1e-6);
+      var atOk=A.atHomeAt(camPos[0],camPos[1],camPos[2]);
+      var opened=A.devOpen(); A.devClose();
+      vlgRestore(st); stepFrames(1);
+      d.push("①たいら 半径 "+M.FLAT+"（弾34は "+T43_DAN34.FLAT+"）＝広がった="+wideOk+
+             "／しらべた点 "+n+" 高さ "+mn.toFixed(6)+"〜"+mx.toFixed(6)+"（差 "+(mx-mn).toExponential(2)+
+             "）＝高低差 0="+flatOk+"／たいらの 外("+(M.FLAT+6)+")は "+outH.toFixed(2)+"＝下がる="+edgeOk);
+      d.push("②山の まん中から いちばん近い 村まで "+nearest.toFixed(1)+"（すそ野 "+M.R+"）飲みこんだ 村="+
+             (eat.join(",")||"なし")+"＝"+eatOk);
+      d.push("③起動の 立ち位置＝山頂から "+rr.toFixed(1)+" ＜ たいら "+M.FLAT+"="+inFlat+
+             "（FRONT "+H.FRONT+" ＞ 弾34 "+T43_DAN34.FRONT+"="+backOk+"・NEAR_Z "+H.NEAR_Z+" ＞ "+
+             T43_DAN34.NEAR_Z+"="+nearZOk+"）／地面に 立つ="+standOk+"／拠点に 居る="+atOk+
+             "／★その場で 板が ひらける="+opened);
+      return { pass:flatOk&&wideOk&&edgeOk&&eatOk&&inFlat&&backOk&&nearZOk&&standOk&&atOk&&(opened===true),
+               detail:d.join(" / ") };
+    }
+
+    // T43f: 回帰帳簿＝既存 T1〜T42f が 1件も 余分に 落ちていない（★前の 網を ぜんぶ 見るので 必ず いちばん最後）
+    function t_T43f(){
+      var need=["T1","T2","T2f","T2n","T3","T3c","T4","T5","T6","T7","T8","T9","T10","T11","T12","T13","T14",
+                "T15","T16","T17","T18","T19a","T19b","T19c","T19d","T20a","T20b","T20c","T20d","T20e",
+                "T21a","T21b","T21c","T21d","T21e","T21f","T21i","T21g","T22a","T22b","T22c",
+                "T23a","T23b","T23c","T23d","T23e","T25a","T25b","T25c","T25d","T25e","T25f",
+                "T24a","T24b","T24c","T24d","T24e","T24f","T26a","T27a","T27b","T27c","T27d","T27e","T27f",
+                "T28a","T28b","T28c","T28d","T28e","T28f","T29a","T29b","T29c","T29d","T29e",
+                "T30a","T30b","T30c","T30d","T30e","T31a","T31b","T31c","T31d","T31e","T31f",
+                "T32a","T32b","T32c","T32d","T32e","T33a","T33b","T33c","T33d","T33e","T33f",
+                "T34a","T34b","T34c","T34d","T34e","T34f","T35a","T35b","T35c","T35d","T35e","T35f",
+                "T36a","T36b","T36c","T36d","T36e","T36f","T37a","T37b","T37c","T37d","T37e","T37g","T37h","T37f",
+                "T38a","T38b","T38c","T38d","T38e","T39a","T39b","T39c","T39d","T39e","T39f",
+                "T40a","T40b","T40c","T40d","T40e","T40f","T41a","T41b",
+                "T42a","T42b","T42c","T42d","T42e","T42f",
+                "T43a","T43b","T43c","T43d","T43e"];
+      var missing=[], failed=[], skipped=[], i, j;
+      for(i=0;i<need.length;i++){
+        var r=null;
+        for(j=0;j<_ranResults.length;j++){ if(_ranResults[j].id===need[i]){ r=_ranResults[j]; break; } }
+        if(!r) missing.push(need[i]);
+        else if(r.skip) skipped.push(need[i]);
+        else if(!r.pass) failed.push(need[i]);
+      }
+      var known=regKnown(failed);
+      var realFails=failed.filter(function(x){ return known.indexOf(x)<0; });
+      var T=window.__tenkyu;
+      // ★保存の キーは 1文字も 変えていない（干場の 訪問記録・図鑑・自己ベストが 読めなく ならない）
+      var keyOk=(CFG_KEY==="tenkyu_cfg_v1")&&(SAVE_KEY==="tenkyu_save_v1");
+      // ★乱数と 時計を 拠点・家具・きせかえの どこにも つかっていない（本文の 文字で 見る＝fail-loud）
+      var src=String(T.mountRise)+String(T.homeStart)+String(T.atHomeAt)+String(T.devBuilderSrc())+
+              String(T.avSuitSrc())+String(homeBoxesFor)+String(homeFurnSpot)+String(atFurnAt);
+      var noRndOk=(src.indexOf("Math.random")<0)&&(src.indexOf("Date.now")<0)&&(src.indexOf("new Date")<0);
+      // ★えがく命令は 弾34のまま＝拠点も インテリアも 村と 同じ 1つの 器に 相乗り（新しい VAO を 作っていない）
+      var L=T.elements(), owner=null, av=null;
+      for(i=0;i<L.elements.length;i++){ if(L.elements[i].id==="village") owner=L.elements[i];
+                                        if(L.elements[i].id==="avatar")  av=L.elements[i]; }
+      var rideOk=!!owner && owner.vao.length===1 && owner.vao[0]==="vlVAO" &&
+                 (L.drawVaoNames.indexOf("homeVAO")<0) && (L.drawVaoNames.indexOf("furnVAO")<0) &&
+                 (String(drawScene).indexOf("homeVAO")<0);
+      // ★台帳（§R24⑦）が 拠点と きせかえを 実測で 持っている（見込みの 数を 書いていない）
+      var HB=T.homeBoxesNow(), FL=T.homeFurnLedger(), AS=T.avSuits();
+      var ledOk=!!owner && !!owner.home && !!av && !!av.suits &&
+                (owner.home.boxes===HB.length)&&(owner.home.furniture===FL.length)&&
+                (owner.home.floors===2)&&(owner.home.triangles===HB.length*12)&&
+                (av.suits.n===AS.n)&&(av.suits.parts===T.avParts().length)&&(av.suits.uploadsPerFrame===0)&&
+                (av.suits.maxY.length===AS.n);
+      // ★自機の 器は 1つのまま／毎フレームの 転送は 0（着がえた ときの 1回きり）
+      var upl0=T.avSuits().uploads;
+      T.stepFrames(30);
+      var perFrameOk=(T.avSuits().uploads===upl0);
+      // ★絵も 音も 1バイトも 足していない（拠点も インテリアも きせかえも ぜんぶ 数と 文字）
+      var devHtml=document.getElementById("devboard").innerHTML;
+      var ledStr=JSON.stringify(T.homeFurnLedger())+JSON.stringify(T.avSuits());
+      var noAssetOk=(document.querySelectorAll("script[src]").length===1)&&
+                    (devHtml.indexOf("<img")<0)&&(devHtml.indexOf("<audio")<0)&&(devHtml.indexOf("<video")<0)&&
+                    (devHtml.indexOf("url(")<0)&&(devHtml.indexOf("http")<0)&&
+                    (ledStr.indexOf("data:")<0)&&(ledStr.indexOf("http")<0)&&
+                    (String(homeBoxesFor).indexOf("fetch")<0);
+      // ★⚙の 逃げ道が そろっている（きせかえは ⚙と 板の 2つから とどく）
+      var uiOk=(document.querySelectorAll("#s-suit").length===1)&&
+               (document.querySelectorAll("#s-suit option").length===AS.n)&&
+               (T.devTabsLedger().length===3);
+      return { pass:(missing.length===0)&&(realFails.length===0)&&keyOk&&noRndOk&&rideOk&&ledOk&&
+                    perFrameOk&&noAssetOk&&uiOk,
+        detail:"登録もれ="+(missing.join(",")||"なし")+" 既知以外の失敗="+(realFails.join(",")||"なし")+
+               " 既知の失敗="+(failed.join(",")||"なし")+" 判定不能="+(skipped.join(",")||"なし")+
+               " ／ 保存キーは 不変="+keyOk+"（"+CFG_KEY+"／"+SAVE_KEY+"）"+
+               " 乱数・時計を つかっていない="+noRndOk+
+               " えがく 器は 村と 同じ 1つに 相乗り="+rideOk+"（拠点の 箱 "+HB.length+"・家具 "+FL.length+"）"+
+               " 要素台帳が 実測で 更新されている="+ledOk+
+               " 毎フレームの GPU転送 0（30フレームで 送った 回数 "+upl0+"→"+T.avSuits().uploads+"）="+perFrameOk+
+               " 絵・音を 足していない="+noAssetOk+
+               " ⚙と 板の 両方から きせかえに とどく="+uiOk+
+               " ／ ★弾35で 動かした 既存テストの 判定基準＝0個（HOME の 数と HOME_MT.FLAT は"+
+               " どの 既存テストも 決めうちで 見ていない＝T40b/T40c/T40d は 定数から 出している）" };
+    }
+//★HW35-END
     window.__tenkyu.runAll = async function(){
       if(!window.__testErrCount){ window.__testErrCount=0;
         var _ce=console.error.bind(console);
@@ -14491,6 +15293,12 @@
       await run("T42a",t_T42a); await run("T42b",t_T42b); await run("T42c",t_T42c);
       await run("T42d",t_T42d); await run("T42e",t_T42e); await run("T42f",t_T42f);
 //★HW34-END
+//★HW35-BEGIN
+      // 弾35 §R29（拠点を 広く 高く・くらしの ある へや。★T43f は 前の 網を ぜんぶ 見るので 必ず いちばん最後。
+      //   T42f を ふくむ 前の 網の 判定基準は 1ビットも 動かしていない＝T42f の 後ろに 置く）
+      await run("T43a",t_T43a); await run("T43b",t_T43b); await run("T43c",t_T43c);
+      await run("T43d",t_T43d); await run("T43e",t_T43e); await run("T43f",t_T43f);
+//★HW35-END
       // 復元＝本当のプレイヤー進行・設定・カメラを一切壊さない
       swooshCount=snapSwoosh.count; swooshLast=snapSwoosh.last;   // persistSave()のnearMiss焼き込み前に実行順を戻す
       save=snapSave; persistSave(); syncVisitedBuffer(); completedConstellations=recomputeCompletedConstellations(); buildLines();
