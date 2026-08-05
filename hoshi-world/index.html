@@ -230,6 +230,18 @@
     background:var(--panel); border:1px solid var(--line); color:var(--fg);
     font-size:15px; cursor:pointer; }
   #btn-pickup.show{ display:flex; }
+  /* 弾42 §R38: 💊つかう・🪵おく。🖐ひろうと 同じ 作法（48px・要る ときだけ 出る・点滅なし・
+     押せない 物を 見せない＝❤満タン/くすり0/置き場の外では 一度も 出ない）。
+     ★items/slots 欄の 無い 世界では どちらも 一度も 出ない＝弾41までの 画面と 1ビットも 同じ。 */
+  #btn-heal,#btn-place{ position:fixed; left:50%; transform:translateX(-50%); z-index:6;
+    display:none; align-items:center; justify-content:center; gap:6px;
+    min-width:120px; height:48px; border-radius:14px; padding:0 18px;
+    background:var(--panel); border:1px solid var(--line); color:var(--fg);
+    font-size:15px; cursor:pointer; }
+  #btn-heal{ top:214px; }
+  #btn-place{ top:270px; }
+  #btn-heal.show,#btn-place.show{ display:flex; }
+  #btn-heal:focus-visible,#btn-place:focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }
   /* 弾25 §R20: スマホの ⚔ふる／✨うつ。★🦘と まったく 同じ 作り（44px床を こえる 56×56・タップ専用）。
      置き場は touchLayout が 決める（9通りの 画面で 重なり0を §G T34d が 機械で 見張る）。
      ⚔たたかう を 切ると display:none＝押せる ものが 1つも 出ない。 */
@@ -496,6 +508,11 @@
 </div>
 <div id="item-toast" aria-hidden="true"></div>
 <button id="btn-pickup" aria-label="ひろう"><span aria-hidden="true">🖐</span><span>ひろう</span></button>
+<!-- 弾42 §R38: 💊つかう（items の 世界で ❤が へっていて くすりを 持つ ときだけ）・
+     🪵おく（slots の 世界で 置き場の ちかくに 立ち かべいたを 持つ ときだけ）。
+     どちらの 欄も 無い 世界では 一度も 出ない＝弾41までと 同じ 画面。 -->
+<button id="btn-heal" aria-label="くすりを つかう"><span aria-hidden="true">💊</span><span>つかう</span></button>
+<button id="btn-place" aria-label="かべいたを おく"><span aria-hidden="true">🪵</span><span>おく</span></button>
 <!-- 弾25 §R20: スマホの 攻撃ボタン。どちらも タップ専用（押しっぱなし 不要）＝
      右親指が 視点スティックを 一瞬 はなれるだけで 撃てる。PCでは 出ない（F／R キー）。 -->
 <button id="btn-atk-melee" class="atkbtn" aria-label="ちかくを ふる">⚔</button>
@@ -830,7 +847,7 @@
   // ★下の 64文字は「焼いた ときの 自分の すがた」。build.py が 0 を 64個 置いた ところへ 書きこむ。
   //   ＝読む がわは その 64文字を 0 に もどして sha256 を とれば、同じ 数に なる。
   //   これで「いま 動いている この ファイルが、源から 焼いた ままか」を 機械で 見張れる（T41a）。
-  var HW_SELF_SHA="9980dd0181a0eb6130a6544d03b4fb6da9eaacc9a1412a35b6fa545057d37f02";
+  var HW_SELF_SHA="3d828e9dc192411be54b116ea3cbf306adef51f9a38830b7abcc13217009ebc9";
   try{ window.HW_SELF_SHA=HW_SELF_SHA; }catch(e){}   // 人が コンソールで 見られる ように（機能には つかわない）
 //★HW33A-END
   // 干場要望「地上から飛べるように」＝セーブが一度も無い初回起動の時だけ、地面のある世界の低空スタートにする。
@@ -2420,6 +2437,13 @@
     shrubBoxes = shrubBoxesFor(VLG.R_MAX, villages);
     for(var ci=0; ci<cityBoxes.length; ci++)  boxes.push(cityBoxes[ci]);
     for(var si=0; si<shrubBoxes.length; si++) boxes.push(shrubBoxes[si]);
+    // 弾42 §R38: かべいたの 置き場（スロット）。★村と 同じ 器へ 足すだけ＝えがく回数の 増分 0。
+    //   slots 欄の 無い 世界では 0個＝弾41までと 1ビットも 同じ。まだ 置いていない スロットは
+    //   大きさ [0,0,0] の 箱＝絵にも 当たり判定にも かからない（立てる ときに 1回だけ 大きさを 送る）。
+    slotBoxBase=-1; slotBoxN=0;
+    var sSet=slotSetFor(wpNow());
+    if(sSet){ slotBoxBase=boxes.length; slotBoxN=sSet.pts.length;
+      for(var qi=0; qi<sSet.pts.length; qi++) boxes.push(slotBoxFor(sSet, qi)); }
     var n=boxes.length;
     if(n===0){ vlVAO=null; vlCount=0; vlBuildMs=+(performance.now()-t0).toFixed(2); return; }
     var CB=cube36(), pos36=CB.pos, nrm36=CB.nrm;
@@ -3826,6 +3850,10 @@
     //   items の 無い 世界では itemsOn を 切って もどるだけ＝画面も ✨も 弾40までと 1ビットも 同じ。
     //   ★村を 作りなおした あとに 呼ぶ（なかみは いまの 世界の 家に 湧く）。
     itemsApply(P);
+    // 弾42 §R38: つかう（くすり・かべいたの 置き場）＝台帳の items／slots 欄の **有無だけ** を 見る。
+    //   ★wpRebuild の あとに 呼ぶ（スロットの 箱が 村の 器に 入って から 当たり判定を そろえる）。
+    //   どちらの 欄も 無い 世界では 切って もどるだけ＝弾41までと 1ビットも 同じ。
+    d42Apply(P);
     // 弾37 §R31: たたかいの 出し入れは **既にある setBattle 1本**へ 渡すだけ（新しい しくみを 作らない）。
     //   ★cfg.battle は 読むだけ＝人の えらびを 書きかえない。おぼえ直しも しない（persist=false）。
     setBattle(cfg.battle, false);
@@ -4168,6 +4196,174 @@
     itemsSayWord(sr);
   }
   // ================= 弾41 ここまで（items 欄を 持つ 世界は まだ 台帳に 無い＝弾44で p4 が 宣言する） =================
+
+  // ================= 弾42 §R38: つかう（くすり・かべいたの 置き場） =================
+  // ★干場の 発注（2026-08-05）＝SPEC_HW_WORLD_SIEGE §3.3（旧「作る」の 置き換え＝作らない・つかうだけ）。
+  // ★契約の 守り方（§R31）＝本体は 台帳の 欄の **有無だけ** を 見る（世界の id は 見ない＝T45d は そのまま）:
+  //   ・💊くすり＝items 欄の ある 世界でだけ「つかう」の 行が 表に 入る（弾41の「ひろう」と 同じ 出入り）。
+  //   ・🪵かべいた＝slots 欄（SLOT_SETS の id を 1つ 書く）の ある 世界でだけ「おく」の 行が 入る。
+  //   どちらの 欄も 無い 世界では 行も キーも ボタンも 出ない＝弾41までと 1ビットも 同じ。
+  // ★置き場は スロット式（自由配置に しない）＝当たり判定は **起動時に 作った 箱の ON/OFF だけ**
+  //   （空間分割 BXG は 作り直さない・敵の 経路も 予測できる・置き直しの 手ざわりが 単純＝設計書 §3.3）。
+  // ★予算＝えがく回数 増分0（かべの 箱は 村と 同じ 器に 相乗り）・毎フレームGPU転送 増分0
+  //   （かべの 立て倒しは 置いた とき 1回だけ bufferSubData）・三角形は スロット上限ぶんを 起動時に 確保
+  //   （1スロット＝箱1つ＝+12。slots の 無い 5つの 世界では 0個＝増分0）・毎フレームJSは 10Hzの 見張り 1つ。
+  // ★これは 共通部品＝「スロット式の 置き場」。とりで（弾43）も 🗼塔（弾47）も 同じ 台帳の 形で 使う。
+  //★HW42-SLOTS-BEGIN
+  // ★置き場の 台帳。1行＝1組の 置き場。欄＝id／kind（何を 置く 場か＝ITEMS の kind）／
+  //   pts（置き場の 座標の ならび。[x, z, むき(ラジアン)]＝高さは 地面から その場で 出す）。
+  // ★世界は WORLD_PATTERNS の 欄に slots:"toride12" と 書くだけ（この弾では まだ どの 世界も 書かない＝弾44）。
+  // ★pts は ✎仮値＝とりで（弾43）の まわり 12か所の めやす。世界の まんなか (0,0) は 村も 敵の 住みかも
+  //   来ない 場所（VLG.R_MIN=150 の 内がわ）＝とりでの 予定地。弾43が 台帳の 数だけ 較正する（本体は 不変）。
+  var SLOT_SETS = [
+    { id:"toride12", kind:"かべ", pts:[
+      [-9,-14,0],[0,-14,0],[9,-14,0],          // 手前(-z)の ならび
+      [-9, 14,0],[0, 14,0],[9, 14,0],          // おく(+z)の ならび
+      [-14,-9,Math.PI/2],[-14,0,Math.PI/2],[-14,9,Math.PI/2],   // ひだり(-x)の ならび
+      [ 14,-9,Math.PI/2],[ 14,0,Math.PI/2],[ 14,9,Math.PI/2]    // みぎ(+x)の ならび
+    ] }
+  ];
+  //★HW42-SLOTS-END
+  var BARR = {
+    HP_MAX:  60,     // ✎ かべ 1まいの 耐久（設計書 §3.4。へらす 側＝敵の 攻撃は 弾43）
+    W: 3.2, H: 3.0, T: 0.45,   // ✎ かべの 箱の 大きさ（はば・たかさ・あつさ。★たかさは 目の 高さ(2.5)より 上＝見通しも ふさぐ）
+    PLACE_R: 3.0,    // ✎ 置ける 近さ（スロットの まん中から。ひろうの PICK_R と 同じ 数）
+    SCAN_S:  0.1,    // ✎ ちかくの 置き場さがしは 1秒に 10回（敵の 思考と 同じ 拍＝毎フレーム 数えない）
+    HIDE_Y:  40,     // まだ 置いていない 箱を しまう 深さ（地面から 下へ。大きさ0でも 当たり判定に かすらない 保険）
+    MAX_SLOTS: 64    // 保存 barr の 長さの 上限（保存が ふくらまない 番人）
+  };
+  var BARR_COL=[0.55,0.42,0.26];   // かべいたの 色（木の 板。絵は 0バイト＝色の 数だけ）
+  var slotsOn=false;       // slots の ある 世界に いるか（frame() は itemsOn と この boolean しか 見ない）
+  var slotSet=null;        // いまの 世界の SLOT_SETS の 行
+  var slotBoxBase=-1, slotBoxN=0;   // 村の 器の 中で スロットの 箱が 始まる 番号と 数（buildVillages が 入れる）
+  var slotScanT=0, slotNear=-1, slotUploads=0;
+  var healActOn=false, slotActOn=false;
+  // 台帳を 引く（世界の 欄 slots:"id" → SLOT_SETS の 行。無ければ null＝この 仕組み全体が 存在しないのと 同じ）
+  function slotSetFor(P){
+    if(!P || !P.slots) return null;
+    for(var i=0;i<SLOT_SETS.length;i++){ if(SLOT_SETS[i].id===P.slots) return SLOT_SETS[i]; }
+    return null;
+  }
+  // スロット 1つぶんの 箱（buildVillages が 村の 器へ 足す）。置いてあれば 立った すがた・
+  //   まだなら 大きさ0で 地面の 下に しまう（絵にも 当たり判定にも 一度も かからない）。
+  function slotBoxFor(set, i){
+    var pt=set.pts[i], gy=heightAt(pt[0], pt[1]);
+    var up=(save.siege.barr[i]|0)>0;
+    return { kind:"barr", ground:true, pos:[pt[0], up?gy:(gy-BARR.HIDE_Y), pt[1]],
+             size: up?[BARR.W,BARR.H,BARR.T]:[0,0,0], yaw:pt[2]||0, col:BARR_COL };
+  }
+  // 立てる＝CPUの 写し（bxCtr/bxSz/bxSolid）と GPUの 器（村の VAOの 属性）を **1回だけ** 書きかえる。
+  //   ★BXG（箱の ちず）は 作り直さない＝箱の x,z は 起動時から 同じ ます に 居る（変えるのは 高さと 大きさだけ）。
+  function slotRaise(si){
+    if(slotBoxBase<0 || !slotSet) return false;
+    var bi=slotBoxBase+si, pt=slotSet.pts[si], gy=heightAt(pt[0], pt[1]);
+    bxCtr[bi*3+1]=gy;
+    bxSz[bi*3]=BARR.W; bxSz[bi*3+1]=BARR.H; bxSz[bi*3+2]=BARR.T;
+    bxSolid[bi]=1;
+    // vlBufs＝[頂点, 法線, 中心, 大きさ, むき, 色]（buildVillages の ならび）。中心(2)と 大きさ(3)へ 3つずつ。
+    if(vlVAO && vlBufs.length>=4){
+      gl.bindBuffer(gl.ARRAY_BUFFER, vlBufs[2]);
+      gl.bufferSubData(gl.ARRAY_BUFFER, bi*3*4, bxCtr.subarray(bi*3, bi*3+3));
+      gl.bindBuffer(gl.ARRAY_BUFFER, vlBufs[3]);
+      gl.bufferSubData(gl.ARRAY_BUFFER, bi*3*4, bxSz.subarray(bi*3, bi*3+3));
+      gl.bindBuffer(gl.ARRAY_BUFFER, null);
+      slotUploads++;
+    }
+    return true;
+  }
+  // 当たり判定の ON/OFF を 保存に そろえる（wpApply→d42Apply の 1か所から。置いた 箱だけ 人が ぶつかる）
+  function slotsSyncSolid(){
+    if(slotBoxBase<0 || !slotSet || !bxSolid) return;
+    for(var i=0;i<slotSet.pts.length;i++) bxSolid[slotBoxBase+i]=((save.siege.barr[i]|0)>0)?1:0;
+  }
+  // 「つかう」「おく」の 行（★表へは 欄の ある 世界に 入った ときだけ 足し、出たら かならず 抜く＝
+  //   弾41の ITM_ACT と 同じ 作法。touch は 持たない＝ひし形にも ☰にも 席を 足さない）。
+  var HEAL_ACT={ id:"heal", name:"つかう", icon:"💊", kind:"tap",
+    keys:["k"], sheet:true, once:true, tap:"heal", btn:"btn-heal", touch:null, when:"heal" };
+  var PLACE_ACT={ id:"place", name:"おく", icon:"🪵", kind:"tap",
+    keys:["o"], sheet:true, once:true, tap:"place", btn:"btn-place", touch:null, when:"slot" };
+  function d42Ensure(row, on){ if(on) return true; ACTIONS.push(row); actRebuild(); return true; }
+  function d42Drop(row){
+    for(var i=ACTIONS.length-1;i>=0;i--){ if(ACTIONS[i]===row){ ACTIONS.splice(i,1); actRebuild(); break; } }
+  }
+  // 世界に あてる（wpApply の 1か所から。★wpRebuild の あと＝スロットの 箱が 器に 入った あとに 呼ばれる）
+  function d42Apply(P){
+    // 💊つかう＝items の 世界でだけ（弾41の「ひろう」と 同じ 出入り）
+    if(P.items){ if(!healActOn){ d42Ensure(HEAL_ACT); healActOn=true; } }
+    else if(healActOn){ d42Drop(HEAL_ACT); healActOn=false; }
+    // 🪵おく＝slots の 世界でだけ
+    var set=slotSetFor(P);
+    if(set){
+      slotSet=set; slotsOn=true; slotNear=-1; slotScanT=BARR.SCAN_S;
+      while(save.siege.barr.length<set.pts.length) save.siege.barr.push(0);   // 保存の 器を そろえる（欠けは 0）
+      if(!slotActOn){ d42Ensure(PLACE_ACT); slotActOn=true; }
+      slotsSyncSolid();
+    } else {
+      slotsOn=false; slotSet=null; slotNear=-1;
+      if(slotActOn){ d42Drop(PLACE_ACT); slotActOn=false; }
+    }
+    updateUseUi();
+  }
+  // 毎フレームの 1歩（★frame() は itemsOn/slotsOn の boolean を 見て 呼ぶだけ。10Hzで しか 数えない）
+  function d42Step(dt){
+    if(ENVID!=="field") return;
+    slotScanT+=dt; if(slotScanT<BARR.SCAN_S) return;
+    slotScanT=0;
+    if(slotsOn) slotScan();
+    updateUseUi();
+  }
+  // ちかくの 置き場（PLACE_R の 中で いちばん 近い 1つ。上下は 見ない＝置き場は 地面の 上に しか 無い）
+  function slotScan(){
+    var px=camPos[0], pz=camPos[2], best=-1, bd2=BARR.PLACE_R*BARR.PLACE_R, i;
+    var pts=slotSet.pts;
+    for(i=0;i<pts.length;i++){
+      var dx=pts[i][0]-px, dz=pts[i][1]-pz, d2=dx*dx+dz*dz;
+      if(d2<=bd2){ bd2=d2; best=i; }
+    }
+    slotNear=best;
+  }
+  // 💊くすりを つかう（K キー・ボタン。とどかない ときは やさしい 案内＝「何も 起きない」を 作らない）。
+  //   ❤2つ＝いのちの 5分の2（いのちの 表示が ♥5つ＝hpHeartsFor の 同じ 割り算から 導く＝別の 数を 書かない）。
+  function kusuriUse(){
+    if(!itemsOn || !battleOn()){ itemsSay("ここでは くすりを つかえません。"); return false; }
+    var bag=save.siege.bag;
+    if((bag.kusuri|0)<=0){ itemsSay("くすりを もっていません。いえの ちかくで さがして ください。"); return false; }
+    if(hp>=BAT.HP_MAX){ itemsSay("いまは げんきです。くすりは へって いません。"); return false; }
+    bag.kusuri--;
+    hp += BAT.HP_MAX*2/5; if(hp>BAT.HP_MAX) hp=BAT.HP_MAX;
+    persistSave();   // つかった ときだけ 書く（毎フレーム 書かない＝弾4からの 作法）
+    itemsToast("💊 なおした", "くすりを つかいました。きずが なおりました。のこり "+bag.kusuri+"つ。");
+    updateHpHud(); updateUseUi();
+    return true;
+  }
+  // 🪵かべいたを おく（O キー・ボタン）。置けるのは きめられた 置き場の ちかくだけ（設計書 §3.3）。
+  function kabePlace(){
+    if(!slotsOn){ itemsSay("ここでは かべいたを おけません。"); return false; }
+    slotScan();   // 押した 瞬間の 近さで 判定（10Hz の 古い 答えを つかわない＝ひろうと 同じ）
+    if(slotNear<0){ itemsSay("かべいたは きめられた おきばに おけます。おきばの ちかくで おして ください。"); return false; }
+    if((save.siege.barr[slotNear]|0)>0){ itemsSay("ここには もう かべが あります。"); return false; }
+    if((save.siege.bag.kabe|0)<=0){ itemsSay("かべいたを もって いません。むらの いえで さがして ください。"); return false; }
+    save.siege.bag.kabe--;
+    save.siege.barr[slotNear]=BARR.HP_MAX;
+    slotRaise(slotNear);
+    persistSave();   // 置いた ときだけ 書く
+    itemsToast("🪵 たてた", "かべいたを たてました。のこり "+save.siege.bag.kabe+"まい。");
+    updateUseUi();
+    return true;
+  }
+  // ---------- ボタンの 出し入れ（書きかえは 変わった ときだけ＝弾18の 作法） ----------
+  var _healBtn=null,_placeBtn=null,_healShown=null,_placeShown=null;
+  function updateUseUi(){
+    if(!_healBtn){ _healBtn=document.getElementById("btn-heal"); _placeBtn=document.getElementById("btn-place"); }
+    var touch = tuiOn && !!TUI.rects;   // ⚔✨🖐の ボタンと 同じ 決め方（PCは K／O キー）
+    var hw = itemsOn && ENVID==="field" && battleOn() && hp<BAT.HP_MAX &&
+             ((save.siege.bag.kusuri|0)>0) && touch;
+    if(_healShown!==hw){ _healShown=hw; if(_healBtn) _healBtn.classList.toggle("show", hw); }
+    var pw = slotsOn && ENVID==="field" && slotNear>=0 && ((save.siege.barr[slotNear]|0)===0) &&
+             ((save.siege.bag.kabe|0)>0) && touch;
+    if(_placeShown!==pw){ _placeShown=pw; if(_placeBtn) _placeBtn.classList.toggle("show", pw); }
+  }
+  // ================= 弾42 ここまで（slots 欄を 持つ 世界は まだ 台帳に 無い＝弾44で p4 が 宣言する） =================
 
   // ================= 弾24 §R19: 敵と 戦闘の 芯（★改訂後の 不変条件5の 実装） =================
   // ★この かたまりの 一番大事な 約束は「⚔たたかう を 切れば、弾23と まったく 同じ 世界に なる」ことである。
@@ -5135,7 +5331,9 @@
     cruise   : function(){ cfg.autocruise=!cfg.autocruise; saveCfg(); syncCruiseUI(); },
     tidy     : function(){ tidyToggle(); },
     homeBoard: function(){ openDevBoard(); },
-    pickup   : function(){ itemsPickup(); }   // 弾41 §R37: 行は items の 世界でだけ 表に 入る（itemsEnsureAction）
+    pickup   : function(){ itemsPickup(); },  // 弾41 §R37: 行は items の 世界でだけ 表に 入る（itemsEnsureAction）
+    heal     : function(){ kusuriUse(); },    // 弾42 §R38: 行は items の 世界でだけ 表に 入る（d42Apply）
+    place    : function(){ kabePlace(); }     // 弾42 §R38: 行は slots の 世界でだけ 表に 入る（d42Apply）
   };
   // ★表から 生える もの（ここが 唯一の 生え口＝手で 並べた ならびは 1つも 無い）。
   //   KEY_ACT   … PCの キー→意味（keydown は これを 1回 引くだけ＝キーの 名まえを 本体に 書かない）
@@ -5685,6 +5883,17 @@
     // キーボードだけで つかう人のために（PCでは Gキーでも 同じ）
     b.addEventListener("keydown", function(e){ if(e.key===" "||e.key==="Enter"){ e.preventDefault(); if(!e.repeat){ itemsPickup(); stopAuto(); } } });
   })();
+  // 弾42 §R38: 💊つかう・🪵おく。🖐ひろうと まったく 同じ 作り（タップ1回＝1回だけ・押しっぱなしで くり返さない）。
+  (function(){
+    function wire42(id, fire){
+      var b=document.getElementById(id); if(!b) return;
+      b.addEventListener("pointerdown", function(e){ e.preventDefault(); fire(); stopAuto(); });
+      // キーボードだけで つかう人のために（PCでは K／O キーでも 同じ）
+      b.addEventListener("keydown", function(e){ if(e.key===" "||e.key==="Enter"){ e.preventDefault(); if(!e.repeat){ fire(); stopAuto(); } } });
+    }
+    wire42("btn-heal",  function(){ kusuriUse(); });
+    wire42("btn-place", function(){ kabePlace(); });
+  })();
   // 弾16 §R14: スマホの操作盤の置き場を あてる（PCでは 何も書かない）。むきを かえた時も おきなおす。
   layoutTouchUI();
   window.addEventListener("resize", function(){ layoutTouchUI(); });
@@ -5997,7 +6206,8 @@
   //   ふるい 保存（siege 項目なし）は 初期値で 読める（下の loadSave が ならす）＝保存は 1つも 壊れない。
   // 弾41 §R37: siege に bag（袋＝つかえば 減る）・tier（ぶきの 段階＝下がらない）・got（きょう ひろった 家）を 足した。
   //   ふるい 保存（bag/tier/got なし）も 初期値で 読める（loadSave が ならす）＝保存は 1つも 壊れない。
-  function defaultSave(){ return { v:1, visited:{}, questDay:null, questDone:[false,false,false], questTotal:0, rankXp:0, nearMiss:0, bests:{}, siege:{ day:1, t:0, bestDay:0, bag:itemsBagDefault(), tier:{ m:1, g:0 }, got:{ d:0, k:[] } } }; }
+  // 弾42 §R38: siege に barr（置き場ごとの かべの のこり耐久。0＝無い）を 足した。ふるい 保存も 初期値で 読める。
+  function defaultSave(){ return { v:1, visited:{}, questDay:null, questDone:[false,false,false], questTotal:0, rankXp:0, nearMiss:0, bests:{}, siege:{ day:1, t:0, bestDay:0, bag:itemsBagDefault(), tier:{ m:1, g:0 }, got:{ d:0, k:[] }, barr:[] } }; }
   function loadSave(){
     try{
       var raw = localStorage.getItem(SAVE_KEY); if(!raw) return defaultSave();
@@ -6023,7 +6233,10 @@
             tier: { m: Math.min(itemsTierMax("m"), Math.max(1, ((+tr.m)|0)||1)),
                     g: Math.min(itemsTierMax("g"), Math.max(0, ((+tr.g)|0)||0)) },
             got: { d: Math.max(0, ((+gt.d)|0)||0),
-                   k: (Array.isArray(gt.k)?gt.k:[]).filter(function(x){ return typeof x==="string"; }).slice(0, ITM.GOT_MAX) } }; })(obj.siege)
+                   k: (Array.isArray(gt.k)?gt.k:[]).filter(function(x){ return typeof x==="string"; }).slice(0, ITM.GOT_MAX) },
+            // 弾42 §R38: barr は 0〜HP_MAX に ならす（マイナス・文字は 0＝「無い」へ。長さは MAX_SLOTS の 番人）
+            barr: (Array.isArray(s.barr)?s.barr:[]).slice(0, BARR.MAX_SLOTS).map(function(x){
+                    var v=(+x)|0; if(v<0) v=0; if(v>BARR.HP_MAX) v=BARR.HP_MAX; return v; }) }; })(obj.siege)
       };
     }catch(e){ console.warn("tenkyu save: 読み込みに失敗（fail-open・初期値でつづける）", e); return defaultSave(); }
   }
@@ -6629,6 +6842,13 @@
                 bag:Object.assign({},save.siege.bag), tier:Object.assign({},save.siege.tier),
                 declared:WORLD_PATTERNS.map(function(P){ return !!P.items; }),
                 trianglesAdded:0, drawCallsAdded:0, gpuBytesPerFrameAdded:0 },
+        // 弾42 §R38: ★かべいたの 置き場（スロット）。箱は 村と 同じ 器に 相乗り＝えがく回数の 増分 0。
+        //   立てる ときだけ 1回 GPUへ 送る（uploads の 実測）＝毎フレーム転送の 増分 0。
+        //   三角形は スロット上限ぶんを 器に 確保（1スロット＝+12。slots の 無い 世界では 0個）。
+        slots:{ on:slotsOn, sets:SLOT_SETS.length, set:(slotSet?slotSet.id:null),
+                boxes:slotBoxN, placed:(save.siege.barr||[]).filter(function(x){ return x>0; }).length,
+                trianglesAdded:slotBoxN*ELM_CUBE_TRI, drawCallsAdded:0,
+                gpuBytesPerFrameAdded:0, uploads:slotUploads },
         cost:C({ triangles:Math.round((vlgN+cityN)*vlTriPer), drawCalls:(villageOn?1:0), points:0, lines:0,
                  bytes:vlBytes }),
         costWhy:W({ bytes:"村・街・低木を ぜんぶ ふくむ 1つの 器の バイト（低木の 欄には 二重に 書かない）＝実測。" }),
@@ -7750,6 +7970,19 @@
     itemsMelee:function(){ return { dmg:meleeNow().dmg, cd:meleeNow().cd }; },
     itemsConsts:function(){ return Object.assign({},ITM); },
     itemsTune:function(o){ if(o){ for(var k in o){ if(ITM[k]!==undefined) ITM[k]=o[k]; } } return Object.assign({},ITM); },
+    // ---------- 弾42 §R38のテスト用フック（つかう＝くすり・かべいたの 置き場） ----------
+    slotSets:function(){ return SLOT_SETS.map(function(s){ return { id:s.id, kind:s.kind,
+      pts:s.pts.map(function(p){ return p.slice(); }) }; }); },
+    slots:function(){ return { on:slotsOn, set:(slotSet?slotSet.id:null), base:slotBoxBase, n:slotBoxN,
+      near:slotNear, actionOn:slotActOn, healActOn:healActOn, uploads:slotUploads,
+      barr:(save.siege.barr||[]).slice(), vlTris:vlTris, vlCount:vlCount }; },
+    slotScanNow:function(){ if(slotsOn) slotScan(); return slotNear; },
+    // ★つかう/おく の 道は 本番と 同じ 1本（kusuriUse／kabePlace）＝採点は 本番の 関数を 通す（規範 §1-①）
+    kusuriUseNow:function(){ return kusuriUse(); },
+    kabePlaceNow:function(){ return kabePlace(); },
+    barrConsts:function(){ return Object.assign({},BARR); },
+    barrTune:function(o){ if(o){ for(var k in o){ if(BARR[k]!==undefined) BARR[k]=o[k]; } } return Object.assign({},BARR); },
+    useUiNow:function(){ updateUseUi(); return { heal:!!_healShown, place:!!_placeShown }; },
     worldRebuild:function(){ return wpRebuild(); },
     worldsOn:function(v, persist){ return setWorldsOn(v, !!persist); },
     warpConsts:function(){ return Object.assign({},WARP); },
@@ -8349,6 +8582,9 @@
     // 弾41 §R37: もちもの。items欄の 無い 世界では この boolean を 1つ 見て 帰るだけ（弾40と 同じ 作法）。
     //   さがすのは 1秒に 10回（itemsStep の 中で 拍を 数える）＝毎フレームJSの 増分は 数の 比較だけ。
     if(itemsOn) itemsStep(dt);
+    // 弾42 §R38: つかう。items/slots の 無い 世界では boolean を 2つ 見て 帰るだけ（弾40/41と 同じ 作法）。
+    //   見張るのは 1秒に 10回（d42Step の 中で 拍を 数える）＝毎フレームJSの 増分は 数の 比較だけ。
+    if(itemsOn||slotsOn) d42Step(dt);
     var _logicRaw = performance.now()-_t0;   // 弾13: なましていない生値（分布を見るのに使う。logicMs自体は従来どおりのなまし）
     logicMs += (_logicRaw-logicMs)*0.1;
     // 弾15 §R13: ★「かんがえる(JS)」だけの時間を ためていく。えがく仕事は 1ミリも 入っていない。
@@ -18616,6 +18852,377 @@
                " ／ ★弾41で 動かした 既存テストの 判定基準＝0個（T45a〜T48d は 1文字も 書きかえていない）" };
     }
 //★HW41-END
+//★HW42-BEGIN
+    // ---------- 弾42 §R38: つかう＝くすり・かべいたの 置き場（T50a〜T50d） ----------
+    // ★干場の 発注（2026-08-05）＝SPEC_HW_WORLD_SIEGE §3.3（旧「作る」の 置き換え＝つかうだけ）。
+    // ★台帳には items/siege/slots の 世界を まだ 足さない（p4 は 弾44）。T48/T49 と 同じ 作法で
+    //   「ためしの 世界（siege＋items＋slots）」を 台帳に 1行 足して 測り、かならず 抜いてから 帰る
+    //   ＝既存の 番人（T44a・T45e など）は 1ビットも 動かさない。
+    var T50_SIEGE={ daySec:240, raidEvery:7, smallRaid:true, graceDays:2 };
+    function t50World(){
+      var base=null, i;
+      for(i=0;i<WORLD_PATTERNS.length;i++)
+        if(!WORLD_PATTERNS[i].home && WORLD_PATTERNS[i].move==="grounded" && WORLD_PATTERNS[i].battle){ base=WORLD_PATTERNS[i]; break; }
+      var W={}; for(var k in base) W[k]=base[k];   // ★あさい写し＝clear等は 台帳と 同じ 配列を 指す（T48と 同じ）
+      W.id="t50"; W.name="ためしの まもりの せかい";
+      W.siege={ daySec:T50_SIEGE.daySec, raidEvery:T50_SIEGE.raidEvery,
+                smallRaid:T50_SIEGE.smallRaid, graceDays:T50_SIEGE.graceDays };
+      W.items=true;        // 弾41の 欄（くすりは 袋から つかう）
+      W.slots="toride12";  // ★弾42の 欄＝置き場は SLOT_SETS の id を 1つ 書くだけ
+      return W;
+    }
+    function t50Setup(){
+      var st=t45Setup();
+      st.rawSave=localStorage.getItem(SAVE_KEY);
+      st.memSave=JSON.stringify(save);
+      st.n=WORLD_PATTERNS.length;
+      st.tidy=cfg.tidy; st.showHud=cfg.showHud; st.hudFly=cfg.hudFly; st.bat=!!cfg.battle;
+      cfg.tidy=false; cfg.showHud=true; cfg.hudFly=true;      // HUD の ふたを あけて 測る
+      window.__tenkyu.setBattle(true,false);                  // ❤（いのち）を 測る ため（もどすのは t50Restore）
+      WORLD_PATTERNS.push(t50World());
+      return st;
+    }
+    function t50Restore(st){
+      window.__tenkyu.battleReset();
+      // ①ためしの 世界から はなれる（★ここで d42Apply が 行を 抜き、時計が 保存へ 書く）
+      window.__tenkyu.worldApply("p0"); stepFrames(1);
+      // ②台帳から ためしの 世界を 抜く（かならず 元の 行数へ）
+      while(WORLD_PATTERNS.length>st.n) WORLD_PATTERNS.pop();
+      // ③保存を テスト前へ（中みも 置き場も）
+      localStorage.setItem(SAVE_KEY, st.memSave); window.__tenkyu.saveReload();
+      if(st.rawSave==null) localStorage.removeItem(SAVE_KEY); else localStorage.setItem(SAVE_KEY, st.rawSave);
+      cfg.tidy=st.tidy; cfg.showHud=st.showHud; cfg.hudFly=st.hudFly;
+      window.__tenkyu.setBattle(st.bat,false);
+      t45Restore(st);
+    }
+
+    // T50a: くすり＝①items の 世界で「つかう」の 行と Kキーが 生える ②❤満タンでは 出ない・つかえない
+    //   （押せない 物を 見せない）③❤が へると 出る→つかうと ❤2つ（=まんたんの 2/5）回復・袋が 1 へる・
+    //   保存に のこる・💊の しるしと 読み上げ ④まんたんを こえない ⑤0個では 出ない・つかえない
+    //   ⑥items の 無い 世界（ぜんぶ）では 一切 出ない
+    function t_T50a(){
+      var T=window.__tenkyu, d=[], i;
+      var st=t50Setup();
+      T.worldApply("t50"); stepFrames(2); T.battleReset();
+      stepFrames(100);   // ★ことばの 間隔(SAY_CD)を ながす（前の テストの 案内の のこりで 黙らないように）
+      // ①行と キー
+      var act=T.actionOf("k");
+      var rowOk=!!act&&(act.id==="heal")&&(T.actionsDerived().keys.indexOf("k")>=0)&&T.slots().healActOn;
+      // ②❤満タン＝出ない・つかえない（くすりは 2つ 持っている）
+      save.siege.bag.kusuri=2;
+      T.touchUiForce(true,390,844);
+      var uiFull=T.useUiNow().heal;
+      var useFull=T.kusuriUseNow();
+      var fullOk=(uiFull===false)&&(useFull===false)&&(save.siege.bag.kusuri===2)&&(hp===BAT.HP_MAX);
+      var sayFull=(document.getElementById("item-say").textContent.indexOf("げんき")>=0);
+      // ③❤が へる（100→40）→ ボタンが 出る → つかうと +2❤（40→80）・袋 2→1・保存・しるし
+      T.battleHurtTest(60);
+      var hp0=hp;
+      var uiHurt=T.useUiNow().heal;
+      var btnOn=document.getElementById("btn-heal").classList.contains("show");
+      var used=T.kusuriUseNow();
+      var healed=(hp===hp0+BAT.HP_MAX*2/5);
+      var bagOk=(save.siege.bag.kusuri===1);
+      var js=JSON.parse(localStorage.getItem(SAVE_KEY));
+      var perOk=!!js.siege&&((js.siege.bag.kusuri|0)===1);
+      var toastOk=(document.getElementById("item-toast").textContent.indexOf("💊")>=0)&&
+                  (document.getElementById("item-say").textContent.indexOf("なおりました")>=0);
+      // ④まんたんを こえない（80→100 で 止まる。のこり 1→0）
+      T.battleReset(); T.battleHurtTest(20);
+      var used2=T.kusuriUseNow();
+      var capOk=used2&&(hp===BAT.HP_MAX)&&(save.siege.bag.kusuri===0);
+      // ⑤0個＝出ない・つかえない（やさしい 案内。ことばの 間隔(SAY_CD)を あけてから 測る）
+      T.battleReset(); T.battleHurtTest(60);
+      stepFrames(100);
+      var uiZero=T.useUiNow().heal;
+      var useZero=T.kusuriUseNow();
+      var zeroOk=(uiZero===false)&&(useZero===false)&&
+                 (document.getElementById("item-say").textContent.indexOf("もって")>=0);
+      T.touchUiForce(false);
+      T.battleReset();
+      // ⑥items の 無い 世界（ぜんぶ）＝行も キーも ボタンも 出ない
+      var P=T.worldPatterns(), norm=P.slice(0,P.length-1), offBad=[];
+      for(i=0;i<norm.length;i++){
+        T.worldApply(norm[i].id); stepFrames(2);
+        if(T.actionOf("k") || T.actionsDerived().keys.indexOf("k")>=0 || T.slots().healActOn ||
+           document.getElementById("btn-heal").classList.contains("show")) offBad.push(norm[i].id);
+      }
+      t50Restore(st);
+      d.push("①「つかう」の 行と Kキーが 生えた="+rowOk);
+      d.push("②❤満タン＝ボタン 出ない・つかえない・袋 2のまま="+fullOk+"・案内「げんき」="+sayFull);
+      d.push("③❤40で ボタンが 出る="+(uiHurt&&btnOn)+"・つかえた="+used+"・40→"+hp0+"+40 の 回復="+healed+
+             "・袋 2→1="+bagOk+"・保存に のこる="+perOk+"・💊の しるしと 読み上げ="+toastOk);
+      d.push("④まんたんを こえない（80→100・のこり 0）="+capOk);
+      d.push("⑤0個＝ボタン 出ない・つかえない・案内="+zeroOk);
+      d.push("⑥items の 無い 世界 "+norm.length+"つ＝出た="+(offBad.join(",")||"なし"));
+      return { pass:rowOk&&fullOk&&sayFull&&uiHurt&&btnOn&&used&&healed&&bagOk&&perOk&&toastOk&&
+                    capOk&&zeroOk&&(offBad.length===0), detail:d.join(" / ") };
+    }
+
+    // T50b: かべいた＝①slots の 世界で 台帳の 組が あたる・「おく」の 行と Oキーが 生える
+    //   ②置き場の 外では 置けない ③近づくと 置ける（barr=耐久・袋が へる・GPUへ 1回だけ・当たり判定が 生きる）
+    //   ④同じ 所に 二重に 置けない ⑤保存往復・再訪で 立っている ⑥こわれた 保存は ならされる
+    //   ⑦slots の 無い 世界（ぜんぶ）では 一切 出ない
+    function t_T50b(){
+      var T=window.__tenkyu, d=[], i;
+      var st=t50Setup();
+      T.worldApply("t50"); stepFrames(2);
+      var S0=T.slots(), K=T.barrConsts();
+      var setOk=S0.on&&(S0.set==="toride12")&&(S0.n===12)&&(S0.base>=0)&&S0.actionOn;
+      var act=T.actionOf("o"); var rowOk=!!act&&(act.id==="place");
+      var L=T.slotSets();
+      var ledOk=(L.length===1)&&(L[0].id==="toride12")&&(L[0].kind==="かべ")&&(L[0].pts.length===12)&&
+        L[0].pts.every(function(p){ return p.length>=2&&isFinite(p[0])&&isFinite(p[1]); });
+      // ②置き場の 外（山頂＝置き場から 数百m）では 置けない
+      save.siege.bag.kabe=3;
+      var M=T.mountConsts(); t43Put(M.X+30, M.Z, M.TOP_Y);
+      var farScan=(T.slotScanNow()===-1);
+      var farPlace=T.kabePlaceNow();
+      var farOk=farScan&&(farPlace===false)&&(save.siege.bag.kabe===3)&&
+                T.slots().barr.every(function(x){ return x===0; });
+      // ③近づくと 置ける（pts[0] の よこ 1.7m）＝barr[0]=耐久・袋 3→2・GPUへ 1回だけ
+      var pt0=L[0].pts[0], gy0=heightAt(pt0[0], pt0[1]);
+      t43Put(pt0[0]+1.2, pt0[1]+1.2, heightAt(pt0[0]+1.2, pt0[1]+1.2));
+      var up0=T.slots().uploads;
+      var nearIdx=T.slotScanNow();
+      T.touchUiForce(true,390,844);
+      var uiOn=T.useUiNow().place&&document.getElementById("btn-place").classList.contains("show");
+      var placed=T.kabePlaceNow();
+      T.touchUiForce(false);
+      var S1=T.slots();
+      var placeOk=placed&&(nearIdx===0)&&(S1.barr[0]===K.HP_MAX)&&(save.siege.bag.kabe===2)&&(S1.uploads===up0+1);
+      var toastOk=(document.getElementById("item-toast").textContent.indexOf("🪵")>=0);
+      // 立った＝器の 写し（大きさ・高さ・当たり）が 台帳どおり
+      var bi=S1.base+0;
+      // ★器は Float32Array＝3.2 などは 32bitの 丸めで 格納される。比較の 許容は その丸めぶん（1e-5／高さは 1e-4）。
+      var boxOk=(Math.abs(bxSz[bi*3]-K.W)<1e-5)&&(Math.abs(bxSz[bi*3+1]-K.H)<1e-5)&&
+                (Math.abs(bxSz[bi*3+2]-K.T)<1e-5)&&(bxSolid[bi]===1)&&(Math.abs(bxCtr[bi*3+1]-gy0)<1e-4);
+      // 当たり判定の 実測①＝かべの まん中に 立とうと すると 本番の 押し出し（boxEscape）が 外へ 出す
+      var esc=T.boxEscapeFrom(pt0[0], gy0+FIELD_CLEAR, pt0[1]);
+      var escMoved=Math.hypot(esc.pos[0]-pt0[0], esc.pos[2]-pt0[1]);
+      var solidOk=esc.out&&(escMoved>K.T*0.4);
+      // 当たり判定の 実測②＝カメラの 線分も 通れない（置く 前は 通れる）。pts[1]（まんなかの 手前 [0,-14]）で
+      //   置く 前後を 同じ 線で くらべる＝この かべ 1まいの ちがいだけを 見る。
+      var pt1=L[0].pts[1], gy1=heightAt(pt1[0], pt1[1]);
+      t43Put(pt1[0], pt1[1]-2.2, heightAt(pt1[0], pt1[1]-2.2));   // ★置ける 近さ(3.0m)の 中に 立つ
+      var freeBefore=T.viewFreeT(0,0,1,8);
+      var near1=T.slotScanNow();
+      var placed1=T.kabePlaceNow();
+      var freeAfter=T.viewFreeT(0,0,1,8);
+      var rayOk=placed1&&(near1===1)&&(freeBefore>7.9)&&(freeAfter<freeBefore-2);
+      // ④同じ 所に 二重に 置けない（袋も へらない）
+      t43Put(pt0[0]+1.2, pt0[1]+1.2, heightAt(pt0[0]+1.2, pt0[1]+1.2));
+      T.slotScanNow();
+      var again=T.kabePlaceNow();
+      var dupOk=(again===false)&&(save.siege.bag.kabe===1)&&(T.slots().barr[0]===K.HP_MAX);
+      // ⑤保存往復・再訪＝出て 帰っても 2まいとも 立っている（器も 当たりも）
+      T.worldApply("p0"); stepFrames(1);
+      var js=JSON.parse(localStorage.getItem(SAVE_KEY));
+      var wroteOk=!!js.siege&&Array.isArray(js.siege.barr)&&(js.siege.barr[0]===K.HP_MAX)&&(js.siege.barr[1]===K.HP_MAX);
+      T.saveReload();
+      T.worldApply("t50"); stepFrames(2);
+      var S2=T.slots(), bi2=S2.base+0;
+      var backOk=(S2.barr[0]===K.HP_MAX)&&(S2.barr[1]===K.HP_MAX)&&
+                 (Math.abs(bxSz[bi2*3+1]-K.H)<1e-5)&&(bxSolid[bi2]===1);
+      var esc2=T.boxEscapeFrom(pt0[0], gy0+FIELD_CLEAR, pt0[1]);
+      var back2Ok=esc2.out&&(Math.hypot(esc2.pos[0]-pt0[0], esc2.pos[2]-pt0[1])>K.T*0.4);
+      // ⑥こわれた 保存（999／-5／文字）は 0〜HP_MAX に ならされる
+      var js2=JSON.parse(localStorage.getItem(SAVE_KEY));
+      js2.siege.barr=[999,-5,"x"];
+      localStorage.setItem(SAVE_KEY, JSON.stringify(js2));
+      var s3=T.saveReload();
+      var normSaveOk=(s3.siege.barr[0]===K.HP_MAX)&&(s3.siege.barr[1]===0)&&(s3.siege.barr[2]===0);
+      // ⑦slots の 無い 世界（ぜんぶ）＝行も キーも ボタンも 箱も 無い
+      var P=T.worldPatterns(), norm=P.slice(0,P.length-1), offBad=[];
+      for(i=0;i<norm.length;i++){
+        T.worldApply(norm[i].id); stepFrames(2);
+        var w=T.slots();
+        if(w.on || w.actionOn || (w.n>0) || T.actionOf("o") ||
+           T.actionsDerived().keys.indexOf("o")>=0 ||
+           document.getElementById("btn-place").classList.contains("show")) offBad.push(norm[i].id);
+      }
+      t50Restore(st);
+      d.push("①組="+(S0.set||"なし")+"・12か所・「おく」の 行と Oキー="+(setOk&&rowOk)+"・台帳の 形="+ledOk);
+      d.push("②置き場の 外＝さがしても 無い="+farScan+"・置けない（袋 3のまま・barr ぜんぶ0）="+farOk);
+      d.push("③近づく＝ボタン="+uiOn+"・置けた="+placed+"（barr[0]="+S1.barr[0]+"・袋 3→2・GPUへ "+(S1.uploads-up0)+
+             "回）="+placeOk+"・器が 台帳どおり（"+K.W+"×"+K.H+"×"+K.T+"・地面の 高さ）="+boxOk+
+             "・🪵の しるし="+toastOk);
+      d.push("③当たり実測＝人の 押し出しが 外へ 出す（動き "+escMoved.toFixed(2)+"m）="+solidOk+
+             "・カメラの 線分 置く前 "+freeBefore.toFixed(2)+"→置いた後 "+freeAfter.toFixed(2)+"="+rayOk);
+      d.push("④二重に 置けない（袋 へらない・barr そのまま）="+dupOk);
+      d.push("⑤保存往復＝書きとめ="+wroteOk+"・再訪で 立っている（器も 当たりも）="+(backOk&&back2Ok));
+      d.push("⑥こわれた 保存（999/-5/文字）→（"+s3.siege.barr.slice(0,3).join(",")+"）="+normSaveOk);
+      d.push("⑦slots の 無い 世界 "+norm.length+"つ＝出た="+(offBad.join(",")||"なし"));
+      return { pass:setOk&&rowOk&&ledOk&&farOk&&uiOn&&placeOk&&toastOk&&boxOk&&solidOk&&rayOk&&
+                    dupOk&&wroteOk&&backOk&&back2Ok&&normSaveOk&&(offBad.length===0), detail:d.join(" / ") };
+    }
+
+    // T50c: 予算＝①えがく回数の 増分 0（写しもとの 世界と 同じ・置く 前後も 同じ）
+    //   ②毎フレームGPU転送の 増分 0（置いた とき 1回だけ・その後 120フレームで 0回）
+    //   ③三角形の 増分＝スロット12個ぶん（12×12=144）を 実測 ④毎フレームJS +2µs 以内
+    function t_T50c(){
+      var T=window.__tenkyu, d=[], i;
+      var st=t50Setup();
+      // 写しもと（slots の 無い 同じ 見た目の 世界）で 三角形と えがく回数を とる
+      var P=T.worldPatterns(), norm=P.slice(0,P.length-1), baseId=null;
+      for(i=0;i<norm.length;i++) if(!norm[i].home && norm[i].move==="grounded" && norm[i].battle){ baseId=norm[i].id; break; }
+      var M=T.mountConsts();
+      T.worldApply(baseId); stepFrames(1);
+      t43Put(M.X+30, M.Z, M.TOP_Y); stepFrames(2);
+      var triBase=T.slots().vlTris, cntBase=T.slots().vlCount, dcBase=lastDrawCalls;
+      // ためしの 世界（スロット 12個 入り・まだ 1まいも 置いていない）
+      T.worldApply("t50"); stepFrames(1);
+      T.wclockSet(1, T50_SIEGE.daySec*0.3);   // 昼に そろえる（空の 色だけの ちがいに する）
+      t43Put(M.X+30, M.Z, M.TOP_Y); stepFrames(2);
+      var tri0=T.slots().vlTris, cnt0=T.slots().vlCount, dc0=lastDrawCalls;
+      var triAdd=tri0-triBase, cntAdd=cnt0-cntBase;
+      var triOk=(triAdd===12*12)&&(cntAdd===12);
+      var dcSameWorld=(dc0===dcBase)&&(dc0>0);
+      // 置く 前後＝えがく回数 同じ・GPUへは 1回だけ・毎フレームは 0回
+      save.siege.bag.kabe=1;
+      var pt=T.slotSets()[0].pts[2];
+      var up0=T.slots().uploads;
+      t43Put(pt[0]+1.0, pt[1]+1.0, heightAt(pt[0]+1.0, pt[1]+1.0));
+      T.slotScanNow();
+      var placed=T.kabePlaceNow();
+      var up1=T.slots().uploads;
+      t43Put(M.X+30, M.Z, M.TOP_Y); stepFrames(2);
+      var dc1=lastDrawCalls;
+      stepFrames(120);
+      var up2=T.slots().uploads;
+      var dcOk=(dc1===dc0);
+      var upOk=placed&&(up1===up0+1)&&(up2===up1);
+      // 毎フレームJS＝10Hzの 見張り（さがしもの＋ボタンの 出し入れ）を 2000回 → 1フレームぶんに 直す
+      var t0=performance.now();
+      for(i=0;i<2000;i++){ T.slotScanNow(); T.useUiNow(); }
+      var scanUs=(performance.now()-t0)/2000*1000;
+      var perFrameUs=scanUs/6;                              // 1秒に 10回 ÷ 60fps
+      var budgetOk=(perFrameUs<2.0);                        // ✎予算＝毎フレーム +2µs 以内（設計指示）
+      t50Restore(st);
+      d.push("①えがく回数＝写しもと "+dcBase+"・スロット12個入り "+dc0+"・置いた後 "+dc1+
+             "（ぜんぶ 同じ="+(dcSameWorld&&dcOk)+"＝増分 0）");
+      d.push("②GPU転送＝置いた とき "+(up1-up0)+"回・その後 120フレームで "+(up2-up1)+"回="+upOk);
+      d.push("③三角形＝+"+triAdd+"（箱 +"+cntAdd+"個 ×12。見込み 144）="+triOk);
+      d.push("④毎フレームJS＝見張り 1回 "+scanUs.toFixed(2)+"µs → 毎フレーム "+perFrameUs.toFixed(3)+
+             "µs（+2µs 以内="+budgetOk+"）");
+      return { pass:dcSameWorld&&dcOk&&upOk&&triOk&&budgetOk, detail:d.join(" / ") };
+    }
+
+    // T50d: 回帰帳簿＝既存 T1〜T49e が 1件も 余分に 落ちていない（★前の 網を ぜんぶ 見るので 必ず いちばん最後）
+    //   ＋ 5つの 環境の「既知の 落ち」の 表が 弾41と 完全一致 ＋ 黄信号（T45d）と 床の 検査（T45e）が 通っている
+    //   ＋ 台帳に items/siege/slots の 世界は まだ 無い ＋ 毎フレームの 道は 台帳を 読まない ＋ ★変異注入で 歯
+    function t_T50d(){
+      var need=["T1","T2","T2f","T2n","T3","T3c","T4","T5","T6","T7","T8","T9","T10","T11","T12","T13","T14",
+                "T15","T16","T17","T18","T19a","T19b","T19c","T19d","T20a","T20b","T20c","T20d","T20e",
+                "T21a","T21b","T21c","T21d","T21e","T21f","T21i","T21g","T22a","T22b","T22c",
+                "T23a","T23b","T23c","T23d","T23e","T25a","T25b","T25c","T25d","T25e","T25f",
+                "T24a","T24b","T24c","T24d","T24e","T24f","T26a","T27a","T27b","T27c","T27d","T27e","T27f",
+                "T28a","T28b","T28c","T28d","T28e","T28f","T29a","T29b","T29c","T29d","T29e",
+                "T30a","T30b","T30c","T30d","T30e","T31a","T31b","T31c","T31d","T31e","T31f",
+                "T32a","T32b","T32c","T32d","T32e","T33a","T33b","T33c","T33d","T33e","T33f",
+                "T34a","T34b","T34c","T34d","T34e","T34f","T35a","T35b","T35c","T35d","T35e","T35f",
+                "T36a","T36b","T36c","T36d","T36e","T36f","T37a","T37b","T37c","T37d","T37e","T37g","T37h","T37f",
+                "T38a","T38b","T38c","T38d","T38e","T39a","T39b","T39c","T39d","T39e","T39f",
+                "T40a","T40b","T40c","T40d","T40e","T40f","T41a","T41b",
+                "T42a","T42b","T42c","T42d","T42e","T42f",
+                "T43a","T43b","T43c","T43d","T43e","T43f",
+                "T44a","T44b","T44c","T44d","T44e","T44f",
+                "T45a","T45b","T45c","T45d","T45e","T45f",
+                "T46a","T46b","T46c","T46d","T46e","T46f",
+                "T47a","T47b","T47c","T47d",
+                "T48a","T48b","T48c","T48d",
+                "T49a","T49b","T49c","T49d","T49e",
+                "T50a","T50b","T50c"];
+      var missing=[], failed=[], skipped=[], i, j;
+      for(i=0;i<need.length;i++){
+        var r=null;
+        for(j=0;j<_ranResults.length;j++){ if(_ranResults[j].id===need[i]){ r=_ranResults[j]; break; } }
+        if(!r) missing.push(need[i]);
+        else if(r.skip) skipped.push(need[i]);
+        else if(!r.pass) failed.push(need[i]);
+      }
+      var known=regKnown(failed);
+      var realFails=failed.filter(function(x){ return known.indexOf(x)<0; });
+      var T=window.__tenkyu;
+      // ★5つの 環境の「既知の 落ち」の 表が 弾41と 1文字も 同じ（＝失敗IDの 集合を 動かしていない）
+      var regBad=[], ks=Object.keys(T45_DAN36.reg);
+      if(Object.keys(REG_BASE).length!==ks.length) regBad.push("環境の 数");
+      for(i=0;i<ks.length;i++){
+        var a=(REG_BASE[ks[i]]||[]).slice().sort().join(","), b=T45_DAN36.reg[ks[i]].slice().sort().join(",");
+        if(a!==b) regBad.push(ks[i]+":"+a+"≠"+b); }
+      if(REG_CASCADE.join(",")!==T45_DAN36.cascade.join(",")) regBad.push("ぶらさがり");
+      var regOk=(regBad.length===0);
+      // ★黄信号（本体に 世界の id 0件）と 床の 検査ループ が どちらも 通っている
+      var t45d=null, t45e=null;
+      for(i=0;i<_ranResults.length;i++){ if(_ranResults[i].id==="T45d") t45d=_ranResults[i];
+        if(_ranResults[i].id==="T45e") t45e=_ranResults[i]; }
+      var guardOk=!!t45d&&t45d.pass&&!!t45e&&t45e.pass;
+      // ★台帳に items／siege／slots の 世界は まだ 無い（p4 は 弾44）
+      var dcl=0; for(i=0;i<WORLD_PATTERNS.length;i++)
+        if(WORLD_PATTERNS[i].items!==undefined||WORLD_PATTERNS[i].siege!==undefined||WORLD_PATTERNS[i].slots!==undefined) dcl++;
+      var noneOk=(dcl===0);
+      // ★毎フレームの 道＝frame() は boolean の 門 3つ（時計・もちもの・つかう）・中は 台帳を 読まない
+      var gateOk=(String(frame).indexOf("if(wclockOn) wclockStep(dt)")>=0)&&
+                 (String(frame).indexOf("if(itemsOn) itemsStep(dt)")>=0)&&
+                 (String(frame).indexOf("if(itemsOn||slotsOn) d42Step(dt)")>=0);
+      var pv=String(d42Step)+String(slotScan)+String(updateUseUi);
+      var perOk=(pv.indexOf("WORLD_PATTERNS")<0)&&(pv.indexOf("wpPat")<0)&&(pv.indexOf("wpNow")<0);
+      // ★えがく 道は スロットを 知らない（かべは 村の 器の 中の 箱＝新しい えがく命令 0）
+      var drawOk=(String(drawScene).indexOf("slot")<0)&&(String(drawScene).indexOf("d42")<0)&&
+                 (String(drawScene).indexOf("createFramebuffer")<0);
+      // ★欄は wpApply の 1か所から 入る だけ（世界の id の 分岐は 書いていない）
+      var apOk=(String(wpApply).indexOf("d42Apply")>=0)&&(String(d42Apply).indexOf("P.items")>=0)&&
+               (String(d42Apply).indexOf("slotSetFor")>=0)&&(String(slotSetFor).indexOf("P.slots")>=0);
+      // ★いまの 世界（p0）では 行も キーも 無い＝弾38の 表の まま
+      var cleanOk=(!T.slots().actionOn)&&(!T.slots().healActOn)&&
+                  (T.actionOf("k")===null)&&(T.actionOf("o")===null)&&
+                  (T.actionsDerived().keys.indexOf("k")<0)&&(T.actionsDerived().keys.indexOf("o")<0);
+      // ★保存キー 不変・絵と 音 0バイト・乱数と 壁の時計 なし
+      var keyOk=(CFG_KEY==="tenkyu_cfg_v1")&&(SAVE_KEY==="tenkyu_save_v1");
+      var noAssetOk=(document.querySelectorAll("script[src]").length===1);
+      var src=String(slotSetFor)+String(slotBoxFor)+String(slotRaise)+String(slotsSyncSolid)+
+              String(d42Apply)+String(d42Step)+String(slotScan)+String(kusuriUse)+String(kabePlace)+String(updateUseUi);
+      var noRndOk=(src.indexOf("Math"+".random")<0)&&(src.indexOf("Date"+".now")<0)&&(src.indexOf("new "+"Date")<0);
+      // ★変異注入＝物差しに 歯が ある ことの 実証（かならず 元へ もどす）
+      var st=t50Setup();
+      T.worldApply("t50"); stepFrames(2);
+      var L=T.slotSets(), K0=T.barrConsts();
+      save.siege.bag.kabe=2;
+      // ①耐久の 初期値を 壊す（HP_MAX=0）→ 置いても barr が 0＝「立った」の 門（=HP_MAX>0 の 耐久）が 閉じる
+      T.barrTune({ HP_MAX:0 });
+      var p3=L[0].pts[3];
+      t43Put(p3[0]+1.0, p3[1]+1.0, heightAt(p3[0]+1.0, p3[1]+1.0));
+      T.slotScanNow(); T.kabePlaceNow();
+      var mut1=(T.slots().barr[3]===0);                     // 耐久が 立たない＝検出
+      T.barrTune({ HP_MAX:K0.HP_MAX });                     // もどす → こんどは 立つ
+      var p4=L[0].pts[4];
+      t43Put(p4[0]+1.0, p4[1]+1.0, heightAt(p4[0]+1.0, p4[1]+1.0));
+      T.slotScanNow(); T.kabePlaceNow();
+      var back1=(T.slots().barr[4]===K0.HP_MAX);
+      // ②台帳を 壊す（組を 1つ 足す）→ 組の 数の 門が 閉じる
+      SLOT_SETS.push({ id:"tame", kind:"かべ", pts:[[0,0,0]] });
+      var mut2=(T.slotSets().length===2);
+      SLOT_SETS.pop();
+      var back2=(T.slotSets().length===1)&&(T.slotSets()[0].id==="toride12");
+      t50Restore(st);
+      var mutOk=mut1&&back1&&mut2&&back2;
+      return { pass:(missing.length===0)&&(realFails.length===0)&&regOk&&guardOk&&noneOk&&
+                    gateOk&&perOk&&drawOk&&apOk&&cleanOk&&keyOk&&noAssetOk&&noRndOk&&mutOk,
+        detail:"登録もれ="+(missing.join(",")||"なし")+" 既知以外の失敗="+(realFails.join(",")||"なし")+
+               " 既知の失敗="+(failed.join(",")||"なし")+" 判定不能="+(skipped.join(",")||"なし")+
+               " ／ ★5つの 環境の 既知の 落ちの 表＝弾41と 完全一致="+regOk+"（合わない="+(regBad.join(" ")||"なし")+"）"+
+               " ★黄信号T45d と 床の検査T45e が 通っている="+guardOk+
+               " 台帳に items/siege/slots の 世界は まだ 無い="+noneOk+"（"+dcl+"件）"+
+               " frame は boolean の 門 3つ="+gateOk+
+               " 毎フレームの 道は 台帳を 読まない="+perOk+
+               " えがく 道は スロットを 知らない（新しい えがく命令 0）="+drawOk+
+               " 欄は wpApply の 1か所から 入る="+apOk+
+               " いまの 世界では 行も キーも 無い="+cleanOk+
+               " 保存キー 不変="+keyOk+" 絵・音を 足していない="+noAssetOk+" 乱数・壁の時計 なし="+noRndOk+
+               " ★変異注入＝耐久の 初期値を 壊すと 立たない/台帳を 壊すと 組の 数が 割れる・もどせば 元どおり="+mutOk+
+               " ／ ★弾42で 動かした 既存テストの 判定基準＝0個（T45a〜T49e は 1文字も 書きかえていない）" };
+    }
+//★HW42-END
     window.__tenkyu.runAll = async function(){
       if(!window.__testErrCount){ window.__testErrCount=0;
         var _ce=console.error.bind(console);
@@ -18762,6 +19369,13 @@
       await run("T49a",t_T49a); await run("T49b",t_T49b);
       await run("T49c",t_T49c); await run("T49d",t_T49d); await run("T49e",t_T49e);
 //★HW40-RUN-END
+//★HW42-RUN-BEGIN
+      // 弾42 §R38（つかう＝くすり・かべいたの 置き場。★T50d は 前の 網を ぜんぶ 見るので 必ず いちばん最後。
+      //   T49e を ふくむ 前の 網の 判定基準は 1ビットも 動かしていない＝T49e の 後ろに 置く。
+      //   T50a〜T50c は 台帳に「ためしの siege＋items＋slots 世界」を 足して 測り、かならず 抜いてから 帰る）
+      await run("T50a",t_T50a); await run("T50b",t_T50b);
+      await run("T50c",t_T50c); await run("T50d",t_T50d);
+//★HW42-RUN-END
       // 復元＝本当のプレイヤー進行・設定・カメラを一切壊さない
       swooshCount=snapSwoosh.count; swooshLast=snapSwoosh.last;   // persistSave()のnearMiss焼き込み前に実行順を戻す
       save=snapSave; persistSave(); syncVisitedBuffer(); completedConstellations=recomputeCompletedConstellations(); buildLines();
