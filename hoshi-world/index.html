@@ -847,7 +847,7 @@
   // ★下の 64文字は「焼いた ときの 自分の すがた」。build.py が 0 を 64個 置いた ところへ 書きこむ。
   //   ＝読む がわは その 64文字を 0 に もどして sha256 を とれば、同じ 数に なる。
   //   これで「いま 動いている この ファイルが、源から 焼いた ままか」を 機械で 見張れる（T41a）。
-  var HW_SELF_SHA="3d828e9dc192411be54b116ea3cbf306adef51f9a38830b7abcc13217009ebc9";
+  var HW_SELF_SHA="76520f2431853569ec9a962dc0f15863a1dfb184c0061f774db587ce41cee9f0";
   try{ window.HW_SELF_SHA=HW_SELF_SHA; }catch(e){}   // 人が コンソールで 見られる ように（機能には つかわない）
 //★HW33A-END
   // 干場要望「地上から飛べるように」＝セーブが一度も無い初回起動の時だけ、地面のある世界の低空スタートにする。
@@ -2437,6 +2437,12 @@
     shrubBoxes = shrubBoxesFor(VLG.R_MAX, villages);
     for(var ci=0; ci<cityBoxes.length; ci++)  boxes.push(cityBoxes[ci]);
     for(var si=0; si<shrubBoxes.length; si++) boxes.push(shrubBoxes[si]);
+    // 弾43 §R39: とりで。★村と 同じ 器へ 足すだけ＝えがく回数の 増分 0。fort 欄の 無い 世界では 0個
+    //   ＝弾42までと 1ビットも 同じ。★スロット（下）より 先に 足す＝slotBoxBase の 決め方は 変えない。
+    fortBoxBase=-1; fortBoxN=0;
+    var fSet=fortSetFor(wpNow());
+    if(fSet){ var fBoxes=fortBoxesFor(fSet); fortBoxBase=boxes.length; fortBoxN=fBoxes.length;
+      for(var fj=0; fj<fBoxes.length; fj++) boxes.push(fBoxes[fj]); }
     // 弾42 §R38: かべいたの 置き場（スロット）。★村と 同じ 器へ 足すだけ＝えがく回数の 増分 0。
     //   slots 欄の 無い 世界では 0個＝弾41までと 1ビットも 同じ。まだ 置いていない スロットは
     //   大きさ [0,0,0] の 箱＝絵にも 当たり判定にも かからない（立てる ときに 1回だけ 大きさを 送る）。
@@ -3854,6 +3860,9 @@
     //   ★wpRebuild の あとに 呼ぶ（スロットの 箱が 村の 器に 入って から 当たり判定を そろえる）。
     //   どちらの 欄も 無い 世界では 切って もどるだけ＝弾41までと 1ビットも 同じ。
     d42Apply(P);
+    // 弾43 §R39: とりでと 襲撃＝台帳の fort／siege 欄の **有無だけ** を 見る（世界の id は 見ない）。
+    //   どちらの 欄も 無い 世界では 切って もどるだけ＝弾42までと 1ビットも 同じ。
+    d43Apply(P);
     // 弾37 §R31: たたかいの 出し入れは **既にある setBattle 1本**へ 渡すだけ（新しい しくみを 作らない）。
     //   ★cfg.battle は 読むだけ＝人の えらびを 書きかえない。おぼえ直しも しない（persist=false）。
     setBattle(cfg.battle, false);
@@ -3928,7 +3937,9 @@
   function wclockApply(P){
     var S=P.siege;
     if(!S){ wclockOn=false; wclockSpec=null; wclockBase=null; wclockBlendLast=-1; updateWkHud(); return; }
-    wclockSpec={ daySec:+S.daySec, raidEvery:(+S.raidEvery)|0, smallRaid:!!S.smallRaid, graceDays:(+S.graceDays)|0 };
+    wclockSpec={ daySec:+S.daySec, raidEvery:(+S.raidEvery)|0, smallRaid:!!S.smallRaid, graceDays:(+S.graceDays)|0,
+      // 弾43 §R39: 夜の 敵の 強化（§8.7）。欄が 無ければ null＝倍率は いつも 1×（弾42までと 同じ）。
+      night:(S.night?{ hpMul:(+S.night.hpMul)||1, spdMul:(+S.night.spdMul)||1, sightMul:(+S.night.sightMul)||1 }:null) };
     // ★昼の 空を 写す＝台帳の 配列は 書きかえない（もどれば かならず 台帳の 数に もどる）。
     //   dome は sun だけ 写しに する（zen/hor/low/sunc は この弾では さわらない＝設計書 §3.1 の とおり）。
     wclockBase={ clear:P.clear.slice(), fog:P.fog.slice(), sun:P.dome.sun.slice() };
@@ -3982,8 +3993,10 @@
     if(_wkPhaseShown!==ph){ _wkPhaseShown=ph;
       _wkIconEl.textContent=(ph==="yoru")?"🌙":"☀";
       _wkPhaseEl.textContent=(ph==="hiru")?"ひる":(ph==="yuu")?"ゆうがた":"よる";
-      // ★夕は「もうすぐ よるが きます」＝やさしい 日本語で つぎに 起きる ことを 先に 言う（設計書 §2）
-      _wkWordEl.textContent=(ph==="hiru")?"ひる です":(ph==="yuu")?"もうすぐ よるが きます":"よる です";
+      // ★夕は「もうすぐ よるが きます」＝やさしい 日本語で つぎに 起きる ことを 先に 言う（設計書 §2）。
+      //   弾43 §R39: とりでの ある 世界では もどる 先も 言う（fort 欄の 無い 世界は 弾40の ことばの まま）。
+      _wkWordEl.textContent=(ph==="hiru")?"ひる です":
+        (ph==="yuu")?(fortOn?"もうすぐ よるが きます。とりでへ もどりましょう":"もうすぐ よるが きます"):"よる です";
     }
   }
   // ================= 弾40 ここまで（siege 欄を 持つ 世界は まだ 台帳に 無い＝弾44で p4 を 足す） =================
@@ -4365,6 +4378,68 @@
   }
   // ================= 弾42 ここまで（slots 欄を 持つ 世界は まだ 台帳に 無い＝弾44で p4 が 宣言する） =================
 
+  // ================= 弾43 §R39: とりでと 襲撃の 波・夜の 敵の 強化 =================
+  // ★干場の 発注（2026-08-05）＝SPEC_HW_WORLD_SIEGE §3.4／§8.7（夜は 敵が 強くなり 走って 襲ってくる）。
+  // ★契約の 守り方（§R31）＝本体は 台帳の 欄の **有無だけ** を 見る（世界の id は 見ない＝T45d は そのまま）:
+  //   ・とりで＝世界の fort 欄（FORT_SETS の id を 1つ 書く）。無い 世界では 箱 0個＝弾42までと 1ビットも 同じ。
+  //   ・夜の 強化＝siege.night 欄。波＝siege 欄の ある 世界でだけ（RAID 台帳と raidRowFor が 日から 引く）。
+  // ★予算＝えがく回数 増分0（とりでの 箱は 村と 同じ 器に 相乗り）・毎フレームGPU転送 増分0
+  //   （波は 既存の 敵プールの 住みかの 数を 差しかえるだけ）・三角形は とりでの 箱ぶんだけ・
+  //   毎フレームJSは 波の 管理が 1秒に 1回（raidStep の 中で 拍を 数える）。
+  //★HW43-FORT-BEGIN
+  // ★とりでの 台帳。1行＝1つの とりで。だいちの 拠点（homeBoxesFor）の 作りを 流用＝
+  //   かべ4方＋入口＋屋根 **だけ**（家具なし・大きさは 拠点の 半分めやす＝設計書 §3.4）。
+  //   欄＝id／x,z（世界の まんなか 付近の 平地＝村も 敵の 住みかも 来ない VLG.R_MIN の 内がわ・✎仮値）／
+  //   w,d,h,t（外のり よこ・おくゆき・かべの 高さ・あつさ）／door（入口の はば）／roof,eave（屋根）。
+  //   ★スロット（SLOT_SETS の toride12＝±14 の 輪）が この まわりを 囲む＝どちらも 台帳の 仮値で 中心 (0,0)。
+  var FORT_SETS = [
+    { id:"toride1", x:0, z:0, w:14.0, d:12.0, h:3.5, t:0.7, door:3.0, roof:0.5, eave:0.6 }
+  ];
+  //★HW43-FORT-END
+  var FORTC = {
+    SINK:  2.0,   // ✎ かべの 根もとを 地面の 下へ うめる 深さ（土台は たいらに ならしていない＝すきまを 作らない）
+    GATE:  5.0    // ✎ 波の 敵の あつまる 点＝入口の 前 これだけ 先（住みか＝とりでの 入口がわ）
+  };
+  var fortOn=false, fortSet=null, fortBoxBase=-1, fortBoxN=0;
+  // 台帳を 引く（世界の 欄 fort:"id" → FORT_SETS の 行。無ければ null＝この 仕組み全体が 存在しないのと 同じ）
+  function fortSetFor(P){
+    if(!P || !P.fort) return null;
+    for(var i=0;i<FORT_SETS.length;i++){ if(FORT_SETS[i].id===P.fort) return FORT_SETS[i]; }
+    return null;
+  }
+  // ★これが とりでそのもの＝だいちの 拠点と 同じ「色つきの 箱」だけ（かべ5＋屋根1＝6箱・72三角形）。
+  //   色も 拠点の もの（HOME_WALL/HOME_ROOF）を そのまま つかう＝絵の 新規 0バイト。
+  //   ★とりで本体は 壊れない＝耐久を 持たない・へらす 道が 1本も 無い（壊れるのは バリケードだけ＝設計書 §3.4）。
+  function fortBoxesFor(F){
+    var cx=F.x, cz=F.z, gy=heightAt(cx,cz), out=[];
+    function box(kind,gr,x,y,z,sx,sy,sz,col){
+      out.push({ kind:kind, ground:gr, pos:[x,y,z], size:[sx,sy,sz], yaw:0, col:col }); }
+    var W=F.w, D=F.d, H=F.h+FORTC.SINK, T=F.t, y0=gy-FORTC.SINK;   // 根もとを うめる＝地面の うねりで すきまを 作らない
+    box("fortwall",true, cx, y0, cz+(D/2-T/2), W, H, T, HOME_WALL);            // おく(+z)の かべ
+    var segW=(W-F.door)/2, segX=F.door/2+segW/2;                               // 入口の ある 手前(-z)＝拠点と 同じ 作り
+    box("fortwall",true, cx-segX, y0, cz-(D/2-T/2), segW, H, T, HOME_WALL);
+    box("fortwall",true, cx+segX, y0, cz-(D/2-T/2), segW, H, T, HOME_WALL);
+    box("fortwall",true, cx-(W/2-T/2), y0, cz, T, H, D-T*2, HOME_WALL);        // ひだり(-x)の かべ
+    box("fortwall",true, cx+(W/2-T/2), y0, cz, T, H, D-T*2, HOME_WALL);        // みぎ(+x)の かべ
+    box("fortroof",false, cx, gy+F.h, cz, W+F.eave*2, F.roof, D+F.eave*2, HOME_ROOF);  // 屋根＝かべの 上面に ぴったり
+    return out;
+  }
+  // 波の 敵の 住みか＝とりでの 入口の 前（★中心に しない＝たおれて もどる ときも かべの 中に 生まれない）
+  function fortSpotNow(){
+    if(!fortSet) return null;
+    return { x:fortSet.x, z:fortSet.z - fortSet.d*0.5 - FORTC.GATE };
+  }
+  // 世界に あてる（wpApply の 1か所から。★wpRebuild の あと＝とりでの 箱が 器に 入った あと）
+  function d43Apply(P){
+    var F=fortSetFor(P);
+    if(F){ fortOn=true; fortSet=F; }
+    else { fortOn=false; fortSet=null; }
+    if(raidOn) raidEnd();                       // 世界を うつったら 波は かならず 返す（住みかを 元へ）
+    raidAcc=0; raidDayLast=wclockOn?wclockDay:0;
+    _wkPhaseShown="";                            // 夕方の ことばが とりでの 有無で 変わる＝つぎの 表示で 引き直す
+  }
+  // ================= 弾43 とりで ここまで（夜の 強化と 波は この下の 弾24/25 の あとに つづく） =================
+
   // ================= 弾24 §R19: 敵と 戦闘の 芯（★改訂後の 不変条件5の 実装） =================
   // ★この かたまりの 一番大事な 約束は「⚔たたかう を 切れば、弾23と まったく 同じ 世界に なる」ことである。
   //   だから 入口は **battleOn() ただ 1つ** に しぼってある。切っていれば:
@@ -4620,8 +4695,11 @@
       thought++;
       var dx=px-x, dz=pz-z, d2=dx*dx+dz*dz, d=Math.sqrt(d2)||1e-6;
       var eyeY=heightAt(x,z)+BAT.H*0.8;
+      // 弾43 §R39: 夜の 強化と 波＝★読む 所で 倍率を 掛けるだけ（状態機械・BAT の 数は 無改変）。
+      //   siege の 無い 世界では かならず 1×＝x*1.0 は ビットまで 同じ＝弾42までと 1ビット不変。
+      var mulI=enMulFor(i);
       // 「見えているか」＝おそってこない ときは いつでも false＝気づきも しない
-      var see = (!peace) && (d<=BAT.SIGHT) && enCanSee(x, eyeY, z, px, pEye, pz);
+      var see = (!peace) && (d<=BAT.SIGHT*mulI.sightMul) && enCanSee(x, eyeY, z, px, pEye, pz);
       var st=enSt[i], tm=enTm[i]-dtT; if(tm<0) tm=0;
       enLost[i] = see ? 0 : (enLost[i]+dtT);
       var h=enH[i], spd=0, toward=1;
@@ -4669,7 +4747,7 @@
       enSeparate(i, x, z);
       if(_sepEX!==0 || _sepEZ!==0) h = Math.atan2(Math.sin(h)+_sepEX*BAT.SEP_PUSH, Math.cos(h)+_sepEZ*BAT.SEP_PUSH);
       if(spd>0){
-        var stp=spd*spdK*dtT*toward;
+        var stp=spd*spdK*mulI.spdMul*dtT*toward;   // 弾43 §R39: 夜は 走る（倍率 1× の ときは ビットまで 同じ）
         x += Math.sin(h)*stp; z += Math.cos(h)*stp;
       }
       // 住みかから 離れすぎない（追っている ときは のばす＝物陰を まわりこめる ていどには 追える）
@@ -4871,7 +4949,9 @@
     if(!enHp || i<0 || i>=BAT.MAX) return false;
     if(enSt[i]===EN_DOWN) return false;
     var s=atkStat[who]; if(!s) return false;
-    enHp[i]-=dmg; s.hit++;
+    // 弾43 §R39: 夜の 強化＝いのちは ★読む 所で 割る（enHp の 器は 無改変・朝は 倍率が 1 に もどる＝
+    //   実効の いのち＝EHP×hpMul。倍率 1× の ときは dmg/1.0＝dmg で ビットまで 同じ）。
+    enHp[i]-=dmg/enMulFor(i).hpMul; s.hit++;
     s.dist += Math.hypot(enX[i]-camPos[0], enZ[i]-camPos[2]);   // 交戦の きょり＝当たった その とき の 平面きょり
     if(enHp[i]<=0){
       enHp[i]=0; enSt[i]=EN_DOWN; enTm[i]=ATK.DOWN_SEC; enLost[i]=BAT.LOSE_SEC;
@@ -5059,6 +5139,198 @@
     _atkBtnR.style.display = want ? "flex" : "none";
   }
   // ================= 弾25 ここまで =================
+
+  // ================= 弾43 §R39（つづき）: 夜の 敵の 強化と 襲撃の 波 =================
+  // ★作りの 芯＝**読む 所で 倍率を 掛けるだけ**（弾24の 状態機械・BAT の 数は 1ビットも さわらない＝
+  //   弾39「かけ算の 前の 数」と 同じ 作法）。siege の 無い 世界では 倍率が かならず 1×＝
+  //   x*1.0 も x/1.0 も ビットまで 同じ＝既存の 世界は 1ビット不変。
+  //★HW43-RAID-BEGIN
+  // ★襲撃の 台帳。1行＝1つの 波。欄＝day（small＝3の倍数の 日／big＝raidEvery の 倍数の 日）／
+  //   count（何体）／hpMul・spdMul（波の 敵の 倍率。★夜の 倍率(siege.night)の 上に **重ねない**＝
+  //   波に 入った 敵は この 行の 値そのもの・入っていない 敵は night の 値＝§8.7 二重掛け防止）。✎ぜんぶ 仮値。
+  var RAID = [
+    { day:"small", count:3,  hpMul:1.5, spdMul:1.5 },
+    { day:"big",   count:10, hpMul:2.5, spdMul:2.0 }
+  ];
+  //★HW43-RAID-END
+  var RAIDC = {
+    TICK_S:  1.0,   // ✎ 波の 管理の 拍（1秒に 1回＝毎フレームは 足し算と 比較だけ）
+    HIT_R:   3.0,   // ✎ 敵が かべを 叩ける 近さ（スロットの まん中から。かべの 半分 1.6＋敵の 半径 0.7＋すこし）
+    HIT_DMG:  10,   // ✎ 1回 叩いた ときの かべの へり（耐久 60÷10＝敵 1体で 6秒）
+    RING:     80    // ✎ 波の 敵が あらわれる 輪（とりでから）。★夜の 気づく距離 69 の 外・思考の 輪 240 の 内
+                    //   ＝くらやみの ふちに あらわれ、走って 来る。村は 遠い（実測 400m級）ので、住みかの
+                    //   差し替えだけでは「近くだけ 考える」（BAT.NEAR）の 外で 凍る＝ここへ 置き直す。
+  };
+  var SIEGE_ONE={ hpMul:1, spdMul:1, sightMul:1 };   // 倍率の ない ときの 1×（毎回 作らない＝きまった 1つ）
+  var raidOn=false, raidRow=null, raidCount=0;
+  var raidSel=null, raidHx0=null, raidHz0=null;      // 波の 敵の しるしと、返すための 元の 住みか
+  var raidX0=null, raidZ0=null;                      // 返すための 元の 位置（朝に そっくり もどす）
+  var raidAcc=0, raidTicks=0, raidDayLast=0;
+  var raidStarts=0, raidEnds=0, fortHits=0, fortBroken=0;
+  // 夜の 強化の 行（★毎晩。夜で・siege.night が あって・⚔たたかうが 入って いる ときだけ。朝は かならず null）
+  function siegeNightSpec(){
+    if(!wclockOn || !wclockSpec || !wclockSpec.night) return null;
+    if(!battleOn()) return null;
+    return (wclockPhaseAt(wclockT/wclockSpec.daySec)==="yoru") ? wclockSpec.night : null;
+  }
+  // ★実効倍率の **唯一の 出どころ**（enThink の 速さ・気づく距離も enemyHurt の いのちも テストも ここを 通る）。
+  //   波に 入った 敵＝RAID の 値そのもの（sightMul は RAID に 宣言が 無い＝1×。夜の 倍率とは 重ねない）。
+  //   入っていない 敵＝夜なら night の 値・昼は 1×。
+  function enMulFor(i){
+    if(raidOn && raidSel && raidSel[i]) return raidRow;
+    return siegeNightSpec() || SIEGE_ONE;
+  }
+  // かべを たおす（slotRaise の 逆＝CPUの 写しと GPUの 器を 1回だけ 書きかえる。BXG は 作り直さない）
+  function slotLower(si){
+    if(slotBoxBase<0 || !slotSet) return false;
+    var bi=slotBoxBase+si, pt=slotSet.pts[si], gy=heightAt(pt[0], pt[1]);
+    bxCtr[bi*3+1]=gy-BARR.HIDE_Y;
+    bxSz[bi*3]=0; bxSz[bi*3+1]=0; bxSz[bi*3+2]=0;
+    bxSolid[bi]=0;
+    if(vlVAO && vlBufs.length>=4){
+      gl.bindBuffer(gl.ARRAY_BUFFER, vlBufs[2]);
+      gl.bufferSubData(gl.ARRAY_BUFFER, bi*3*4, bxCtr.subarray(bi*3, bi*3+3));
+      gl.bindBuffer(gl.ARRAY_BUFFER, vlBufs[3]);
+      gl.bufferSubData(gl.ARRAY_BUFFER, bi*3*4, bxSz.subarray(bi*3, bi*3+3));
+      gl.bindBuffer(gl.ARRAY_BUFFER, null);
+      slotUploads++;
+    }
+    return true;
+  }
+  // ★かべを いためる 唯一の 道（敵の 叩きも テストも ここを 通る＝battleHurt と 同じ 作法）。
+  //   耐久を へらし、0 に なったら 消す（消えたら 通れる＝翌日 作り直せる）。とりで本体には 指 1本 ふれない。
+  function fortHurt(si, dmg){
+    if(!slotsOn || !slotSet) return false;
+    if(si<0 || si>=slotSet.pts.length) return false;
+    var hpNow=save.siege.barr[si]|0;
+    if(hpNow<=0) return false;                     // もう 無い かべは 叩けない
+    hpNow-=Math.max(0, (+dmg)||0);
+    if(hpNow<=0){ hpNow=0; }
+    save.siege.barr[si]=hpNow;
+    fortHits++;
+    if(hpNow===0){ slotLower(si); fortBroken++; persistSave(); }   // 書くのは 壊れた ときだけ（毎回 書かない）
+    return true;
+  }
+  // その 日の 波の 行（純関数＝テストが 直接 たたける）。猶予の 日と ふつうの 日は null。大きい 波が 勝つ。
+  function raidRowFor(day){
+    if(!wclockOn || !wclockSpec) return null;
+    if(day<=wclockSpec.graceDays) return null;
+    var i;
+    if(wclockSpec.raidEvery>0 && day%wclockSpec.raidEvery===0){
+      for(i=0;i<RAID.length;i++){ if(RAID[i].day==="big") return RAID[i]; } }
+    if(wclockSpec.smallRaid && day%3===0){
+      for(i=0;i<RAID.length;i++){ if(RAID[i].day==="small") return RAID[i]; } }
+    return null;
+  }
+  // 波の はじまり＝既存の 敵プールから count 体を えらび「住みか＝とりで」に 上書きして 見失わせる
+  //   （EN_LOST＝住みかへ 歩き出す＝弾24の 状態機械 その もの。新しい 状態は 1つも 作らない）。
+  function raidBegin(row){
+    var F=fortSpotNow();
+    if(!F || !enX) return false;                   // とりでの 無い 世界では 波は 始まらない
+    var want=Math.min(row.count|0, enShown);
+    if(want<=0) return false;
+    if(!raidSel){ raidSel=new Uint8Array(BAT.MAX); raidHx0=new Float32Array(BAT.MAX); raidHz0=new Float32Array(BAT.MAX);
+      raidX0=new Float32Array(BAT.MAX); raidZ0=new Float32Array(BAT.MAX); }
+    raidSel.fill(0);
+    // ★とりでに 近い 敵から えらぶ（波は 近くの 村から 来る）。
+    var order=[], i, j;
+    for(i=0;i<enShown;i++){
+      if(enSt[i]===EN_DOWN) continue;              // たおれている 敵は 借りない
+      var fdx=enX[i]-F.x, fdz=enZ[i]-F.z;
+      order.push({ i:i, d2:fdx*fdx+fdz*fdz });
+    }
+    order.sort(function(a,b){ return a.d2-b.d2; });
+    var got=0;
+    for(j=0;j<order.length && got<want;j++){
+      i=order[j].i;
+      raidSel[i]=1; raidHx0[i]=enHx[i]; raidHz0[i]=enHz[i];
+      raidX0[i]=enX[i]; raidZ0[i]=enZ[i];          // 朝に そっくり 返すため（位置も）
+      enHx[i]=F.x; enHz[i]=F.z;                    // ★住みかの 数を 差しかえる
+      // ★くらやみの ふち（RING）へ 置き直す。村は 遠く「近くだけ 考える」の 外で 凍る ため、
+      //   置き直さないと 波が 一生 来ない（実測＝この世界の 村は とりでから 400m級）。
+      //   置き方は たおれた 敵の もどり（enThink の EN_DOWN）と 同じ 作法＝enSolveBox で 建物の 外へ・
+      //   enP0=enP1（線を 引かない＝地の底や 村から 飛んでこない）。角度は 番号から 決める（乱数 0）。
+      var a=(got/Math.max(1,want))*Math.PI*2 + Math.PI*0.5;
+      var rx=F.x+Math.sin(a)*RAIDC.RING, rz=F.z+Math.cos(a)*RAIDC.RING;
+      enSolveBox(rx, rz, heightAt(rx,rz), _enPos); rx=_enPos[0]; rz=_enPos[1];
+      var ry=heightAt(rx,rz), o=i*3;
+      enX[i]=rx; enZ[i]=rz;
+      enP0[o]=rx; enP0[o+1]=ry; enP0[o+2]=rz;
+      enP1[o]=rx; enP1[o+1]=ry; enP1[o+2]=rz;
+      enSt[i]=EN_LOST; enTm[i]=0; enLost[i]=BAT.LOSE_SEC;
+      got++;
+    }
+    if(got<=0) return false;
+    raidRow={ kind:row.day, count:row.count|0, day:wclockDay,
+              hpMul:(+row.hpMul)||1, spdMul:(+row.spdMul)||1, sightMul:1 };
+    raidCount=got; raidOn=true; raidStarts++;
+    return true;
+  }
+  // 朝（または 世界を はなれる・⚙を 切る）＝住みかを かならず 返す。昼の 姿（倍率なし）へは enMulFor が 自動で もどす。
+  function raidEnd(){
+    if(raidSel){
+      for(var i=0;i<BAT.MAX;i++){
+        if(!raidSel[i]) continue;
+        enHx[i]=raidHx0[i]; enHz[i]=raidHz0[i];
+        if(enSt[i]!==EN_DOWN){
+          // 位置も そっくり 返す（来た ときと 同じ 作法＝線を 引かない）。たおれている 敵は さわらない
+          //   （しずみ の もどりが 住みか＝村へ 返すのを 既存の 道が やってくれる）。
+          var rx=raidX0[i], rz=raidZ0[i];
+          enSolveBox(rx, rz, heightAt(rx,rz), _enPos); rx=_enPos[0]; rz=_enPos[1];
+          var ry=heightAt(rx,rz), o=i*3;
+          enX[i]=rx; enZ[i]=rz;
+          enP0[o]=rx; enP0[o+1]=ry; enP0[o+2]=rz;
+          enP1[o]=rx; enP1[o+1]=ry; enP1[o+2]=rz;
+          enSt[i]=EN_LOST; enTm[i]=0; enLost[i]=BAT.LOSE_SEC;
+        }
+        raidSel[i]=0;
+      }
+    }
+    raidOn=false; raidRow=null; raidCount=0; raidEnds++;
+  }
+  // 波の 敵が 経路上の かべを 叩く（1秒に 1回・敵 1体に つき いちばん 近い 1まいだけ）。
+  //   「おそってこない」（⚙🕊️）の ときは 叩かない＝見ているだけ。
+  function raidBash(){
+    if(!slotsOn || !slotSet || cfg.battlePeace) return;
+    var pts=slotSet.pts, r2=RAIDC.HIT_R*RAIDC.HIT_R;
+    for(var i=0;i<BAT.MAX;i++){
+      if(!raidSel[i] || enSt[i]===EN_DOWN) continue;
+      var best=-1, bd2=r2;
+      for(var s=0;s<pts.length;s++){
+        if((save.siege.barr[s]|0)<=0) continue;
+        var dx=pts[s][0]-enX[i], dz=pts[s][1]-enZ[i], d2=dx*dx+dz*dz;
+        if(d2<=bd2){ bd2=d2; best=s; }
+      }
+      if(best>=0) fortHurt(best, RAIDC.HIT_DMG);
+    }
+  }
+  // ★毎フレームの 1歩（frame() は wclockOn の boolean を 1つ 見て 呼ぶだけ）。中みは 1秒に 1回。
+  function raidStep(dt){
+    raidAcc+=dt; if(raidAcc<RAIDC.TICK_S) return;
+    raidAcc=0; raidTicks++;
+    if(ENVID!=="field" || !wclockOn){ if(raidOn) raidEnd(); return; }
+    // 朝＝日が かわった＝夜を 生きて 朝を むかえた（すごした 日＝いまの 日の 1つ 前。
+    //   bestDay は ぜったいに 減らさない＝max だけ・設計書 §5）。
+    //   ⚔たたかうを 切って いる あいだは 進めない（まもる あそびが 止まっている＝記録も 止まる）。
+    if(raidDayLast!==wclockDay){
+      var lived=wclockDay-1;
+      if(raidDayLast>0 && battleOn() && lived>save.siege.bestDay){
+        save.siege.bestDay=lived; persistSave();
+      }
+      raidDayLast=wclockDay;
+    }
+    var ph=wclockPhaseAt(wclockT/wclockSpec.daySec);
+    if(ph!=="yoru"){ if(raidOn) raidEnd(); return; }        // 朝が 来たら かならず 帰る
+    if(!raidOn && battleOn()){
+      var row=raidRowFor(wclockDay);
+      if(row) raidBegin(row);                                // ★夜の はじまりに 波が 来る
+    }
+    if(raidOn){
+      if(!battleOn()){ raidEnd(); return; }                  // ⚙たたかう OFF＝波も その場で 止まる
+      raidBash();
+    }
+  }
+  // ================= 弾43 ここまで（fort/siege.night の 世界は まだ 台帳に 無い＝弾44で p4 が 宣言する） =================
 
   buildStreakSeed(cfg.count); buildWorks(); buildNebula(4000);
   if(ENV.terrain) buildTerrain();
@@ -6849,6 +7121,15 @@
                 boxes:slotBoxN, placed:(save.siege.barr||[]).filter(function(x){ return x>0; }).length,
                 trianglesAdded:slotBoxN*ELM_CUBE_TRI, drawCallsAdded:0,
                 gpuBytesPerFrameAdded:0, uploads:slotUploads },
+        // 弾43 §R39: ★とりでと 襲撃。とりでの 箱は 村と 同じ 器に 相乗り＝えがく回数の 増分 0。
+        //   波は 既存の 敵プールの 住みかの 数を 差しかえるだけ＝絵も 器も 増えない（毎フレーム転送の 増分 0）。
+        //   数は ぜんぶ その場の 実測（見込みの 数は 1つも 書かない＝§G T38c）。
+        fort:{ on:fortOn, sets:FORT_SETS.length, set:(fortSet?fortSet.id:null),
+               boxes:fortBoxN, trianglesAdded:fortBoxN*ELM_CUBE_TRI,
+               drawCallsAdded:0, gpuBytesPerFrameAdded:0 },
+        raid:{ ledger:RAID.length, on:raidOn, count:raidCount, starts:raidStarts, ends:raidEnds,
+               hits:fortHits, broken:fortBroken, bestDay:save.siege.bestDay,
+               trianglesAdded:0, drawCallsAdded:0, gpuBytesPerFrameAdded:0 },
         cost:C({ triangles:Math.round((vlgN+cityN)*vlTriPer), drawCalls:(villageOn?1:0), points:0, lines:0,
                  bytes:vlBytes }),
         costWhy:W({ bytes:"村・街・低木を ぜんぶ ふくむ 1つの 器の バイト（低木の 欄には 二重に 書かない）＝実測。" }),
@@ -7983,6 +8264,37 @@
     barrConsts:function(){ return Object.assign({},BARR); },
     barrTune:function(o){ if(o){ for(var k in o){ if(BARR[k]!==undefined) BARR[k]=o[k]; } } return Object.assign({},BARR); },
     useUiNow:function(){ updateUseUi(); return { heal:!!_healShown, place:!!_placeShown }; },
+    // ---------- 弾43 §R39のテスト用フック（とりでと 襲撃の 波・夜の 敵の 強化） ----------
+    fortSets:function(){ return FORT_SETS.map(function(F){ return Object.assign({},F); }); },
+    fortConsts:function(){ return Object.assign({},FORTC); },
+    fort:function(){ return { on:fortOn, set:(fortSet?fortSet.id:null), base:fortBoxBase, n:fortBoxN,
+      spot:fortSpotNow(), vlTris:vlTris, vlCount:vlCount }; },
+    raidLedger:function(){ return RAID.map(function(r){ return Object.assign({},r); }); },
+    raidConsts:function(){ return Object.assign({},RAIDC); },
+    raidTune:function(o){ if(o){ for(var k in o){ if(RAIDC[k]!==undefined) RAIDC[k]=o[k]; } } return Object.assign({},RAIDC); },
+    // ★その 日の 波の 行＝本番と 同じ 1本（raidRowFor）を 通す（規範 §1-①）
+    raidRowForDay:function(day){ var r=raidRowFor(day|0); return r?Object.assign({},r):null; },
+    raid:function(){ var sel=[], i; if(raidSel){ for(i=0;i<BAT.MAX;i++) if(raidSel[i]) sel.push(i); }
+      return { on:raidOn, row:(raidRow?Object.assign({},raidRow):null), count:raidCount, sel:sel,
+        starts:raidStarts, ends:raidEnds, ticks:raidTicks, hits:fortHits, broken:fortBroken,
+        dayLast:raidDayLast, bestDay:save.siege.bestDay }; },
+    raidHomes:function(){ var out=[], i; if(raidSel){ for(i=0;i<BAT.MAX;i++) if(raidSel[i])
+      out.push({ i:i, hx:enHx[i], hz:enHz[i], hx0:raidHx0[i], hz0:raidHz0[i] }); } return out; },
+    // ★倍率も 被弾も かべの 叩きも 本番と 同じ 1本（enMulFor／enemyHurt／fortHurt／raidStep）を 通す（規範 §1-①）
+    enMulNow:function(i){ var m=enMulFor(i|0); return { hpMul:m.hpMul, spdMul:m.spdMul, sightMul:m.sightMul }; },
+    siegeNight:function(){ var N=siegeNightSpec(); return N?{ hpMul:N.hpMul, spdMul:N.spdMul, sightMul:N.sightMul }:null; },
+    enemyHurtTest:function(i,dmg){ return enemyHurt(i|0, (dmg==null)?ATK.M_DMG:+dmg, "melee"); },
+    fortHurtNow:function(si,dmg){ return fortHurt(si|0, +dmg); },
+    raidTickNow:function(){ raidStep(RAIDC.TICK_S); return { on:raidOn, count:raidCount, ticks:raidTicks }; },
+    // ★変異注入の ため＝いま 動いている 波の 行を 壊す（もどすのも テストの 責任）
+    raidRowTune:function(o){ if(raidRow&&o){ for(var k in o){ if(raidRow[k]!==undefined) raidRow[k]=o[k]; } }
+      return raidRow?Object.assign({},raidRow):null; },
+    // テストの したごしらえ専用＝敵を 置く（★ふるまいの 採点は かならず 本番の enThink/raidBash を 通す）
+    enemyPut:function(i,x,z,hx,hz){ if(!enX) return false; i|=0;
+      enX[i]=+x; enZ[i]=+z; if(hx!=null) enHx[i]=+hx; if(hz!=null) enHz[i]=+hz;
+      var y=heightAt(+x,+z), o=i*3;
+      enP0[o]=+x; enP0[o+1]=y; enP0[o+2]=+z; enP1[o]=+x; enP1[o+1]=y; enP1[o+2]=+z;
+      return true; },
     worldRebuild:function(){ return wpRebuild(); },
     worldsOn:function(v, persist){ return setWorldsOn(v, !!persist); },
     warpConsts:function(){ return Object.assign({},WARP); },
@@ -8585,6 +8897,9 @@
     // 弾42 §R38: つかう。items/slots の 無い 世界では boolean を 2つ 見て 帰るだけ（弾40/41と 同じ 作法）。
     //   見張るのは 1秒に 10回（d42Step の 中で 拍を 数える）＝毎フレームJSの 増分は 数の 比較だけ。
     if(itemsOn||slotsOn) d42Step(dt);
+    // 弾43 §R39: 襲撃の 波。siege欄の 無い 世界では boolean を 1つ 見て 帰るだけ（弾40と 同じ 作法）。
+    //   波の 管理は 1秒に 1回（raidStep の 中で 拍を 数える）＝毎フレームJSの 増分は 足し算と 比較だけ。
+    if(wclockOn) raidStep(dt);
     var _logicRaw = performance.now()-_t0;   // 弾13: なましていない生値（分布を見るのに使う。logicMs自体は従来どおりのなまし）
     logicMs += (_logicRaw-logicMs)*0.1;
     // 弾15 §R13: ★「かんがえる(JS)」だけの時間を ためていく。えがく仕事は 1ミリも 入っていない。
@@ -19223,6 +19538,571 @@
                " ／ ★弾42で 動かした 既存テストの 判定基準＝0個（T45a〜T49e は 1文字も 書きかえていない）" };
     }
 //★HW42-END
+//★HW43-BEGIN
+    // ---------- 弾43 §R39: とりでと 襲撃の 波・夜の 敵の 強化（T51a〜T51f） ----------
+    // ★干場の 発注（2026-08-05）＝SPEC_HW_WORLD_SIEGE §3.4／§8.7。台帳には fort/siege の 世界を まだ 足さない
+    //   （p4 は 弾44）。T48〜T50 と 同じ 作法で「ためしの 世界」を 台帳に 1行 足して 測り、かならず 抜いてから 帰る。
+    var T51_SIEGE={ daySec:240, raidEvery:7, smallRaid:true, graceDays:2,
+                    night:{ hpMul:2.0, spdMul:1.8, sightMul:1.5 } };   // §8.7 の 仮値 その まま
+    function t51World(){
+      var base=null, i;
+      for(i=0;i<WORLD_PATTERNS.length;i++)
+        if(!WORLD_PATTERNS[i].home && WORLD_PATTERNS[i].move==="grounded" && WORLD_PATTERNS[i].battle){ base=WORLD_PATTERNS[i]; break; }
+      var W={}; for(var k in base) W[k]=base[k];   // ★あさい写し＝clear等は 台帳と 同じ 配列を 指す（T48と 同じ）
+      W.id="t51"; W.name="ためしの とりでの せかい";
+      W.siege={ daySec:T51_SIEGE.daySec, raidEvery:T51_SIEGE.raidEvery, smallRaid:T51_SIEGE.smallRaid,
+                graceDays:T51_SIEGE.graceDays,
+                night:{ hpMul:T51_SIEGE.night.hpMul, spdMul:T51_SIEGE.night.spdMul, sightMul:T51_SIEGE.night.sightMul } };
+      W.items=true;        // 弾41の 欄（たま・くすり・かべいた）
+      W.slots="toride12";  // 弾42の 欄（バリケードの 置き場）
+      W.fort="toride1";    // ★弾43の 欄＝とりでは FORT_SETS の id を 1つ 書くだけ
+      return W;
+    }
+    function t51Setup(){
+      var st=t45Setup();
+      st.rawSave=localStorage.getItem(SAVE_KEY);
+      st.memSave=JSON.stringify(save);
+      st.n=WORLD_PATTERNS.length;
+      st.tidy=cfg.tidy; st.showHud=cfg.showHud; st.hudFly=cfg.hudFly;
+      st.bat=!!cfg.battle; st.peace=!!cfg.battlePeace;
+      cfg.tidy=false; cfg.showHud=true; cfg.hudFly=true;      // HUD の ふたを あけて 測る
+      window.__tenkyu.setBattle(true,false);                  // 敵と いのちを 測る ため（もどすのは t51Restore）
+      window.__tenkyu.enemyCount(24);                         // ★vlgSetup が 0 に して いる＝波を 測るには 敵の プールが 要る
+      WORLD_PATTERNS.push(t51World());
+      return st;
+    }
+    function t51Restore(st){
+      window.__tenkyu.setBattlePeace(st.peace);
+      window.__tenkyu.battleReset();
+      // ①ためしの 世界から はなれる（★ここで d43Apply が 波を 返し、時計が 保存へ 書く）
+      window.__tenkyu.worldApply("p0"); stepFrames(1);
+      // ②台帳から ためしの 世界を 抜く（かならず 元の 行数へ）
+      while(WORLD_PATTERNS.length>st.n) WORLD_PATTERNS.pop();
+      // ③保存を テスト前へ
+      localStorage.setItem(SAVE_KEY, st.memSave); window.__tenkyu.saveReload();
+      if(st.rawSave==null) localStorage.removeItem(SAVE_KEY); else localStorage.setItem(SAVE_KEY, st.rawSave);
+      cfg.tidy=st.tidy; cfg.showHud=st.showHud; cfg.hudFly=st.hudFly;
+      window.__tenkyu.setBattle(st.bat,false);
+      t45Restore(st);
+    }
+
+    // T51a: とりで＝①台帳の 形 ②fort 欄の 世界で 台帳どおりに 建つ（かべ5＋屋根1・寸法・当たり判定）
+    //   ③壊れない（fortHurt は かべ(barr)しか 知らない・とりでの 箱は 1ビットも 動かない）
+    //   ④スロット12か所が とりでを 囲む ⑤fort 欄の 無い 世界（ぜんぶ）には 無い
+    //   ⑥予算＝えがく回数の 増分 0・三角形は （スロット12＋とりで6）×12 の 実測
+    function t_T51a(){
+      var T=window.__tenkyu, d=[], i;
+      var st=t51Setup();
+      // ①台帳の 形
+      var FS=T.fortSets(), K=T.fortConsts();
+      var F0=FS[0];
+      var ledOk=(FS.length===1)&&(F0.id==="toride1")&&
+        ["x","z","w","d","h","t","door","roof","eave"].every(function(k){ return isFinite(F0[k]); })&&
+        (F0.door<F0.w)&&(F0.t*2<F0.w)&&(F0.t*2<F0.d);
+      // ⑥の 写しもと（fort/slots の 無い 同じ 見た目の 世界）で 三角形と えがく回数を とる
+      var P=T.worldPatterns(), norm=P.slice(0,P.length-1), baseId=null;
+      for(i=0;i<norm.length;i++) if(!norm[i].home && norm[i].move==="grounded" && norm[i].battle){ baseId=norm[i].id; break; }
+      var M=T.mountConsts();
+      T.worldApply(baseId); stepFrames(1);
+      t43Put(M.X+30, M.Z, M.TOP_Y); stepFrames(2);
+      var triBase=T.fort().vlTris, cntBase=T.fort().vlCount, dcBase=lastDrawCalls;
+      // ②ためしの 世界＝とりでが 建つ
+      T.worldApply("t51"); stepFrames(1);
+      T.wclockSet(1, T51_SIEGE.daySec*0.3);   // 昼に そろえる（空の 色だけの ちがいに する）
+      t43Put(M.X+30, M.Z, M.TOP_Y); stepFrames(2);
+      var FT=T.fort();
+      var onOk=FT.on&&(FT.set==="toride1")&&(FT.n===6)&&(FT.base>=0);
+      // 寸法＝器の 写し（Float32 の 丸めぶんの 許容＝1e-4）。並びは かべ5（おく・手前2・ひだり・みぎ）＋屋根。
+      var bi=FT.base, gy=heightAt(F0.x, F0.z);
+      var wallH=F0.h+K.SINK;
+      var szOk=(Math.abs(bxSz[bi*3]-F0.w)<1e-4)&&(Math.abs(bxSz[bi*3+1]-wallH)<1e-4)&&(Math.abs(bxSz[bi*3+2]-F0.t)<1e-4)&&
+               (Math.abs(bxSz[(bi+3)*3]-F0.t)<1e-4)&&(Math.abs(bxSz[(bi+3)*3+2]-(F0.d-F0.t*2))<1e-4)&&
+               (Math.abs(bxSz[(bi+5)*3]-(F0.w+F0.eave*2))<1e-4)&&(Math.abs(bxSz[(bi+5)*3+1]-F0.roof)<1e-4)&&
+               (Math.abs(bxCtr[(bi+5)*3+1]-(gy+F0.h))<1e-3);
+      var solidWalls=[0,1,2,3,4].every(function(q){ return bxSolid[bi+q]===1; });
+      // 当たり判定の 実測＝おくの かべの まん中に 立とうと すると 本番の 押し出しが 外へ 出す
+      var wz=F0.z+(F0.d/2-F0.t/2);
+      var esc=T.boxEscapeFrom(F0.x, gy+FIELD_CLEAR, wz);
+      var escMoved=Math.hypot(esc.pos[0]-F0.x, esc.pos[2]-wz);
+      var solidOk=esc.out&&(escMoved>F0.t*0.4);
+      // ③壊れない＝かべ(barr)が 1まいも 無い とき fortHurt は false・とりでの 箱は 1ビットも 動かない
+      var before=[], q;
+      for(q=0;q<6;q++) before.push(bxSz[(bi+q)*3], bxSz[(bi+q)*3+1], bxSz[(bi+q)*3+2], bxCtr[(bi+q)*3+1]);
+      var hurtNone=(T.fortHurtNow(0,999)===false)&&(T.fortHurtNow(99,10)===false);
+      var after=[]; for(q=0;q<6;q++) after.push(bxSz[(bi+q)*3], bxSz[(bi+q)*3+1], bxSz[(bi+q)*3+2], bxCtr[(bi+q)*3+1]);
+      var unbreakOk=hurtNone&&(before.join(",")===after.join(","))&&
+        (String(fortHurt).indexOf("fortBox")<0)&&(String(fortHurt).indexOf("barr")>=0);
+      // ④スロット12か所が とりでを 囲む＝どの 置き場も とりでの 外がわ・30m の 輪の 中
+      var L=T.slotSets()[0], surOk=(L.pts.length===12)&&L.pts.every(function(p){
+        var lx=p[0]-F0.x, lz=p[1]-F0.z;
+        return (Math.abs(lx)>F0.w/2 || Math.abs(lz)>F0.d/2) && Math.hypot(lx,lz)<30; });
+      // 波の 敵の 住みか＝入口の 前（-z がわ）
+      var spotOk=!!FT.spot&&(Math.abs(FT.spot.x-F0.x)<1e-9)&&(Math.abs(FT.spot.z-(F0.z-F0.d/2-K.GATE))<1e-9);
+      // ⑥予算＝えがく回数 同じ・三角形 +（12+6）×12
+      var triAdd=T.fort().vlTris-triBase, cntAdd=T.fort().vlCount-cntBase, dc1=lastDrawCalls;
+      var triOk=(triAdd===18*12)&&(cntAdd===18);
+      var dcOk=(dc1===dcBase)&&(dc1>0);
+      // ⑤fort 欄の 無い 世界（ぜんぶ）＝とりでは 無い・fortHurt も 効かない
+      var offBad=[];
+      for(i=0;i<norm.length;i++){
+        T.worldApply(norm[i].id); stepFrames(2);
+        var w=T.fort();
+        if(w.on || (w.n>0) || w.set!==null || T.fortHurtNow(0,10)!==false) offBad.push(norm[i].id);
+      }
+      t51Restore(st);
+      d.push("①台帳の 形（1行・toride1・数が ぜんぶ 有限・入口<よこ）="+ledOk);
+      d.push("②建つ＝箱 "+FT.n+"個（かべ5＋屋根1）="+onOk+"・寸法が 台帳どおり（"+F0.w+"×"+F0.h+"(+うめ"+K.SINK+")×"+F0.t+
+             "・屋根 "+(F0.w+F0.eave*2)+"）="+szOk+"・かべ5まい みんな 当たる="+solidWalls+
+             "・押し出しの 実測（動き "+escMoved.toFixed(2)+"m）="+solidOk);
+      d.push("③壊れない＝fortHurt は かべ(barr)だけ・とりでの 箱の 24数が 完全一致="+unbreakOk);
+      d.push("④スロット12か所が とりでの 外がわ 30m の 輪="+surOk+"・波の あつまる 点＝入口の 前="+spotOk);
+      d.push("⑥えがく回数＝写しもと "+dcBase+"・とりで入り "+dc1+"（同じ="+dcOk+"＝増分 0）・三角形 +"+triAdd+
+             "（箱 +"+cntAdd+"個。見込み （12+6）×12=216）="+triOk);
+      d.push("⑤fort 欄の 無い 世界 "+norm.length+"つ＝あった="+(offBad.join(",")||"なし"));
+      return { pass:ledOk&&onOk&&szOk&&solidWalls&&solidOk&&unbreakOk&&surOk&&spotOk&&triOk&&dcOk&&(offBad.length===0),
+               detail:d.join(" / ") };
+    }
+    // T51b: 夜の 敵の 強化＝①昼は 1×（実測）②夜だけ 台帳の 宣言どおり（いのち＝本番 enemyHurt の 実測／
+    //   速さ＝同じ 出発点からの 走りの 実測／気づく距離＝本番 enThink の 実測）③朝に かならず もどる
+    //   ④⚙たたかう OFF で 消える ⑤siege.night の 無い 世界（ぜんぶ）では 一度も 効かない
+    function t_T51b(){
+      var T=window.__tenkyu, d=[], i;
+      var st=t51Setup();
+      T.worldApply("t51"); stepFrames(2); T.battleReset();
+      var N=T51_SIEGE.night, A=T.atkConsts(), K=T.battleConsts();
+      var dayT=T51_SIEGE.daySec*0.3, nightT=T51_SIEGE.daySec*0.8;   // 昼30%・夜80%（day1＝猶予の 日＝波は 来ない）
+      // ①昼＝1×・siegeNight は null・いのちは 20 あてると ちょうど 20 へる
+      T.wclockSet(1, dayT);
+      var m0=T.enMulNow(0);
+      var dayMulOk=(m0.hpMul===1)&&(m0.spdMul===1)&&(m0.sightMul===1)&&(T.siegeNight()===null);
+      T.battleReset(); T.enemyHurtTest(0, 20);
+      var hpDay=T.enemyHpState(1)[0].hp;
+      var hpDayOk=(Math.abs(hpDay-(A.EHP-20))<1e-6);
+      // ②夜＝宣言どおり（enMulFor＝実効倍率の 唯一の 出どころ・本番 その もの）
+      T.wclockSet(1, nightT);
+      var m1=T.enMulNow(0), sg=T.siegeNight();
+      var nightMulOk=(m1.hpMul===N.hpMul)&&(m1.spdMul===N.spdMul)&&(m1.sightMul===N.sightMul)&&
+                     !!sg&&(sg.hpMul===N.hpMul)&&(sg.spdMul===N.spdMul)&&(sg.sightMul===N.sightMul);
+      // いのちの 実測＝20 あてても 20/2.0=10 しか へらない（実効の いのちが hpMul 倍）
+      T.battleReset(); T.enemyHurtTest(0, 20);
+      var hpNight=T.enemyHpState(1)[0].hp;
+      var hpNightOk=(Math.abs(hpNight-(A.EHP-20/N.hpMul))<1e-6);
+      // 速さの 実測＝同じ 出発点（battleReset＝決定論の 並び・enT=0）から、ひらけた 場所（村の 輪 150 の
+      //   内がわ＝建物 0）に 6体 置いて ぶらぶら歩き（CALM）の 道のりを くらべる。歩く 速さも 読む所の
+      //   かけ算＝道のりは ちょうど spdMul 倍に なる はず（押し出しも よけも 起きない 置き方）→ 1.6〜2.0 で 合格。
+      function runPath(tSet){
+        T.battleReset(); T.setBattlePeace(true); T.wclockSet(1, tSet);
+        t43Put(100, 0, heightAt(100, 0));
+        for(var q=0;q<6;q++) T.enemyPut(q, 70+q*8, -60, 70+q*8, -60);   // 8m おき＝よけ(SEP 2.6)に かからない
+        stepFrames(3);
+        var p0=T.enemyStates(6), q2;
+        stepFrames(36);                               // 0.6秒
+        var p1=T.enemyStates(6), sum=0;
+        for(q2=0;q2<6;q2++) sum+=Math.hypot(p1[q2].x-p0[q2].x, p1[q2].z-p0[q2].z);
+        return sum;
+      }
+      var pathDay=runPath(dayT), pathNight=runPath(nightT);
+      var spdRatio=(pathDay>1e-6)?(pathNight/pathDay):0;
+      var spdOk=(pathDay>0.5)&&(spdRatio>1.6)&&(spdRatio<2.0);
+      // 気づく きょりの 実測＝46（昼）と 46×1.5=69（夜）の あいだ＝55m に 人を 置く。
+      //   したごしらえだけ enemyPut（住みかも その場）＝ふるまいは 本番の enThink が 決める。
+      T.battleReset(); T.setBattlePeace(false);
+      var ex=120, ez=0;                               // 村の 輪（150）の 内がわ＝あいだに 建物が 無い
+      t43Put(ex, ez+55, heightAt(ex, ez+55));
+      T.wclockSet(1, dayT);
+      T.enemyPut(0, ex, ez, ex, ez);
+      stepFrames(15);
+      var stDay=T.enemyStates(1)[0].st;
+      T.wclockSet(1, nightT);
+      T.enemyPut(0, ex, ez, ex, ez);
+      stepFrames(15);
+      var stNight=T.enemyStates(1)[0].st;
+      var sightOk=(stDay===0)&&(stNight>=1&&stNight<=2);   // 昼＝気づかない（CALM）／夜＝気づく（NOTICE→CHASE）
+      // ③朝＝かならず もどる（あくる日の 昼＝1×・いのちも 元の きき目）
+      T.battleReset(); T.wclockSet(2, dayT);
+      var m2=T.enMulNow(0);
+      T.enemyHurtTest(0, 20);
+      var mornOk=(m2.hpMul===1)&&(m2.spdMul===1)&&(m2.sightMul===1)&&
+                 (Math.abs(T.enemyHpState(1)[0].hp-(A.EHP-20))<1e-6)&&(T.siegeNight()===null);
+      // ④⚙たたかう OFF＝夜でも 消える（siegeNight＝null・倍率 1×）→ もどすと また 効く
+      T.wclockSet(1, nightT);
+      T.setBattle(false,false);
+      var offOk=(T.siegeNight()===null)&&(T.enMulNow(0).hpMul===1);
+      T.setBattle(true,false);
+      var backOk=(T.enMulNow(0).hpMul===N.hpMul);
+      T.battleReset();
+      // ⑤siege.night の 無い 世界（ぜんぶ）＝一度も 効かない
+      var P=T.worldPatterns(), norm=P.slice(0,P.length-1), offBad=[];
+      for(i=0;i<norm.length;i++){
+        T.worldApply(norm[i].id); stepFrames(2);
+        var m=T.enMulNow(0);
+        if(T.siegeNight()!==null || m.hpMul!==1 || m.spdMul!==1 || m.sightMul!==1) offBad.push(norm[i].id);
+      }
+      t51Restore(st);
+      d.push("①昼＝1×・siegeNight null="+dayMulOk+"・いのち 20あて→"+hpDay.toFixed(1)+"（20 へる）="+hpDayOk);
+      d.push("②夜＝台帳の 宣言どおり（hp×"+N.hpMul+"・速さ×"+N.spdMul+"・気づき×"+N.sightMul+"）="+nightMulOk+
+             "・いのち 20あて→"+hpNight.toFixed(1)+"（"+(20/N.hpMul).toFixed(1)+" しか へらない）="+hpNightOk);
+      d.push("②速さの 実測＝昼 "+pathDay.toFixed(1)+"m → 夜 "+pathNight.toFixed(1)+"m（"+spdRatio.toFixed(2)+
+             "倍・見込み "+N.spdMul+"）="+spdOk);
+      d.push("②気づく きょり＝55m の 人を 昼は 見えない（st="+stDay+"）・夜は 気づく（st="+stNight+"）="+sightOk);
+      d.push("③朝＝1×へ もどる（いのちも 元の きき目）="+mornOk);
+      d.push("④⚙OFF＝夜でも 消える="+offOk+"・もどすと また 効く="+backOk);
+      d.push("⑤siege.night の 無い 世界 "+norm.length+"つ＝効いた="+(offBad.join(",")||"なし"));
+      return { pass:dayMulOk&&hpDayOk&&nightMulOk&&hpNightOk&&spdOk&&sightOk&&mornOk&&offOk&&backOk&&(offBad.length===0),
+               detail:d.join(" / ") };
+    }
+    // T51c: 襲撃の 波＝①台帳と 日の 引き（猶予・3の倍数・raidEvery・21日は 大が 勝つ）②夜の はじまりに
+    //   count 体が「住みか＝とりで」に なって 向かう ③★二重掛けなし（波の 敵＝RAID の 値そのもの・
+    //   外の 敵＝night の 値＝実効値を 本番の enemyHurt でも 数で 突き合わせ）④朝に 住みかへ 帰る
+    //   ⑤大襲撃は 10体 ⑥⚙たたかう OFF で 波が 止まる
+    function t_T51c(){
+      var T=window.__tenkyu, d=[], q;
+      var st=t51Setup();
+      T.worldApply("t51"); stepFrames(2); T.battleReset();
+      var N=T51_SIEGE.night, A=T.atkConsts();
+      var dayT=T51_SIEGE.daySec*0.3, nightT=T51_SIEGE.daySec*0.8;
+      // ①台帳の 形と 日の 引き（純関数 raidRowFor＝本番 その もの）
+      var RL=T.raidLedger(), smallRow=null, bigRow=null;
+      for(q=0;q<RL.length;q++){ if(RL[q].day==="small") smallRow=RL[q]; if(RL[q].day==="big") bigRow=RL[q]; }
+      var ledOk=(RL.length===2)&&!!smallRow&&!!bigRow&&(smallRow.count===3)&&(bigRow.count===10);
+      var r3=T.raidRowForDay(3), r6=T.raidRowForDay(6), r7=T.raidRowForDay(7), r21=T.raidRowForDay(21);
+      var rowOk=(T.raidRowForDay(1)===null)&&(T.raidRowForDay(2)===null)&&(T.raidRowForDay(4)===null)&&
+                !!r3&&(r3.day==="small")&&!!r6&&(r6.day==="small")&&!!r7&&(r7.day==="big")&&!!r21&&(r21.day==="big");
+      // ②3日目の 夜の はじまり＝小襲撃（3体）が 来る。追いかけを 切って（🕊️）「向かう」だけを 見る
+      T.setBattlePeace(true);
+      t43Put(0, -30, heightAt(0, -30));                // とりでの 前＝波の 敵（とりでに 近い 村）が 思考の 輪に 入る
+      T.wclockSet(3, nightT);
+      T.raidTickNow();
+      var R=T.raid();
+      var beganOk=R.on&&(R.count===smallRow.count)&&(R.sel.length===smallRow.count)&&
+                  !!R.row&&(R.row.kind==="small");
+      var starts0=R.starts;
+      T.raidTickNow();                                  // 2回 たたいても 波は 1つ（はじまりは 1回だけ）
+      var onceOk=(T.raid().starts===starts0)&&T.raid().on;
+      // ③★二重掛けなし＝実効倍率（本番 enMulFor）が 台帳の 宣言 その もの
+      var selI=R.sel[0], outI=-1;
+      for(q=0;q<24;q++){ if(R.sel.indexOf(q)<0){ outI=q; break; } }
+      var mSel=T.enMulNow(selI), mOut=T.enMulNow(outI);
+      var noStackOk=(mSel.hpMul===smallRow.hpMul)&&(mSel.spdMul===smallRow.spdMul)&&(mSel.sightMul===1)&&
+                    (mOut.hpMul===N.hpMul)&&(mOut.spdMul===N.spdMul)&&(mOut.sightMul===N.sightMul);
+      // いのちの 実測＝本番の enemyHurt。波の 敵は 20/1.5・外の 敵は 20/2.0 しか へらない
+      T.enemyHurtTest(selI, 20); T.enemyHurtTest(outI, 20);
+      var hps=T.enemyHpState(24);
+      var hpMeasOk=(Math.abs(hps[selI].hp-(A.EHP-20/smallRow.hpMul))<5e-3)&&   // 表示は 小数3けた 丸め＝その ぶんの 許容
+                   (Math.abs(hps[outI].hp-(A.EHP-20/N.hpMul))<5e-3);
+      // ②住みか＝とりでの 入口の 前に 上書き・元の 住みかは おぼえている（返すため）
+      var H=T.raidHomes(), spot=T.fort().spot;
+      var homeOk=(H.length===smallRow.count)&&H.every(function(h){
+        return (Math.abs(h.hx-spot.x)<1e-4)&&(Math.abs(h.hz-spot.z)<1e-4)&&
+               (Math.hypot(h.hx0-spot.x, h.hz0-spot.z)>50); });
+      // ②とりでへ 向かう＝えらばれた 敵の とりでまでの きょりの 合計が へっていく（実移動＝本番の enThink）
+      function distSum(){ var s=0, es=T.enemyStates(24);
+        for(var q2=0;q2<H.length;q2++){ var e=es[H[q2].i]; s+=Math.hypot(e.x-spot.x, e.z-spot.z); } return s; }
+      var d0=distSum();
+      stepFrames(66);                                   // 1.1秒（夜＝走って 来る）
+      var d1=distSum();
+      var approachOk=(d1<d0-2.0);
+      // ④朝＝波が 終わり、住みかが 元へ もどる（昼の 姿＝倍率 1× は enMulFor が 自動で もどす）
+      var h0=H[0];
+      T.wclockSet(4, dayT);
+      T.raidTickNow();
+      var R2=T.raid();
+      var endOk=(!R2.on)&&(R2.sel.length===0)&&(R2.ends>0);
+      var backOk=(Math.abs(enHx[h0.i]-h0.hx0)<1e-4)&&(Math.abs(enHz[h0.i]-h0.hz0)<1e-4);
+      var mornMul=T.enMulNow(h0.i);
+      var mornOk=(mornMul.hpMul===1)&&(mornMul.spdMul===1)&&(mornMul.sightMul===1);
+      // ⑤7日目の 夜＝大襲撃（10体・RAID の 値そのもの）
+      T.battleReset();
+      T.wclockSet(7, nightT);
+      T.raidTickNow();
+      var R7=T.raid();
+      var bigSel=(R7.sel.length>0)?R7.sel[0]:0;
+      var mBig=T.enMulNow(bigSel);
+      var bigOk=R7.on&&(R7.count===bigRow.count)&&!!R7.row&&(R7.row.kind==="big")&&
+                (mBig.hpMul===bigRow.hpMul)&&(mBig.spdMul===bigRow.spdMul)&&(mBig.sightMul===1);
+      // ⑥⚙たたかう OFF＝波は その場で 止まる（住みかも 返る）
+      T.setBattle(false,false);
+      T.raidTickNow();
+      var offOk=(!T.raid().on)&&(T.raid().sel.length===0);
+      T.setBattle(true,false);
+      t51Restore(st);
+      d.push("①台帳＝small 3体・big 10体="+ledOk+"・日の 引き（1,2,4=なし／3,6=small／7,21=big）="+rowOk);
+      d.push("②3日目の 夜＝"+R.count+"体の 波="+beganOk+"・はじまりは 1回だけ="+onceOk+
+             "・住みか＝とりでの 入口（元の 住みかは 50m以上 別）="+homeOk+
+             "・とりでへ 向かう（きょり合計 "+d0.toFixed(1)+"→"+d1.toFixed(1)+"m）="+approachOk);
+      d.push("③★二重掛けなし＝波の 敵（hp×"+smallRow.hpMul+"・速さ×"+smallRow.spdMul+"・気づき×1）・"+
+             "外の 敵（hp×"+N.hpMul+"・速さ×"+N.spdMul+"・気づき×"+N.sightMul+"）="+noStackOk+
+             "・いのちの 実測（本番 enemyHurt）="+hpMeasOk);
+      d.push("④朝＝波が 終わる="+endOk+"・住みかが 元へ="+backOk+"・倍率も 1×へ="+mornOk);
+      d.push("⑤7日目＝大襲撃 "+R7.count+"体・RAID の 値そのもの="+bigOk);
+      d.push("⑥⚙OFF＝波が 止まり 住みかも 返る="+offOk);
+      return { pass:ledOk&&rowOk&&beganOk&&onceOk&&noStackOk&&hpMeasOk&&homeOk&&approachOk&&
+                    endOk&&backOk&&mornOk&&bigOk&&offOk, detail:d.join(" / ") };
+    }
+
+    // T51d: バリケード＝①敵が 叩くと 耐久が へる（本番の raidStep→raidBash→fortHurt）②🕊️の ときは 叩かない
+    //   ③0 に なると 消えて 通れる（当たり判定と 器の 実測・GPUへ 1回だけ）④とりで本体は 1ビットも 動かない
+    //   ⑤プレイヤーの 被弾は 既存の 道（battleHurt）その まま
+    function t_T51d(){
+      var T=window.__tenkyu, d=[], q;
+      var st=t51Setup();
+      T.worldApply("t51"); stepFrames(2); T.battleReset();
+      var K=T.barrConsts(), RC=T.raidConsts(), Fb=T.fort();
+      var nightT=T51_SIEGE.daySec*0.8;
+      // したごしらえ＝スロット1（まんなかの 手前 [0,-14]）に かべを 1まい 立てる
+      save.siege.bag.kabe=2;
+      var pts=T.slotSets()[0].pts, p1=pts[1];
+      t43Put(p1[0]+1.0, p1[1]+1.0, heightAt(p1[0]+1.0, p1[1]+1.0));
+      T.slotScanNow();
+      var placed=T.kabePlaceNow();
+      // とりでの 箱の すがた（あとで「1ビットも 動かない」を 見る）
+      var fortBefore=[], bi=Fb.base;
+      for(q=0;q<Fb.n;q++) fortBefore.push(bxSz[(bi+q)*3], bxSz[(bi+q)*3+1], bxSz[(bi+q)*3+2], bxCtr[(bi+q)*3+1]);
+      // 人は とおくへ（波の 敵の 気づく きょり 46 の 外＝叩きだけを 見る）
+      t43Put(0, -80, heightAt(0, -80));
+      T.setBattlePeace(false);
+      T.wclockSet(3, nightT);
+      T.raidTickNow();
+      var R=T.raid(), selI=(R.sel.length>0)?R.sel[0]:0;
+      // ★えらばれた 敵を かべの 前に 置く（したごしらえ）。叩きは 本番の raidStep→raidBash→fortHurt が 決める
+      T.enemyPut(selI, p1[0], p1[1]-2.5);
+      var b0=T.slots().barr[1], hits0=T.raid().hits;
+      T.raidTickNow();
+      var b1=T.slots().barr[1];
+      var decOk=placed&&(b0===K.HP_MAX)&&(b1===K.HP_MAX-RC.HIT_DMG)&&(T.raid().hits===hits0+1);
+      // ②🕊️「おそってこない」＝叩かない（見ているだけ）
+      T.setBattlePeace(true);
+      T.raidTickNow();
+      var doveOk=(T.slots().barr[1]===b1);
+      T.setBattlePeace(false);
+      // ③0 まで 叩くと 消えて 通れる（GPUへは たおす ときの 1回だけ）
+      var up0=T.slots().uploads, need=Math.ceil(b1/RC.HIT_DMG);
+      for(q=0;q<need;q++) T.raidTickNow();
+      var S1=T.slots(), sbi=S1.base+1;
+      var brokeOk=(S1.barr[1]===0)&&(T.raid().broken>=1)&&(S1.uploads===up0+1);
+      var goneOk=(bxSolid[sbi]===0)&&(bxSz[sbi*3]===0)&&(bxSz[sbi*3+1]===0);
+      var esc=T.boxEscapeFrom(p1[0], heightAt(p1[0],p1[1])+FIELD_CLEAR, p1[1]);
+      var passOk=(Math.hypot(esc.pos[0]-p1[0], esc.pos[2]-p1[1])<0.05);   // 押し出されない＝かべは もう 無い
+      // 保存にも のこる（壊れた とき 1回 書く）
+      var js=JSON.parse(localStorage.getItem(SAVE_KEY));
+      var saveOk=!!js.siege&&((js.siege.barr[1]|0)===0);
+      // ④とりで本体は 1ビットも 動かない
+      var fortAfter=[]; for(q=0;q<Fb.n;q++) fortAfter.push(bxSz[(bi+q)*3], bxSz[(bi+q)*3+1], bxSz[(bi+q)*3+2], bxCtr[(bi+q)*3+1]);
+      var fortOk=(fortBefore.join(",")===fortAfter.join(","));
+      // ⑤プレイヤーの 被弾は 既存の 道＝battleHurt（HURT_LOCK も 効く）
+      var hp0=hp;
+      var hit1=T.battleHurtTest(9), hit2=T.battleHurtTest(9);   // 2発目は 間かくの 下限で 入らない
+      var hurtOk=hit1&&(!hit2)&&(hp===hp0-9);
+      T.wclockSet(4, T51_SIEGE.daySec*0.3); T.raidTickNow();    // 朝＝波を 返してから 帰る
+      t51Restore(st);
+      d.push("①かべ 60→"+b1+"（敵 1体×1秒＝-"+RC.HIT_DMG+"・hits +1）="+decOk);
+      d.push("②🕊️の あいだは 叩かない="+doveOk);
+      d.push("③0 で 消える（barr=0・GPUへ +1回・当たり 0・大きさ 0）="+(brokeOk&&goneOk)+
+             "・通れる（押し出しが 起きない）="+passOk+"・保存にも 0="+saveOk);
+      d.push("④とりで本体の "+Fb.n+"箱×4数＝完全一致="+fortOk);
+      d.push("⑤プレイヤーの 被弾＝battleHurt の 道（9 へる・2発目は HURT_LOCK）="+hurtOk);
+      return { pass:decOk&&doveOk&&brokeOk&&goneOk&&passOk&&saveOk&&fortOk&&hurtOk, detail:d.join(" / ") };
+    }
+
+    // T51e: 床＝①夕方の 案内（とりでへ もどりましょう）②破られても 詰まない（battleDown＝安全地点へ・
+    //   記録は 1つも へらない）③ワープ点は 生きている ④bestDay が 進む・保存に のこる ⑤ぜったいに 減らない
+    //   ⑥⚙たたかう OFF で 全部 止まる（夜の 強化も 波も bestDay も）⑦古い 保存も 読める
+    function t_T51e(){
+      var T=window.__tenkyu, d=[];
+      var st=t51Setup();
+      T.worldApply("t51"); stepFrames(2); T.battleReset();
+      var dayT=T51_SIEGE.daySec*0.3, nightT=T51_SIEGE.daySec*0.8;
+      // ①夕方の 案内＝とりでの ある 世界だけ 長い ことば（弾40の HUD ことば欄を つかう）
+      T.wclockSet(1, T51_SIEGE.daySec*0.7);
+      var word=document.getElementById("wk-word").textContent;
+      var wordOk=(word==="もうすぐ よるが きます。とりでへ もどりましょう");
+      // ②破られても 詰まない＝やられたら 既存の battleDown（安全地点へ・保存は 1バイトも 変わらない）
+      T.wclockSet(1, nightT);
+      var raw0=localStorage.getItem(SAVE_KEY), downs0=T.battleState().downs;
+      T.battleHurtTest(9999);
+      var B=T.battleState();
+      var downOk=(B.downs===downs0+1)&&(B.hp===B.hpMax)&&(Math.hypot(camPos[0],camPos[2])<30)&&(ENVID==="field");
+      var downSaveOk=(localStorage.getItem(SAVE_KEY)===raw0);
+      // ③ワープ点は 生きている（襲撃の 世界にも 同じ ものが 建つ＝いつでも 帰れる）
+      var warpOk=(T.warpBoxesNow().length===4);
+      // ④bestDay＝夜を 生きて 朝を むかえたら 進む（進むのは 本番の raidStep だけ）＋保存に のこる
+      var bd0=T.raid().bestDay;
+      T.wclockSet(5, T51_SIEGE.daySec-0.5);
+      stepFrames(66);                                   // 1.1秒＝日が 6 へ かわる（拍も 1回 入る）
+      T.raidTickNow();
+      var bd1=T.raid().bestDay;
+      var upOk=(bd1===Math.max(bd0,5))&&(save.siege.day===6);
+      var js=JSON.parse(localStorage.getItem(SAVE_KEY));
+      var upSaveOk=!!js.siege&&((js.siege.bestDay|0)===bd1);
+      // ⑤ぜったいに 減らない＝大きい 記録は 小さい 日を 生きても そのまま
+      save.siege.bestDay=9;
+      T.wclockSet(6, T51_SIEGE.daySec-0.5);
+      stepFrames(66); T.raidTickNow();
+      var keepOk=(T.raid().bestDay===9);
+      // ⑥⚙たたかう OFF＝夜の 強化も 波も bestDay も 止まる（平和に 探索だけ できる）
+      T.setBattle(false,false);
+      save.siege.bestDay=0;
+      T.wclockSet(9, nightT);                           // 9日目＝3の倍数＝ふだんなら 小襲撃の 夜
+      T.raidTickNow();
+      var offRaid=(T.raid().on===false);
+      var offNight=(T.siegeNight()===null)&&(T.enMulNow(0).hpMul===1);
+      T.wclockSet(9, T51_SIEGE.daySec-0.5);
+      stepFrames(66); T.raidTickNow();
+      var offBest=(T.raid().bestDay===0);               // 朝を むかえても 記録は 進まない（まもって いない）
+      T.setBattle(true,false);
+      // ⑦古い 保存（siege ごと 無い）も 読める＝初期値に ならされる
+      var js2=JSON.parse(localStorage.getItem(SAVE_KEY));
+      delete js2.siege;
+      localStorage.setItem(SAVE_KEY, JSON.stringify(js2));
+      var s3=T.saveReload();
+      var oldOk=!!s3.siege&&(s3.siege.day===1)&&(s3.siege.bestDay===0)&&(typeof s3.siege.bag==="object");
+      t51Restore(st);
+      d.push("①夕方の 案内＝「"+word+"」="+wordOk);
+      d.push("②やられても battleDown＝安全地点へ・いのち まんたん・保存 1バイトも 不変="+(downOk&&downSaveOk));
+      d.push("③ワープ点（箱4つ）は 生きている="+warpOk);
+      d.push("④夜を 生きて 朝＝bestDay "+bd0+"→"+bd1+"（日は 6 へ）="+upOk+"・保存にも="+upSaveOk);
+      d.push("⑤bestDay=9 の まま 6日目を 生きても 9="+keepOk);
+      d.push("⑥⚙OFF＝波 なし="+offRaid+"・夜の 強化 なし="+offNight+"・bestDay 進まない="+offBest);
+      d.push("⑦siege の 無い ふるい 保存＝初期値で 読める="+oldOk);
+      return { pass:wordOk&&downOk&&downSaveOk&&warpOk&&upOk&&upSaveOk&&keepOk&&offRaid&&offNight&&offBest&&oldOk,
+               detail:d.join(" / ") };
+    }
+    // T51f: 回帰帳簿＝既存 T1〜T50d が 1件も 余分に 落ちていない（★前の 網を ぜんぶ 見るので 必ず いちばん最後）
+    //   ＋ 5つの 環境の「既知の 落ち」の 表が 弾42と 完全一致 ＋ 黄信号（T45d）と 床の 検査（T45e）＋
+    //   台帳に items/siege/slots/fort の 世界は まだ 無い ＋ 毎フレームの 道は 台帳を 読まない ＋
+    //   読む所の かけ算の 結線 ＋ 毎フレームJSの 予算（+3µs） ＋ ★変異注入（二重掛け ほか）で 歯
+    function t_T51f(){
+      var need=["T1","T2","T2f","T2n","T3","T3c","T4","T5","T6","T7","T8","T9","T10","T11","T12","T13","T14",
+                "T15","T16","T17","T18","T19a","T19b","T19c","T19d","T20a","T20b","T20c","T20d","T20e",
+                "T21a","T21b","T21c","T21d","T21e","T21f","T21i","T21g","T22a","T22b","T22c",
+                "T23a","T23b","T23c","T23d","T23e","T25a","T25b","T25c","T25d","T25e","T25f",
+                "T24a","T24b","T24c","T24d","T24e","T24f","T26a","T27a","T27b","T27c","T27d","T27e","T27f",
+                "T28a","T28b","T28c","T28d","T28e","T28f","T29a","T29b","T29c","T29d","T29e",
+                "T30a","T30b","T30c","T30d","T30e","T31a","T31b","T31c","T31d","T31e","T31f",
+                "T32a","T32b","T32c","T32d","T32e","T33a","T33b","T33c","T33d","T33e","T33f",
+                "T34a","T34b","T34c","T34d","T34e","T34f","T35a","T35b","T35c","T35d","T35e","T35f",
+                "T36a","T36b","T36c","T36d","T36e","T36f","T37a","T37b","T37c","T37d","T37e","T37g","T37h","T37f",
+                "T38a","T38b","T38c","T38d","T38e","T39a","T39b","T39c","T39d","T39e","T39f",
+                "T40a","T40b","T40c","T40d","T40e","T40f","T41a","T41b",
+                "T42a","T42b","T42c","T42d","T42e","T42f",
+                "T43a","T43b","T43c","T43d","T43e","T43f",
+                "T44a","T44b","T44c","T44d","T44e","T44f",
+                "T45a","T45b","T45c","T45d","T45e","T45f",
+                "T46a","T46b","T46c","T46d","T46e","T46f",
+                "T47a","T47b","T47c","T47d",
+                "T48a","T48b","T48c","T48d",
+                "T49a","T49b","T49c","T49d","T49e",
+                "T50a","T50b","T50c","T50d",
+                "T51a","T51b","T51c","T51d","T51e"];
+      var missing=[], failed=[], skipped=[], i, j;
+      for(i=0;i<need.length;i++){
+        var r=null;
+        for(j=0;j<_ranResults.length;j++){ if(_ranResults[j].id===need[i]){ r=_ranResults[j]; break; } }
+        if(!r) missing.push(need[i]);
+        else if(r.skip) skipped.push(need[i]);
+        else if(!r.pass) failed.push(need[i]);
+      }
+      var known=regKnown(failed);
+      var realFails=failed.filter(function(x){ return known.indexOf(x)<0; });
+      var T=window.__tenkyu;
+      // ★5つの 環境の「既知の 落ち」の 表が 弾42と 1文字も 同じ（＝失敗IDの 集合を 動かしていない）
+      var regBad=[], ks=Object.keys(T45_DAN36.reg);
+      if(Object.keys(REG_BASE).length!==ks.length) regBad.push("環境の 数");
+      for(i=0;i<ks.length;i++){
+        var a=(REG_BASE[ks[i]]||[]).slice().sort().join(","), b=T45_DAN36.reg[ks[i]].slice().sort().join(",");
+        if(a!==b) regBad.push(ks[i]+":"+a+"≠"+b); }
+      if(REG_CASCADE.join(",")!==T45_DAN36.cascade.join(",")) regBad.push("ぶらさがり");
+      var regOk=(regBad.length===0);
+      // ★黄信号（本体に 世界の id 0件）と 床の 検査ループ が どちらも 通っている
+      var t45d=null, t45e=null;
+      for(i=0;i<_ranResults.length;i++){ if(_ranResults[i].id==="T45d") t45d=_ranResults[i];
+        if(_ranResults[i].id==="T45e") t45e=_ranResults[i]; }
+      var guardOk=!!t45d&&t45d.pass&&!!t45e&&t45e.pass;
+      // ★台帳に items／siege／slots／fort の 世界は まだ 無い（p4 は 弾44）
+      var dcl=0; for(i=0;i<WORLD_PATTERNS.length;i++)
+        if(WORLD_PATTERNS[i].items!==undefined||WORLD_PATTERNS[i].siege!==undefined||
+           WORLD_PATTERNS[i].slots!==undefined||WORLD_PATTERNS[i].fort!==undefined) dcl++;
+      var noneOk=(dcl===0);
+      // ★毎フレームの 道＝frame() は boolean の 門 4つ・波の 道は 台帳を 読まない
+      var gateOk=(String(frame).indexOf("if(wclockOn) wclockStep(dt)")>=0)&&
+                 (String(frame).indexOf("if(itemsOn) itemsStep(dt)")>=0)&&
+                 (String(frame).indexOf("if(itemsOn||slotsOn) d42Step(dt)")>=0)&&
+                 (String(frame).indexOf("if(wclockOn) raidStep(dt)")>=0);
+      var pv=String(raidStep)+String(raidBash)+String(raidBegin)+String(raidEnd)+
+             String(enMulFor)+String(siegeNightSpec)+String(fortHurt)+String(slotLower);
+      var perOk=(pv.indexOf("WORLD_PATTERNS")<0)&&(pv.indexOf("wpPat")<0)&&(pv.indexOf("wpNow")<0);
+      // ★えがく 道は とりでも 波も 知らない（箱は 村の 器に 相乗り＝新しい えがく命令 0）。
+      //   ★"fort" の 文字だけで 見ない＝drawScene には comfort（快適モード）が 居る（1回目の 実測で 学んだ）。
+      var drawOk=(String(drawScene).indexOf("fortBox")<0)&&(String(drawScene).indexOf("fortSet")<0)&&
+                 (String(drawScene).indexOf("raid")<0)&&(String(drawScene).indexOf("createFramebuffer")<0);
+      // ★欄は wpApply の 1か所から 入る だけ・夜の 欄は 時計の 写し（S.night）から
+      var apOk=(String(wpApply).indexOf("d43Apply")>=0)&&(String(d43Apply).indexOf("fortSetFor")>=0)&&
+               (String(fortSetFor).indexOf("P.fort")>=0)&&(String(buildVillages).indexOf("fortSetFor")>=0)&&
+               (String(wclockApply).indexOf("S.night")>=0);
+      // ★読む所の かけ算の 結線＝敵の 状態機械は 無改変・倍率は enMulFor の 1本から（規範 §1-①の 逆り止め）
+      var wireOk=(String(enThink).indexOf("mulI.sightMul")>=0)&&(String(enThink).indexOf("mulI.spdMul")>=0)&&
+                 (String(enThink).indexOf("battleHurt(battleDmg())")>=0)&&
+                 (String(enemyHurt).indexOf("enMulFor(i).hpMul")>=0);
+      // ★いまの 世界（p0）では とりでも 波も 無い
+      var cleanOk=(!T.fort().on)&&(T.fort().n===0)&&(!T.raid().on)&&(T.raid().sel.length===0);
+      // ★保存キー 不変・絵と 音 0バイト・乱数と 壁の時計 なし
+      var keyOk=(CFG_KEY==="tenkyu_cfg_v1")&&(SAVE_KEY==="tenkyu_save_v1");
+      var noAssetOk=(document.querySelectorAll("script[src]").length===1);
+      var src=String(fortSetFor)+String(fortBoxesFor)+String(fortSpotNow)+String(d43Apply)+
+              String(siegeNightSpec)+String(enMulFor)+String(slotLower)+String(fortHurt)+
+              String(raidRowFor)+String(raidBegin)+String(raidEnd)+String(raidBash)+String(raidStep);
+      var noRndOk=(src.indexOf("Math"+".random")<0)&&(src.indexOf("Date"+".now")<0)&&(src.indexOf("new "+"Date")<0);
+      // ★毎フレームJSの 予算＝波の 管理の 速い道（拍が 来るまでは 足し算と 比較だけ）を 実測（+3µs 以内）
+      var t0=performance.now();
+      for(i=0;i<200000;i++) raidStep(0.000001);
+      var perUs=(performance.now()-t0)/200000*1000;
+      var budgetOk=(perUs<3.0);
+      // ★変異注入＝物差しに 歯が ある ことの 実証（かならず 元へ もどす）
+      var st=t51Setup();
+      T.worldApply("t51"); stepFrames(2); T.battleReset();
+      T.setBattlePeace(true);
+      t43Put(0, -30, heightAt(0, -30));
+      T.wclockSet(3, T51_SIEGE.daySec*0.8);
+      T.raidTickNow();
+      var RL=T.raidLedger(), smallRow=null;
+      for(i=0;i<RL.length;i++) if(RL[i].day==="small") smallRow=RL[i];
+      var sel0=T.raid().sel[0];
+      // ①★二重掛けを わざと 入れる（波の 実効倍率に 夜の 倍率を 重ねる）→「実効値＝台帳の 宣言どおり」の 門が 閉じる
+      T.raidRowTune({ hpMul: smallRow.hpMul*T51_SIEGE.night.hpMul });
+      var mut1=(T.enMulNow(sel0).hpMul!==smallRow.hpMul);          // 検出＝宣言と ずれた
+      T.raidRowTune({ hpMul: smallRow.hpMul });                    // もどす → また 一致
+      var back1=(T.enMulNow(sel0).hpMul===smallRow.hpMul);
+      // ②RAID 台帳を 壊す（行を 1つ 足す）→ 行数の 門が 閉じる
+      RAID.push({ day:"small", count:1, hpMul:1, spdMul:1 });
+      var mut2=(T.raidLedger().length===3);
+      RAID.pop();
+      var back2=(T.raidLedger().length===2);
+      // ③FORT 台帳を 壊す（組を 1つ 足す）→ 組の 数の 門が 閉じる
+      FORT_SETS.push({ id:"tame", x:9, z:9, w:4, d:4, h:2, t:0.5, door:1, roof:0.3, eave:0.2 });
+      var mut3=(T.fortSets().length===2);
+      FORT_SETS.pop();
+      var back3=(T.fortSets().length===1)&&(T.fortSets()[0].id==="toride1");
+      t51Restore(st);
+      var mutOk=mut1&&back1&&mut2&&back2&&mut3&&back3;
+      return { pass:(missing.length===0)&&(realFails.length===0)&&regOk&&guardOk&&noneOk&&
+                    gateOk&&perOk&&drawOk&&apOk&&wireOk&&cleanOk&&keyOk&&noAssetOk&&noRndOk&&budgetOk&&mutOk,
+        detail:"登録もれ="+(missing.join(",")||"なし")+" 既知以外の失敗="+(realFails.join(",")||"なし")+
+               " 既知の失敗="+(failed.join(",")||"なし")+" 判定不能="+(skipped.join(",")||"なし")+
+               " ／ ★5つの 環境の 既知の 落ちの 表＝弾42と 完全一致="+regOk+"（合わない="+(regBad.join(" ")||"なし")+"）"+
+               " ★黄信号T45d と 床の検査T45e が 通っている="+guardOk+
+               " 台帳に items/siege/slots/fort の 世界は まだ 無い="+noneOk+"（"+dcl+"件）"+
+               " frame は boolean の 門 4つ="+gateOk+
+               " 波の 道は 台帳を 読まない="+perOk+
+               " えがく 道は とりでも 波も 知らない（新しい えがく命令 0）="+drawOk+
+               " 欄は wpApply の 1か所から 入る="+apOk+
+               " 読む所の かけ算の 結線（状態機械は 無改変）="+wireOk+
+               " いまの 世界では とりでも 波も 無い="+cleanOk+
+               " 保存キー 不変="+keyOk+" 絵・音を 足していない="+noAssetOk+" 乱数・壁の時計 なし="+noRndOk+
+               " ★毎フレームJS＝波の 管理 "+perUs.toFixed(3)+"µs/回（+3µs 以内="+budgetOk+"）"+
+               " ★変異注入＝二重掛けを 入れると 門が 閉じる/台帳を 壊すと 数が 割れる・もどせば 元どおり="+mutOk+
+               " ／ ★弾43で 動かした 既存テストの 判定基準＝0個（T45a〜T50d は 1文字も 書きかえていない）" };
+    }
+//★HW43-END
     window.__tenkyu.runAll = async function(){
       if(!window.__testErrCount){ window.__testErrCount=0;
         var _ce=console.error.bind(console);
@@ -19375,6 +20255,11 @@
       //   T50a〜T50c は 台帳に「ためしの siege＋items＋slots 世界」を 足して 測り、かならず 抜いてから 帰る）
       await run("T50a",t_T50a); await run("T50b",t_T50b);
       await run("T50c",t_T50c); await run("T50d",t_T50d);
+      // 弾43 §R39（とりでと 襲撃の 波・夜の 敵の 強化。★T51f は 前の 網を ぜんぶ 見るので 必ず いちばん最後。
+      //   T50d を ふくむ 前の 網の 判定基準は 1ビットも 動かしていない＝T50d の 後ろに 置く。
+      //   T51a〜T51e は 台帳に「ためしの とりでの 世界」を 足して 測り、かならず 抜いてから 帰る）
+      await run("T51a",t_T51a); await run("T51b",t_T51b); await run("T51c",t_T51c);
+      await run("T51d",t_T51d); await run("T51e",t_T51e); await run("T51f",t_T51f);
 //★HW42-RUN-END
       // 復元＝本当のプレイヤー進行・設定・カメラを一切壊さない
       swooshCount=snapSwoosh.count; swooshLast=snapSwoosh.last;   // persistSave()のnearMiss焼き込み前に実行順を戻す
