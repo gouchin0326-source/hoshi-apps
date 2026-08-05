@@ -586,6 +586,11 @@
     やられても きろくは 1つも へりません（訪問・ずかん・自己ベスト・お題は そのまま）。あんぜんな ところへ もどるだけです。<br>
     画面が ちかちか することは ありません。画面が ゆれることも ありません。</p>
   </div>
+  <!-- 弾37 §R31: ★たたかいの 無い 世界に いる あいだの 案内（やさしい 日本語）。
+       ★人の 自由は 取りあげない＝⚔の 入切じたいは いつもの ところに あり、たたかいの ある 世界へ もどれば
+       その ままの 入切で 遊べる（世界が ⚙の ✔を 書きかえる ことは しない）。 -->
+  <p id="s-battle-off" class="hint" style="display:none">⚔ この 世界には たたかう あそびが ありません。<br>
+  🌀 ワープポイントから きょてんの ある 世界へ もどると、また たたかえます。（⚙の えらびは そのまま のこって います）</p>
   <!-- 弾13 §R11-3: 物差しの入口。ふだんは開発用の ?debug=perf だが、スマホでも ここから ひらける -->
   <div class="foot">
     <button id="s-perf" title="いまの機械で どれくらい なめらかに動くかを はかる">📊 うごきの速さを しらべる</button>
@@ -760,6 +765,10 @@
 <script src="stars.js" onerror="window.__starsMissing=true"></script>
 <script>
 "use strict";
+//★HW37-BODY-BEGIN
+// 弾37 §R31: ここから 下（HW37-BODY-END まで）が **本体**＝テストは 入っていない。
+//   ★黄信号の 検査（T45d）は この しるしの あいだだけを 読んで、世界の id が 台帳の 外に
+//     もれていない ことを 数で 見る。しるしを 消すと T45d が 落ちる（判定不能の ふりを させない）。
 (function(){
   var CFG_KEY = "tenkyu_cfg_v1";
 //★HW33A-BEGIN
@@ -767,7 +776,7 @@
   // ★下の 64文字は「焼いた ときの 自分の すがた」。build.py が 0 を 64個 置いた ところへ 書きこむ。
   //   ＝読む がわは その 64文字を 0 に もどして sha256 を とれば、同じ 数に なる。
   //   これで「いま 動いている この ファイルが、源から 焼いた ままか」を 機械で 見張れる（T41a）。
-  var HW_SELF_SHA="637956ff6463c628e4b50d5d20bc05976370dbf7694d63d5f5c3c3a514638af4";
+  var HW_SELF_SHA="c0c2ddd5a5e807cb6a94bc45f99a38eec179352348a7ae14da6eea1ebcd51c21";
   try{ window.HW_SELF_SHA=HW_SELF_SHA; }catch(e){}   // 人が コンソールで 見られる ように（機能には つかわない）
 //★HW33A-END
   // 干場要望「地上から飛べるように」＝セーブが一度も無い初回起動の時だけ、地面のある世界の低空スタートにする。
@@ -3575,6 +3584,20 @@
   };
   // ★台座の 色は 画を 撮って 決めなおした＝山頂は 雪の 白なので、うすい 青白では 台座が 消えた。
   var WARP_PAD_C=[0.50,0.64,0.82], WARP_POST_C=[0.34,0.72,0.82];
+  // ================= 弾37 §R31: ワープホール契約 段2（動き方と 見え方の 既定を 宣言に 載せる） =================
+  // ★干場の 問い（2026-08-05）＝「別世界では 操作感・視点・3Dの 概念すら 変わりうる。自由度が 高いと
+  //   支障が 出やすいが、一定の ルールを 守れば 比較的 バグなく 進めるのでは＝それが ワープホール」
+  // ★段2で 足すのは **3つの 欄だけ**（新しい しくみは 1つも 作らない＝既に ある ものを 宣言に 載せる）:
+  //     move … 動き方。"grounded"＝歩く（弾12 §R10 の 道）／"fly6dof"＝飛ぶ（うちゅう等と 同じ 道）。
+  //            ★渡し先は ENVS.field.locomotion **1か所だけ**＝frame() の 分岐は 1文字も 変えない。
+  //     view … ひらいた ときの 見え方の 既定（"first"／"third"／"top"＝弾22/26で 既に ある 3つ）。
+  //            ★これは **初期値であって 拘束では ない**＝着いた あと 👁でも ⚙でも いつでも 変えられる。
+  //     fric … 地面の すべりやすさ（GRND.GROUND_GRIP＝大きいほど キビキビ 止まる）。
+  //            ★新しい 物理は 作らない＝弾12から ある 減速の 数を 世界ごとに 持つだけ。
+  //     home … きょてんが 建つ 世界か（弾36では 本体に「WP_ID が はじまりの 世界と 同じか」を
+  //            **世界の 名まえの 直書き**で 2か所 書いていた＝**契約の もれ**。
+  //            台帳の 欄に うつして、本体から 世界の 名まえを 1つ 残らず 追い出した＝T45dが 0を 見張る）
+  //★HW37-LEDGER-BEGIN
   // ★台帳。1行＝1つの 世界。★ここに 1行 足すと 行き先が 1つ ふえる（本体は 1行も 書きたさない）。
   var WORLD_PATTERNS = [
     { id:"p0", name:"はじまりの だいち", note:"山と 海の ある はじまりの 世界（きょてんが ある）",
@@ -3582,7 +3605,9 @@
       land:{ col:[1,1,1], mix:0 },                                        // ★まぜる量 0＝弾35の 地形の 色そのもの
       rough:FIELD_GAIN, sea:SEA_Y,
       tree:{ chance:SHRUB.CHANCE, cols:SHRUB_COL },
-      mobW:[11,4,4,1], hab:MOB_HAB_CYCLE, grav:34 },
+      mobW:[11,4,4,1], hab:MOB_HAB_CYCLE, grav:34,
+      // 弾37 §R31: ★p0は 弾36と 1ビットも 同じ＝歩く・目の高さ・GRND.GROUND_GRIP の 今の 数(12)・きょてんが ある
+      move:"grounded", view:"first", fric:12, home:true, battle:true },
     { id:"p1", name:"あかい さばく", note:"海が ひいて 陸が ひろい・なだらかで あかい 大地",
       clear:[0.86,0.74,0.56], fog:[0.90,0.78,0.60,0.00160],
       dome:{ zen:[0.44,0.50,0.72], hor:[0.90,0.78,0.60], low:[0.68,0.54,0.38],
@@ -3592,7 +3617,9 @@
       land:{ col:[0.76,0.36,0.22], mix:0.74 },
       rough:1.60, sea:-22,
       tree:{ chance:0.18, cols:[[0.50,0.42,0.22],[0.44,0.36,0.20],[0.56,0.48,0.28],[0.38,0.32,0.18]] },
-      mobW:[5,5,9,1], hab:[0,2,1,2,2,0,1,2,3,2,0,1,2,2,0,1,2,2,0,1], grav:30 },
+      mobW:[5,5,9,1], hab:[0,2,1,2,2,0,1,2,3,2,0,1,2,2,0,1,2,2,0,1], grav:30,
+      // 砂は すこし 足を とられる＝止まるまでが だいちより 少し 長い。広さが 見える ように 三人称で ひらく。
+      move:"grounded", view:"third", fric:8.0, home:false, battle:true },
     // ★名まえは 画を 撮って つけなおした＝海を 14まで 上げ うねりを 3.2に すると、
     //   高い ところが 雪の 色に なって **青白い 岩の しま**に 見える（「あおい しま」では 南の島に 読める）。
     { id:"p2", name:"こおりの しま", note:"海が 上がって 島だらけ・青白い 岩の しま・みずべの 子が いちばん おおい",
@@ -3602,21 +3629,39 @@
       land:{ col:[0.26,0.68,0.60], mix:0.38 },
       rough:3.20, sea:14,
       tree:{ chance:0.78, cols:[[0.16,0.44,0.26],[0.22,0.52,0.30],[0.12,0.38,0.24],[0.28,0.56,0.34]] },
-      mobW:[5,2,3,10], hab:[3,0,3,2,3,0,3,1,3,0,3,2,3,0,3,1,3,0,3,2], grav:34 },
-    { id:"p3", name:"よるの こうげん", note:"月あかりの 高原・かるく 跳べる（重力が 小さい）",
+      mobW:[5,2,3,10], hab:[3,0,3,2,3,0,3,1,3,0,3,2,3,0,3,1,3,0,3,2], grav:34,
+      // ★こおり＝よく すべる（だいちの 5分の1の きき＝止まるまでが およそ 5倍 のびる）。
+      //   すべる のを 自分の 目で 見られる ように 三人称で ひらく。
+      move:"grounded", view:"third", fric:2.4, home:false, battle:true },
+    { id:"p3", name:"よるの こうげん", note:"月あかりの 高原・ここでは そらを 自由に とぶ（うちゅうと 同じ 動き方）",
       clear:[0.05,0.06,0.12], fog:[0.11,0.13,0.24,0.00180],
       dome:{ zen:[0.02,0.03,0.10], hor:[0.14,0.16,0.30], low:[0.05,0.06,0.11],
              sun:[0.30,0.45,-0.84], sunc:[0.46,0.52,0.74] },
       land:{ col:[0.22,0.26,0.42], mix:0.55 },
       rough:2.20, sea:-6,
       tree:{ chance:0.45, cols:[[0.14,0.20,0.24],[0.18,0.26,0.30],[0.11,0.17,0.22],[0.22,0.30,0.34]] },
-      mobW:[9,7,3,1], hab:[0,1,0,1,0,2,0,1,0,1,2,0,1,0,1,3,0,1,2,0], grav:26 }
+      mobW:[9,7,3,1], hab:[0,1,0,1,0,2,0,1,0,1,2,0,1,0,1,3,0,1,2,0], grav:26,
+      // ★ここだけ **動き方が ちがう**＝歩く のでは なく 6方向に 自由に とぶ（うちゅう・そら と 同じ 道）。
+      //   ★新しい 移動の しくみは 1つも 作っていない＝ENVS.field.locomotion を 外すだけ（弾12 以前の だいちの 道）。
+      //   とぶので 重力(26)も すべりやすさ(12)も この 世界では 出番が 無い＝数は だいちのまま 置いておく
+      //   （「使っていない ことを 数で 見せる」ため。T45bが 実際に 歩きの 道を 通らない ことを 数える）。
+      //   見おろしながら とべる ように「まうえ」で ひらく。
+      // ★たたかいは 無い＝敵は 村を すみかに して 地面に 立つ 作り＝そらを とぶ 世界とは かみ合わない（司令塔裁定 2026-08-05）。
+      //   ★渡し先は 既にある ENVS.field.battle 1か所だけ＝battleOn() の 判定も 敵の 作りも 1文字も 変えない。
+      move:"fly6dof", view:"top", fric:12, home:false, battle:false }
   ];
-  var WP_ID="p0";                     // いま どの 世界か（★おぼえない＝ひらいた ときは いつも「はじまりの だいち」）
+  //★HW37-LEDGER-END
+  // 弾37 §R31: ★本体は 世界の 名まえ（id）を 1つも 知らない＝台帳の いちばん上が「はじまりの 世界」。
+  var WP_ID=WORLD_PATTERNS[0].id;     // いま どの 世界か（★おぼえない＝ひらいた ときは いつも 台帳の 1行目）
   var WP_LAND=WORLD_PATTERNS[0].land; // いま 地形シェーダーへ わたす 地面の いろ
   var wpBuildMs=0, wpGoes=0, warpBoxes=[];
   function wpOn(){ return cfg.worlds!==false; }              // ⚙「べつの 世界」の 入切（切ると 弾35へ 完全に もどる）
-  function wpHomeHere(){ return !wpOn() || WP_ID==="p0"; }   // ★拠点は「だいち」にだけ 建つ
+  // 弾37 §R31: きょてんの ある 世界＝**台帳の home の 欄で 決まる**（本体に 世界の 名まえを 書かない）。
+  function wpHomeP(){ for(var i=0;i<WORLD_PATTERNS.length;i++) if(WORLD_PATTERNS[i].home) return WORLD_PATTERNS[i];
+                      return WORLD_PATTERNS[0]; }
+  function wpHomeId(){ return wpHomeP().id; }
+  function wpHomeName(){ return wpHomeP().name; }
+  function wpHomeHere(){ return !wpOn() || !!wpNow().home; } // ★拠点は home の 世界にだけ 建つ
   function wpPat(id){ for(var i=0;i<WORLD_PATTERNS.length;i++) if(WORLD_PATTERNS[i].id===id) return WORLD_PATTERNS[i]; return null; }
   function wpNow(){ return wpPat(WP_ID)||WORLD_PATTERNS[0]; }
   // すみかの 重み（4つ）を 割りあての ならびから 数える＝台帳の mobW が 嘘を つかない ための 出どころ
@@ -3676,22 +3721,40 @@
     SHRUB.CHANCE=P.tree.chance; SHRUB_COL=P.tree.cols;
     MOB_HAB_CYCLE=P.hab;
     GRND.GRAVITY=P.grav;
+    // 弾37 §R31: ★動き方と すべりやすさも「数を わたすだけ」＝新しい しくみは 1つも 作らない。
+    //   locomotion は frame() が 読む ただ 1つの 分岐＝ここを 入れかえると 歩く／飛ぶが 入れかわる。
+    ENVS.field.locomotion = (P.move==="grounded") ? "grounded" : null;
+    GRND.GROUND_GRIP = P.fric;
+    // 弾37 §R31: ★たたかいの 在る 世界か。渡し先は battleOn() が 読む ENVS.field.battle **1か所だけ**
+    //   ＝敵・攻撃・いのちの しくみは 1文字も 変えていない（切れば 弾23と 同じ 世界に なる 既存の 道）。
+    //   ★人の えらび（cfg.battle）は さわらない＝世界が ONでも 人は OFFに できるし、
+    //     たたかいの 無い 世界から もどれば その ままの 入切で 遊べる。
+    ENVS.field.battle = !!P.battle;
     if(ENVID==="field"){
       gl.clearColor(ENV.clear[0], ENV.clear[1], ENV.clear[2], 1);
       wpRebuild();
     }
+    // 弾37 §R31: たたかいの 出し入れは **既にある setBattle 1本**へ 渡すだけ（新しい しくみを 作らない）。
+    //   ★cfg.battle は 読むだけ＝人の えらびを 書きかえない。おぼえ直しも しない（persist=false）。
+    setBattle(cfg.battle, false);
     return true;
   }
   // ★人が えらんで はじめて 飛ぶ（近づいた だけでは 飛ばない＝不変条件⑤と 酔い対策）
   function wpGo(id){
     if(!wpOn()) return null;
     var P=wpPat(id); if(!P) return null;
+    var wasId=WP_ID;
     wpApply(P.id);
     var S=warpStandPos();
     camPos=[S.x, S.y, S.z]; camVel=[0,0,0]; boost=0; boostOn=false; speedN=0;
     takenOff=true; onGround=true;
     flyGauge=GRND.GAUGE_MAX; jumpHeldRaw=false; jumpHoldSec=-1; risingNow=false;
     if(typeof updateFlyHud==="function") updateFlyHud();
+    // 弾37 §R31: ★見え方は「その 世界を ひらいた ときの 既定」＝**初期値であって 拘束では ない**。
+    //   着いた あと 👁ボタン・Vキー・⚙で いつでも 変えられる（世界は 人から 取りあげない＝床③④）。
+    //   おぼえない（persist=false）＝人が 自分で えらんだ 見え方の 保存を 世界が 上書きしない。
+    //   同じ 世界を もう一度 えらんだ ときは 何も しない（人の えらんだ 見え方を 戻さない）。
+    if(P.id!==wasId) setViewMode(P.view, false);
     updateView(0, true);
     wpGoes++;
     return P.id;
@@ -5964,7 +6027,16 @@
         world:{ id:WP_ID, name:wpNow().name, patterns:WORLD_PATTERNS.length,
                 ids:WORLD_PATTERNS.map(function(P){ return P.id; }),
                 homeHere:wpHomeHere(), rebuildMs:wpBuildMs, goes:wpGoes,
-                rough:FIELD_GAIN, sea:SEA_Y, grav:GRND.GRAVITY, treeChance:SHRUB.CHANCE, landMix:WP_LAND.mix },
+                rough:FIELD_GAIN, sea:SEA_Y, grav:GRND.GRAVITY, treeChance:SHRUB.CHANCE, landMix:WP_LAND.mix,
+                // 弾37 §R31: ★ぜんぶ その場の 実測（見込みの 数は 1つも 書かない＝§G T38c/T45f）。
+                //   動き方も 見え方も すべりやすさも 絵を 1つも 増やさない＝三角形・えがく回数・毎フレーム転送は ぜんぶ 増分0。
+                move:(ENVS.field.locomotion||"fly6dof"), view:cfg.view, viewDefault:wpNow().view,
+                fric:GRND.GROUND_GRIP, battle:!!ENVS.field.battle,
+                battles:WORLD_PATTERNS.map(function(P){ return !!P.battle; }),
+                moves:WORLD_PATTERNS.map(function(P){ return P.move; }),
+                views:WORLD_PATTERNS.map(function(P){ return P.view; }),
+                frics:WORLD_PATTERNS.map(function(P){ return P.fric; }),
+                trianglesAdded:0, drawCallsAdded:0, gpuBytesPerFrameAdded:0 },
         cost:C({ triangles:Math.round((vlgN+cityN)*vlTriPer), drawCalls:(villageOn?1:0), points:0, lines:0,
                  bytes:vlBytes }),
         costWhy:W({ bytes:"村・街・低木を ぜんぶ ふくむ 1つの 器の バイト（低木の 欄には 二重に 書かない）＝実測。" }),
@@ -6994,7 +7066,9 @@
       land:{ col:P.land.col.slice(), mix:P.land.mix },
       rough:P.rough, sea:P.sea,
       tree:{ chance:P.tree.chance, cols:P.tree.cols.map(function(c){ return c.slice(); }) },
-      mobW:P.mobW.slice(), hab:P.hab.slice(), habCount:wpHabCount(P.hab), grav:P.grav }; }); },
+      mobW:P.mobW.slice(), hab:P.hab.slice(), habCount:wpHabCount(P.hab), grav:P.grav,
+      // 弾37 §R31: 動き方・見え方の 既定・すべりやすさ・きょてんの 有無
+      move:P.move, view:P.view, fric:P.fric, home:!!P.home, battle:!!P.battle }; }); },
     // いま あたっている 数（★台帳の 数と 突きあわせる ための 実測側）
     worldLive:function(){ return { id:WP_ID, on:wpOn(), homeHere:wpHomeHere(),
       clear:ENVS.field.clear.slice(), fog:ENVS.field.fog.slice(),
@@ -7005,6 +7079,11 @@
       tree:{ chance:SHRUB.CHANCE, cols:SHRUB_COL.map(function(c){ return c.slice(); }) },
       hab:Array.prototype.slice.call(MOB_HAB_CYCLE), habCount:wpHabCount(MOB_HAB_CYCLE), grav:GRND.GRAVITY,
       buildMs:wpBuildMs, goes:wpGoes, warpBoxes:warpBoxes.length, homeBoxes:homeBoxes.length,
+      // 弾37 §R31: いま 効いている 動き方・すべりやすさ（★台帳と 突きあわせる ための 実測側）と、
+      //   いまの 見え方（cfg.view＝人が 変えられる もの）／その 世界の 既定（viewDefault）。
+      move:(ENVS.field.locomotion||"fly6dof"), fric:GRND.GROUND_GRIP, grndSteps:grndSteps,
+      view:cfg.view, viewDefault:wpNow().view, home:!!wpNow().home,
+      battle:!!ENVS.field.battle, battleOn:battleOn(), battleCfg:!!cfg.battle,
       tris:{ terrain:trTris, village:vlTris, boxes:vlCount } }; },
     worldGo:function(id){ return wpGo(id); },
     worldApply:function(id){ return wpApply(id); },
@@ -7424,7 +7503,7 @@
     if(_hpHitShown!==on){ _hpHitShown=on; _hpHitEl.classList.toggle("on", on); }
   }
   // ⚙の「⚔ たたかう あそび」の かたまりは「だいち」の ときだけ 出す（ほかの4つでは 概念ごと 見せない＝§G T33b）
-  var _batBoxShown=null;
+  var _batBoxShown=null, _batOffShown=null;   // 弾37 §R31: たたかいの 無い 世界の 案内の 出し入れ（毎フレーム 書かない）
   function applyBattleUi(){
     var box=document.getElementById("s-battle-box"); if(!box) return;
     var want=!!ENV.battle;
@@ -7433,6 +7512,11 @@
     var l=document.getElementById("s-battle-level"); if(l) l.value=(cfg.battleLevel==="easy")?"easy":"normal";
     var p=document.getElementById("s-battle-peace"); if(p) p.checked=!!cfg.battlePeace;
     var e=document.getElementById("s-enemies"); if(e && e.value!==String(enWanted)) e.value=String(enWanted);
+    // 弾37 §R31: ★たたかいの 無い 世界に いる あいだだけ 案内を 出す（既存の 4つの 世界では ENV.terrain が
+    //   無いので いつもどおり 出ない＝弾24〜弾36の 見た目を 1ビットも 変えていない）。
+    var off=document.getElementById("s-battle-off");
+    if(off){ var ds=(!!ENV.terrain && !ENV.battle) ? "" : "none";
+             if(_batOffShown!==ds){ _batOffShown=ds; off.style.display=ds; } }
   }
   // ⚔の 入切（⚙と テストは この 1本しか 通らない）。★切った ときは その場で 敵と いのちを 消す。
   function setBattle(on, persist){
@@ -7829,7 +7913,8 @@
     if(atWarpNow()) return openWarpBoard();
     if(!atHomeNow()){
       devSay(wpHomeHere() ? "ここでは ひらけません。山の てっぺんの きょてん まで 行ってください。"
-                          : "ここには きょてんが ありません。🌀 ワープポイントから「はじまりの だいち」へ もどれます。");
+                          // 弾37 §R31: もどり先の 名まえも 台帳から 引く（本体に 世界の 名まえを 直書きしない）
+                          : "ここには きょてんが ありません。🌀 ワープポイントから「"+wpHomeName()+"」へ もどれます。");
       return false; }
     closeSheets();                       // ⚙などと 二重に かさねない（closeSheets は 中で closeDevBoard を 呼ぶ）
     if(typeof closeToolSheet==="function") closeToolSheet(true);
@@ -7876,8 +7961,9 @@
     h+="</p><ul>";
     for(var j=0;j<WORLD_PATTERNS.length;j++){ var R=WORLD_PATTERNS[j];
       h+="<li>"+esc(R.name+"＝"+R.note)+"</li>"; }
+    // 弾37 §R31: ★もどり先の 名まえも 台帳から 引く（本体に 世界の 名まえを 直書きしない＝T45d の 契約）
     h+="</ul><p class='hint'>"+esc("★どの 世界にも 同じ 🌀ワープポイントが 建って います。だから いつでも "+
-       "「はじまりの だいち」へ もどれます。きょてん（いえ）が あるのは「はじまりの だいち」だけ です。")+"</p></div>";
+       "「"+wpHomeName()+"」へ もどれます。きょてん（いえ）が あるのは「"+wpHomeName()+"」だけ です。")+"</p></div>";
     return h;
   }
   function warpFill(){
@@ -8092,7 +8178,8 @@
     var on=!!v;
     if(cfg.worlds!==on){ cfg.worlds=on; if(persist) saveCfg(); }
     if(sWorlds && sWorlds.checked!==on) sWorlds.checked=on;
-    if(!on && WP_ID!=="p0") wpApply("p0");     // 切る＝いつでも だいちへ もどる
+    // 弾37 §R31: もどり先も 台帳から 引く（本体に 世界の 名まえを 書かない＝T45dが 0を 見張る）
+    if(!on && WP_ID!==wpHomeId()) wpApply(wpHomeId());   // 切る＝いつでも きょてんの ある 世界へ もどる
     else if(ENVID==="field") wpRebuild();      // ワープポイントの 箱を 出し入れする（同じ 器・同じ 1回の 命令）
     if(warpBoardOn) closeWarpBoard(true);
     return cfg.worlds!==false;
@@ -8232,6 +8319,9 @@
 
   // 弾33-B §R27: ここまで 例外なしに 来られた＝起動は 成功。以後の エラーは bootFail の 対象外（別種の 問題だから）。
   window.__hwBooted = true;
+//★HW37-BODY-END
+  // 弾37 §R31: ここまでが 本体（この 下は テストだけ）。T45d は この しるしの あいだの 文字を 読んで
+  //   「世界の id が 台帳の 外に 何回 出てくるか」を 数える＝宣言(0)を こえたら 落ちる。
 
   // ---------- 弾6: 全テスト総回し（§G T1〜T16をwindow.__tenkyu.runAll()から1回で実行） ----------
   // 方針: 実際のsave/cfg/カメラ状態を一時的に使って判定し、終了後に必ず元の値へ復元する（プレイヤーの本当の進行を壊さない）。
@@ -15943,6 +16033,477 @@
                "🌀は べつの 板に した。WORLD_PATTERNS と WARP は どの 既存テストも 見ていない）" };
     }
 //★HW36-END
+//★HW37-BEGIN
+    // ---------- 弾37 §R31: ワープホール契約 段2（動き方と 見え方の 宣言。T45a〜T45f） ----------
+    // ★干場の 問い（2026-08-05）＝「別世界では 操作感・視点・3Dの 概念すら 変わりうる。自由度が 高いと
+    //   支障が 出やすいが、一定の ルールを 守れば 比較的 バグなく 進めるのでは＝それが ワープホール」
+    // ★ここで 見るのは「別の 動き方が たのしいか」では ない。**契約が ほんとうに 持つか**である:
+    //   ①宣言（台帳）で しか 世界は 変わらない ②世界は 人から 見え方を 取りあげない
+    //   ③本体に 世界ごとの if が 増えていない（黄信号） ④床の 検査が 世界の 数だけ ひとりでに 増える。
+    // ✎ 弾36の だいちの 数（★p0 が これと 1ビットも 同じ ことの 対照。実装より 先に 手で 書き写した）
+    var T45_DAN36 = { move:"grounded", view:"first", fric:12, home:true, battle:true, cfgView:"first",
+                      // ★5つの 環境の「既知の 落ち」の 表＝弾36から 1文字も 変えていない ことの 突きあわせ
+                      reg:{ space:[], sky:["T2n","T9","T17"], ground:["T2n","T17"], cave:[], field:["T17"] },
+                      cascade:["T23e","T25f","T24f","T27f","T28f"] };
+    var T45_MOVES=["grounded","fly6dof"];      // 動き方＝既に ある 2つ だけ（新しい 移動の しくみは 作らない）
+    var T45_IF_MAX=0;                          // ★宣言＝本体に 世界の id は 1つも 出てこない（0を こえたら 落ちる）
+    var T45_SLIDE_V0=14;                       // ✎ すべりを 測る ときの「手を はなした しゅんかんの 速さ」（GRND.WALK と 同じ）
+    var T45_SLIDE_EPS=0.02;                    // ✎ ここまで 遅く なったら「止まった」とみなす
+    var T45_DT=16.6667/1000;                   // stepFrames の 1フレーム（秒）＝式との 突きあわせに つかう
+
+    // ---- 本体の 文字（★テストは 入っていない＝しるしの あいだだけ） ----
+    // ★なぜ 文字で 見るのか＝「本体に 世界ごとの if を 書かない」は **書き方の 約束**であって、
+    //   走らせても 出てこない。だから 走らせずに 文字で 数える（fail-loud＝しるしが 無ければ FAIL）。
+    function t45BodySrc(){
+      var sc=document.querySelectorAll("script"), s=null, i;
+      for(i=0;i<sc.length;i++) if(!sc[i].getAttribute("src")){ s=sc[i]; break; }
+      if(!s) return null;
+      var src=s.textContent||"";
+      var b0=src.indexOf(T45_MK.b), b1=src.indexOf(T45_MK.e);
+      if(b0<0||b1<=b0) return null;
+      return src.slice(b0,b1);
+    }
+    // ★しるしの 文字は 組み立てて 持つ＝この テストの 文字じたいが 本体の しるしに 化けない ように
+    var T45_MK={ b:"//"+"★HW37-BODY-BEGIN", e:"//"+"★HW37-BODY-END",
+                 l0:"//"+"★HW37-LEDGER-BEGIN", l1:"//"+"★HW37-LEDGER-END" };
+    function t45StripLedger(body){
+      var a=body.indexOf(T45_MK.l0), b=body.indexOf(T45_MK.l1);
+      if(a<0||b<=a) return null;
+      return body.slice(0,a)+body.slice(b);
+    }
+    // ★数え方（これが 黄信号の 物差し）＝**台帳の 外の 本体**に 世界の id の 文字リテラル（"p0" など）が
+    //   出てくる 回数。コメントも 数える＝きびしい 側に 倒す（本体が 世界の 名まえを 知って いたら それだけで 黄信号）。
+    function t45CountWorldIds(body){
+      var noLed=t45StripLedger(body);
+      if(noLed==null) return null;
+      return (noLed.match(/["']p[0-9]+["']/g)||[]).length;
+    }
+
+    // ---- したごしらえ（世界も 見え方も かならず 元へ もどす） ----
+    function t45Setup(){ var st=t44Setup(); st.view=cfg.view; return st; }
+    function t45Restore(st){
+      clearHeld(); moveVec={f:0,s:0}; camVel=[0,0,0];
+      t44Restore(st);
+      setViewMode(st.view, false);   // ★見え方も テスト前へ（おぼえない＝人の 保存を さわらない）
+      stepFrames(1);
+    }
+    // いまの 見え方を 3つの 口（本体・⚙・👁）から 見る＝「同じ 1状態を さしている」ことの 確かめ
+    function t45ViewNow(){
+      var s=document.getElementById("s-view"), w=document.getElementById("btn-view-word");
+      return { mode:window.__tenkyu.viewMode(), sel:s?s.value:"(無い)", word:w?(w.textContent||""):"(無い)" };
+    }
+    // ★板が とじて いたら「ワープ点の 前に 立ち直して ひらく」＝人が する ことと 同じ。
+    //   ★黙って 直さない＝直した 回数を 数えて detail に 出す（0で ないなら 立ち位置が ずれている しるし）。
+    var t45Reopened=0;
+    function t45EnsureBoard(){
+      if(window.__tenkyu.warpBoard().on) return;
+      t45Reopened++; t44StandAtWarp(); stepFrames(1); window.__tenkyu.warpOpen();
+    }
+    // ★すべりやすさ＝「同じ 速さから 手を はなして 止まるまでに どれだけ すべるか」を **本物の ゲームループ**で 測る。
+    //   山頂の たいらな 台（半径 FLAT の 中は 高さが ぴったり TOP_Y）で 測る＝坂も 段差も 入らない。
+    //   置き場は 建物(|x|≤15.2)からも ワープ点(+26,-18)からも はなれた ところ。
+    function t45Slide(){
+      var M=window.__tenkyu.mountConsts();
+      var x=M.X+30, z=M.Z;
+      t43Put(x, z, M.TOP_Y);
+      clearHeld(); moveVec={f:0,s:0};
+      camVel=[0,0,-T45_SLIDE_V0];
+      var d=0, air=0, side=0, i, px=camPos[0], pz=camPos[2];
+      for(i=0;i<900;i++){
+        stepFrames(1);
+        d += Math.hypot(camPos[0]-px, camPos[2]-pz); px=camPos[0]; pz=camPos[2];
+        if(!onGround) air++;
+        var sd=Math.abs(camPos[0]-x); if(sd>side) side=sd;
+        if(Math.hypot(camVel[0],camVel[2])<T45_SLIDE_EPS) break;
+      }
+      camVel=[0,0,0];
+      return { dist:+d.toFixed(4), frames:i, air:air, side:+side.toFixed(6) };
+    }
+    // 止まるまでの 距離の 見込み＝v0×(1−k)/きき（k＝1フレームぶんの きき）。★式は 弾12の 減速 そのもの。
+    function t45SlideWant(fric){ var k=Math.min(1, T45_DT*fric); return T45_SLIDE_V0*(1-k)/fric; }
+    // 歩く道（stepGrounded）を 60フレームで 何回 通ったか＝動き方の 実測（§G T21f と 同じ 物差し）
+    function t45GrndDelta(n){
+      var a=window.__tenkyu.worldLive().grndSteps;
+      stepFrames(n||60);
+      return window.__tenkyu.worldLive().grndSteps - a;
+    }
+
+    // T45a: 台帳＝①move/view/fric/home が ぜんぶの 世界に あり 値が 決められた ものだけ
+    //   ②きょてんの ある 世界は ちょうど 1つ ③★p0 が 弾36と 完全一致 ④あてた ときの 実測も 台帳どおり
+    function t_T45a(){
+      var T=window.__tenkyu, P=T.worldPatterns(), d=[], i;
+      var st=t45Setup();
+      var bad=[], homes=0;
+      for(i=0;i<P.length;i++){ var Q=P[i], miss=[];
+        if(T45_MOVES.indexOf(Q.move)<0) miss.push("move("+Q.move+")");
+        if(T.viewModes().indexOf(Q.view)<0) miss.push("view("+Q.view+")");
+        if(!(typeof Q.fric==="number" && Q.fric>0)) miss.push("fric("+Q.fric+")");
+        if(typeof Q.home!=="boolean") miss.push("home("+Q.home+")");
+        if(typeof Q.battle!=="boolean") miss.push("battle("+Q.battle+")");   // 弾37: たたかいが 在るか
+        if(Q.home) homes++;
+        if(miss.length) bad.push(Q.id+":"+miss.join("+")); }
+      var shapeOk=(bad.length===0)&&(P.length>=4), homeOk=(homes===1);
+      // ★p0＝弾36と 1ビットも 同じ
+      var p0=P[0], sameBad=[];
+      if(p0.move!==T45_DAN36.move) sameBad.push("move");
+      if(p0.view!==T45_DAN36.view) sameBad.push("view");
+      if(p0.fric!==T45_DAN36.fric) sameBad.push("fric");
+      if(p0.home!==T45_DAN36.home) sameBad.push("home");
+      if(p0.battle!==T45_DAN36.battle) sameBad.push("battle");
+      if(CFG_DEFAULTS.view!==T45_DAN36.cfgView) sameBad.push("⚙の 既定");
+      var p0Ok=(sameBad.length===0);
+      // ④あてた ときの 実測（台帳の 数が ほんとうに 効いている）
+      var rows=[], liveBad=[];
+      for(i=0;i<P.length;i++){
+        T.worldApply(P[i].id); stepFrames(2);
+        var L=T.worldLive();
+        if(L.move!==P[i].move) liveBad.push(P[i].id+":move "+L.move);
+        if(L.fric!==P[i].fric) liveBad.push(P[i].id+":fric "+L.fric);
+        if(L.viewDefault!==P[i].view) liveBad.push(P[i].id+":view "+L.viewDefault);
+        if(L.homeHere!==P[i].home) liveBad.push(P[i].id+":home "+L.homeHere);
+        if(L.battle!==P[i].battle) liveBad.push(P[i].id+":battle "+L.battle);
+        // ★人の えらび（⚙の ✔）は 世界を うつっても 1ビットも 書きかわらない
+        if(L.battleCfg!==!!cfg.battle) liveBad.push(P[i].id+":⚙の えらびが 書きかわった");
+        rows.push(P[i].id+"（"+P[i].move+"・"+P[i].view+"・すべり "+P[i].fric+"・きょてん "+(P[i].home?"あり":"なし")+
+                  "・たたかい "+(P[i].battle?"あり":"なし")+"）");
+      }
+      var liveOk=(liveBad.length===0);
+      // ★p0 へ もどすと 弾36の 数に ぴたりと もどる（陰性対照）
+      T.worldApply(P[0].id); stepFrames(2);
+      var back=T.worldLive();
+      var backOk=(back.move===T45_DAN36.move)&&(back.fric===T45_DAN36.fric)&&(GRND.GROUND_GRIP===T45_DAN36.fric)&&
+                 (ENVS.field.locomotion==="grounded")&&(!!ENVS.field.battle===T45_DAN36.battle);
+      t45Restore(st);
+      d.push("①欄の もれ="+(bad.join(" ")||"なし")+"（"+P.length+"個）="+shapeOk+"／②きょてんの ある 世界="+homes+"つ="+homeOk);
+      d.push("③★p0＝弾36と 完全一致（合わない="+(sameBad.join(",")||"なし")+"）="+p0Ok+
+             "＝歩く・目の高さ・すべり "+p0.fric+"・きょてん あり");
+      d.push("④"+rows.join(" / ")+"＝あてた ときの 実測が ちがう もの="+(liveBad.join(",")||"なし")+"="+liveOk);
+      d.push("★p0へ もどすと 弾36の 数（歩く・すべり "+GRND.GROUND_GRIP+"・たたかい "+(!!ENVS.field.battle)+"）="+backOk);
+      return { pass:shapeOk&&homeOk&&p0Ok&&liveOk&&backOk, detail:d.join(" / ") };
+    }
+
+    // T45b: 動き方＝①宣言どおりの 道を 通る（歩く 世界だけ stepGrounded を 通る）
+    //   ②歩く 世界では ただでは 飛べない（とぶ ちからが 減る）／飛ぶ 世界では ちからを 使わず 上がれる
+    //   ③★すべりやすさが 数のとおり 効く（同じ 速さから 止まるまでの 距離を 実測して くらべる）
+    function t_T45b(){
+      var T=window.__tenkyu, P=T.worldPatterns(), d=[], i;
+      var st=t45Setup();
+      var rows=[], pathBad=[], slide=[], slideBad=[];
+      for(i=0;i<P.length;i++){
+        T.worldApply(P[i].id);
+        var M=window.__tenkyu.mountConsts();
+        t43Put(M.X+30, M.Z, M.TOP_Y);
+        var steps=t45GrndDelta(60);
+        var walkWant=(P[i].move==="grounded");
+        if((steps>0)!==walkWant) pathBad.push(P[i].id+":歩く道 "+steps+"回");
+        rows.push(P[i].id+"("+P[i].move+")＝歩く道 "+steps+"回/60F");
+        // すべりやすさ＝歩く 世界だけ 測る（飛ぶ 世界には 地面の きき じたいが 出番を 持たない）
+        if(walkWant){
+          var s=t45Slide(), want=t45SlideWant(P[i].fric);
+          var err=Math.abs(s.dist-want)/want;
+          if(err>0.02) slideBad.push(P[i].id+":見込み "+want.toFixed(3)+" 実測 "+s.dist);
+          if(s.air>0||s.side>1e-6) slideBad.push(P[i].id+":たいらで 測れていない(air "+s.air+"・よこずれ "+s.side+")");
+          slide.push({ id:P[i].id, fric:P[i].fric, dist:s.dist, want:+want.toFixed(3), f:s.frames });
+        }
+      }
+      var pathOk=(pathBad.length===0), slideOk=(slideBad.length===0);
+      // ★すべる 世界は だいちの 3倍 以上 すべる（数だけでなく 手ざわりとして ちがう）
+      var base=slide[0], slowest=slide[0];
+      for(i=1;i<slide.length;i++) if(slide[i].dist>slowest.dist) slowest=slide[i];
+      var feelOk=(slowest.dist >= base.dist*3);
+      // ②とぶ ちから＝歩く 世界では 減る／飛ぶ 世界では 1つも 減らない
+      var gr=null, fl=null;
+      for(i=0;i<P.length;i++){
+        T.worldApply(P[i].id);
+        var Mm=window.__tenkyu.mountConsts(); t43Put(Mm.X+30, Mm.Z, Mm.TOP_Y);
+        window.__tenkyu.setGauge(GRND_T.GAUGE_MAX);
+        var y0=camPos[1], g0=window.__tenkyu.flyState().gauge;
+        if(P[i].move==="grounded"){ window.__tenkyu.jumpKey(true); stepFrames(150); window.__tenkyu.jumpKey(false); }
+        else { keys[" "]=true; stepFrames(150); delete keys[" "]; }
+        var y1=camPos[1], g1=window.__tenkyu.flyState().gauge;
+        var rec={ id:P[i].id, move:P[i].move, up:+(y1-y0).toFixed(2), g0:+g0.toFixed(1), g1:+g1.toFixed(1) };
+        if(P[i].move==="grounded"){ if(gr==null) gr=rec; } else { if(fl==null) fl=rec; }
+        camVel=[0,0,0]; clearHeld();
+      }
+      var gaugeOk=!!gr && (gr.up>2) && (gr.g1<gr.g0);                     // 歩く＝上がれるが ちからを 使う
+      var flyOk  =!!fl && (fl.up>20) && (Math.abs(fl.g1-fl.g0)<1e-9);     // 飛ぶ＝ちからを 使わず ずっと 上がれる
+      t45Restore(st);
+      d.push("①"+rows.join(" / ")+"＝宣言と ちがう 道="+(pathBad.join(",")||"なし")+"="+pathOk);
+      d.push("②歩く 世界("+(gr?gr.id:"?")+")＝150F 上へ "+(gr?gr.up:"?")+"・とぶ ちから "+(gr?gr.g0+"→"+gr.g1:"?")+"="+gaugeOk+
+             "／飛ぶ 世界("+(fl?fl.id:"?")+")＝上へ "+(fl?fl.up:"?")+"・ちから "+(fl?fl.g0+"→"+fl.g1:"?")+"（1つも 減らない）="+flyOk);
+      d.push("③★すべり（同じ 速さ "+T45_SLIDE_V0+" から 手を はなす）＝"+
+             slide.map(function(s){ return s.id+" きき"+s.fric+"→"+s.dist+"（見込み "+s.want+"・"+s.f+"F）"; }).join(" / ")+
+             "＝式と 合わない もの="+(slideBad.join(",")||"なし")+"="+slideOk+
+             "／いちばん すべる("+slowest.id+" "+slowest.dist+")は だいち("+base.dist+")の "+
+             (slowest.dist/base.dist).toFixed(2)+"倍（3倍 以上）="+feelOk);
+      return { pass:pathOk&&slideOk&&feelOk&&gaugeOk&&flyOk, detail:d.join(" / ") };
+    }
+
+    // T45c: 見え方＝①ひらいた ときの 見え方が 宣言どおり ②⚙と 👁と 本体が 同じ 1状態を さす
+    //   ③★人が 👁で 変えられる（世界が 取りあげない）④世界の 既定は **おぼえない**（人の 保存を 上書きしない）
+    function t_T45c(){
+      var T=window.__tenkyu, P=T.worldPatterns(), d=[], i;
+      var st=t45Setup();
+      t44StandAtWarp(); stepFrames(2); T.warpOpen();
+      var rows=[], viewBad=[], syncBad=[];
+      t45Reopened=0;
+      t45EnsureBoard(); T.warpPick(P.length-1); stepFrames(4);   // まず いちばん 下の 世界へ（つぎの 1周で かならず 世界が 変わる）
+      for(i=0;i<P.length;i++){
+        t45EnsureBoard(); T.warpPick(i); stepFrames(4);
+        var V=t45ViewNow(), W=VIEW_WORDS[P[i].view];
+        if(V.mode!==P[i].view) viewBad.push(P[i].id+":"+V.mode);
+        if(V.sel!==P[i].view || V.word!==W.word) syncBad.push(P[i].id+":⚙"+V.sel+"/👁"+V.word);
+        rows.push(P[i].id+"→"+V.mode+"（⚙"+V.sel+"・👁"+V.word+"）");
+      }
+      var viewOk=(viewBad.length===0), syncOk=(syncBad.length===0);
+      // ③★人が 変える＝世界は 取りあげない（30フレーム 走らせても もどらない・同じ 世界を えらび直しても もどらない）
+      var mine=(P[P.length-1].view==="first")?"third":"first";
+      T.setView(mine, false); stepFrames(30);
+      var keep1=T.viewMode();
+      t45EnsureBoard(); T.warpPick(P.length-1); stepFrames(4);   // いま 居る 世界を もう一度 えらぶ
+      var keep2=T.viewMode();
+      var V2=t45ViewNow();
+      var keepOk=(keep1===mine)&&(keep2===mine)&&(V2.sel===mine)&&(V2.word===VIEW_WORDS[mine].word);
+      // ④世界の 既定は おぼえない＝⚙の 保存の 中みが 世界を うつっても 1文字も 変わらない
+      saveCfg();                                      // ★いまの ⚙を 1回 書いてから くらべる（空と 空を くらべて にせのPASSを 作らない）
+      var raw0=localStorage.getItem(CFG_KEY);
+      t45EnsureBoard(); T.warpPick(0); stepFrames(4);
+      var raw1=localStorage.getItem(CFG_KEY);
+      var afterHome=T.viewMode();
+      var noSaveOk=(raw0!=null)&&(raw0===raw1);
+      T.warpClose();
+      t45Restore(st);
+      d.push("①②"+rows.join(" / ")+"＝宣言と ちがう="+(viewBad.join(",")||"なし")+"="+viewOk+
+             "／⚙と 👁が ずれた="+(syncBad.join(",")||"なし")+"="+syncOk);
+      d.push("③★人が 👁で 「"+mine+"」に した→30フレーム後 "+keep1+"／同じ 世界を えらび直しても "+keep2+
+             "（⚙"+V2.sel+"・👁"+V2.word+"）＝世界は 取りあげない="+keepOk);
+      d.push("④世界を うつっても ⚙の 保存は 1文字も 変わらない="+noSaveOk+"（もどった 先の 見え方＝"+afterHome+"＝台帳の 既定）"+
+             "／★板を ひらき直した 回数="+t45Reopened+"（0が ふつう）");
+      return { pass:viewOk&&syncOk&&keepOk&&noSaveOk, detail:d.join(" / ") };
+    }
+
+    // T45d: ★黄信号＝本体に 世界ごとの 分岐が 増えていない（宣言 T45_IF_MAX 以下）
+    //   ★変異注入＝わざと 1つ 足すと ちゃんと 落ちる（歯が ある ことを 見せる）
+    function t_T45d(){
+      var d=[];
+      var body=t45BodySrc();
+      if(body==null) return { pass:false, detail:"本体の しるし（"+T45_MK.b+"／"+T45_MK.e+"）が 見つからない＝数えられない。"+
+                                                "★これは 判定不能では なく FAIL＝しるしを 消して 検査を 黙らせる ことを ゆるさない。" };
+      var n=t45CountWorldIds(body);
+      if(n==null) return { pass:false, detail:"台帳の しるし（"+T45_MK.l0+"／"+T45_MK.l1+"）が 見つからない＝数えられない（FAIL）" };
+      var gateOk=(n<=T45_IF_MAX);
+      // ★物差しじたいが 生きているか（台帳の 中には 世界の id が ちゃんと 見えている）
+      var a=body.indexOf(T45_MK.l0), b=body.indexOf(T45_MK.l1);
+      var inLedger=(body.slice(a,b).match(/["']p[0-9]+["']/g)||[]).length;
+      var seesOk=(inLedger>=4);
+      // ★変異注入①＝本体に 世界ごとの 分岐を 1つ 足す → 数が 1 ふえ、門が 閉じる
+      var mut1=body.slice(0,a) + '\n if(WP_ID==="p'+'2"){ SEA_Y=0; }\n' + body.slice(a);
+      var n1=t45CountWorldIds(mut1);
+      var bite1=(n1===n+1)&&!(n1<=T45_IF_MAX);
+      // ★変異注入②＝台帳の 中に 足しても 数は ふえない（台帳は 分岐では ない＝にせの 落ちを 作らない）
+      var mut2=body.slice(0,b) + '\n { id:"p'+'9", name:"ため" },\n' + body.slice(b);
+      var n2=t45CountWorldIds(mut2);
+      var bite2=(n2===n);
+      d.push("①本体（"+body.length+"字・台帳を のぞくと "+t45StripLedger(body).length+"字）の 世界idの 直書き＝"+n+
+             "件（宣言 "+T45_IF_MAX+"件 以下）="+gateOk);
+      d.push("②物差しは 生きている＝台帳の 中には "+inLedger+"件 見えている="+seesOk);
+      d.push("③★変異注入＝本体に if(WP_ID==='p2') を 1つ 足す→"+n1+"件（門 閉じる="+!(n1<=T45_IF_MAX)+"）="+bite1+
+             "／台帳に 1行 足す→"+n2+"件（ふえない）="+bite2);
+      d.push("★数え方＝台帳（"+T45_MK.l0+"〜"+T45_MK.l1+"）を 取りのぞいた 本体の 文字に、"+
+             "世界の id の 文字リテラル（\"p0\" など）が 出てくる 回数。コメントも 数える＝きびしい 側に 倒す。"+
+             "★見ているのは script の 中みだけ＝HTML・CSS は 見ていない（世界の 分岐は JS にしか 書けない）。");
+      return { pass:gateOk&&seesOk&&bite1&&bite2, detail:d.join(" / ") };
+    }
+
+    // T45e: ★床の 検査ループ＝**世界の 一覧から 回す**（世界を 1行 足すと 人が 書き足さずに 検査が ふえる）
+    //   どの 世界でも ①はじまりの 世界へ 帰れる ②地面の 上に 立っている ③記録が 同じ ④押しどころ44px・やさしい 日本語
+    //   ⑤★たたかいの 無い 世界では、90フレーム 立っていても 敵の 処理にも 攻撃の 処理にも 1回も 入らない（弾37 追補）
+    function t_T45e(){
+      var T=window.__tenkyu, P=T.worldPatterns(), d=[], i, j;
+      var st=t45Setup();
+      var snap=JSON.stringify(save);
+      // ★もどり先は 台帳の home の 欄から 引く（テストにも 世界の 名まえを 書かない）
+      var homeIdx=0; for(i=0;i<P.length;i++) if(P[i].home){ homeIdx=i; break; }
+      t45Reopened=0; t44StandAtWarp(); stepFrames(2); T.warpOpen();
+      var seen=[], footBad=[], backBad=[], saveBad=[], tapBad=[], sayBad=[], rows=[];
+      for(i=0;i<P.length;i++){
+        t45EnsureBoard();
+        var got=T.warpPick(i); stepFrames(6);
+        seen.push(got);
+        // ②地面の 上（めり込み0・浮き0）
+        var c=T.camPos(), g=heightAt(c[0],c[2]), err=Math.abs((c[1]-FIELD_CLEAR)-g);
+        if(err>0.01) footBad.push(P[i].id+":"+err.toExponential(2));
+        // ①帰れる＝ワープ点が あり、一覧に はじまりの 世界の ボタンが ある
+        var WB=T.warpBoxesNow(), bs=document.querySelectorAll("#warp-panel button.warp-go");
+        var hasHome=false;
+        for(j=0;j<bs.length;j++) if((bs[j].textContent||"").indexOf(P[homeIdx].name)>=0) hasHome=true;
+        if(WB.length===0||!hasHome||bs.length!==P.length) backBad.push(P[i].id+":箱 "+WB.length+"・一覧 "+bs.length+"・帰り道 "+hasHome);
+        // ④押しどころ44px（ぜんぶの ボタン）＋やさしい 日本語（ひらがな・かたかなが 8割 以上）
+        for(j=0;j<bs.length;j++){
+          var sz=t27Size(bs[j]);
+          if(!(sz.ok && sz.w>=T34_TAP_MIN && sz.h>=T34_TAP_MIN)) tapBad.push(P[i].id+":"+sz.w+"x"+sz.h+"("+sz.how+")");
+        }
+        var say=(document.getElementById("warp-say").textContent||"");
+        var nm=P[i].name, kanji=(nm.match(/[一-龥]/g)||[]).length;
+        if(!(nm.length>0 && (nm.length-kanji)/nm.length>=0.8) || nm.indexOf("<")>=0) sayBad.push(P[i].id+":なまえ「"+nm+"」");
+        if(say.indexOf("<")>=0 || say.length===0) sayBad.push(P[i].id+":案内「"+say+"」");
+        // ③記録は 1つも 動いていない
+        if(JSON.stringify(save)!==snap) saveBad.push(P[i].id);
+        rows.push(P[i].id+"("+P[i].move+"・足もと "+err.toExponential(1)+"・ワープ点 "+WB.length+"箱)");
+      }
+      // ★ほんとうに 帰れる（最後の 世界から はじまりの 世界へ 実際に もどる）
+      t45EnsureBoard(); T.warpPick(P.length-1); stepFrames(4);
+      var awayId=T.worldLive().id;
+      t45EnsureBoard(); T.warpPick(homeIdx); stepFrames(6);
+      var back=T.worldLive();
+      var c2=T.camPos(), backErr=Math.abs((c2[1]-FIELD_CLEAR)-heightAt(c2[0],c2[2]));
+      var backOk=(awayId!==P[homeIdx].id)&&(back.id===P[homeIdx].id)&&(back.homeBoxes>0)&&(backErr<=0.01)&&
+                 (back.move===P[homeIdx].move)&&(back.fric===P[homeIdx].fric);
+      T.warpClose();
+      // ⑤★たたかいの 有無＝**同じ 一覧から もう 1周**。⚔を 入れ「おそってこない」に して 90フレーム 立つ。
+      //   ★ここを 入れずに 測ると、⚙が 切れて いる せいで どの 世界も 0 に なり **にせのPASS** に なる
+      //   （＝物差しが 生きている ことを、たたかいの 在る 世界で 0でない ことで 見せる）。
+      var wasPeace=cfg.battlePeace;
+      cfg.battlePeace=true;                       // 敵に 押されて 立ち位置が 変わらない ように（既存の ⚙ そのもの）
+      T.enemyCount(24); T.setBattle(true, false);
+      var batRows=[], batBad=[];
+      for(i=0;i<P.length;i++){
+        T.worldApply(P[i].id);
+        var Mb=T.mountConsts(); t43Put(Mb.X+30, Mb.Z, Mb.TOP_Y);
+        T.battleReset();
+        var b0=T.battleState(), a0=T.atkState();
+        stepFrames(90);
+        var b1=T.battleState(), a1=T.atkState();
+        var dEn=b1.steps-b0.steps, dTk=b1.ticks-b0.ticks, dAt=a1.steps-a0.steps;
+        if(P[i].battle){ if(!(dEn>0&&dAt>0)) batBad.push(P[i].id+":たたかえるはずが 動いていない("+dEn+"/"+dAt+")"); }
+        else { if(dEn!==0||dTk!==0||dAt!==0) batBad.push(P[i].id+":たたかいが 無いのに 動いた("+dEn+"/"+dTk+"/"+dAt+")"); }
+        if(b1.on!==!!P[i].battle) batBad.push(P[i].id+":battleOn "+b1.on);
+        batRows.push(P[i].id+"("+(P[i].battle?"たたかい あり":"たたかい なし")+"＝敵の処理 "+dEn+"・考え "+dTk+"・攻撃の処理 "+dAt+")");
+      }
+      // ★人の 自由＝世界が ONでも 人は OFFに できる（⚙の ✔は 世界に 取りあげられない）
+      T.worldApply(P[homeIdx].id);
+      T.setBattle(false, false);
+      var offByPerson=(T.battleState().on===false)&&(cfg.battle===false);
+      T.setBattle(true, false);
+      // ★たたかいの 無い 世界では ⚙に やさしい 日本語の 案内が 出る（人の ✔は 書きかわらない）
+      var noBatIdx=-1; for(i=0;i<P.length;i++) if(!P[i].battle){ noBatIdx=i; break; }
+      var sayOn=false, sayTxt="", cfgKept=false;
+      if(noBatIdx>=0){
+        T.worldApply(P[noBatIdx].id);
+        var oel=document.getElementById("s-battle-off");
+        sayOn=!!oel && getComputedStyle(oel).display!=="none";
+        sayTxt=oel?(oel.textContent||"").replace(/\s+/g," ").trim():"";
+        cfgKept=(cfg.battle===true)&&(T.battleState().on===false);
+        T.worldApply(P[homeIdx].id);
+      }
+      var kanji5=(sayTxt.match(/[一-龥]/g)||[]).length;
+      var sayEasy=(sayTxt.length>0)&&((sayTxt.length-kanji5)/sayTxt.length>=0.8);
+      var offEl=document.getElementById("s-battle-off");
+      var sayHomeOff=!!offEl && getComputedStyle(offEl).display==="none";   // たたかいの ある 世界では 出ない
+      cfg.battlePeace=wasPeace;
+      var batOk=(batBad.length===0)&&offByPerson&&(noBatIdx>=0)&&sayOn&&sayEasy&&cfgKept&&sayHomeOff;
+      // ★この 検査は 世界の 一覧から 回っている（テスト自身が 見せる）＝世界を 足せば ひとりでに ふえる
+      var srcT=String(t_T45e);
+      var loopOk=(seen.length===P.length)&&(seen.join(",")===P.map(function(x){ return x.id; }).join(","))&&
+                 (srcT.indexOf("worldPatterns")>=0)&&(srcT.indexOf("P.length")>=0)&&
+                 !/["']p[0-9]+["']/.test(srcT);
+      var saveOk=(saveBad.length===0)&&(JSON.stringify(save)===snap);
+      t45Restore(st);
+      d.push("★世界の 一覧から 回した＝"+seen.length+"／"+P.length+"（"+seen.join(",")+"）"+
+             "・テストの 中に 世界の 名まえの 直書き なし="+loopOk+"／板を ひらき直した 回数="+t45Reopened+"（0が ふつう）");
+      d.push("①②"+rows.join(" / ")+"＝地面から ずれた="+(footBad.join(",")||"なし")+
+             "／帰り道の 無い 世界="+(backBad.join(",")||"なし"));
+      d.push("③記録（ずかん・じこベスト・訪問）が 動いた 世界="+(saveBad.join(",")||"なし")+"="+saveOk);
+      d.push("④押しどころ "+T34_TAP_MIN+"px 未満="+(tapBad.join(",")||"なし")+
+             "／やさしい 日本語で ない="+(sayBad.join(",")||"なし"));
+      d.push("★ほんとうに 帰れる＝"+awayId+"→"+back.id+"（きょてん "+back.homeBoxes+"箱・足もと "+backErr.toExponential(1)+
+             "・動き方 "+back.move+"・すべり "+back.fric+"）="+backOk);
+      d.push("⑤★たたかい（90フレーム 立つ）＝"+batRows.join(" / ")+"＝合わない="+(batBad.join(",")||"なし")+
+             "／世界が ONでも 人は OFFに できる="+offByPerson+
+             "／たたかいの 無い 世界の ⚙の 案内＝出る "+sayOn+"・やさしい 日本語 "+sayEasy+
+             "・人の ✔は そのまま "+cfgKept+"・たたかえる 世界では 出ない "+sayHomeOff+"＝"+batOk+
+             "（案内＝「"+sayTxt.slice(0,44)+"…」）");
+      return { pass:loopOk&&(footBad.length===0)&&(backBad.length===0)&&saveOk&&
+                    (tapBad.length===0)&&(sayBad.length===0)&&backOk&&batOk, detail:d.join(" / ") };
+    }
+
+    // T45f: 回帰帳簿＝既存 T1〜T44f が 1件も 余分に 落ちていない（★前の 網を ぜんぶ 見るので 必ず いちばん最後）
+    //   ＋ 5つの 環境の「既知の 落ち」の 表が 弾36と 完全一致（＝失敗IDの 集合が 動いていない）
+    function t_T45f(){
+      var need=["T1","T2","T2f","T2n","T3","T3c","T4","T5","T6","T7","T8","T9","T10","T11","T12","T13","T14",
+                "T15","T16","T17","T18","T19a","T19b","T19c","T19d","T20a","T20b","T20c","T20d","T20e",
+                "T21a","T21b","T21c","T21d","T21e","T21f","T21i","T21g","T22a","T22b","T22c",
+                "T23a","T23b","T23c","T23d","T23e","T25a","T25b","T25c","T25d","T25e","T25f",
+                "T24a","T24b","T24c","T24d","T24e","T24f","T26a","T27a","T27b","T27c","T27d","T27e","T27f",
+                "T28a","T28b","T28c","T28d","T28e","T28f","T29a","T29b","T29c","T29d","T29e",
+                "T30a","T30b","T30c","T30d","T30e","T31a","T31b","T31c","T31d","T31e","T31f",
+                "T32a","T32b","T32c","T32d","T32e","T33a","T33b","T33c","T33d","T33e","T33f",
+                "T34a","T34b","T34c","T34d","T34e","T34f","T35a","T35b","T35c","T35d","T35e","T35f",
+                "T36a","T36b","T36c","T36d","T36e","T36f","T37a","T37b","T37c","T37d","T37e","T37g","T37h","T37f",
+                "T38a","T38b","T38c","T38d","T38e","T39a","T39b","T39c","T39d","T39e","T39f",
+                "T40a","T40b","T40c","T40d","T40e","T40f","T41a","T41b",
+                "T42a","T42b","T42c","T42d","T42e","T42f",
+                "T43a","T43b","T43c","T43d","T43e","T43f",
+                "T44a","T44b","T44c","T44d","T44e","T44f",
+                "T45a","T45b","T45c","T45d","T45e"];
+      var missing=[], failed=[], skipped=[], i, j;
+      for(i=0;i<need.length;i++){
+        var r=null;
+        for(j=0;j<_ranResults.length;j++){ if(_ranResults[j].id===need[i]){ r=_ranResults[j]; break; } }
+        if(!r) missing.push(need[i]);
+        else if(r.skip) skipped.push(need[i]);
+        else if(!r.pass) failed.push(need[i]);
+      }
+      var known=regKnown(failed);
+      var realFails=failed.filter(function(x){ return known.indexOf(x)<0; });
+      var T=window.__tenkyu, P=T.worldPatterns(), L=T.elements(), Lv=T.worldLive();
+      // ★5つの 環境の「既知の 落ち」の 表が 弾36と 1文字も 同じ（＝失敗IDの 集合を 動かしていない）
+      var regBad=[], ks=Object.keys(T45_DAN36.reg);
+      if(Object.keys(REG_BASE).length!==ks.length) regBad.push("環境の 数");
+      for(i=0;i<ks.length;i++){
+        var a=(REG_BASE[ks[i]]||[]).slice().sort().join(","), b=T45_DAN36.reg[ks[i]].slice().sort().join(",");
+        if(a!==b) regBad.push(ks[i]+":"+a+"≠"+b); }
+      if(REG_CASCADE.join(",")!==T45_DAN36.cascade.join(",")) regBad.push("ぶらさがり");
+      var regOk=(regBad.length===0);
+      // ★保存の キーは 1文字も 変えていない
+      var keyOk=(CFG_KEY==="tenkyu_cfg_v1")&&(SAVE_KEY==="tenkyu_save_v1");
+      // ★乱数と 時計を つかっていない（本文の 文字で 見る＝fail-loud）
+      var src=String(wpApply)+String(wpGo)+String(wpHomeHere)+String(wpHomeId)+String(setViewMode)+JSON.stringify(P);
+      var noRndOk=(src.indexOf("Math.random")<0)&&(src.indexOf("Date.now")<0)&&(src.indexOf("new Date")<0);
+      // ★動き方・見え方は **既に ある しくみへ 渡すだけ**（新しい 移動の しくみも カメラの 型も 作っていない）
+      var reuseOk=(String(wpApply).indexOf("ENVS.field.locomotion")>=0)&&
+                  (String(wpApply).indexOf("GRND.GROUND_GRIP")>=0)&&
+                  (String(wpApply).indexOf("ENVS.field.battle")>=0)&&(String(wpApply).indexOf("setBattle")>=0)&&
+                  (String(battleOn).indexOf("ENV.battle && cfg.battle")>=0)&&
+                  (String(wpGo).indexOf("setViewMode")>=0)&&
+                  (T.viewModes().length===3)&&(String(frame).indexOf('ENV.locomotion==="grounded"')>=0);
+      // ★絵を 1つも 増やしていない＝台帳の 増分が ぜんぶ 0
+      var owner=null;
+      for(i=0;i<L.elements.length;i++) if(L.elements[i].id==="village") owner=L.elements[i];
+      var ledOk=!!owner && !!owner.world &&
+                (owner.world.trianglesAdded===0)&&(owner.world.drawCallsAdded===0)&&(owner.world.gpuBytesPerFrameAdded===0)&&
+                (owner.world.move===Lv.move)&&(owner.world.fric===Lv.fric)&&
+                (owner.world.battle===Lv.battle)&&
+                (owner.world.battles.join(",")===P.map(function(x){ return !!x.battle; }).join(","))&&
+                (owner.world.moves.join(",")===P.map(function(x){ return x.move; }).join(","))&&
+                (owner.world.views.join(",")===P.map(function(x){ return x.view; }).join(","))&&
+                (owner.world.frics.join(",")===P.map(function(x){ return x.fric; }).join(","));
+      // ★絵も 音も 1バイトも 足していない／ポストエフェクト 0
+      var noAssetOk=(document.querySelectorAll("script[src]").length===1)&&
+                    (JSON.stringify(P).indexOf("data:")<0)&&(JSON.stringify(P).indexOf("http")<0);
+      var noFboOk=(String(drawScene).indexOf("createFramebuffer")<0);
+      return { pass:(missing.length===0)&&(realFails.length===0)&&regOk&&keyOk&&noRndOk&&reuseOk&&ledOk&&noAssetOk&&noFboOk,
+        detail:"登録もれ="+(missing.join(",")||"なし")+" 既知以外の失敗="+(realFails.join(",")||"なし")+
+               " 既知の失敗="+(failed.join(",")||"なし")+" 判定不能="+(skipped.join(",")||"なし")+
+               " ／ ★5つの 環境の 既知の 落ちの 表＝弾36と 完全一致="+regOk+"（合わない="+(regBad.join(" ")||"なし")+"）"+
+               " 保存キーは 不変="+keyOk+" 乱数・時計 なし="+noRndOk+
+               " 既に ある しくみへ 渡すだけ（新しい 移動の しくみも カメラの 型も 0）="+reuseOk+
+               " 要素台帳が 実測で 更新（三角形・えがく回数・毎フレーム転送の 増分 0）="+ledOk+
+               " 絵・音を 足していない="+noAssetOk+" ポストエフェクト 0="+noFboOk+
+               " ／ ★弾37で 動かした 既存テストの 判定基準＝0個（T44a〜T44f は 1文字も 書きかえていない。"+
+               "台帳に 欄を 足しただけ＝T44a は 欄の もれだけを 見る 作り）" };
+    }
+//★HW37-END
     window.__tenkyu.runAll = async function(){
       if(!window.__testErrCount){ window.__testErrCount=0;
         var _ce=console.error.bind(console);
@@ -16060,6 +16621,12 @@
       await run("T44a",t_T44a); await run("T44b",t_T44b); await run("T44c",t_T44c);
       await run("T44d",t_T44d); await run("T44e",t_T44e); await run("T44f",t_T44f);
 //★HW36-RUN-END
+//★HW37-RUN-BEGIN
+      // 弹37 §R31（ワープホール契約 段2。★T45f は 前の 網を ぜんぶ 見るので 必ず いちばん最後。
+      //   T44f を ふくむ 前の 網の 判定基準は 1ビットも 動かしていない＝T44f の 後ろに 置く）
+      await run("T45a",t_T45a); await run("T45b",t_T45b); await run("T45c",t_T45c);
+      await run("T45d",t_T45d); await run("T45e",t_T45e); await run("T45f",t_T45f);
+//★HW37-RUN-END
       // 復元＝本当のプレイヤー進行・設定・カメラを一切壊さない
       swooshCount=snapSwoosh.count; swooshLast=snapSwoosh.last;   // persistSave()のnearMiss焼き込み前に実行順を戻す
       save=snapSave; persistSave(); syncVisitedBuffer(); completedConstellations=recomputeCompletedConstellations(); buildLines();
