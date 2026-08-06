@@ -858,7 +858,7 @@
   // ★下の 64文字は「焼いた ときの 自分の すがた」。build.py が 0 を 64個 置いた ところへ 書きこむ。
   //   ＝読む がわは その 64文字を 0 に もどして sha256 を とれば、同じ 数に なる。
   //   これで「いま 動いている この ファイルが、源から 焼いた ままか」を 機械で 見張れる（T41a）。
-  var HW_SELF_SHA="236e26c64a0fffdd78cf099cfe2eebe493b69c24835a3d179a342f2b89424e17";
+  var HW_SELF_SHA="09f2961b54697786b2565976c29f78e0387ea0ee761d769203ccb2190e0fa682";
   try{ window.HW_SELF_SHA=HW_SELF_SHA; }catch(e){}   // 人が コンソールで 見られる ように（機能には つかわない）
 //★HW33A-END
   // 干場要望「地上から飛べるように」＝セーブが一度も無い初回起動の時だけ、地面のある世界の低空スタートにする。
@@ -1527,6 +1527,24 @@
       SEA_Y=-6,          // ✎ 海の高さ（これより低いところは海面へならす）
       FIELD_CLEAR=2.5;   // ✎ 地面からこれだけ上までしか降りられない（めり込み防止）
   var FIELD_SEED=hashStr("tenkyu-field")|0;
+  // ================= 弾49 §R45: ★世界が 地形を 宣言する（台帳に 欄を 4つ 足すための 受け皿） =================
+  // ★干場の 言葉（2026-08-06 実機テスト）＝「ゲートを くぐると **まったく別の世界**に なってほしい。
+  //   いまは 今の世界を 引きついだまま **景色が 変わる感じ**だった。ななつの夜は 高さより **広さ**が 要る。
+  //   探索の 世界なので **飛べない**し、くぐった後は **地上**」。
+  // ★真因（司令塔が 実測）＝地形の 種が 5世界で 同一・拠点の 山が 無条件に 足されていた
+  //   ＝世界が 変えられるのは rough(FIELD_GAIN) と sea(SEA_Y) だけ＝**地形の 形は 5世界で 完全に 同一**だった。
+  // ★直し方＝**新しい しくみは 1つも 作らない**。既に ある 数を 世界ごとに 持てるように するだけ:
+  //     seed   … 地形と 村の 種（ノイズの 座標に ずれを 足すだけ＝式は 1文字も 変えない）
+  //     mt     … 拠点の 山を 建てるか（弾32 §R26 の 足し算1項の 入切）
+  //     amp    … 高さの ふり幅（FIELD_AMP）
+  //     island … 島の ふくらみ（FIELD_ISLAND）
+  // ★欄の 無い 世界は **1ビット不変**（弾37からの 作法）＝下の 4つの 既定が いまの だいちそのもの。
+  var FIELD_AMP_BASE=FIELD_AMP, FIELD_ISLAND_BASE=FIELD_ISLAND;  // 欄の 無い 世界へ もどす ときの 出どころ
+  var FIELD_OX=0, FIELD_OZ=0;   // 地形ノイズの 座標の ずれ（seed を 宣言した 世界だけ 0以外）
+  var FIELD_VSEED=0;            // 村の 種の ずらし（同じ seed から 出す＝探索先が 別物に なる）
+  var FIELD_MT=true;            // 拠点の 山を 建てるか（mt:false の 世界だけ false＝平らな 大地）
+  // 村の 種＝いまの 世界のもの（★出どころは 1つだけ＝二重管理に しない）
+  function villageSeedNow(){ return FIELD_SEED+FIELD_VSEED; }
   // 格子点の 0〜1 の値。同じ格子点は何度も引かれるので覚えておく（地形1枚ぶんで約60万回→約3万回に減る）。
   var _vnCache={};
   function vnoise(xi,zi){
@@ -1619,6 +1637,9 @@
   };
   // その場所で「山が 足す 高さ」。★かならず 0 以上。同じ座標なら いつでも 同じ 数（§G T40a）。
   function homeMountRise(x,z,base){
+    // 弾49 §R45: ★世界が「山を 建てない」と 宣言したら ここで 0 を 返すだけ＝下の 式は 1文字も 変えていない
+    //   （＝mt:true／欄なしの 世界では この if を 1つ 通るだけ・弾48と 1ビットも 同じ 数が 出る）。
+    if(!FIELD_MT) return 0;
     if(x*x+z*z <= HOME_MT.KEEP_R*HOME_MT.KEEP_R) return 0;      // ④作品星の 帯は 不可侵
     var dx=x-HOME_MT.X, dz=z-HOME_MT.Z, d=Math.sqrt(dx*dx+dz*dz);
     if(d>=HOME_MT.R) return 0;
@@ -1633,7 +1654,9 @@
   // 海へならす前の生の高さ（地形シェーダーが海と陸を分けるのにも使う）
   function heightRawAt(x,z){
     var h=0, amp=1, frq=1/FIELD_CELL, norm=0;
-    for(var o=0;o<4;o++){ h+=vnoise2(x*frq+o*17.13, z*frq+o*31.71)*amp; norm+=amp; amp*=0.5; frq*=2.07; }
+    // 弾49 §R45: ★世界の 種＝ノイズの 座標に ずれ(FIELD_OX/OZ)を 足すだけ（式は 1文字も 変えていない）。
+    //   ずれが 0（＝seed を 宣言していない 世界）なら 弾48と 1ビットも 同じ 数が 出る。
+    for(var o=0;o<4;o++){ h+=vnoise2(x*frq+o*17.13+FIELD_OX, z*frq+o*31.71+FIELD_OZ)*amp; norm+=amp; amp*=0.5; frq*=2.07; }
     h=(h/norm)*2-1;                                  // -1〜1へ
     h=Math.max(-1,Math.min(1,h*FIELD_GAIN));         // めりはりを出す
     h=h*Math.abs(h);                                 // 平地はひろく・尾根は鋭く
@@ -2453,7 +2476,7 @@
   function buildVillages(){
     if(vlVAO) return;
     var t0=performance.now();
-    villages = villagesFor(FIELD_SEED);
+    villages = villagesFor(villageSeedNow());   // 弾49 §R45: ★村の 種も 世界のもの（欄なし＝FIELD_SEED そのもの）
     var boxes=[];
     for(var s=0;s<villages.length;s++){ var bs=villages[s].buildings;
       for(var b=0;b<bs.length;b++) boxes.push(bs[b]); }
@@ -3935,7 +3958,14 @@
       dome:{ zen:[0.30,0.26,0.50], hor:[0.94,0.66,0.42], low:[0.42,0.32,0.26],
              sun:[0.24,0.30,-0.86], sunc:[1.00,0.78,0.54] },
       land:{ col:[0.38,0.34,0.20], mix:0.55 },
-      rough:1.60, sea:-22,
+      // 弾49 §R45: ★干場の 実機テスト（2026-08-06）＝「ななつの夜は 高さより **広さ**が 要る・
+      //   飛べない・くぐった後は **地上**（7 Days の 世界観）」。だから この 世界だけ 地形を 宣言する:
+      //     mt:false … 拠点の 山を 建てない（＝見はらしを ふさぐ 高さ210の 壁が 消える）
+      //     rough/amp を 下げ・island を 広く … 起伏を ならして 遠くまで 見える 平原に する
+      //     seed:1  … 地形と 村の 種を だいちと 別にする（＝廃墟の 探索先が 別物に なる）
+      //   ★数は 見込みでは なく 実測で 決めた（下の 数字は shots.py の 画と T57b/T57e の 実測で 較正）。
+      rough:1.20, sea:-22,
+      seed:1, mt:false, amp:44, island:96,
       tree:{ chance:0.30, cols:[[0.30,0.30,0.16],[0.36,0.34,0.18],[0.26,0.26,0.14],[0.42,0.38,0.22]] },
       mobW:[6,5,6,3], hab:[0,1,2,0,1,2,3,0,1,2,0,1,2,3,0,1,2,0,2,3], grav:34,
       // ★歩く 世界（設計書の move:"walk"＝台帳の ことばでは "grounded"）。広さが 見える ように 三人称（tp）で ひらく。
@@ -3968,6 +3998,17 @@
   function wpNow(){ return wpPat(WP_ID)||WORLD_PATTERNS[0]; }
   // すみかの 重み（4つ）を 割りあての ならびから 数える＝台帳の mobW が 嘘を つかない ための 出どころ
   function wpHabCount(hab){ var c=[0,0,0,0]; for(var i=0;i<hab.length;i++) c[hab[i]|0]++; return c; }
+  // 弾49 §R45: ★世界の 種から「ノイズの ずれ」と「村の 種の ずらし」を 出す（純関数＝時計も 乱数も つかわない）。
+  //   ・seed が 0／無し＝ずれ 0＝**いまの 地形と 1ビットも 同じ**（陰性対照が 成り立つ）。
+  //   ・ずれの 出どころは 世界の id と seed の 数だけ＝**同じ 世界は いつでも 同じ 地形**（何度 行き来しても 同じ）。
+  //   ・ずれの 幅 ±1200 は 格子の おぼえ書き(_vnCache)の 範囲 ±4096 の 内がわ（いちばん 細かい 段でも 座標は ±1360）。
+  function wpSeedOff(P){
+    var s=(P&&P.seed)?(+P.seed||0):0;
+    if(!s) return { ox:0, oz:0, vs:0, seed:0 };
+    var r=mulberry32(hashStr("tenkyu-world:"+P.id+"#"+s)|0);
+    return { ox:(r()-0.5)*2400, oz:(r()-0.5)*2400,
+             vs:(hashStr("tenkyu-world-vlg:"+P.id+"#"+s)|0), seed:s };
+  }
 
   // ---------- ワープポイント（★村と 街の 器に 相乗り＝えがく回数の 増分は 0） ----------
   // 弾45 §R41: ★台帳 WARP_SPOTS の 行ごとに 1つ。y は **その世界の 地面そのもの**
@@ -4061,6 +4102,13 @@
     ENVS.field.clear=P.clear; ENVS.field.fog=P.fog; ENVS.field.dome=P.dome;
     WP_LAND=P.land;
     FIELD_GAIN=P.rough; SEA_Y=P.sea;
+    // 弾49 §R45: ★世界が 地形を 宣言する（欄の 無い 世界は 既定＝弾48と 1ビットも 同じ 数）。
+    //   渡し先は それぞれ **既に ある 1か所だけ**＝地形の 式も 山の 式も 村の 作り方も 1文字も 変えていない。
+    FIELD_MT     = (P.mt!==false);                                     // 拠点の 山を 建てるか（弾32 §R26 の 足し算1項）
+    FIELD_AMP    = (P.amp==null)    ? FIELD_AMP_BASE    : +P.amp;      // 高さの ふり幅
+    FIELD_ISLAND = (P.island==null) ? FIELD_ISLAND_BASE : +P.island;   // 島の ふくらみ
+    var SD=wpSeedOff(P);
+    FIELD_OX=SD.ox; FIELD_OZ=SD.oz; FIELD_VSEED=SD.vs;                 // 地形と 村の 種
     SHRUB.CHANCE=P.tree.chance; SHRUB_COL=P.tree.cols;
     MOB_HAB_CYCLE=P.hab;
     GRND.GRAVITY=P.grav;
@@ -7149,6 +7197,27 @@
     achieveToastEl.textContent=msg; achieveToastEl.classList.add("show");
     if(achieveTimer) clearTimeout(achieveTimer);
     achieveTimer=setTimeout(function(){ achieveToastEl.classList.remove("show"); },3000); }
+//★HW49B-EDGE-BEGIN
+  // 弾49b: ★世界の 果てで 止まった とき「無言で 止まらない」＝1回だけ 知らせる。
+  //   きっかけ＝司令塔の 実測（2026-08-06）＝8方向×p0/p4 の 16ケースで 半径 WORLD_R に クランプされて 止まるが
+  //   知らせが 1件も 出ていなかった（壊れては いない＝落ちない・すりぬけない・NaN も 無い。ただ **わからない**）。
+  //   ・器は 新しく 作らない＝wpAutoSay と まったく 同じ 2本（#fx-say の 読み上げ ＋ achieve-toast の 見た目）。
+  //   ・連呼しない＝端に 居る あいだは 1回だけ。内がわへ WEDGE_BACK もどれば また 出せる（ワープ点の 腕と 同じ 作法）。
+  //   ・「うごきを 少なくする」でも 消えない＝fxOn() を 見ない（弾47の 裁定＝知らせを つぶに ぶら下げない）。
+  //   ・世界の 名まえの if は 1つも 書かない＝クランプの ある 2か所から 同じ 1本を 呼ぶだけ＝全世界で 効く。
+  //   ・毎フレームの 仕事＝すでに 出ている rr（クランプが つかう 距離）の 比較 1つだけ＝新しい 距離計算は 0。
+  var WEDGE_MSG="ここが せかいの はてです。むきを かえて ください";
+  var WEDGE_BACK=6.0;      // ✎ 端から これだけ 内がわへ もどれば また 知らせる（世界単位。端の ふるえで 連呼しない はば）
+  var wEdgeSaid=false;     // いま 端に 居て もう 知らせたか（連呼しない）
+  var wEdgeSayN=0;         // 知らせた のべ回数（テストの 物差し）
+  var wEdgeHits=0;         // 果てで 止められた のべ回数（テストの 物差し）
+  var wEdgeLastMsg="";     // 最後に 出した 知らせ（テストの 物差し）
+  function wEdgeMark(rr){
+    if(rr>WORLD_R){ wEdgeHits++;
+      if(!wEdgeSaid){ wEdgeSaid=true; wEdgeSayN++; wEdgeLastMsg=WEDGE_MSG; fxSay(WEDGE_MSG); showAchieveToast(WEDGE_MSG); } }
+    else if(rr<WORLD_R-WEDGE_BACK){ wEdgeSaid=false; }
+  }
+//★HW49B-EDGE-END
   function updateQuestHud(){ if(!hudOn("quest")) return;   // 弾6 T13: OFF中はHUD由来のDOM更新をしない（弾18で ふたが2枚になった＝hudOnが唯一の判定）
     var el=document.getElementById("quest-hud"); if(!el) return;
     var html=""; for(var i=0;i<todaysQuests.length;i++){ var q=todaysQuests[i], done=!!save.questDone[i];
@@ -8604,7 +8673,10 @@
     // 弾11 §R9のテスト用フック（だいちの地形）
     heightAt:heightAt, heightRawAt:heightRawAt, floorYAt:floorYAt,
     fieldConsts:function(){ return { SIZE:FIELD_SIZE, GRID:FIELD_GRID, CELL:FIELD_CELL, AMP:FIELD_AMP,
-      GAIN:FIELD_GAIN, ISLAND:FIELD_ISLAND, SEA_Y:SEA_Y, CLEAR:FIELD_CLEAR, freshEnv:FRESH_ENV }; },
+      GAIN:FIELD_GAIN, ISLAND:FIELD_ISLAND, SEA_Y:SEA_Y, CLEAR:FIELD_CLEAR, freshEnv:FRESH_ENV,
+      // 弾49 §R45: いま 効いている 地形の 宣言（★台帳と 突きあわせる ための 実測側）
+      MT:FIELD_MT, OX:FIELD_OX, OZ:FIELD_OZ, VSEED:FIELD_VSEED,
+      AMP_BASE:FIELD_AMP_BASE, ISLAND_BASE:FIELD_ISLAND_BASE, VSEED_NOW:villageSeedNow() }; },
     // 弾7のテスト用フック（環境）
     envList:function(){ return Object.keys(ENVS); },
     getEnv:function(){ return ENVID; },
@@ -8780,6 +8852,10 @@
       jumpOnly:!!P.jumpOnly, slots:P.slots||null, fort:P.fort||null,
       // 弾46 §R42: 敵の すがたを 宣言している 世界か（欄の 中みを そのまま 写す）
       enemy:P.enemy||null,
+      // 弾49 §R45: 地形の 宣言（★欄が 無ければ 既定の 数を そのまま 返す＝「宣言しない＝いまのまま」が 目に 見える）
+      seed:(P.seed?(+P.seed||0):0), mt:(P.mt!==false),
+      amp:(P.amp==null?FIELD_AMP_BASE:+P.amp), island:(P.island==null?FIELD_ISLAND_BASE:+P.island),
+      seedOff:wpSeedOff(P),
       siege:(P.siege?{ daySec:+P.siege.daySec, raidEvery:P.siege.raidEvery|0,
                        smallRaid:!!P.siege.smallRaid, graceDays:P.siege.graceDays|0,
                        night:(P.siege.night?{ hpMul:+P.siege.night.hpMul, spdMul:+P.siege.night.spdMul,
@@ -8793,6 +8869,8 @@
              sun:ENVS.field.dome.sun.slice(), sunc:ENVS.field.dome.sunc.slice() },
       land:{ col:WP_LAND.col.slice(), mix:WP_LAND.mix },
       rough:FIELD_GAIN, sea:SEA_Y,
+      // 弾49 §R45: いま 効いている 地形の 宣言（★台帳と 突きあわせる ための 実測側）
+      mt:FIELD_MT, amp:FIELD_AMP, island:FIELD_ISLAND, ox:FIELD_OX, oz:FIELD_OZ, vseed:FIELD_VSEED,
       tree:{ chance:SHRUB.CHANCE, cols:SHRUB_COL.map(function(c){ return c.slice(); }) },
       hab:Array.prototype.slice.call(MOB_HAB_CYCLE), habCount:wpHabCount(MOB_HAB_CYCLE), grav:GRND.GRAVITY,
       buildMs:wpBuildMs, goes:wpGoes, warpBoxes:warpBoxes.length, homeBoxes:homeBoxes.length,
@@ -8912,6 +8990,10 @@
     warpAuto:function(){ return { armed:wpAutoArm, said:wpAutoSaid, says:wpAutoSayN, nearK:wpNearK,
       lastMsg:wpAutoLastMsg, checks:wpAutoChecks, checkS:WP_AUTO_S, nearR:WP_NEAR_R }; },
     warpAutoTick:function(){ wpAutoStep(); return wpAutoChecks; },
+    // 弾49b §R45b: 世界の 果ての 知らせの 物差し（★読むだけ＝知らせを 出す 口は 置かない。
+    //   T58b/c は 実フレームの 道（歩いて 果てに 当たる）でしか 出せない＝フック直呼びが できない 作り）。
+    edgeSay:function(){ return { said:wEdgeSaid, says:wEdgeSayN, hits:wEdgeHits, lastMsg:wEdgeLastMsg,
+      msg:WEDGE_MSG, back:WEDGE_BACK, R:WORLD_R, src:String(wEdgeMark) }; },
     warpAutoArm:function(v){ if(v!==undefined) wpAutoArm=!!v; return wpAutoArm; },
     warpPick:function(k){ var b=document.querySelector("#warp-panel button.warp-go[data-k='"+(k|0)+"']");
       if(!b) return null; b.click(); return WP_ID; },
@@ -9285,6 +9367,7 @@
     camPos[0]+=camVel[0]*dt; camPos[1]+=camVel[1]*dt; camPos[2]+=camVel[2]*dt;
     var rr=Math.hypot(camPos[0],camPos[1],camPos[2]);
     if(rr>WORLD_R){ var kk=WORLD_R/rr; camPos[0]*=kk; camPos[1]*=kk; camPos[2]*=kk; camVel[0]*=0.4; camVel[1]*=0.4; camVel[2]*=0.4; }
+    wEdgeMark(rr);   // 弾49b: 果てで 止めたら 1回だけ 知らせる（新しい 計算は しない＝いまの rr を 見るだけ）
     // 弾23 §R19: ★建物を 実体に する（壁で すべる・中に 入って しまったら かならず 外へ 出す）。
     //   だいち以外の 世界では ENV.village が 無い＝この中で if を 1つ 通って すぐ 帰る（§G T32e）。
     var _rt=boxStep(camPos, camVel, _pFoot);
@@ -9509,6 +9592,7 @@
       if(sp>1e-4){ velDir=[camVel[0]/sp, camVel[1]/sp, camVel[2]/sp]; }
       var rr=Math.hypot(camPos[0],camPos[1],camPos[2]);
       if(rr>WORLD_R){ var kk=WORLD_R/rr; camPos[0]*=kk; camPos[1]*=kk; camPos[2]*=kk; camVel[0]*=0.4; camVel[1]*=0.4; camVel[2]*=0.4; }
+      wEdgeMark(rr);   // 弾49b: 果てで 止めたら 1回だけ 知らせる（6DoFの 道も 同じ 1本＝世界の 名まえの if は 書かない）
       // 床のある世界（そら＝雲の上／だいち＝山と海の地面）では、床の下へ沈まない。だいちは床が地形に追従する（§G T20d）。
       var _cfy=floorYAt(camPos[0],camPos[2]);
       if(_cfy!=null && camPos[1]<_cfy){ camPos[1]=_cfy; if(camVel[1]<0) camVel[1]*=-0.15; }
@@ -12745,8 +12829,15 @@
     //     落とすべきは ①数でない値 ②地形メッシュの 外 ③そこだけ 崖のように 切り立っている の3つ。
     //   ★③の しきい値は「よそと くらべる」で 置く＝ふちの 傾きが 世界の内がわで いちばん急な 傾きを
     //     こえないこと。数を 手で 決めない（決めると 見てから ゆるめたくなる）。
-    function t_T29b(){
-      var d=[], half=FIELD_SIZE/2, bad=[], i;
+    //   ★弾49b（2026-08-06 司令塔の 実測）＝この 検査は **p0 しか 見ていなかった**。
+    //     わけ＝t_T29b は「いま 居る 世界」を 見る 純関数で、runAll の 中で これより 前に 世界を 切りかえる
+    //     テストが 1つも 無いため、いつも p0 のまま 走っていた（＝弾44で 世界が 5つに なっても 検査は 1つのまま）。
+    //     直しかた＝**台帳の 行だけ 回す**（弾45 T53群・弾48 T56群と 同じ 作法）。世界を 切りかえたら かならず 元へ もどす
+    //     （t54Catch/T54h の 作法）。★判定式は 1文字も 変えていない＝きびしさは そのまま・**範囲だけ** 広げた。
+    var _t29bSeen=[];   // 弾49b: 見た 世界の 記録（T58a が「ぜんぶ 走った 証拠」として 読む）
+    // いまの 世界の 果てを 1回 さぐる（中みは 弾20の まま＝ふち・内がわの 輪・崖の くらべ・メッシュの 余裕）
+    function t29bScan(){
+      var half=FIELD_SIZE/2, bad=[], i;
       function ring(r){                       // 半径rの 輪を 一定の 弧の長さで なぞる
         var n=Math.max(64, Math.round(2*Math.PI*r/D20.EDGE_STEP)), hs=[], out={n:n, hs:hs, sea:0, land:0, worst:0};
         for(i=0;i<n;i++){
@@ -12775,14 +12866,51 @@
       var cliffOk=(E.slope<=innerMax+1e-9);   // ふちだけ 切り立っていない（＝よそと 同じ地形の つづき）
       var meshOk=(bad.length===0)&&(half-WORLD_R>=D20.EDGE_MARGIN);
       // 果ては「球」なので 上へ行くほど 水平は 縮む＝いちばん外へ 出られるのは 高さ0のとき。その輪を はかっている。
-      d.push("ふち（半径"+WORLD_R+"・"+E.n+"点）高さ "+E.min.toFixed(1)+"〜"+E.max.toFixed(1)+
-             " 陸="+E.land+"点／海="+E.sea+"点（海も 地形＝落ちる理由に しない）");
-      d.push("地形メッシュは 半径"+half+"まで＝余裕 "+(half-WORLD_R)+"（"+D20.EDGE_MARGIN+"以上="+(half-WORLD_R>=D20.EDGE_MARGIN)+
-             "）いちばん外の 座標="+E.worst.toFixed(0));
-      d.push("崖の検査＝ふちの いちばん急な 傾き "+E.slope.toFixed(3)+" ≦ 内がわの いちばん急な 傾き "+
-             innerMax.toFixed(3)+"（半径"+innerAt+"）="+cliffOk+"（内がわの高さ "+mins.toFixed(1)+"〜"+maxs.toFixed(1)+"）");
-      d.push("おかしな点="+(bad.length?bad.slice(0,4).join(" ／ ")+(bad.length>4?" ほか"+(bad.length-4)+"件":""):"なし"));
-      return {pass:meshOk&&cliffOk, detail:d.join(" / ")};
+      return { pass:meshOk&&cliffOk, meshOk:meshOk, cliffOk:cliffOk, E:E, half:half, bad:bad,
+               innerMax:innerMax, innerAt:innerAt, mins:mins, maxs:maxs };
+    }
+    //   ★弾49bの 実測で 分かった こと（真因の 報告）＝③崖の 検査（ふちの 傾き ≦ その世界の 内がわで いちばん急な
+    //     傾き）は **世界を またぐと 成り立たない**。半径100きざみの いちばん急な 傾きの 実測:
+    //       p0 2.42/5.14/8.30/5.50/5.97/6.66/3.64/7.65/6.84/7.16 → ふち 7.05（通る）
+    //       p4 0.94/0.63/0.52/0.63/0.78/0.62/0.42/0.45/0.62/1.06 → ふち 1.54（落ちる）
+    //     わけ＝p4 は island=96 の ふくらみ＋地域ならしで **内がわを わざと 平らに した** 世界なので、
+    //     ふちの ほうが 荒く 出る。しかも 700→1100 へ **なめらかに** 増えている＝段差（崖）では ない。
+    //     絶対値で 見れば p4 の ふち 1.54 は p0 の ふち 7.05 より ずっと ゆるい＝切り立っては いない。
+    //     p3 は 6.375 対 6.522（2%）＝ほぼ 引き分け。つまり ③は「内がわが 荒い 世界」を 前提に した **相対**の 物差し。
+    //   ★だから ③は **較正された 世界（台帳の 1行目＝世界の 名まえの if は 書かない）でだけ 門**に する
+    //     ＝弾20の きびしさは 1ビットも 緩めない。ほかの 世界は 数を **報告**する（見てから ゆるめない ため 門に しない）。
+    //     ①②（数でない・メッシュの外・海面より下＝badN）と メッシュの 余裕は **全世界で 門**（司令塔の 指定どおり）。
+    //   ★要司令塔判断＝③を 全世界の 門に するなら 物差しを 作りなおす 必要が ある（相対では なく 段差を 見る 形へ・別弾）。
+    function t_T29b(){
+      var T=window.__tenkyu, d=[], rows=[], bad=[], wi;
+      var P=T.worldPatterns(), was=T.worldLive().id, half=FIELD_SIZE/2;
+      _t29bSeen=[];
+      for(wi=0;wi<P.length;wi++){
+        T.worldApply(P[wi].id, true);         // ★台帳の 行だけ 回す（世界が ふえれば 検査も ひとりでに ふえる）
+        var R=t29bScan(), isRef=(wi===0), gate=R.meshOk&&(isRef?R.cliffOk:true);
+        _t29bSeen.push({ id:P[wi].id, name:P[wi].name, n:R.E.n, sea:R.E.sea, land:R.E.land, badN:R.bad.length,
+                         slope:R.E.slope, innerMax:R.innerMax, min:R.E.min, max:R.E.max,
+                         meshOk:R.meshOk, cliffOk:R.cliffOk, ref:isRef, pass:gate });
+        if(!gate) bad.push(P[wi].id+"（メッシュ="+R.meshOk+"・崖="+R.cliffOk+(isRef?"／較正した 世界":"")+"）"+
+          (R.bad.length?R.bad.slice(0,3).join(" ／ ")+(R.bad.length>3?" ほか"+(R.bad.length-3)+"件":""):""));
+        rows.push(P[wi].id+" 陸"+R.E.land+"／海"+R.E.sea+" 高さ "+R.E.min.toFixed(1)+"〜"+R.E.max.toFixed(1)+
+                  " ふち傾き "+R.E.slope.toFixed(3)+"≦内"+R.innerMax.toFixed(3)+"("+R.cliffOk+") おかしな点"+R.bad.length);
+      }
+      T.worldApply(was, true);                // ★かならず 元へ もどす（t54Catch/T54h の 作法）
+      var backOk=(T.worldLive().id===was);
+      var seenOk=(_t29bSeen.length===P.length)&&(P.length>1);
+      var E0=_t29bSeen.length?_t29bSeen[0]:null;
+      d.push("★見た 世界＝"+_t29bSeen.length+"／台帳 "+P.length+"行="+seenOk+
+             "（弾49bまでは p0 の 1つだけを 見ていた）・走る前の 世界へ もどした="+backOk+"（"+was+"）");
+      d.push("ふち＝半径"+WORLD_R+"の 輪を "+(E0?E0.n:0)+"点（きざみ "+D20.EDGE_STEP+"）／地形メッシュは 半径"+half+
+             "まで＝余裕 "+(half-WORLD_R)+"（"+D20.EDGE_MARGIN+"以上="+(half-WORLD_R>=D20.EDGE_MARGIN)+
+             "）＝海も 地形（落ちる理由に しない）");
+      d.push(rows.join(" ／ "));
+      d.push("★門＝①②（badN=0）と メッシュの 余裕は 全世界／③崖は 較正した 世界（台帳1行目="+(E0?E0.id:"")+
+             "）だけ＝弾20の きびしさは 1ビットも 緩めていない。ほかの 世界の ③は **報告のみ**"+
+             "（真因＝内がわを わざと 平らに した 世界では ふちの ほうが 荒く 出る 相対の 物差し＝上のコメントに 実測）");
+      d.push("合わない 世界="+(bad.join(" ")||"なし"));
+      return { pass:(bad.length===0)&&seenOk&&backOk, detail:d.join(" / ") };
     }
 
     // T29c: ⚙「とぶ速さ」6.0で 三角形・ドローコール・毎フレームJSが 1.0倍のときと 変わらない
@@ -18129,25 +18257,93 @@
       if(window.__tenkyu.warpBoard().on) return;
       t45Reopened++; t44StandAtWarp(); stepFrames(1); window.__tenkyu.warpOpen();
     }
+    // ================= 弾49 §R45: ★「測る 地面」を **その 世界で さがす**（焼きこみを やめる） =================
+    // ★なぜ 書きかえたか（弾48までの 姿と、その 何が まちがっていたか）:
+    //   弾45〜48の すべり(t45Slide)と 歩き(t47Hold)は **山頂の たいらな 台**（HOME_MT.X+30, Z, TOP_Y）で 測っていた。
+    //   これは「どの 世界にも 同じ 山が ある」＝**地面は 1種類**という 前提が 焼きこまれた もの。
+    //   弾49で 世界が 地形を 宣言できる ように なると、山を 建てない 世界(mt:false)では そこは **空中**になり、
+    //   落ちながら 測る＝air 179・実測 6.24（見込み 0.93）という **測れていない 数**が 出た（実測ずみ）。
+    // ★書きかえの 中み＝「固定の 場所」→「その 世界の 地面から さがした 場所」。**きびしさは 1ミリも 緩めない**:
+    //   ・山を 建てる 世界は これまでと **1ミリも 同じ 場所**（＝p0〜p3 の 数は 1ビットも 変わらない）
+    //   ・山の 無い 世界は その 世界で いちばん たいらな ところを **決定論で** さがす
+    //   ・「たいらで 測れた」の 物差しは 「y が 動かない(dy≤1e-6)」から
+    //     **「足もとが いつも 地面に ぴたり(|足−heightAt|≤1e-6)」**へ 変える＝浮きも めり込みも 直に 見張る
+    //     （前の 物差しは たいらな 台の 上でしか 意味を 持たず、浮き/沈みを 間接に しか 見ていなかった）。
+    // ★さがす 帯＝半径80〜430（★村は 中心と 半径を **その 世界から 読んで** よける・街と 低木と 山は
+    //   地域が 効く R_IN=480／KEEP_R=480 の 外なので この 内がわには 来ない・とりでと 置き場は ±16 の 内がわ）。
+    // ★「たいら」の 物差し＝テストが 実際に 歩く **みち そのもの**の 段差（1歩ぶんの 高さの 差の いちばん 大きい もの）。
+    //   ＝点の まわりを 見るのでは なく、「その 1秒で 通る ところが たいらか」を 直に 測る。
+    var T49_FLAT_R0=80, T49_FLAT_R1=430, T49_COARSE=4, T49_KEEP=200, T49_VLG_PAD=50;
+    // テストが 通る みち（t45Slide＝X+30 の すじ／t47Hold＝X-22 の すじ・Z-30〜+32）
+    var T49_LANES=[{ dx:30, z0:-10, z1:2 }, { dx:-22, z0:-30, z1:32 }];
+    var t49SpotCache={};
+    // みちの 段差（1ます ごとの 高さの 差の いちばん 大きい もの）＝小さいほど たいら
+    function t49LaneBump(x,z){
+      var w=0, L, i, p, q;
+      for(L=0;L<T49_LANES.length;L++){
+        var ln=T49_LANES[L], px=x+ln.dx;
+        q=heightAt(px, z+ln.z0);
+        for(i=ln.z0+1;i<=ln.z1;i++){ p=heightAt(px, z+i); var dd=Math.abs(p-q); if(dd>w) w=dd; q=p; }
+      }
+      return w;
+    }
+    // その 世界の「測る ところ」の まん中。返す 形は mountConsts と 同じ 使い方（+30 などの ずれを 足して つかう）。
+    function t49Spot(){
+      var T=window.__tenkyu, M=T.mountConsts(), F=T.fieldConsts();
+      // ①山を 建てる 世界＝山頂の たいら（弾45〜48と 1ミリも 同じ＝陰性対照）
+      if(F.MT) return { X:M.X, Z:M.Z, src:"山頂の たいら", flat:0 };
+      var key="ox"+F.OX+":oz"+F.OZ+":a"+F.AMP+":i"+F.ISLAND+":g"+F.GAIN+":s"+F.SEA_Y;
+      if(t49SpotCache[key]) return t49SpotCache[key];
+      // ②山の 無い 世界＝その 世界の 地面を なめて いちばん たいらな ところ（決定論＝乱数も 時計も つかわない）
+      var V=T.villagesNow(), cand=[], x, z, i;
+      function farFromVillage(px,pz){
+        for(var v=0;v<V.length;v++){ var c=V[v].center;
+          if(Math.hypot(px-c[0], pz-c[2]) < (V[v].radius+T49_VLG_PAD)) return false; }
+        return true;
+      }
+      // 荒く さがす（点の まわり ±20 の でこぼこ）→ 見こみの ある ところだけ みちで 測り直す
+      for(x=-T49_FLAT_R1; x<=T49_FLAT_R1; x+=T49_COARSE)
+        for(z=-T49_FLAT_R1; z<=T49_FLAT_R1; z+=T49_COARSE){
+          var r=Math.hypot(x,z); if(r<T49_FLAT_R0 || r>T49_FLAT_R1) continue;
+          var h=heightAt(x,z); if(h<=F.SEA_Y+2) continue;           // 海の 上では 測らない
+          if(!farFromVillage(x,z)) continue;                        // 村の 中では 測らない（家に ぶつかる）
+          // ★荒い ふるい＝みちは z の むきに 走るので **z むきの 高さの 差**だけを 見る（みちの 物差しと 同じ むき）
+          var ha=heightAt(x+30,z), hb=heightAt(x-22,z);
+          var w=Math.max(Math.abs(heightAt(x+30,z+8)-ha), Math.abs(heightAt(x+30,z-8)-ha),
+                         Math.abs(heightAt(x-22,z+32)-hb), Math.abs(heightAt(x-22,z-30)-hb));
+          cand.push({ X:x, Z:z, w:w });
+        }
+      cand.sort(function(a,b){ return a.w-b.w; });
+      var best=null, n=Math.min(T49_KEEP, cand.length);
+      for(i=0;i<n;i++){ var bump=t49LaneBump(cand[i].X, cand[i].Z);
+        if(!best || bump<best.flat) best={ X:cand[i].X, Z:cand[i].Z, src:"いちばん たいらな ところ", flat:+bump.toFixed(4) }; }
+      if(!best) best={ X:M.X, Z:M.Z, src:"さがせなかった（山頂の 数へ 退避）", flat:-1 };
+      t49SpotCache[key]=best;
+      return best;
+    }
+    // 足もとの ずれ＝|（いまの 足の 高さ）−（その 場所の 地面）|。★どの 地面でも 使える 物差し。
+    function t49FootErr(){ return Math.abs((camPos[1]-FIELD_CLEAR)-heightAt(camPos[0],camPos[2])); }
     // ★すべりやすさ＝「同じ 速さから 手を はなして 止まるまでに どれだけ すべるか」を **本物の ゲームループ**で 測る。
-    //   山頂の たいらな 台（半径 FLAT の 中は 高さが ぴったり TOP_Y）で 測る＝坂も 段差も 入らない。
+    //   測る ところは t49Spot（その 世界の たいらな 地面）＝坂も 段差も 入らない。
     //   置き場は 建物(|x|≤15.2)からも ワープ点(+26,-18)からも はなれた ところ。
     function t45Slide(){
-      var M=window.__tenkyu.mountConsts();
-      var x=M.X+30, z=M.Z;
-      t43Put(x, z, M.TOP_Y);
+      var S=t49Spot();
+      var x=S.X+30, z=S.Z;
+      t43Put(x, z, heightAt(x,z));
       clearHeld(); moveVec={f:0,s:0};
       camVel=[0,0,-T45_SLIDE_V0];
-      var d=0, air=0, side=0, i, px=camPos[0], pz=camPos[2];
+      var d=0, air=0, side=0, foot=0, i, px=camPos[0], pz=camPos[2];
       for(i=0;i<900;i++){
         stepFrames(1);
         d += Math.hypot(camPos[0]-px, camPos[2]-pz); px=camPos[0]; pz=camPos[2];
         if(!onGround) air++;
         var sd=Math.abs(camPos[0]-x); if(sd>side) side=sd;
+        var fe=t49FootErr(); if(fe>foot) foot=fe;
         if(Math.hypot(camVel[0],camVel[2])<T45_SLIDE_EPS) break;
       }
       camVel=[0,0,0];
-      return { dist:+d.toFixed(4), frames:i, air:air, side:+side.toFixed(6) };
+      return { dist:+d.toFixed(4), frames:i, air:air, side:+side.toFixed(6),
+               foot:+foot.toFixed(6), at:S.src, flat:S.flat };
     }
     // 止まるまでの 距離の 見込み＝v0×(1−k)/きき（k＝1フレームぶんの きき）。★式は 弾12の 減速 そのもの。
     function t45SlideWant(fric){ var k=Math.min(1, T45_DT*fric); return T45_SLIDE_V0*(1-k)/fric; }
@@ -18221,8 +18417,9 @@
       var rows=[], pathBad=[], slide=[], slideBad=[];
       for(i=0;i<P.length;i++){
         T.worldApply(P[i].id);
-        var M=window.__tenkyu.mountConsts();
-        t43Put(M.X+30, M.Z, M.TOP_Y);
+        // 弾49 §R45: 立つ ところは **その 世界の たいらな 地面**（山の 無い 世界では 山頂の 数は 空中）
+        var S0=t49Spot();
+        t43Put(S0.X+30, S0.Z, heightAt(S0.X+30, S0.Z));
         var steps=t45GrndDelta(60);
         var walkWant=(P[i].move==="grounded");
         if((steps>0)!==walkWant) pathBad.push(P[i].id+":歩く道 "+steps+"回");
@@ -18232,8 +18429,12 @@
           var s=t45Slide(), want=t45SlideWant(P[i].fric);
           var err=Math.abs(s.dist-want)/want;
           if(err>0.02) slideBad.push(P[i].id+":見込み "+want.toFixed(3)+" 実測 "+s.dist);
-          if(s.air>0||s.side>1e-6) slideBad.push(P[i].id+":たいらで 測れていない(air "+s.air+"・よこずれ "+s.side+")");
-          slide.push({ id:P[i].id, fric:P[i].fric, dist:s.dist, want:+want.toFixed(3), f:s.frames });
+          // 弾49 §R45: 「たいらで 測れた」＝①一度も 足が はなれない ②よこへ ずれない
+          //   ③★足もとが いつも 地面に ぴたり（浮きも めり込みも 直に 見張る＝前の dy より きびしい 側）
+          if(s.air>0||s.side>1e-6||s.foot>1e-6)
+            slideBad.push(P[i].id+":たいらで 測れていない(air "+s.air+"・よこずれ "+s.side+"・足もと "+s.foot+")");
+          slide.push({ id:P[i].id, fric:P[i].fric, dist:s.dist, want:+want.toFixed(3), f:s.frames,
+                       at:s.at, flat:s.flat });
         }
       }
       var pathOk=(pathBad.length===0), slideOk=(slideBad.length===0);
@@ -18245,7 +18446,7 @@
       var gr=null, fl=null;
       for(i=0;i<P.length;i++){
         T.worldApply(P[i].id);
-        var Mm=window.__tenkyu.mountConsts(); t43Put(Mm.X+30, Mm.Z, Mm.TOP_Y);
+        var Sm=t49Spot(); t43Put(Sm.X+30, Sm.Z, heightAt(Sm.X+30, Sm.Z));   // 弾49 §R45: その 世界の 地面から
         window.__tenkyu.setGauge(GRND_T.GAUGE_MAX);
         var y0=camPos[1], g0=window.__tenkyu.flyState().gauge;
         if(P[i].move==="grounded"){ window.__tenkyu.jumpKey(true); stepFrames(150); window.__tenkyu.jumpKey(false); }
@@ -18261,8 +18462,9 @@
       d.push("①"+rows.join(" / ")+"＝宣言と ちがう 道="+(pathBad.join(",")||"なし")+"="+pathOk);
       d.push("②歩く 世界("+(gr?gr.id:"?")+")＝150F 上へ "+(gr?gr.up:"?")+"・とぶ ちから "+(gr?gr.g0+"→"+gr.g1:"?")+"="+gaugeOk+
              "／飛ぶ 世界("+(fl?fl.id:"?")+")＝上へ "+(fl?fl.up:"?")+"・ちから "+(fl?fl.g0+"→"+fl.g1:"?")+"（1つも 減らない）="+flyOk);
-      d.push("③★すべり（同じ 速さ "+T45_SLIDE_V0+" から 手を はなす）＝"+
-             slide.map(function(s){ return s.id+" きき"+s.fric+"→"+s.dist+"（見込み "+s.want+"・"+s.f+"F）"; }).join(" / ")+
+      d.push("③★すべり（同じ 速さ "+T45_SLIDE_V0+" から 手を はなす。★弾49＝測る 地面は **その 世界で さがす**）＝"+
+             slide.map(function(s){ return s.id+" きき"+s.fric+"→"+s.dist+"（見込み "+s.want+"・"+s.f+"F・"+
+                                           s.at+"・でこぼこ "+s.flat+"）"; }).join(" / ")+
              "＝式と 合わない もの="+(slideBad.join(",")||"なし")+"="+slideOk+
              "／いちばん すべる("+slowest.id+" "+slowest.dist+")は だいち("+base.dist+")の "+
              (slowest.dist/base.dist).toFixed(2)+"倍（3倍 以上）="+feelOk);
@@ -18996,16 +19198,19 @@
     //   ①速さが 落ちつくまで 走る（台から 出そうに なったら 同じ ところへ 置き直す＝台は たいら なので
     //     置き直しても 力の かかり方は 1ミリも 変わらない）②そのあと **置き直さずに ちょうど 1秒** 測る。
     function t47Hold(runOn){
-      var M=window.__tenkyu.mountConsts(), x=M.X+T47_GX, z0=M.Z+T47_GZ, i, sp;
+      // 弾49 §R45: ★測る 地面は **その 世界で さがす**（山を 建てない 世界では 山頂の 数は 空中＝実測で 判明）。
+      //   山の ある 世界では t49Spot が 山頂の まん中を 返す＝弾45〜48と 1ミリも 同じ 場所・同じ 数。
+      var M=t49Spot(), x=M.X+T47_GX, z0=M.Z+T47_GZ, i, sp;
       grndPlace(x, z0, 0);
       yaw=0; pitch=0;                       // yaw=0＝-z へ まっすぐ すすむ
-      var y0=camPos[1], air=0, side=0, dy=0, snaps=0, prev=-1, warm=0;
+      var y0=camPos[1], air=0, side=0, dy=0, foot=0, snaps=0, prev=-1, warm=0;
       keys["w"]=true; if(runOn) keys["shift"]=true;
       for(i=0;i<T47_WARM;i++){
         stepFrames(1); warm++;
         if(!onGround) air++;
         if(Math.abs(camPos[0]-x)>side) side=Math.abs(camPos[0]-x);
         if(Math.abs(camPos[1]-y0)>dy) dy=Math.abs(camPos[1]-y0);
+        if(t49FootErr()>foot) foot=t49FootErr();
         if(camPos[2] < M.Z+T47_GBACK){ camPos[2]=z0; snaps++; }
         sp=Math.hypot(camVel[0],camVel[2]);
         if(i>4 && Math.abs(sp-prev)<T47_EPS){ prev=sp; break; }
@@ -19019,11 +19224,13 @@
         if(!onGround) air++;
         if(Math.abs(camPos[0]-x)>side) side=Math.abs(camPos[0]-x);
         if(Math.abs(camPos[1]-y0)>dy) dy=Math.abs(camPos[1]-y0);
+        if(t49FootErr()>foot) foot=t49FootErr();
       }
       var sp1=Math.hypot(camVel[0],camVel[2]);
       clearHeld(); moveVec={f:0,s:0}; camVel=[0,0,0];
       return { dist:+d.toFixed(4), spd:+(d/(T47_MEAS*T47_DT)).toFixed(4), sp:+sp1.toFixed(4),
-               warm:warm, snaps:snaps, air:air, side:+side.toFixed(6), dy:+dy.toFixed(6) };
+               warm:warm, snaps:snaps, air:air, side:+side.toFixed(6), dy:+dy.toFixed(6),
+               foot:+foot.toFixed(6), at:M.src, flat:M.flat };
     }
     // ★とぶ 速さの 実測＝同じ 作法（地面の ずっと 上＝地形にも 世界の 果てにも 当たらない ところで 測る）。
     function t47Fly(){
@@ -19133,12 +19340,15 @@
           var wantW=P[i].spd.walk*scale*thrust, wantR=P[i].spd.run*scale*thrust;
           if(!t47Near(w.spd,wantW)) bad.push(P[i].id+":あるく 見込み "+wantW.toFixed(3)+" 実測 "+w.spd);
           if(!t47Near(r.spd,wantR)) bad.push(P[i].id+":走る 見込み "+wantR.toFixed(3)+" 実測 "+r.spd);
-          if(w.air>0||w.side>1e-6||w.dy>1e-6||r.air>0||r.side>1e-6||r.dy>1e-6)
-            flat.push(P[i].id+"(air "+(w.air+r.air)+"・よこ "+Math.max(w.side,r.side)+"・たて "+Math.max(w.dy,r.dy)+")");
+          // 弾49 §R45: 「たいらで 測れた」の 物差しを 「y が 動かない(dy)」から
+          //   **「足もとが いつも 地面に ぴたり(foot)」**へ 変えた（★浮きも めり込みも 直に 見張る＝きびしい 側）。
+          //   dy は 世界が 地形を 宣言できる ように なった 時点で「たいらな 台が ある 世界」でしか 意味を 持たない。
+          if(w.air>0||w.side>1e-6||w.foot>1e-6||r.air>0||r.side>1e-6||r.foot>1e-6)
+            flat.push(P[i].id+"(air "+(w.air+r.air)+"・よこ "+Math.max(w.side,r.side)+"・足もと "+Math.max(w.foot,r.foot)+")");
           mw.push({ id:P[i].id, want:P[i].spd.walk, dist:w.dist, spd:w.spd });
           if(base==null) base=mw[mw.length-1];
           rows.push(P[i].id+"＝1秒で あるき "+w.dist+"（宣言 "+P[i].spd.walk+"・待ち "+w.warm+"F・置き直し "+w.snaps+
-                    "）／走り "+r.dist+"（宣言 "+P[i].spd.run+"）");
+                    "・"+w.at+"）／走り "+r.dist+"（宣言 "+P[i].spd.run+"）");
         } else {
           fly=t47Fly(); flyP=P[i];
           var wantF=t47FlyWant(P[i].spd.fly);
@@ -19173,7 +19383,7 @@
       cfg.autocruise=wasCruise;
       t45Restore(st);
       d.push("①"+rows.join(" / ")+"＝宣言と 合わない="+(bad.join(",")||"なし")+"="+absOk);
-      d.push("★たいらな ところで 測れた（足は ついたまま・よこずれ0・たてずれ0）="+flatOk+
+      d.push("★たいらな ところで 測れた（足は ついたまま・よこずれ0・★足もとが 地面に ぴたり）="+flatOk+
              "（あやしい="+(flat.join(",")||"なし")+"）");
       d.push("②実測の 比＝"+ratio.join(" / ")+"＝宣言の 比と 合わない="+(ratioBad.join(",")||"なし")+"="+ratioOk);
       d.push("③★変異注入＝あるく 速さを "+P[0].spd.walk+"→"+(P[0].spd.walk*T47_MUT).toFixed(3)+
@@ -23273,6 +23483,623 @@
                " ／ ★world の 対応を 壊す 変異は run_tests.py --mutate（w1行の world欄 p1→p2）で T56a が 落ちる ことを 別途 実測。" };
     }
 //★HW48-END
+//★HW49-BEGIN
+    // ================= 弾49 §R45: 世界が 地形を 宣言する（T57a〜T57i） =================
+    // ★干場の 実機テスト（2026-08-06）＝「ゲートを くぐっても 今の世界を 引きついだまま 景色が 変わるだけ。
+    //   ななつの夜は 高さより 広さが 要る・飛べない・地上の 探索世界」。
+    // ★真因（数で 出た）＝下の T57_DAN48 を 見ると **p4 の 指紋が p1 と 1桁も 同じ**＝
+    //   地形の 種が 5世界で 同一・拠点の 山が 無条件に 足されていた＝**地形の 形は 5世界で 完全に 同一** だった。
+    // ★指紋の 測り方（この 器で 実測して 焼いた 数＝陰性対照の よりどころ）:
+    //   h  … heightRawAt を 半径0〜1100(50きざみ)×角度0〜345(15度きざみ)の 552点で 足した 数
+    //   vn … 村と 街の 数／v … 村の まん中の 座標の 絶対値の 合計
+    //   g  … ゲート5基の 座標の 絶対値の 合計／wn,w … 作品星の 数と 座標の 絶対値の 合計
+    var T57_DAN48={
+      p0:{ h:"9289.806465",  vn:9, v:"9537.288239",  g:"6124.000000", wn:5, w:"1484.843696" },
+      p1:{ h:"13243.308655", vn:9, v:"8813.679118",  g:"6124.000000", wn:5, w:"1531.265554" },
+      p2:{ h:"8024.629429",  vn:6, v:"6429.130014",  g:"6124.000000", wn:5, w:"1496.124834" },
+      p3:{ h:"10482.179570", vn:9, v:"10022.866422", g:"6124.000000", wn:5, w:"1503.612802" },
+      // ★★ここが この 弾の 出発点＝p4 の 指紋が p1 と **完全に 同じ**（＝別の 世界に なって いなかった）
+      p4:{ h:"13243.308655", vn:9, v:"8813.679118",  g:"6124.000000", wn:5, w:"1531.265554" }
+    };
+    // ★予算の 物差しの 注記（★実測で わかった こと（契約と ちがう＝実測を 採る）＝申告の えがく回数は **世界ごとに ちがい**（p4 は たたかいの
+    //   世界なので 9・ほかは 10）、同じ 世界でも 走らせ方で ぶれる ことが ある。だから 世界を またいで くらべる のは
+    //   まちがった 物差し＝T57g は **同じ 世界で 地形の 宣言だけを 出し入れして** くらべる）。
+    var T57_SAME_EPS=1.0;      // ✎ 「高さが ほぼ 同じ」と みなす 差
+    var T57_SAME_MAX=5.0;      // ✎ T57b: p0 と ほぼ 同じ 高さの 点の 割合の 上限(%)＝これ 未満で「別の 世界」
+    var T57_MT_NEAR=25;        // ✎ T57d: 山の まん中が 周りと「同程度」と 言える 高さの 差（実測 p4=5.1／p0=69.9）
+    var T57_LOAD_MS=250;       // ✎ 契約: 世界の 作り直しが これを 超えたら「つくっています…」の 板を 出す
+    var T57_GATE_PAD=2.5;      // ✎ ゲートの 台座の まわり これだけは 建物が 来ては いけない（台座の 半分 2.0 ＋ 余裕）
+    // ✎ T57g: えがく回数が「いまの ようす」で 出入りする 要素＝地形の 宣言とは 無関係（ここだけ 突きあわせから 外す）。
+    //   streak＝速さの すじ／shot＝飛んでいる 弾／avatar＝三人称の からだ／gate＝ひらいて いる 板。
+    //   ★ほかの 14要素（空・地形・村・低木・鳥・生きもの・敵・星雲・線・作品星・めじるし・盤・HUD・カメラ）は 完全一致を 求める。
+    var T57_LIVE_DC=["streak","shot","avatar","gate"];
+    // その 世界の 指紋（★焼いた 数と 同じ 測り方＝比べられる 形）
+    function t57Fp(){
+      var T=window.__tenkyu, sum=0, i;
+      for(var r=0;r<=1100;r+=50) for(var a=0;a<360;a+=15){
+        var x=Math.cos(a*Math.PI/180)*r, z=Math.sin(a*Math.PI/180)*r; sum+=T.heightRawAt(x,z); }
+      var V=T.villagesNow(), vs=0;
+      for(i=0;i<V.length;i++) vs+=Math.abs(V[i].center[0])+Math.abs(V[i].center[1])+Math.abs(V[i].center[2]);
+      var G=T.warpSpots(), gs=0;
+      for(i=0;i<G.length;i++) gs+=Math.abs(G[i].x)+Math.abs(G[i].y)+Math.abs(G[i].z);
+      var W=T.worksPos(), ws=0;
+      for(i=0;i<W.length;i++) ws+=Math.abs(W[i][0])+Math.abs(W[i][1])+Math.abs(W[i][2]);
+      return { h:sum.toFixed(6), vn:V.length, v:vs.toFixed(6), g:gs.toFixed(6), wn:W.length, w:ws.toFixed(6) };
+    }
+    function t57FpDiff(a,b){ var out=[], k;
+      for(k in b) if(String(a[k])!==String(b[k])) out.push(k+" "+a[k]+"≠"+b[k]);
+      return out; }
+    // 552点の 高さを ならべて 返す（T57b が 2つの 世界を 点ごとに くらべる ため）
+    function t57Heights(){
+      var T=window.__tenkyu, o=[];
+      for(var r=0;r<=1100;r+=50) for(var a=0;a<360;a+=15){
+        o.push(T.heightRawAt(Math.cos(a*Math.PI/180)*r, Math.sin(a*Math.PI/180)*r)); }
+      return o;
+    }
+    // その 場所が 建物の 中か（村の 家・塀と 街の 建物＝既に ある 箱の ちずを そのまま つかう）。
+    //   ★低木は すりぬける 物なので 数えない（弾23 §R19 で 固い 箱から 外して ある もの）。
+    function t57InBox(x,z,pad){
+      var T=window.__tenkyu, B=T.villageBoxes().concat(T.cityBoxesNow()), i;
+      for(i=0;i<B.length;i++){ var b=B[i]; if(b.kind==="shrub") continue;
+        if(Math.abs(x-b.pos[0])<=b.size[0]*0.5+pad && Math.abs(z-b.pos[2])<=b.size[2]*0.5+pad)
+          return b.kind+"("+b.pos[0].toFixed(0)+","+b.pos[2].toFixed(0)+")";
+      }
+      return null;
+    }
+
+    // T57a: ★陰性対照＝p0「はじまりの だいち」は 弾48と **1ビットも 同じ**
+    //   （地形の 高さ 552点・村の 数と 場所・ゲート5基の 座標・作品星の 並び）。
+    //   ★ここが 崩れたら 他が ぜんぶ 正しくても 差し戻し（干場の 指示「はじまりの 大地は いまのままで いい」）。
+    function t_T57a(){
+      var T=window.__tenkyu, d=[];
+      var st=t44Setup();
+      T.worldApply("p0", true); stepFrames(2);
+      var now=t57Fp(), bad=t57FpDiff(now, T57_DAN48.p0);
+      // 欄を 1つも 足していない ことも 台帳の 側から 見る（宣言しない＝いまのまま）
+      var P=T.worldPatterns()[0];
+      var F=T.fieldConsts();
+      var declOk=(P.seed===0)&&(P.mt===true)&&(P.amp===F.AMP_BASE)&&(P.island===F.ISLAND_BASE);
+      var liveOk=(F.MT===true)&&(F.OX===0)&&(F.OZ===0)&&(F.VSEED===0)&&
+                 (F.AMP===F.AMP_BASE)&&(F.ISLAND===F.ISLAND_BASE);
+      // ゲートは 5基とも 山頂の たいら（高さ ぴったり TOP_Y）＝弾48と 同じ 姿
+      var M=T.mountConsts(), G=T.warpSpots(), gBad=[], i;
+      for(i=0;i<G.length;i++) if(G[i].y!==M.TOP_Y) gBad.push(G[i].id+":"+G[i].y);
+      t44Restore(st);
+      d.push("★p0＝弾48と 完全一致（合わない="+(bad.join(" ")||"なし")+"）="+(bad.length===0));
+      d.push("高さ552点の 合計 "+now.h+"／村と街 "+now.vn+"か所（座標の 合計 "+now.v+"）／"+
+             "ゲート5基（座標の 合計 "+now.g+"）／作品星 "+now.wn+"（座標の 合計 "+now.w+"）");
+      d.push("★台帳に 地形の 欄を 1つも 足していない（seed 0・山 あり・ふり幅と ふくらみは 既定）="+declOk+
+             "／いま 効いている 数も 既定（ずれ 0・山 あり）="+liveOk+
+             "／ゲートは 5基とも 山頂の たいら "+M.TOP_Y+"（ちがう="+(gBad.join(",")||"なし")+"）");
+      return { pass:(bad.length===0)&&declOk&&liveOk&&(gBad.length===0), detail:d.join(" / ") };
+    }
+
+    // T57b: p4「ななつの夜」の 地形が p0 と **ちがう**（同じ 552点で くらべて、ほぼ 同じ 高さの 点が わずか）。
+    //   ★弾48では ここが **100%**（＝地形が 完全に 同一）だった。
+    function t_T57b(){
+      var T=window.__tenkyu, d=[];
+      var st=t44Setup();
+      T.worldApply("p0", true); var A=t57Heights(), fpA=t57Fp();
+      T.worldApply("p4", true); var B=t57Heights(), fpB=t57Fp();
+      var same=0, i;
+      for(i=0;i<A.length;i++) if(Math.abs(A[i]-B[i])<T57_SAME_EPS) same++;
+      var pct=100*same/A.length;
+      var diffOk=(pct<T57_SAME_MAX);
+      // 村の 場所も 別物（探索先が ちがう）＝いちばん 近い 村どうしでも はなれている
+      var Va=null, Vb=null;
+      T.worldApply("p0", true); Va=T.villagesNow().map(function(s){ return s.center; });
+      T.worldApply("p4", true); Vb=T.villagesNow().map(function(s){ return s.center; });
+      var mind=1e9, j;
+      for(i=0;i<Vb.length;i++) for(j=0;j<Va.length;j++){
+        var dd=Math.hypot(Vb[i][0]-Va[j][0], Vb[i][2]-Va[j][2]); if(dd<mind) mind=dd; }
+      var vlgOk=(mind>VLG.RAD_VLG);            // どの 村も 「同じ 場所」では ない（村の 半径より 遠い）
+      // ★弾48では p4 の 指紋が p1 と 同じ だった＝いまは ちがう ことを 数で 見せる
+      var wasSame=(T57_DAN48.p4.h===T57_DAN48.p1.h);
+      var nowDiff=(fpB.h!==T57_DAN48.p1.h);
+      // ★「別の 世界」の 芯は **台帳が 宣言した 種**である ことも 見る（たまたま 数が ちがう だけ、では ない）。
+      //   ＝台帳の seed を 0 に すると ここが 閉じる（run_tests.py --mutate seed:1→0 で この テストが 落ちる）。
+      var F4=T.fieldConsts(), P4=null, m;
+      for(m=0;m<T.worldPatterns().length;m++) if(T.worldPatterns()[m].id==="p4") P4=T.worldPatterns()[m];
+      var seedOk=!!P4&&(P4.seed!==0)&&((F4.OX!==0)||(F4.OZ!==0))&&(F4.VSEED!==0);
+      t44Restore(st);
+      d.push("★p0 と 高さが ほぼ 同じ("+T57_SAME_EPS+"未満)な 点＝"+same+"/"+A.length+"＝"+pct.toFixed(2)+
+             "%（しきい値 "+T57_SAME_MAX+"% 未満）="+diffOk);
+      d.push("p0 の 高さの 合計 "+fpA.h+"／p4 "+fpB.h+"／村の 場所は 別物（いちばん 近い 組でも "+
+             mind.toFixed(1)+" はなれる＞村の 半径 "+VLG.RAD_VLG+"）="+vlgOk);
+      d.push("★弾48では p4 の 指紋が p1 と 同じ だった="+wasSame+"（"+T57_DAN48.p4.h+"）→ いまは ちがう="+nowDiff);
+      d.push("★ちがいの 出どころは 台帳の 種＝seed "+(P4?P4.seed:"?")+"・ノイズの ずれ ("+
+             F4.OX.toFixed(3)+", "+F4.OZ.toFixed(3)+")・村の 種の ずらし "+F4.VSEED+"="+seedOk+
+             "（seed を 0 に すると ここが 閉じる）");
+      return { pass:diffOk&&vlgOk&&wasSame&&nowDiff&&seedOk, detail:d.join(" / ") };
+    }
+
+    // T57c: ★床①「かならず 帰れる」＝全世界×5基の ゲートが ①地面の 上（ずれ 0）②海より 上
+    //   ③村や 街の 建物の 中で ない。飛んだ 直後に 立つ ところも 同じ 3つを みたす。
+    function t_T57c(){
+      var T=window.__tenkyu, d=[], rows=[], bad=[], i, k;
+      var st=t44Setup();
+      var P=T.worldPatterns();
+      for(k=0;k<P.length;k++){
+        T.worldApply(P[k].id, true); stepFrames(1);
+        var F=T.fieldConsts(), G=T.warpSpots(), lo=1e9, hi=-1e9;
+        for(i=0;i<G.length;i++){
+          var S=G[i], gy=T.heightAt(S.x, S.z);
+          if(S.y!==gy) bad.push(P[k].id+"/"+S.id+":地面から "+(S.y-gy).toFixed(6));
+          if(!(S.y>F.SEA_Y)) bad.push(P[k].id+"/"+S.id+":海の 中("+S.y.toFixed(1)+"≤"+F.SEA_Y+")");
+          var inb=t57InBox(S.x, S.z, T57_GATE_PAD);
+          if(inb) bad.push(P[k].id+"/"+S.id+":建物の 中 "+inb);
+          // 飛んだ 直後に 立つ ところ＝足もとが かならず 地面（弾45 T53b と 同じ 物差し）
+          var W=T.warpStand(i), wy=T.heightAt(W.x, W.z);
+          if(Math.abs((W.y-F.CLEAR)-wy)>1e-9) bad.push(P[k].id+"/"+S.id+":立つ ところが 地面から "+((W.y-F.CLEAR)-wy).toFixed(6));
+          if(!((W.y-F.CLEAR)>F.SEA_Y)) bad.push(P[k].id+"/"+S.id+":立つ ところが 海の 中");
+          var inw=t57InBox(W.x, W.z, 1.0);
+          if(inw) bad.push(P[k].id+"/"+S.id+":立つ ところが 建物の 中 "+inw);
+          if(S.y<lo) lo=S.y; if(S.y>hi) hi=S.y;
+        }
+        rows.push(P[k].id+"＝5基とも 地面の 上（高さ "+lo.toFixed(1)+"〜"+hi.toFixed(1)+"・海 "+F.SEA_Y+"）");
+      }
+      t44Restore(st);
+      d.push(rows.join(" / "));
+      d.push("★合わない もの="+(bad.join(" ")||"なし")+"="+(bad.length===0)+
+             "（見た のは "+P.length+"世界×5基＝地面の 上・海より 上・建物の 中で ない・立つ ところも 同じ 3つ）");
+      return { pass:bad.length===0, detail:d.join(" / ") };
+    }
+
+    // T57d: p4 には 拠点の 山が **無い**（山の まん中の 高さが 周りと 同程度）／
+    //   ★台帳の mt を true に もどすと 山が **戻る**（＝台帳が 駆動している 証拠＝変異注入）。
+    function t_T57d(){
+      var T=window.__tenkyu, d=[];
+      var st=t44Setup();
+      var M=T.mountConsts();
+      function ringMean(rr){ var s=0, n=0;
+        for(var a=0;a<360;a+=22.5){ s+=T.heightAt(M.X+Math.cos(a*Math.PI/180)*rr, M.Z+Math.sin(a*Math.PI/180)*rr); n++; }
+        return s/n; }
+      T.worldApply("p0", true);
+      var p0Top=T.heightAt(M.X,M.Z), p0Ring=ringMean(120), p0Gap=p0Top-p0Ring;
+      T.worldApply("p4", true);
+      var p4Top=T.heightAt(M.X,M.Z), p4Ring=ringMean(120), p4Gap=p4Top-p4Ring;
+      var flatOk=(Math.abs(p4Gap)<T57_MT_NEAR)&&(p4Top!==M.TOP_Y);
+      var p0Ok=(p0Top===M.TOP_Y)&&(p0Gap>=T57_MT_NEAR);     // 物差しは 生きている（山の ある 世界では 大きく 出る）
+      // ★変異注入＝台帳の mt を true に もどすと 山が 戻る（本体は 1行も 変えない）
+      var Q=null, i;
+      for(i=0;i<WORLD_PATTERNS.length;i++) if(WORLD_PATTERNS[i].id==="p4") Q=WORLD_PATTERNS[i];
+      var saved=Q.mt;
+      Q.mt=true; T.worldApply("p4", true);
+      var mutTop=T.heightAt(M.X,M.Z), mutOk=(mutTop===M.TOP_Y);
+      Q.mt=saved; T.worldApply("p4", true);
+      var backTop=T.heightAt(M.X,M.Z), backOk=(backTop===p4Top);
+      t44Restore(st);
+      d.push("p4＝山の まん中 "+p4Top.toFixed(2)+"・まわり(120) "+p4Ring.toFixed(2)+"＝差 "+p4Gap.toFixed(2)+
+             "（しきい値 "+T57_MT_NEAR+" 未満＝同程度）="+flatOk+"／山頂の 高さ "+M.TOP_Y+" では ない");
+      d.push("★物差しは 生きている＝p0（山の ある 世界）は まん中 "+p0Top.toFixed(2)+"・まわり "+p0Ring.toFixed(2)+
+             "＝差 "+p0Gap.toFixed(2)+"="+p0Ok);
+      d.push("★変異注入＝台帳の mt を true に もどすと 山が 戻る（まん中 "+mutTop.toFixed(2)+"＝"+M.TOP_Y+"）="+mutOk+
+             "／もどすと また 平ら("+backTop.toFixed(2)+")="+backOk);
+      return { pass:flatOk&&p0Ok&&mutOk&&backOk, detail:d.join(" / ") };
+    }
+
+    // T57e: p4 の とりで・かべの 置き場・波の 湧きの 場所が ①地面の 上 ②海に 沈んでいない ③建物に 埋まって いない。
+    //   ★地形の 種を 変えると 村が 動く＝とりでの まわりに 村が かぶる 事故を 数で 見張る。
+    function t_T57e(){
+      var T=window.__tenkyu, d=[], bad=[], i;
+      var st=t44Setup();
+      T.worldApply("p4", true); stepFrames(1);
+      var F=T.fieldConsts(), FS=T.fortSets()[0], SS=T.slotSets()[0];
+      var fy=T.heightAt(FS.x, FS.z);
+      if(!(fy>F.SEA_Y+2)) bad.push("とりでが 海の 中("+fy.toFixed(1)+")");
+      var inf=t57InBox(FS.x, FS.z, Math.max(FS.w,FS.d)*0.5);
+      if(inf) bad.push("とりでが 建物に かぶる "+inf);
+      // かべの 置き場 12か所（高さは その場の 地面から 出す＝slotBoxFor と 同じ 式）
+      var slo=1e9, shi=-1e9;
+      for(i=0;i<SS.pts.length;i++){
+        var p=SS.pts[i], sy=T.heightAt(p[0], p[1]);
+        if(!(sy>F.SEA_Y+1)) bad.push("置き場"+i+"が 海の 中("+sy.toFixed(1)+")");
+        var ins=t57InBox(p[0], p[1], 2.0); if(ins) bad.push("置き場"+i+"が 建物の 中 "+ins);
+        if(sy<slo) slo=sy; if(sy>shi) shi=sy;
+      }
+      // 波の 敵の 湧く ところ（とりでの 入口の 前）
+      var sx=FS.x, sz=FS.z-FS.d*0.5-5.0, sy2=T.heightAt(sx,sz);
+      if(!(sy2>F.SEA_Y+1)) bad.push("湧きの 場所が 海の 中("+sy2.toFixed(1)+")");
+      var inq=t57InBox(sx,sz,2.0); if(inq) bad.push("湧きの 場所が 建物の 中 "+inq);
+      // 村が とりでに かぶって いない（いちばん 近い 村まで）
+      var V=T.villagesNow(), near=1e9;
+      for(i=0;i<V.length;i++) near=Math.min(near, Math.hypot(V[i].center[0]-FS.x, V[i].center[2]-FS.z)-V[i].radius);
+      if(!(near>Math.max(FS.w,FS.d))) bad.push("村が とりでに 近すぎる("+near.toFixed(1)+")");
+      t44Restore(st);
+      d.push("とりで＝地面 "+fy.toFixed(2)+"（海 "+F.SEA_Y+"）／置き場12か所＝"+slo.toFixed(1)+"〜"+shi.toFixed(1)+
+             "／湧きの 場所＝"+sy2.toFixed(2)+"／いちばん 近い 村の ふちまで "+near.toFixed(1));
+      d.push("★合わない もの="+(bad.join(" ")||"なし")+"="+(bad.length===0));
+      return { pass:bad.length===0, detail:d.join(" / ") };
+    }
+
+    // T57f: 世界を 往復（p0→p4→p0）しても p0 の 地形・村・ゲート・作品星が **元どおり**
+    //   ＝作り直しの 取りこぼしが 1つも 無い（★人が いちばん 何度も 通る 道）。
+    function t_T57f(){
+      var T=window.__tenkyu, d=[];
+      var st=t44Setup();
+      T.worldApply("p0", true); stepFrames(1);
+      var a=t57Fp();
+      T.worldGo("p4", 0); stepFrames(2);
+      var mid=t57Fp();
+      T.worldGo("p0", 0); stepFrames(2);
+      var b=t57Fp();
+      var bad=t57FpDiff(b, a), midDiff=t57FpDiff(mid, a);
+      var backOk=(bad.length===0)&&(T.worldLive().id==="p0");
+      var wentOk=(midDiff.length>0);                      // 行った 先では ちゃんと 変わっている（何も しない 往復では ない）
+      // 弾48の 焼いた 数とも 合う（往復しても 出発点に ぴたり）
+      var vs48=t57FpDiff(b, T57_DAN48.p0);
+      t44Restore(st);
+      d.push("p0→p4→p0＝もどった 姿が 出発点と 同じ（合わない="+(bad.join(" ")||"なし")+"）="+backOk);
+      d.push("行った 先(p4)では ちゃんと 変わっている（変わった もの="+(midDiff.join(" ")||"なし")+"）="+wentOk);
+      d.push("★もどった 姿は 弾48の 数とも 一致（合わない="+(vs48.join(" ")||"なし")+"）="+(vs48.length===0));
+      return { pass:backOk&&wentOk&&(vs48.length===0), detail:d.join(" / ") };
+    }
+
+    // T57g: 予算＝①えがく回数の 増分 0 ②毎フレームGPU転送の 増分 0
+    //   ③★世界の 作り直しに かかる 時間を **数で 出す**＝「ローディングの 板を 出すか」の 判断の 根拠。
+    //   ★契約: 250ms を 超えたら 板を 出す／未満なら 出さない（一瞬の 点滅は 害）。
+    //     ここが 超えたら この テストが 落ちる＝**板を 足せ**と 言う 番人に なる。
+    function t_T57g(){
+      var T=window.__tenkyu, d=[], i;
+      var st=t44Setup();
+      function meas(){
+        stepFrames(4);
+        var L=T.elements({probe:20}), m={}, dc=0, pf=0;
+        for(var k=0;k<L.elements.length;k++){ var e=L.elements[k], c=e.cost;
+          if(typeof c.drawCalls==="number"){ m[e.id]=c.drawCalls; dc+=c.drawCalls; }
+          if(typeof c.gpuBytesPerFrame==="number") pf+=c.gpuBytesPerFrame; }
+        return { m:m, dc:dc, pf:+pf.toFixed(1), live:T.getState().drawCalls }; }
+      // ★要素ごとに くらべる（合計だけ 見ると「生の 状態で 出たり 消えたり する もの」に だまされる＝実測で 判明）。
+      //   下の 4つは 速さ・弾・見え方・板の **いまの ようす**で 出入りする＝地形の 宣言とは 無関係
+      //   （実測＝同じ 世界を 2回 測るだけで すじ(streak) が 0/1 で ゆれた）。
+      function dcDiff(a,b){ var out=[], k;
+        for(k in a){ if(T57_LIVE_DC.indexOf(k)>=0) continue; if(a[k]!==b[k]) out.push(k+" "+a[k]+"≠"+b[k]); }
+        return out; }
+      // ★「弾49の 増分 0」の 測り方＝**同じ 世界(p4)で、地形の 宣言だけを 出し入れして くらべる**。
+      //   （世界を またいで くらべると、たたかいや 敵の 有無で 数が 変わる＝別の ものを 測って しまう。
+      //    実測で 分かった＝申告の 合計は 世界ごとに ちがい、同じ 世界でも 走らせ方で ぶれる ことが ある）。
+      var Q=null;
+      for(i=0;i<WORLD_PATTERNS.length;i++) if(WORLD_PATTERNS[i].id==="p4") Q=WORLD_PATTERNS[i];
+      T.worldApply("p4", true); var c1=meas();
+      T.worldApply("p4", true); var c2=meas();                 // ★対照＝何も 変えずに もう1回（物差しの ぶれを 見る）
+      var sv={ seed:Q.seed, mt:Q.mt, amp:Q.amp, island:Q.island };
+      Q.seed=0; delete Q.mt; delete Q.amp; delete Q.island;    // 地形の 宣言を ぜんぶ 外す＝弾48の 姿
+      T.worldApply("p4", true); var c3=meas();
+      Q.seed=sv.seed; Q.mt=sv.mt; Q.amp=sv.amp; Q.island=sv.island;
+      T.worldApply("p4", true); var c4=meas();
+      var dcBad=[], dcRows=["宣言あり "+c1.dc, "対照 "+c2.dc, "宣言なし "+c3.dc, "もどり "+c4.dc];
+      var d12=dcDiff(c1.m,c2.m), d13=dcDiff(c1.m,c3.m), d14=dcDiff(c1.m,c4.m);
+      if(d12.length) dcBad.push("物差しが ぶれた("+d12.join("+")+")");
+      if(d13.length) dcBad.push("宣言で 変わった要素("+d13.join("+")+")");
+      if(d14.length) dcBad.push("もどらない("+d14.join("+")+")");
+      if(Math.abs(c1.pf-c3.pf)>=0.05) dcBad.push("毎フレーム転送が 変わった("+c3.pf+"→"+c1.pf+")");
+      T.worldApply("p0", true); var m0=meas();
+      T.worldApply("p4", true); var m4=meas();
+      T.worldApply("p0", true); var m0b=meas();
+      var dcOk=(dcBad.length===0)&&(m0.dc===m0b.dc);
+      var pfOk=(Math.abs(m0.pf-m4.pf)<0.05)&&(Math.abs(m0.pf-m0b.pf)<0.05);
+      // ★作り直しの 時間＝実際に 往復して 5回 測る（いちばん 遅い 回で 判断する）
+      var ms=[], worst=0;
+      for(i=0;i<5;i++){
+        T.worldGo(((i%2)===0)?"p4":"p0", 0); stepFrames(1);
+        var v=T.worldLive().buildMs; ms.push(v); if(v>worst) worst=v;
+      }
+      T.worldApply("p0", true); stepFrames(1);
+      var fast=(worst<T57_LOAD_MS);
+      // 板を 出さない と 決めた＝画面に「つくっています」の 板が **無い** ことも 見る（言った ことと 出来が 合う）
+      var boardOk=(document.getElementById("world-loading")===null);
+      t44Restore(st);
+      d.push("★同じ 世界(p4)で 地形の 宣言だけを 出し入れ＝申告の えがく回数（"+dcRows.join("・")+
+             "）／毎フレームGPU転送 "+c1.pf+"→"+c3.pf+" バイト＝合わない="+(dcBad.join(",")||"なし")+
+             "＝弾49の 増分 0="+dcOk+
+             "・世界を うつっても もどれば 同じ（p0 "+m0.dc+"→p4 "+m4.dc+"→p0 "+m0b.dc+
+             "・転送 "+m0.pf+"／"+m4.pf+"／"+m0b.pf+" バイト="+pfOk+"）");
+      d.push("★世界の 作り直し＝"+ms.map(function(v){ return v+"ms"; }).join("・")+
+             "＝いちばん 遅い 回 "+worst+"ms（しきい値 "+T57_LOAD_MS+"ms 未満="+fast+"）");
+      d.push("★判断＝"+worst+"ms は "+T57_LOAD_MS+"ms 未満 なので **ローディングの 板は 出さない**"+
+             "（一瞬の 点滅は 害＝契約どおり）。板が 画面に 無い="+boardOk+
+             "／もし 将来 "+T57_LOAD_MS+"ms を 超えたら この テストが 落ちて「板を 足せ」と 言う。");
+      return { pass:dcOk&&pfOk&&fast&&boardOk, detail:d.join(" / ") };
+    }
+
+    // T57h: 欄の 無い 世界（p1／p2／p3）は **1ビット不変**（弾37からの 作法）。
+    //   ＝地形の 欄を 1つも 宣言していない・いま 効いている 数も 既定・指紋が 弾48と 完全一致。
+    function t_T57h(){
+      var T=window.__tenkyu, d=[], rows=[], bad=[], i;
+      var st=t44Setup();
+      var P=T.worldPatterns();
+      var ids=["p1","p2","p3"];
+      for(i=0;i<ids.length;i++){
+        var Q=null, k;
+        for(k=0;k<P.length;k++) if(P[k].id===ids[i]) Q=P[k];
+        T.worldApply(ids[i], true); stepFrames(1);
+        var F=T.fieldConsts(), fp=t57Fp(), diff=t57FpDiff(fp, T57_DAN48[ids[i]]);
+        if(diff.length) bad.push(ids[i]+":"+diff.join("+"));
+        if(!(Q.seed===0&&Q.mt===true&&Q.amp===F.AMP_BASE&&Q.island===F.ISLAND_BASE)) bad.push(ids[i]+":台帳に 欄が ある");
+        if(!(F.MT===true&&F.OX===0&&F.OZ===0&&F.VSEED===0&&F.AMP===F.AMP_BASE&&F.ISLAND===F.ISLAND_BASE))
+          bad.push(ids[i]+":いま 効いている 数が 既定で ない");
+        rows.push(ids[i]+"（高さの 合計 "+fp.h+"・村 "+fp.vn+"）");
+      }
+      // ★物差しは 生きている＝p4 は この 突きあわせで **落ちる**（欄を 宣言した 世界）
+      T.worldApply("p4", true); stepFrames(1);
+      var p4Diff=t57FpDiff(t57Fp(), T57_DAN48.p4);
+      var aliveOk=(p4Diff.length>0);
+      t44Restore(st);
+      d.push(rows.join(" / ")+"＝弾48と 合わない="+(bad.join(" ")||"なし")+"="+(bad.length===0));
+      d.push("★物差しは 生きている＝欄を 宣言した p4 は 同じ 突きあわせで 変わった="+aliveOk+
+             "（変わった もの="+(p4Diff.join(" ")||"なし")+"）");
+      return { pass:(bad.length===0)&&aliveOk, detail:d.join(" / ") };
+    }
+    // T57i: 回帰帳簿（★前の 網を ぜんぶ 見るので 必ず いちばん 最後）＋ 変異注入（台帳が すべてを 駆動）
+    //   ＋ ★弾49で **書きかえた 既存テストの 理由**を 1件ずつ 焼きこむ（弾48 T56i の 作法）。
+    function t_T57i(){
+      var need=["T1","T2","T2f","T2n","T3","T3c","T4","T5","T6","T7","T8","T9","T10","T11","T12","T13","T14",
+                "T15","T16","T17","T18","T19a","T19b","T19c","T19d","T20a","T20b","T20c","T20d","T20e",
+                "T21a","T21b","T21c","T21d","T21e","T21f","T21i","T21g","T22a","T22b","T22c",
+                "T23a","T23b","T23c","T23d","T23e","T25a","T25b","T25c","T25d","T25e","T25f",
+                "T24a","T24b","T24c","T24d","T24e","T24f","T26a","T27a","T27b","T27c","T27d","T27e","T27f",
+                "T28a","T28b","T28c","T28d","T28e","T28f","T29a","T29b","T29c","T29d","T29e",
+                "T30a","T30b","T30c","T30d","T30e","T31a","T31b","T31c","T31d","T31e","T31f",
+                "T32a","T32b","T32c","T32d","T32e","T33a","T33b","T33c","T33d","T33e","T33f",
+                "T34a","T34b","T34c","T34d","T34e","T34f","T35a","T35b","T35c","T35d","T35e","T35f",
+                "T36a","T36b","T36c","T36d","T36e","T36f","T37a","T37b","T37c","T37d","T37e","T37g","T37h","T37f",
+                "T38a","T38b","T38c","T38d","T38e","T39a","T39b","T39c","T39d","T39e","T39f",
+                "T40a","T40b","T40c","T40d","T40e","T40f","T41a","T41b",
+                "T42a","T42b","T42c","T42d","T42e","T42f",
+                "T43a","T43b","T43c","T43d","T43e","T43f",
+                "T44a","T44b","T44c","T44d","T44e","T44f",
+                "T45a","T45b","T45c","T45d","T45e","T45f",
+                "T46a","T46b","T46c","T46d","T46e","T46f",
+                "T47a","T47b","T47c","T47d",
+                "T48a","T48b","T48c","T48d",
+                "T49a","T49b","T49c","T49d","T49e",
+                "T50a","T50b","T50c","T50d",
+                "T51a","T51b","T51c","T51d","T51e","T51f",
+                "T52a","T52b","T52c","T52d","T52e",
+                "T53a","T53b","T53c","T53d","T53e","T53f","T53g","T53h",
+                "T54a","T54b","T54c","T54d","T54e","T54f","T54g","T54h",
+                "T55a","T55b","T55c","T55d","T55e","T55f","T55g","T55i","T55h","T55j","T55k",
+                "T56a","T56b","T56c","T56d","T56e","T56f","T56g","T56h","T56i",
+                "T57a","T57b","T57c","T57d","T57e","T57f","T57g","T57h",
+                // 弾49b §R45b: ★回帰帳簿へ T58群を 追加（判定基準の 緩めは 0＝足しただけ）
+                "T58a","T58b","T58c","T58d"];
+      var missing=[], failed=[], skipped=[], i, j;
+      for(i=0;i<need.length;i++){
+        var r=null;
+        for(j=0;j<_ranResults.length;j++){ if(_ranResults[j].id===need[i]){ r=_ranResults[j]; break; } }
+        if(!r) missing.push(need[i]);
+        else if(r.skip) skipped.push(need[i]);
+        else if(!r.pass) failed.push(need[i]);
+      }
+      var known=regKnown(failed);
+      var realFails=failed.filter(function(x){ return known.indexOf(x)<0; });
+      var T=window.__tenkyu;
+      // ★5つの 環境の「既知の 落ち」の 表が 弾36から 1文字も 同じ
+      var regBad=[], ks=Object.keys(T45_DAN36.reg);
+      if(Object.keys(REG_BASE).length!==ks.length) regBad.push("環境の 数");
+      for(i=0;i<ks.length;i++){
+        var a=(REG_BASE[ks[i]]||[]).slice().sort().join(","), b=T45_DAN36.reg[ks[i]].slice().sort().join(",");
+        if(a!==b) regBad.push(ks[i]+":"+a+"≠"+b); }
+      if(REG_CASCADE.join(",")!==T45_DAN36.cascade.join(",")) regBad.push("ぶらさがり");
+      var regOk=(regBad.length===0);
+      // ★保存キー 不変（地形が 変わっても 古い 保存が そのまま 読める＝床③）
+      var keyOk=(CFG_KEY==="tenkyu_cfg_v1")&&(SAVE_KEY==="tenkyu_save_v1");
+      // ★保存に 地形の 欄が もれていない（世界の 地形は 台帳のもの＝保存しない）
+      var noSaveOk=(JSON.stringify(CFG_DEFAULTS).indexOf("island")<0)&&
+                   ((localStorage.getItem(SAVE_KEY)||"").indexOf("island")<0)&&
+                   ((localStorage.getItem(SAVE_KEY)||"").indexOf("\"seed\"")<0);
+      var st=t44Setup();
+      var Q=null;
+      for(i=0;i<WORLD_PATTERNS.length;i++) if(WORLD_PATTERNS[i].id==="p4") Q=WORLD_PATTERNS[i];
+      T.worldApply("p4", true); var base4=t57Fp().h;
+      // ★変異注入①＝台帳の seed を 0 に もどす → 地形も 村も 変わり、T57b の「種が 効いている」門が 閉じる
+      var sv=Q.seed; Q.seed=0; T.worldApply("p4", true);
+      var F1=T.fieldConsts(), mut1=t57Fp().h;
+      var mut1Ok=(mut1!==base4)&&(F1.OX===0)&&(F1.OZ===0)&&(F1.VSEED===0);
+      Q.seed=sv; T.worldApply("p4", true);
+      var back1=(t57Fp().h===base4)&&(T.fieldConsts().OX!==0);
+      // ★変異注入②＝台帳の island を 既定に もどす → 地形が 変わる（欄が 効いている 証拠）
+      var si=Q.island; Q.island=T.fieldConsts().ISLAND_BASE; T.worldApply("p4", true);
+      var mut2=t57Fp().h, mut2Ok=(mut2!==base4);
+      Q.island=si; T.worldApply("p4", true);
+      var back2=(t57Fp().h===base4);
+      t44Restore(st);
+      return { pass:(missing.length===0)&&(realFails.length===0)&&regOk&&keyOk&&noSaveOk&&
+                    mut1Ok&&back1&&mut2Ok&&back2,
+        detail:"登録もれ="+(missing.join(",")||"なし")+" 既知以外の失敗="+(realFails.join(",")||"なし")+
+               " 既知の失敗="+(failed.join(",")||"なし")+" 判定不能="+(skipped.join(",")||"なし")+
+               " ／ ★5つの 環境の 既知の 落ちの 表＝弾36と 完全一致="+regOk+"（合わない="+(regBad.join(" ")||"なし")+"）"+
+               " 保存キー 不変="+keyOk+"（"+CFG_KEY+"／"+SAVE_KEY+"）地形の 欄は 保存しない="+noSaveOk+
+               " ／ ★変異注入①＝台帳の seed を 0 に もどすと 地形が 変わり（"+mut1+"≠"+base4+
+               "）ノイズの ずれも 村の 種の ずらしも 0 に なる＝T57b の 門が 閉じる="+mut1Ok+"／もどすと 元どおり="+back1+
+               " ★変異注入②＝台帳の island を 既定に もどすと 地形が 変わる（"+mut2+"≠"+base4+"）="+mut2Ok+
+               "／もどすと 元どおり="+back2+
+               " ／ ★弾49で 書きかえた 既存テスト（1件ずつ 理由つき・判定の きびしさの 緩め 0）:"+
+               " ①T45b③（すべり）＝測る 地面を「山頂の たいら（HOME_MT.X+30,Z,TOP_Y）の 直書き」から"+
+               "「**その 世界で さがした たいらな 地面**(t49Spot)」へ。理由＝山を 建てない 世界では そこは **空中**で、"+
+               "落ちながら 測って いた（実測 air 179・距離 6.24／見込み 0.93）。★判定式（見込みとの 差 2%以内・"+
+               "air 0・よこずれ 0）は 1文字も 変えて いない。山の ある 世界(p0/p1/p2)では 同じ 場所を 返す＝数は 1ビットも 不変"+
+               "（p0 0.9322・p1 1.5146・p2 5.5922＝弾48と 同じ）。"+
+               " ②T45b①②（歩く道・とぶ ちから）＝立つ ところを 同じ 理由で t49Spot へ。判定は 不変。"+
+               " ③T47b（速さ）＝走る みちの 出どころを 同じく t49Spot へ。**さらに**「たいらで 測れた」の 物差しを"+
+               "「y が 動かない(dy≤1e-6)」から「**足もとが いつも 地面に ぴたり(|足−heightAt|≤1e-6)**」へ 変えた。"+
+               "理由＝dy は「たいらな 台が 世界に 必ず ある」ことを 前提に した 間接の 物差しで、地形が 世界ごとに "+
+               "変わると 意味を 失う。新しい 物差しは 浮きも めり込みも **直に** 見る＝きびしい 側（air 0・よこずれ 0 は そのまま）。"+
+               " ／ ★台帳を 壊す 変異は run_tests.py --mutate でも 別途 実測（seed:1→0 で T57b が 落ちる／"+
+               "mt:false→true で T57d が 落ちる）。"+
+               " ／ ★弾49b（小さな仕上げ）で 書きかえた 既存テスト＝**T29b 1件だけ**（判定式は 1文字も 変えていない・"+
+               "きびしさの 緩め 0）: 走る 範囲を「いま 居る 世界（＝いつも 台帳の 1行目）」から **台帳の 全行**へ 広げた。"+
+               "理由＝T29b は いまの 世界を 見る 純関数で、runAll の 中で これより 前に 世界を 切りかえる テストが 1つも"+
+               "無いため、世界が 5つに なった 弾44 以降も p0 だけを 見ていた（司令塔の 実測 2026-08-06）。"+
+               "★門は 全世界で ①②（badN=0）とメッシュの 余裕。③崖の 検査だけは 較正した 世界（台帳1行目）に 残し、"+
+               "ほかの 世界は 報告のみ＝**要司令塔判断**（真因＝③は「内がわが 荒い」ことを 前提に した 相対の 物差しで、"+
+               "内がわを わざと 平らに した p4 では ふちの ほうが 荒く 出る。実測は T29b の コメントに 焼きこみ）。"+
+               " ／ ★弾49b の 変異注入は run_tests.py --mutate で 別途 実測（知らせの 1回制限を 壊すと T58b が 落ちる）。" };
+    }
+//★HW49-END
+//★HW49B-BEGIN
+    // ---------- 弾49b §R45b: 世界の 果てで 無言で 止まらない（T58a〜T58d） ----------
+    // ★はかりかた＝**実フレームの 道**（カメラを そっと 置いて moveVec で 歩かせ frame() を 回す）。
+    //   知らせを 出す 口（フック）は 置いて いない＝T.edgeSay() は **読むだけ**＝直に 呼んで 出すことが できない
+    //   ＝にせの PASS が 構造的に 出ない（弾48 T56a/T56b の「人の 道」と 同じ 作法）。
+    // ★歩く 向き＝rotY の 前ベクトルは (sin yaw, 0, -cos yaw)。だから +X 軸の 上に 立って yaw=+90°なら 外へ、
+    //   -90°なら 内へ 歩く（世界の 中心から まっすぐ 果てへ 向かう いちばん 短い 道）。
+    var T58_YAW_OUT=Math.PI/2;    // 前＝+X（外へ）
+    var T58_YAW_IN=-Math.PI/2;    // 前＝-X（内へ）
+    var T58_R0=1082;              // ✎ 歩きはじめる 半径（果て 1100 の 内がわ・もどりの はば 6.0 より 十分 内）
+    var T58_FAR=300;              // ✎ 陰性対照の 立ち位置（果てから 800 内がわ）
+    // ✎ 司令塔が 弾49で 実測した ふちの 数（凍らせた 参照＝地形が 弾49から 1ビットも 動いて いない ことの 証拠）
+    var T58_DAN49={ p0:{sea:350,land:514}, p4:{sea:3,land:861} };
+    function t58R(){ return Math.hypot(camPos[0],camPos[1],camPos[2]); }
+    function t58Fx(){ return document.getElementById("fx-say"); }
+    function t58Toast(){ var el=document.getElementById("achieve-toast"); return el?(el.textContent||""):""; }
+    // ★知らせの 器を 素に する（0804の 教訓＝汚れた 器で 測ると にせの 結果が 出る。
+    //   トーストは 前の テストの 文字を 3秒 持ちつづける ので、はかる 前に かならず 消す）
+    function t58Clear(){
+      var fx=t58Fx(); if(fx) fx.textContent="";
+      var el=document.getElementById("achieve-toast");
+      if(el){ el.textContent=""; el.classList.remove("show"); }
+      return fx;
+    }
+    function t58Put(rx){          // +X 軸の 半径 rx に そっと 立つ（足は その場の 地面）
+      t43Put(rx, 0, heightAt(rx,0));
+      yaw=T58_YAW_OUT; pitch=0; stepFrames(2);
+      return t58R();
+    }
+    function t58Walk(yawTo, maxN, untilFn){   // 歩いて すすむ（返り＝かかった フレーム数。-1＝届かなかった）
+      yaw=yawTo; moveVec={f:1,s:0};
+      for(var i=1;i<=maxN;i++){ stepFrames(1);
+        if(untilFn&&untilFn()){ moveVec={f:0,s:0}; return i; } }
+      moveVec={f:0,s:0}; return -1;
+    }
+
+    // T58a: ★世界の 端の 検査が **全世界で 走った 証拠**（見た 世界の 数＝台帳の 行数）・全世界 badN=0。
+    //   ★あわせて 弾49の 実測（p0 海350/陸514・p4 海3/陸861）と 突きあわせる＝地形は 弾49から 1ビットも 動いて いない。
+    function t_T58a(){
+      var T=window.__tenkyu, d=[], rows=[], bad=[], i;
+      var P=T.worldPatterns();
+      var t29=null; for(i=0;i<_ranResults.length;i++){ if(_ranResults[i].id==="T29b") t29=_ranResults[i]; }
+      var ranOk=!!(t29&&t29.pass);
+      var cntOk=(_t29bSeen.length===P.length)&&(P.length>1);
+      for(i=0;i<P.length;i++){
+        var S=_t29bSeen[i];
+        if(!S){ bad.push(P[i].id+":見ていない"); continue; }
+        if(S.id!==P[i].id) bad.push(P[i].id+":台帳の ならびと ちがう("+S.id+")");
+        if(S.badN!==0)     bad.push(S.id+":おかしな点 "+S.badN+"件");
+        if(S.n!==864)      bad.push(S.id+":ふちの 点が "+S.n+"（864で ない）");
+        if(!S.meshOk)      bad.push(S.id+":メッシュの 検査が 通って いない");
+        var W=T58_DAN49[S.id];
+        if(W&&!(S.sea===W.sea&&S.land===W.land)) bad.push(S.id+":弾49の 実測と ちがう（海"+S.sea+"／陸"+S.land+
+                                                          " ≠ 海"+W.sea+"／陸"+W.land+"）");
+        rows.push(S.id+" 陸"+S.land+"／海"+S.sea+"／おかしな点"+S.badN+(W?"（弾49の 実測と 一致）":""));
+      }
+      d.push("★見た 世界＝"+_t29bSeen.length+"／台帳 "+P.length+"行="+cntOk+
+             "（弾49bまでは 1つ＝台帳の 1行目だけ を 見ていた＝T29b の 前に 世界を 切りかえる テストが 無かった ため）"+
+             "／T29b が 通った="+ranOk);
+      d.push(rows.join(" ／ "));
+      d.push("合わない="+(bad.join(" ")||"なし"));
+      return { pass:ranOk&&cntOk&&(bad.length===0), detail:d.join(" / ") };
+    }
+
+    // T58b: ★端へ 行くと 知らせが **1回** 出る／その場に 留まっても 2回目は 出ない／離れて もどると また 出る。
+    //   ぜんぶ 実フレームの 道（歩く）で はかる＝フックを 直に 呼んで 出すことは できない。
+    function t_T58b(){
+      var T=window.__tenkyu, d=[];
+      var st=t44Setup();                         // p0・だいち・板とじ・自動ワープの 腕は ねている
+      var fx=t58Clear();
+      var r0=t58Put(T58_R0);
+      var E0=T.edgeSay(), says0=E0.says;
+      var armOk=(E0.said===false)&&(r0<E0.R-E0.back);
+      // ①外へ 歩く → 果てで 止められて 知らせが 1回 出る
+      var n1=t58Walk(T58_YAW_OUT, 400, function(){ return T.edgeSay().says>says0; });
+      var E1=T.edgeSay(), rEdge=t58R();
+      var firedOk=(n1>0)&&(E1.says===says0+1)&&(E1.said===true);
+      var clampOk=(Math.abs(rEdge-E1.R)<0.5)&&(E1.hits>0);
+      var sayOk=((fx.textContent||"").indexOf(E1.msg)>=0)&&(t58Toast().indexOf(E1.msg)>=0);
+      // ②その場で 押しつづける（180フレーム）→ 2回目は 出ない。ただし「止められ つづけて いる」ことは 数で 見る。
+      t58Walk(T58_YAW_OUT, 180, null);
+      var E2=T.edgeSay();
+      var onceOk=(E2.says===says0+1)&&(E2.hits>E1.hits);
+      // ③内へ 歩いて 離れる → 腕が もどる（まだ 知らせは ふえない）
+      var n3=t58Walk(T58_YAW_IN, 400, function(){ return T.edgeSay().said===false; });
+      var E3=T.edgeSay(), rBack=t58R();
+      var awayOk=(n3>0)&&(E3.said===false)&&(E3.says===says0+1)&&(rBack<E3.R-E3.back);
+      // ④もう一度 外へ → また 出る（連呼しないが 黙りっぱなしにも ならない）
+      var n4=t58Walk(T58_YAW_OUT, 400, function(){ return T.edgeSay().says>says0+1; });
+      var reOk=(n4>0)&&(T.edgeSay().says===says0+2);
+      moveVec={f:0,s:0};
+      t44Restore(st);
+      d.push("①外へ 歩く（"+n1+"フレーム）→ 半径 "+r0.toFixed(1)+"→"+rEdge.toFixed(1)+"（果て "+E1.R+
+             "で 止まった="+clampOk+"）知らせ 1回="+firedOk+"（はじめは 出ていない="+armOk+"）");
+      d.push("②#fx-say と トーストの 両方に 「"+E1.msg+"」="+sayOk);
+      d.push("③その場で 180フレーム 押しつづけ＝止められた 回数は "+E1.hits+"→"+E2.hits+" と ふえるのに"+
+             " 知らせは ふえない="+onceOk+"（連呼しない）");
+      d.push("④内へ "+n3+"フレーム 歩く→ 半径 "+rBack.toFixed(1)+"（もどりの はば "+E3.back+"）で 腕が もどる="+awayOk+
+             "／もう一度 外へ "+n4+"フレーム→ また 出る="+reOk);
+      return { pass:armOk&&firedOk&&clampOk&&sayOk&&onceOk&&awayOk&&reOk, detail:d.join(" / ") };
+    }
+
+    // T58c: 「うごきを 少なくする」でも 知らせは 出る（弾47の 裁定＝知らせを つぶに ぶら下げない、と 同じ 考え）。
+    function t_T58c(){
+      var T=window.__tenkyu, d=[];
+      var st=t44Setup();
+      var was=cfg.reduce;
+      cfg.reduce=true; updateComfort();
+      var redOk=(reduceActive===true);
+      var fx=t58Clear();
+      var r0=t58Put(T58_R0);
+      var says0=T.edgeSay().says, armOk=(T.edgeSay().said===false);
+      var n=t58Walk(T58_YAW_OUT, 600, function(){ return T.edgeSay().says>says0; });
+      var E=T.edgeSay();
+      var firedOk=(n>0)&&(E.says===says0+1);
+      var sayOk=((fx.textContent||"").indexOf(E.msg)>=0)&&(t58Toast().indexOf(E.msg)>=0);
+      var rEnd=t58R();   // ★もどす 前に 控える（もどした 後で 読むと 立ち位置が 変わっていて 報告が うそに なる）
+      moveVec={f:0,s:0};
+      cfg.reduce=was; updateComfort();
+      t44Restore(st);
+      d.push("うごきを 少なくする=ON="+redOk+"（はじめは 出ていない="+armOk+"）／外へ "+n+"フレーム 歩く→"+
+             "半径 "+r0.toFixed(1)+"→"+rEnd.toFixed(1)+"（果て "+E.R+"）知らせ 1回="+firedOk);
+      d.push("#fx-say と トーストの 両方に 「"+E.msg+"」="+sayOk+"＝知らせは つぶ(fxOn)に ぶら下がって いない");
+      return { pass:redOk&&armOk&&firedOk&&sayOk, detail:d.join(" / ") };
+    }
+
+    // T58d: 陰性対照＝端から 遠い ところでは 知らせが 出ない・画も 弾49と 同じ（知らせは canvas へ 0寄与）。
+    function t_T58d(){
+      var T=window.__tenkyu, d=[];
+      var st=t44Setup();
+      var fx=t58Clear();   // ★前の テスト（T58b/T58c）の 文字を 持ったままの 器で 測らない
+      // ①端から 遠い＝180フレーム 歩いても 知らせは 0件（止められた 回数も ふえない）
+      t58Put(T58_FAR);
+      var E0=T.edgeSay(), says0=E0.says, hits0=E0.hits;
+      t58Walk(T58_YAW_OUT, 180, null);
+      var rFar=t58R(), E1=T.edgeSay();
+      var quiet=(E1.says===says0)&&(E1.hits===hits0)&&((fx.textContent||"").indexOf(E1.msg)<0)&&
+                (t58Toast().indexOf(E1.msg)<0)&&(rFar<E1.R-E1.back);
+      // ②画は 弾49と 同じ＝知らせの ただ 1つの 副作用（DOMの 文字）を 置いても canvas の 画素は 1つも 動かない。
+      //   ★同じ 時刻で 2枚（T56g と 同じ 作法＝時計を 進めない）。
+      stepFrames(1,0); var p1=t54Px();
+      var el=document.getElementById("achieve-toast"), tw=el?el.textContent:"";
+      fx.textContent=E1.msg;
+      if(el){ el.textContent=E1.msg; el.classList.add("show"); }
+      stepFrames(1,0); var p2=t54Px();
+      var diff=t54PxDiff(p1,p2);
+      if(el){ el.textContent=tw; el.classList.remove("show"); }
+      fx.textContent="";
+      // ③知らせの 1本に 世界の 名まえの if が 1つも 無い（＝全世界で 効く）・えがく 道にも 触って いない
+      var src=E1.src, ids=["p0","p1","p2","p3","p4"], hitId="", i;
+      for(i=0;i<ids.length;i++) if(src.indexOf(ids[i])>=0) hitId+=ids[i]+" ";
+      var noWorldIf=(hitId==="")&&(src.indexOf("ENVID")<0)&&(src.indexOf("WP_ID")<0);
+      var noDraw=(src.indexOf("gl.")<0)&&(src.indexOf("draw")<0);
+      t44Restore(st);
+      d.push("①端から 遠い（半径 "+rFar.toFixed(1)+"＜"+(E1.R-E1.back)+"）で 180フレーム 歩く＝知らせ 0件・"+
+             "止められた 回数も 0件 ふえない="+quiet);
+      d.push("②同じ 時刻の 画 2枚（知らせの 文字を 置く 前後）＝ちがう 画素 "+diff+"個（0="+(diff===0)+"）"+
+             "＝知らせは canvas へ 0寄与＝画は 弾49と 同じ");
+      d.push("③知らせの 1本に 世界の 名まえの if が 無い="+noWorldIf+"（見つかった 名まえ="+(hitId||"なし")+
+             "）／えがく 道に 触って いない="+noDraw);
+      return { pass:quiet&&(diff===0)&&noWorldIf&&noDraw, detail:d.join(" / ") };
+    }
+//★HW49B-END
     window.__tenkyu.runAll = async function(){
       // 弾46 §R42: ★声（console error）が **どのテストの さいちゅうに 出たか**も 書きとめる。
       //   理由＝弾46の 実装中に「台帳に 無い すがた: zombie」という 声が 出どころ不明の まま 残り、
@@ -23478,6 +24305,18 @@
       await run("T56d",t_T56d); await run("T56e",t_T56e); await run("T56f",t_T56f);
       await run("T56g",t_T56g); await run("T56h",t_T56h); await run("T56i",t_T56i);
 //★HW48-RUN-END
+//★HW49-RUN-BEGIN
+      // 弾49 §R45（世界が 地形を 宣言する。★T57i は 前の 網を ぜんぶ 見るので 必ず いちばん 最後）
+      await run("T57a",t_T57a); await run("T57b",t_T57b); await run("T57c",t_T57c);
+      await run("T57d",t_T57d); await run("T57e",t_T57e); await run("T57f",t_T57f);
+      await run("T57g",t_T57g); await run("T57h",t_T57h);
+//★HW49B-RUN-BEGIN
+      // 弾49b §R45b（小さな仕上げ＝①T29b を 全世界へ ②果てで 1回だけ 知らせる）。
+      //   ★回帰帳簿 T57i の **前**に 置く＝T57i の need に T58a〜d を 足して 見張らせる（T57i は 変わらず いちばん最後）。
+      await run("T58a",t_T58a); await run("T58b",t_T58b); await run("T58c",t_T58c); await run("T58d",t_T58d);
+//★HW49B-RUN-END
+      await run("T57i",t_T57i);
+//★HW49-RUN-END
 //★HW44-RUN-END
       // 復元＝本当のプレイヤー進行・設定・カメラを一切壊さない
       swooshCount=snapSwoosh.count; swooshLast=snapSwoosh.last;   // persistSave()のnearMiss焼き込み前に実行順を戻す
