@@ -1,22 +1,14 @@
 {
-  "generated_at": "2026-08-06 19:07:07",
+  "generated_at": "2026-08-06 19:13:08",
   "gpu": {
-    "occupant": "appmv_a1_lyrics（hoshi-brain-20260728-appmv）",
-    "note": "経過1s / 目安あと約9分",
-    "vram_used_gb": 0.9,
+    "occupant": "メディア生成（画像/音楽）",
+    "note": "生成モデルがVRAMを使用中",
+    "vram_used_gb": 5.5,
     "vram_total_gb": 15.9,
     "util": 0,
     "lock": {
-      "locked": true,
-      "holder": {
-        "pid": 40484,
-        "session": "hoshi-brain-20260728-appmv",
-        "job": "appmv_a1_lyrics",
-        "started_at": "2026-08-06T19:07:05+0900",
-        "age_sec": 1,
-        "alive": true,
-        "est_minutes": 10
-      },
+      "locked": false,
+      "holder": null,
       "stale": false
     }
   },
@@ -49,7 +41,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-06 19:05",
+    "updated": "2026-08-06 19:11",
     "current": null
   },
   "queue": [
@@ -136,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 127
+    "push_today": 128
   },
   "ai_works": [
     {
@@ -213,8 +205,8 @@
     }
   ],
   "resources": {
-    "cpu_pct": 7,
-    "mem_pct": 48,
+    "cpu_pct": 2,
+    "mem_pct": 42,
     "mem_total_gb": 31.7,
     "disk_used_gb": 389.7,
     "disk_free_gb": 1472.0
