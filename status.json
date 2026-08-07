@@ -1,22 +1,14 @@
 {
-  "generated_at": "2026-08-07 14:25:07",
+  "generated_at": "2026-08-07 14:31:06",
   "gpu": {
-    "occupant": "regression_gate（regression_gate）",
-    "note": "経過35s / 目安あと約19分",
-    "vram_used_gb": 7.9,
+    "occupant": "コード開発（ローカルLLM）",
+    "note": "qwen3:14b",
+    "vram_used_gb": 10.0,
     "vram_total_gb": 15.9,
-    "util": 73,
+    "util": 97,
     "lock": {
-      "locked": true,
-      "holder": {
-        "pid": 20616,
-        "session": "regression_gate",
-        "job": "regression_gate",
-        "started_at": "2026-08-07T14:24:30+0900",
-        "age_sec": 35,
-        "alive": true,
-        "est_minutes": 20
-      },
+      "locked": false,
+      "holder": null,
       "stale": false
     }
   },
@@ -49,7 +41,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-07 14:24",
+    "updated": "2026-08-07 14:30",
     "current": null
   },
   "queue": [
@@ -136,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 85
+    "push_today": 86
   },
   "ai_works": [
     {
@@ -213,8 +205,8 @@
     }
   ],
   "resources": {
-    "cpu_pct": 7,
-    "mem_pct": 47,
+    "cpu_pct": 6,
+    "mem_pct": 46,
     "mem_total_gb": 31.7,
     "disk_used_gb": 392.6,
     "disk_free_gb": 1469.2
