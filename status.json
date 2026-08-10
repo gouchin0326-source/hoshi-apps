@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-10 11:31:29",
+  "generated_at": "2026-08-10 11:37:07",
   "gpu": {
     "occupant": "空き（アイドル）",
     "note": "誰も使っていません",
@@ -27,7 +27,7 @@
     },
     {
       "name": "自律ランナー",
-      "up": false
+      "up": true
     },
     {
       "name": "電源固定(スリープ無効)",
@@ -39,9 +39,9 @@
     }
   ],
   "runner": {
-    "up": false,
+    "up": true,
     "activity": "待機中",
-    "updated": "2026-08-10 11:30",
+    "updated": "2026-08-10 11:36",
     "current": null
   },
   "queue": [
@@ -128,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 57
+    "push_today": 58
   },
   "ai_works": [
     {
@@ -205,10 +205,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 8,
-    "mem_pct": 49,
+    "cpu_pct": 6,
+    "mem_pct": 45,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 368.5,
-    "disk_free_gb": 1493.2
+    "disk_used_gb": 368.0,
+    "disk_free_gb": 1493.7
   }
 }
