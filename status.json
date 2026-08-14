@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-08-14 16:07:08",
+  "generated_at": "2026-08-14 16:13:05",
   "gpu": {
     "occupant": "TX3タイル素材生成(Z-Image 5種x4)（fca4e5b4）",
-    "note": "排他ロック保持中 / 経過32s",
-    "vram_used_gb": 0.9,
+    "note": "排他ロック保持中 / 経過389s",
+    "vram_used_gb": 10.8,
     "vram_total_gb": 15.9,
-    "util": 0,
+    "util": 1,
     "lock": {
       "locked": true,
       "holder": {
@@ -13,7 +13,7 @@
         "session": "fca4e5b4",
         "job": "TX3タイル素材生成(Z-Image 5種x4)",
         "started_at": "2026-08-14T16:06:35+0900",
-        "age_sec": 32,
+        "age_sec": 389,
         "alive": true,
         "est_minutes": null
       },
@@ -27,7 +27,7 @@
     },
     {
       "name": "生成 (ComfyUI)",
-      "up": false
+      "up": true
     },
     {
       "name": "チャットUI (Open WebUI)",
@@ -49,7 +49,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-14 16:06",
+    "updated": "2026-08-14 16:12",
     "current": null
   },
   "queue": [
@@ -136,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 63
+    "push_today": 64
   },
   "ai_works": [
     {
@@ -213,8 +213,8 @@
     }
   ],
   "resources": {
-    "cpu_pct": 1,
-    "mem_pct": 40,
+    "cpu_pct": 14,
+    "mem_pct": 47,
     "mem_total_gb": 31.7,
     "disk_used_gb": 352.2,
     "disk_free_gb": 1509.5
