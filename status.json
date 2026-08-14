@@ -1,14 +1,22 @@
 {
-  "generated_at": "2026-08-14 16:01:07",
+  "generated_at": "2026-08-14 16:07:08",
   "gpu": {
-    "occupant": "空き（アイドル）",
-    "note": "誰も使っていません",
+    "occupant": "TX3タイル素材生成(Z-Image 5種x4)（fca4e5b4）",
+    "note": "排他ロック保持中 / 経過32s",
     "vram_used_gb": 0.9,
     "vram_total_gb": 15.9,
-    "util": 1,
+    "util": 0,
     "lock": {
-      "locked": false,
-      "holder": null,
+      "locked": true,
+      "holder": {
+        "pid": 24820,
+        "session": "fca4e5b4",
+        "job": "TX3タイル素材生成(Z-Image 5種x4)",
+        "started_at": "2026-08-14T16:06:35+0900",
+        "age_sec": 32,
+        "alive": true,
+        "est_minutes": null
+      },
       "stale": false
     }
   },
@@ -41,7 +49,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-14 16:00",
+    "updated": "2026-08-14 16:06",
     "current": null
   },
   "queue": [
@@ -128,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 62
+    "push_today": 63
   },
   "ai_works": [
     {
@@ -205,7 +213,7 @@
     }
   ],
   "resources": {
-    "cpu_pct": 9,
+    "cpu_pct": 1,
     "mem_pct": 40,
     "mem_total_gb": 31.7,
     "disk_used_gb": 352.2,
