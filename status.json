@@ -1,14 +1,22 @@
 {
-  "generated_at": "2026-08-15 20:25:09",
+  "generated_at": "2026-08-15 20:31:09",
   "gpu": {
-    "occupant": "空き（アイドル）",
-    "note": "誰も使っていません",
+    "occupant": "codex-ollama-zombie-review（codex）",
+    "note": "排他ロック保持中 / 経過32s",
     "vram_used_gb": 0.8,
     "vram_total_gb": 15.9,
     "util": 0,
     "lock": {
-      "locked": false,
-      "holder": null,
+      "locked": true,
+      "holder": {
+        "pid": 19000,
+        "session": "codex",
+        "job": "codex-ollama-zombie-review",
+        "started_at": "2026-08-15T20:30:36+0900",
+        "age_sec": 32,
+        "alive": true,
+        "est_minutes": null
+      },
       "stale": false
     }
   },
@@ -41,7 +49,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-15 20:23",
+    "updated": "2026-08-15 20:29",
     "current": null
   },
   "queue": [
@@ -128,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 129
+    "push_today": 130
   },
   "ai_works": [
     {
@@ -206,7 +214,7 @@
   ],
   "resources": {
     "cpu_pct": 100,
-    "mem_pct": 54,
+    "mem_pct": 57,
     "mem_total_gb": 31.7,
     "disk_used_gb": 360.7,
     "disk_free_gb": 1501.0
