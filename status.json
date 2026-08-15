@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-08-15 10:55:08",
+  "generated_at": "2026-08-15 11:01:07",
   "gpu": {
     "occupant": "pilot_panel_deep（pilot_panel）",
-    "note": "経過386s / 目安あと約23分",
-    "vram_used_gb": 0.9,
+    "note": "経過6s / 目安あと約29分",
+    "vram_used_gb": 1.2,
     "vram_total_gb": 15.9,
     "util": 3,
     "lock": {
@@ -12,8 +12,8 @@
         "pid": 19828,
         "session": "pilot_panel",
         "job": "pilot_panel_deep",
-        "started_at": "2026-08-15T10:48:40+0900",
-        "age_sec": 386,
+        "started_at": "2026-08-15T11:01:00+0900",
+        "age_sec": 6,
         "alive": true,
         "est_minutes": 30
       },
@@ -49,7 +49,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-15 10:54",
+    "updated": "2026-08-15 11:00",
     "current": null
   },
   "queue": [
@@ -136,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 34
+    "push_today": 35
   },
   "ai_works": [
     {
@@ -213,8 +213,8 @@
     }
   ],
   "resources": {
-    "cpu_pct": 7,
-    "mem_pct": 45,
+    "cpu_pct": 12,
+    "mem_pct": 50,
     "mem_total_gb": 31.7,
     "disk_used_gb": 354.8,
     "disk_free_gb": 1506.9
