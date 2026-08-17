@@ -1,14 +1,22 @@
 {
-  "generated_at": "2026-08-17 18:25:09",
+  "generated_at": "2026-08-17 18:31:05",
   "gpu": {
-    "occupant": "空き（アイドル）",
-    "note": "誰も使っていません",
-    "vram_used_gb": 1.0,
+    "occupant": "sg_walk_side4（STRIDE-0817-Fable5）",
+    "note": "経過40s / 目安あと約19分",
+    "vram_used_gb": 6.4,
     "vram_total_gb": 15.9,
-    "util": 0,
+    "util": 14,
     "lock": {
-      "locked": false,
-      "holder": null,
+      "locked": true,
+      "holder": {
+        "pid": 24724,
+        "session": "STRIDE-0817-Fable5",
+        "job": "sg_walk_side4",
+        "started_at": "2026-08-17T18:30:24+0900",
+        "age_sec": 40,
+        "alive": true,
+        "est_minutes": 20
+      },
       "stale": false
     }
   },
@@ -19,7 +27,7 @@
     },
     {
       "name": "生成 (ComfyUI)",
-      "up": false
+      "up": true
     },
     {
       "name": "チャットUI (Open WebUI)",
@@ -41,7 +49,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-17 18:24",
+    "updated": "2026-08-17 18:30",
     "current": null
   },
   "queue": [
@@ -128,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 112
+    "push_today": 113
   },
   "ai_works": [
     {
@@ -205,10 +213,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 4,
-    "mem_pct": 40,
+    "cpu_pct": 19,
+    "mem_pct": 59,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 371.9,
-    "disk_free_gb": 1489.8
+    "disk_used_gb": 379.5,
+    "disk_free_gb": 1482.2
   }
 }
