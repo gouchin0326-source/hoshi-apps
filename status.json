@@ -1,14 +1,22 @@
 {
-  "generated_at": "2026-08-18 06:07:07",
+  "generated_at": "2026-08-18 06:13:05",
   "gpu": {
-    "occupant": "空き（アイドル）",
-    "note": "誰も使っていません",
-    "vram_used_gb": 0.8,
+    "occupant": "sg_sprite_farm2（SPRITE-0818-Fable5）",
+    "note": "経過200s / 目安あと約56分",
+    "vram_used_gb": 10.5,
     "vram_total_gb": 15.9,
-    "util": 1,
+    "util": 0,
     "lock": {
-      "locked": false,
-      "holder": null,
+      "locked": true,
+      "holder": {
+        "pid": 19432,
+        "session": "SPRITE-0818-Fable5",
+        "job": "sg_sprite_farm2",
+        "started_at": "2026-08-18T06:09:44+0900",
+        "age_sec": 200,
+        "alive": true,
+        "est_minutes": 60
+      },
       "stale": false
     }
   },
@@ -19,7 +27,7 @@
     },
     {
       "name": "生成 (ComfyUI)",
-      "up": false
+      "up": true
     },
     {
       "name": "チャットUI (Open WebUI)",
@@ -41,7 +49,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-18 06:04",
+    "updated": "2026-08-18 06:10",
     "current": null
   },
   "queue": [
@@ -109,9 +117,8 @@
     }
   ],
   "requests": {
-    "today": 0,
+    "today": 1,
     "hist": {
-      "2026-07-03": 612,
       "2026-07-04": 501,
       "2026-07-05": 20,
       "2026-07-06": 16,
@@ -124,11 +131,12 @@
       "2026-07-14": 35,
       "2026-07-15": 159,
       "2026-07-16": 106,
-      "2026-07-17": 11
+      "2026-07-17": 11,
+      "2026-07-18": 12
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 2
+    "push_today": 3
   },
   "ai_works": [
     {
@@ -205,10 +213,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 11,
-    "mem_pct": 35,
+    "cpu_pct": 9,
+    "mem_pct": 69,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 368.2,
-    "disk_free_gb": 1493.6
+    "disk_used_gb": 388.0,
+    "disk_free_gb": 1473.7
   }
 }
