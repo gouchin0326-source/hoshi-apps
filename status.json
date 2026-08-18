@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-08-18 15:55:05",
+  "generated_at": "2026-08-18 16:01:05",
   "gpu": {
     "occupant": "sg_3d_stills（SG3D-0818-Fable5）",
-    "note": "経過301s / 目安あと約54分",
-    "vram_used_gb": 13.4,
+    "note": "経過660s / 目安あと約49分",
+    "vram_used_gb": 13.5,
     "vram_total_gb": 15.9,
     "util": 100,
     "lock": {
@@ -13,7 +13,7 @@
         "session": "SG3D-0818-Fable5",
         "job": "sg_3d_stills",
         "started_at": "2026-08-18T15:50:04+0900",
-        "age_sec": 301,
+        "age_sec": 660,
         "alive": true,
         "est_minutes": 60
       },
@@ -49,7 +49,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-18 15:52",
+    "updated": "2026-08-18 15:58",
     "current": null
   },
   "queue": [
@@ -136,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 100
+    "push_today": 101
   },
   "ai_works": [
     {
@@ -213,10 +213,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 20,
-    "mem_pct": 81,
+    "cpu_pct": 11,
+    "mem_pct": 82,
     "mem_total_gb": 31.7,
     "disk_used_gb": 426.7,
-    "disk_free_gb": 1435.1
+    "disk_free_gb": 1435.0
   }
 }
