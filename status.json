@@ -1,22 +1,14 @@
 {
-  "generated_at": "2026-08-18 17:25:05",
+  "generated_at": "2026-08-18 17:31:07",
   "gpu": {
-    "occupant": "sg_back_lora_test（SG3D-0818-Fable5）",
-    "note": "経過196s / 目安あと約16分",
-    "vram_used_gb": 13.5,
+    "occupant": "空き（アイドル）",
+    "note": "誰も使っていません",
+    "vram_used_gb": 0.8,
     "vram_total_gb": 15.9,
-    "util": 100,
+    "util": 1,
     "lock": {
-      "locked": true,
-      "holder": {
-        "pid": 15460,
-        "session": "SG3D-0818-Fable5",
-        "job": "sg_back_lora_test",
-        "started_at": "2026-08-18T17:21:48+0900",
-        "age_sec": 196,
-        "alive": true,
-        "est_minutes": 20
-      },
+      "locked": false,
+      "holder": null,
       "stale": false
     }
   },
@@ -27,7 +19,7 @@
     },
     {
       "name": "生成 (ComfyUI)",
-      "up": true
+      "up": false
     },
     {
       "name": "チャットUI (Open WebUI)",
@@ -49,7 +41,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-18 17:22",
+    "updated": "2026-08-18 17:28",
     "current": null
   },
   "queue": [
@@ -136,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 115
+    "push_today": 116
   },
   "ai_works": [
     {
@@ -213,10 +205,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 0,
-    "mem_pct": 81,
+    "cpu_pct": 4,
+    "mem_pct": 24,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 428.4,
-    "disk_free_gb": 1433.3
+    "disk_used_gb": 412.9,
+    "disk_free_gb": 1448.9
   }
 }
