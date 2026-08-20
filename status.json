@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-08-20 11:31:07",
+  "generated_at": "2026-08-20 11:37:06",
   "gpu": {
     "occupant": "空き（アイドル）",
     "note": "誰も使っていません",
     "vram_used_gb": 0.8,
     "vram_total_gb": 15.9,
-    "util": 5,
+    "util": 4,
     "lock": {
       "locked": false,
       "holder": null,
@@ -41,7 +41,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-20 11:30",
+    "updated": "2026-08-20 11:36",
     "current": null
   },
   "queue": [
@@ -128,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 50
+    "push_today": 51
   },
   "ai_works": [
     {
@@ -205,10 +205,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 4,
-    "mem_pct": 30,
+    "cpu_pct": 10,
+    "mem_pct": 33,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 432.6,
-    "disk_free_gb": 1429.2
+    "disk_used_gb": 434.3,
+    "disk_free_gb": 1427.4
   }
 }
