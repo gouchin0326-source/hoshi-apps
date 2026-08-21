@@ -1,14 +1,22 @@
 {
-  "generated_at": "2026-08-21 12:13:08",
+  "generated_at": "2026-08-21 12:19:05",
   "gpu": {
-    "occupant": "空き（アイドル）",
-    "note": "誰も使っていません",
-    "vram_used_gb": 0.9,
+    "occupant": "sg_quad_stills（QUAD-0821-brain）",
+    "note": "経過332s / 目安あと約9分",
+    "vram_used_gb": 13.4,
     "vram_total_gb": 15.9,
-    "util": 1,
+    "util": 100,
     "lock": {
-      "locked": false,
-      "holder": null,
+      "locked": true,
+      "holder": {
+        "pid": 26744,
+        "session": "QUAD-0821-brain",
+        "job": "sg_quad_stills",
+        "started_at": "2026-08-21T12:13:33+0900",
+        "age_sec": 332,
+        "alive": true,
+        "est_minutes": 15
+      },
       "stale": false
     }
   },
@@ -19,7 +27,7 @@
     },
     {
       "name": "生成 (ComfyUI)",
-      "up": false
+      "up": true
     },
     {
       "name": "チャットUI (Open WebUI)",
@@ -41,7 +49,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-21 12:12",
+    "updated": "2026-08-21 12:18",
     "current": null
   },
   "queue": [
@@ -128,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 58
+    "push_today": 59
   },
   "ai_works": [
     {
@@ -205,10 +213,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 5,
-    "mem_pct": 32,
+    "cpu_pct": 78,
+    "mem_pct": 57,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 432.9,
-    "disk_free_gb": 1428.8
+    "disk_used_gb": 445.1,
+    "disk_free_gb": 1416.6
   }
 }
