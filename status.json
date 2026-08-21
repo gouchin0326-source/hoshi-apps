@@ -1,22 +1,14 @@
 {
-  "generated_at": "2026-08-21 12:31:06",
+  "generated_at": "2026-08-21 12:37:06",
   "gpu": {
-    "occupant": "quad_trellis（QUAD-0821-brain）",
-    "note": "経過472s / 目安あと約7分",
-    "vram_used_gb": 6.1,
+    "occupant": "空き（アイドル）",
+    "note": "誰も使っていません",
+    "vram_used_gb": 0.9,
     "vram_total_gb": 15.9,
-    "util": 97,
+    "util": 1,
     "lock": {
-      "locked": true,
-      "holder": {
-        "pid": 19176,
-        "session": "QUAD-0821-brain",
-        "job": "quad_trellis",
-        "started_at": "2026-08-21T12:23:13+0900",
-        "age_sec": 472,
-        "alive": true,
-        "est_minutes": 15
-      },
+      "locked": false,
+      "holder": null,
       "stale": false
     }
   },
@@ -49,7 +41,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-21 12:30",
+    "updated": "2026-08-21 12:36",
     "current": null
   },
   "queue": [
@@ -136,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 61
+    "push_today": 62
   },
   "ai_works": [
     {
@@ -213,10 +205,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 16,
-    "mem_pct": 38,
+    "cpu_pct": 3,
+    "mem_pct": 29,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 433.0,
-    "disk_free_gb": 1428.8
+    "disk_used_gb": 433.2,
+    "disk_free_gb": 1428.5
   }
 }
