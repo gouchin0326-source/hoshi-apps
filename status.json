@@ -1,22 +1,14 @@
 {
-  "generated_at": "2026-08-22 21:49:04",
+  "generated_at": "2026-08-22 21:55:05",
   "gpu": {
-    "occupant": "ha3d_token_sweep（model3d_lane）",
-    "note": "経過443s / 目安あと約0分",
-    "vram_used_gb": 5.6,
+    "occupant": "空き（アイドル）",
+    "note": "誰も使っていません",
+    "vram_used_gb": 0.9,
     "vram_total_gb": 15.9,
-    "util": 93,
+    "util": 2,
     "lock": {
-      "locked": true,
-      "holder": {
-        "pid": 24492,
-        "session": "model3d_lane",
-        "job": "ha3d_token_sweep",
-        "started_at": "2026-08-22T21:41:41+0900",
-        "age_sec": 443,
-        "alive": true,
-        "est_minutes": 8
-      },
+      "locked": false,
+      "holder": null,
       "stale": false
     }
   },
@@ -49,7 +41,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-22 21:46",
+    "updated": "2026-08-22 21:52",
     "current": null
   },
   "queue": [
@@ -136,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 148
+    "push_today": 149
   },
   "ai_works": [
     {
@@ -213,10 +205,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 10,
-    "mem_pct": 52,
+    "cpu_pct": 6,
+    "mem_pct": 34,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 444.5,
-    "disk_free_gb": 1417.2
+    "disk_used_gb": 439.2,
+    "disk_free_gb": 1422.6
   }
 }
