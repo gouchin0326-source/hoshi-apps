@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-08-25 04:19:06",
+  "generated_at": "2026-08-25 04:25:07",
   "gpu": {
     "occupant": "barrel_m2_trellis（props_barrel_door_lane）",
-    "note": "経過279s / 目安あと約5分",
-    "vram_used_gb": 2.1,
+    "note": "経過640s / 目安あと約0分",
+    "vram_used_gb": 10.1,
     "vram_total_gb": 15.9,
-    "util": 19,
+    "util": 41,
     "lock": {
       "locked": true,
       "holder": {
@@ -13,7 +13,7 @@
         "session": "props_barrel_door_lane",
         "job": "barrel_m2_trellis",
         "started_at": "2026-08-25T04:14:26+0900",
-        "age_sec": 279,
+        "age_sec": 640,
         "alive": true,
         "est_minutes": 10
       },
@@ -49,7 +49,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-25 04:17",
+    "updated": "2026-08-25 04:23",
     "current": null
   },
   "queue": [
@@ -136,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 43
+    "push_today": 44
   },
   "ai_works": [
     {
@@ -213,10 +213,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 21,
-    "mem_pct": 57,
+    "cpu_pct": 59,
+    "mem_pct": 45,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 475.8,
-    "disk_free_gb": 1386.0
+    "disk_used_gb": 475.9,
+    "disk_free_gb": 1385.9
   }
 }
