@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-08-25 04:31:08",
+  "generated_at": "2026-08-25 04:37:06",
   "gpu": {
     "occupant": "appmv_i2v_stage3（hoshi-brain-mv3-stage3）",
-    "note": "経過207s / 目安あと約16分",
-    "vram_used_gb": 14.4,
+    "note": "経過567s / 目安あと約10分",
+    "vram_used_gb": 11.2,
     "vram_total_gb": 15.9,
-    "util": 100,
+    "util": 95,
     "lock": {
       "locked": true,
       "holder": {
@@ -13,7 +13,7 @@
         "session": "hoshi-brain-mv3-stage3",
         "job": "appmv_i2v_stage3",
         "started_at": "2026-08-25T04:27:38+0900",
-        "age_sec": 207,
+        "age_sec": 567,
         "alive": true,
         "est_minutes": 20
       },
@@ -49,7 +49,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-25 04:29",
+    "updated": "2026-08-25 04:35",
     "current": null
   },
   "queue": [
@@ -136,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 45
+    "push_today": 46
   },
   "ai_works": [
     {
@@ -213,10 +213,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 56,
-    "mem_pct": 57,
+    "cpu_pct": 11,
+    "mem_pct": 85,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 487.5,
-    "disk_free_gb": 1374.2
+    "disk_used_gb": 493.1,
+    "disk_free_gb": 1368.7
   }
 }
