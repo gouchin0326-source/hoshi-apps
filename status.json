@@ -1,14 +1,22 @@
 {
-  "generated_at": "2026-08-25 05:13:04",
+  "generated_at": "2026-08-25 05:19:04",
   "gpu": {
-    "occupant": "モデル待機中（アイドル）",
-    "note": "生成は完了済み・モデルがVRAMに残っています",
-    "vram_used_gb": 11.0,
+    "occupant": "barrel_retry_m2（model3d_lane）",
+    "note": "経過330s / 目安あと約2分",
+    "vram_used_gb": 4.1,
     "vram_total_gb": 15.9,
     "util": 0,
     "lock": {
-      "locked": false,
-      "holder": null,
+      "locked": true,
+      "holder": {
+        "pid": 7208,
+        "session": "model3d_lane",
+        "job": "barrel_retry_m2",
+        "started_at": "2026-08-25T05:13:34+0900",
+        "age_sec": 330,
+        "alive": true,
+        "est_minutes": 8
+      },
       "stale": false
     }
   },
@@ -41,7 +49,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-25 05:11",
+    "updated": "2026-08-25 05:17",
     "current": null
   },
   "queue": [
@@ -128,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 52
+    "push_today": 53
   },
   "ai_works": [
     {
@@ -205,8 +213,8 @@
     }
   ],
   "resources": {
-    "cpu_pct": 5,
-    "mem_pct": 31,
+    "cpu_pct": 11,
+    "mem_pct": 47,
     "mem_total_gb": 31.7,
     "disk_used_gb": 476.8,
     "disk_free_gb": 1384.9
