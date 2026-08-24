@@ -1,22 +1,14 @@
 {
-  "generated_at": "2026-08-25 04:01:05",
+  "generated_at": "2026-08-25 04:07:05",
   "gpu": {
-    "occupant": "wan22_bench（hoshi-brain-mv3-bench）",
-    "note": "経過2726s / 目安あと約14分",
-    "vram_used_gb": 9.4,
+    "occupant": "空き（アイドル）",
+    "note": "誰も使っていません",
+    "vram_used_gb": 1.5,
     "vram_total_gb": 15.9,
-    "util": 99,
+    "util": 0,
     "lock": {
-      "locked": true,
-      "holder": {
-        "pid": 17000,
-        "session": "hoshi-brain-mv3-bench",
-        "job": "wan22_bench",
-        "started_at": "2026-08-25T03:15:38+0900",
-        "age_sec": 2726,
-        "alive": true,
-        "est_minutes": 60
-      },
+      "locked": false,
+      "holder": null,
       "stale": false
     }
   },
@@ -49,7 +41,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-25 03:59",
+    "updated": "2026-08-25 04:05",
     "current": null
   },
   "queue": [
@@ -136,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 40
+    "push_today": 41
   },
   "ai_works": [
     {
@@ -213,8 +205,8 @@
     }
   ],
   "resources": {
-    "cpu_pct": 19,
-    "mem_pct": 63,
+    "cpu_pct": 13,
+    "mem_pct": 68,
     "mem_total_gb": 31.7,
     "disk_used_gb": 503.2,
     "disk_free_gb": 1358.5
