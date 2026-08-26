@@ -1,22 +1,14 @@
 {
-  "generated_at": "2026-08-26 20:25:05",
+  "generated_at": "2026-08-26 20:31:15",
   "gpu": {
-    "occupant": "sera_v8_m2_trellis（sera_v8）",
-    "note": "排他ロック保持中 / 経過300s",
-    "vram_used_gb": 4.9,
+    "occupant": "モデル待機中（アイドル）",
+    "note": "生成は完了済み・モデルがVRAMに残っています",
+    "vram_used_gb": 4.3,
     "vram_total_gb": 15.9,
-    "util": 94,
+    "util": 1,
     "lock": {
-      "locked": true,
-      "holder": {
-        "pid": 16992,
-        "session": "sera_v8",
-        "job": "sera_v8_m2_trellis",
-        "started_at": "2026-08-26T20:20:04+0900",
-        "age_sec": 300,
-        "alive": true,
-        "est_minutes": null
-      },
+      "locked": false,
+      "holder": null,
       "stale": false
     }
   },
@@ -49,7 +41,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-26 20:23",
+    "updated": "2026-08-26 20:29",
     "current": null
   },
   "queue": [
@@ -136,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 115
+    "push_today": 116
   },
   "ai_works": [
     {
@@ -213,10 +205,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 13,
-    "mem_pct": 44,
+    "cpu_pct": 100,
+    "mem_pct": 49,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 474.1,
-    "disk_free_gb": 1387.6
+    "disk_used_gb": 474.3,
+    "disk_free_gb": 1387.5
   }
 }
