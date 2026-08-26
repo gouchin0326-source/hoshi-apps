@@ -1,14 +1,22 @@
 {
-  "generated_at": "2026-08-27 00:31:05",
+  "generated_at": "2026-08-27 00:37:06",
   "gpu": {
-    "occupant": "画像/音楽生成中（ComfyUI）",
-    "note": "ファイル: newchar_beastfolk",
-    "vram_used_gb": 12.9,
+    "occupant": "newchars_trellis_newchar_villager（newchars_0827）",
+    "note": "排他ロック保持中 / 経過184s",
+    "vram_used_gb": 13.8,
     "vram_total_gb": 15.9,
-    "util": 32,
+    "util": 99,
     "lock": {
-      "locked": false,
-      "holder": null,
+      "locked": true,
+      "holder": {
+        "pid": 2548,
+        "session": "newchars_0827",
+        "job": "newchars_trellis_newchar_villager",
+        "started_at": "2026-08-27T00:34:00+0900",
+        "age_sec": 184,
+        "alive": true,
+        "est_minutes": null
+      },
       "stale": false
     }
   },
@@ -41,7 +49,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-27 00:30",
+    "updated": "2026-08-27 00:36",
     "current": null
   },
   "queue": [
@@ -128,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 5
+    "push_today": 6
   },
   "ai_works": [
     {
@@ -205,10 +213,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 33,
-    "mem_pct": 63,
+    "cpu_pct": 56,
+    "mem_pct": 64,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 476.0,
-    "disk_free_gb": 1385.8
+    "disk_used_gb": 483.0,
+    "disk_free_gb": 1378.8
   }
 }
