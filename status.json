@@ -1,19 +1,19 @@
 {
-  "generated_at": "2026-08-27 01:01:05",
+  "generated_at": "2026-08-27 01:07:05",
   "gpu": {
-    "occupant": "newchars_trellis_newchar_merchant（newchars_0827）",
-    "note": "排他ロック保持中 / 経過153s",
-    "vram_used_gb": 14.9,
+    "occupant": "newchars_trellis_newchar_familiar（newchars_0827）",
+    "note": "排他ロック保持中 / 経過40s",
+    "vram_used_gb": 14.4,
     "vram_total_gb": 15.9,
-    "util": 95,
+    "util": 98,
     "lock": {
       "locked": true,
       "holder": {
         "pid": 2548,
         "session": "newchars_0827",
-        "job": "newchars_trellis_newchar_merchant",
-        "started_at": "2026-08-27T00:58:31+0900",
-        "age_sec": 153,
+        "job": "newchars_trellis_newchar_familiar",
+        "started_at": "2026-08-27T01:06:25+0900",
+        "age_sec": 40,
         "alive": true,
         "est_minutes": null
       },
@@ -49,7 +49,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-27 01:00",
+    "updated": "2026-08-27 01:06",
     "current": null
   },
   "queue": [
@@ -136,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 10
+    "push_today": 11
   },
   "ai_works": [
     {
@@ -213,10 +213,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 8,
-    "mem_pct": 45,
+    "cpu_pct": 11,
+    "mem_pct": 58,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 482.2,
-    "disk_free_gb": 1379.6
+    "disk_used_gb": 482.9,
+    "disk_free_gb": 1378.8
   }
 }
