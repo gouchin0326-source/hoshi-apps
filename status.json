@@ -1,22 +1,14 @@
 {
-  "generated_at": "2026-08-26 15:13:06",
+  "generated_at": "2026-08-26 15:19:12",
   "gpu": {
-    "occupant": "sera_v6_a2_facehires（sera_v6_a2）",
-    "note": "排他ロック保持中 / 経過123s",
-    "vram_used_gb": 13.6,
+    "occupant": "モデル待機中（アイドル）",
+    "note": "生成は完了済み・モデルがVRAMに残っています",
+    "vram_used_gb": 9.6,
     "vram_total_gb": 15.9,
-    "util": 99,
+    "util": 1,
     "lock": {
-      "locked": true,
-      "holder": {
-        "pid": 25332,
-        "session": "sera_v6_a2",
-        "job": "sera_v6_a2_facehires",
-        "started_at": "2026-08-26T15:11:02+0900",
-        "age_sec": 123,
-        "alive": true,
-        "est_minutes": null
-      },
+      "locked": false,
+      "holder": null,
       "stale": false
     }
   },
@@ -49,7 +41,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-26 15:12",
+    "updated": "2026-08-26 15:19",
     "current": null
   },
   "queue": [
@@ -136,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 63
+    "push_today": 64
   },
   "ai_works": [
     {
@@ -213,10 +205,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 12,
+    "cpu_pct": 97,
     "mem_pct": 87,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 493.8,
-    "disk_free_gb": 1368.0
+    "disk_used_gb": 494.0,
+    "disk_free_gb": 1367.7
   }
 }
