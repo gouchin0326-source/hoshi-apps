@@ -1,22 +1,14 @@
 {
-  "generated_at": "2026-08-27 01:19:05",
+  "generated_at": "2026-08-27 01:25:06",
   "gpu": {
-    "occupant": "newchars_trellis_newchar_beastfolk（newchars_0827）",
-    "note": "排他ロック保持中 / 経過139s",
-    "vram_used_gb": 15.0,
+    "occupant": "空き（アイドル）",
+    "note": "誰も使っていません",
+    "vram_used_gb": 1.0,
     "vram_total_gb": 15.9,
-    "util": 96,
+    "util": 1,
     "lock": {
-      "locked": true,
-      "holder": {
-        "pid": 6588,
-        "session": "newchars_0827",
-        "job": "newchars_trellis_newchar_beastfolk",
-        "started_at": "2026-08-27T01:16:46+0900",
-        "age_sec": 139,
-        "alive": true,
-        "est_minutes": null
-      },
+      "locked": false,
+      "holder": null,
       "stale": false
     }
   },
@@ -49,7 +41,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-27 01:18",
+    "updated": "2026-08-27 01:24",
     "current": null
   },
   "queue": [
@@ -136,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 13
+    "push_today": 14
   },
   "ai_works": [
     {
@@ -213,10 +205,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 8,
-    "mem_pct": 47,
+    "cpu_pct": 7,
+    "mem_pct": 74,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 483.3,
-    "disk_free_gb": 1378.4
+    "disk_used_gb": 481.7,
+    "disk_free_gb": 1380.0
   }
 }
