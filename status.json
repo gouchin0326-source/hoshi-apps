@@ -1,19 +1,19 @@
 {
-  "generated_at": "2026-08-29 08:43:07",
+  "generated_at": "2026-08-29 08:49:07",
   "gpu": {
-    "occupant": "house3d_bypass216_test（t4_20260829）",
-    "note": "排他ロック保持中 / 経過386s",
-    "vram_used_gb": 7.5,
+    "occupant": "props_trellis_prop_house_small（props_0827）",
+    "note": "排他ロック保持中 / 経過69s",
+    "vram_used_gb": 4.1,
     "vram_total_gb": 15.9,
-    "util": 98,
+    "util": 21,
     "lock": {
       "locked": true,
       "holder": {
-        "pid": 20100,
-        "session": "t4_20260829",
-        "job": "house3d_bypass216_test",
-        "started_at": "2026-08-29T08:36:40+0900",
-        "age_sec": 386,
+        "pid": 28208,
+        "session": "props_0827",
+        "job": "props_trellis_prop_house_small",
+        "started_at": "2026-08-29T08:47:58+0900",
+        "age_sec": 69,
         "alive": true,
         "est_minutes": null
       },
@@ -49,7 +49,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-29 08:42",
+    "updated": "2026-08-29 08:48",
     "current": null
   },
   "queue": [
@@ -136,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 12
+    "push_today": 13
   },
   "ai_works": [
     {
@@ -213,10 +213,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 7,
+    "cpu_pct": 12,
     "mem_pct": 49,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 486.3,
-    "disk_free_gb": 1375.5
+    "disk_used_gb": 486.2,
+    "disk_free_gb": 1375.6
   }
 }
