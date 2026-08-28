@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-08-28 12:49:08",
+  "generated_at": "2026-08-28 12:55:07",
   "gpu": {
     "occupant": "props_trellis_prop_crates（props_0827）",
-    "note": "排他ロック保持中 / 経過54s",
-    "vram_used_gb": 3.9,
+    "note": "排他ロック保持中 / 経過88s",
+    "vram_used_gb": 3.8,
     "vram_total_gb": 15.9,
     "util": 97,
     "lock": {
@@ -12,8 +12,8 @@
         "pid": 26248,
         "session": "props_0827",
         "job": "props_trellis_prop_crates",
-        "started_at": "2026-08-28T12:48:13+0900",
-        "age_sec": 54,
+        "started_at": "2026-08-28T12:53:38+0900",
+        "age_sec": 88,
         "alive": true,
         "est_minutes": null
       },
@@ -49,7 +49,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-28 12:46",
+    "updated": "2026-08-28 12:52",
     "current": null
   },
   "queue": [
@@ -136,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 37
+    "push_today": 38
   },
   "ai_works": [
     {
@@ -213,8 +213,8 @@
     }
   ],
   "resources": {
-    "cpu_pct": 9,
-    "mem_pct": 57,
+    "cpu_pct": 14,
+    "mem_pct": 49,
     "mem_total_gb": 31.7,
     "disk_used_gb": 485.6,
     "disk_free_gb": 1376.1
