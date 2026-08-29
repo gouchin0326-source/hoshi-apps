@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-08-29 09:31:07",
+  "generated_at": "2026-08-29 09:37:07",
   "gpu": {
     "occupant": "props_trellis_prop_tree_broadleaf（props_0827）",
-    "note": "排他ロック保持中 / 経過341s",
-    "vram_used_gb": 7.3,
+    "note": "排他ロック保持中 / 経過701s",
+    "vram_used_gb": 15.4,
     "vram_total_gb": 15.9,
     "util": 100,
     "lock": {
@@ -13,7 +13,7 @@
         "session": "props_0827",
         "job": "props_trellis_prop_tree_broadleaf",
         "started_at": "2026-08-29T09:25:26+0900",
-        "age_sec": 341,
+        "age_sec": 701,
         "alive": true,
         "est_minutes": null
       },
@@ -49,7 +49,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-29 09:30",
+    "updated": "2026-08-29 09:36",
     "current": null
   },
   "queue": [
@@ -136,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 20
+    "push_today": 21
   },
   "ai_works": [
     {
@@ -213,8 +213,8 @@
     }
   ],
   "resources": {
-    "cpu_pct": 6,
-    "mem_pct": 43,
+    "cpu_pct": 8,
+    "mem_pct": 52,
     "mem_total_gb": 31.7,
     "disk_used_gb": 486.7,
     "disk_free_gb": 1375.0
