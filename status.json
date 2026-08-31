@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-08-31 12:07:05",
+  "generated_at": "2026-08-31 12:13:05",
   "gpu": {
     "occupant": "newchar_art_batch（P3-NEWCHAR-0831）",
-    "note": "経過123s / 目安あと約22分",
+    "note": "経過482s / 目安あと約16分",
     "vram_used_gb": 13.5,
     "vram_total_gb": 15.9,
     "util": 100,
@@ -13,7 +13,7 @@
         "session": "P3-NEWCHAR-0831",
         "job": "newchar_art_batch",
         "started_at": "2026-08-31T12:05:02+0900",
-        "age_sec": 123,
+        "age_sec": 482,
         "alive": true,
         "est_minutes": 25
       },
@@ -49,7 +49,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-31 12:04",
+    "updated": "2026-08-31 12:10",
     "current": null
   },
   "queue": [
@@ -136,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 52
+    "push_today": 53
   },
   "ai_works": [
     {
@@ -213,10 +213,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 71,
-    "mem_pct": 56,
+    "cpu_pct": 7,
+    "mem_pct": 57,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 508.7,
+    "disk_used_gb": 508.8,
     "disk_free_gb": 1353.0
   }
 }
