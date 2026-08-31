@@ -1,14 +1,22 @@
 {
-  "generated_at": "2026-08-31 12:01:09",
+  "generated_at": "2026-08-31 12:07:05",
   "gpu": {
-    "occupant": "空き（アイドル）",
-    "note": "誰も使っていません",
-    "vram_used_gb": 1.0,
+    "occupant": "newchar_art_batch（P3-NEWCHAR-0831）",
+    "note": "経過123s / 目安あと約22分",
+    "vram_used_gb": 13.5,
     "vram_total_gb": 15.9,
-    "util": 0,
+    "util": 100,
     "lock": {
-      "locked": false,
-      "holder": null,
+      "locked": true,
+      "holder": {
+        "pid": 24628,
+        "session": "P3-NEWCHAR-0831",
+        "job": "newchar_art_batch",
+        "started_at": "2026-08-31T12:05:02+0900",
+        "age_sec": 123,
+        "alive": true,
+        "est_minutes": 25
+      },
       "stale": false
     }
   },
@@ -19,7 +27,7 @@
     },
     {
       "name": "生成 (ComfyUI)",
-      "up": false
+      "up": true
     },
     {
       "name": "チャットUI (Open WebUI)",
@@ -41,7 +49,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-08-31 11:58",
+    "updated": "2026-08-31 12:04",
     "current": null
   },
   "queue": [
@@ -128,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 51
+    "push_today": 52
   },
   "ai_works": [
     {
@@ -205,10 +213,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 7,
-    "mem_pct": 44,
+    "cpu_pct": 71,
+    "mem_pct": 56,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 508.8,
+    "disk_used_gb": 508.7,
     "disk_free_gb": 1353.0
   }
 }
