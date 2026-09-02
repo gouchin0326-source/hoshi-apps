@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-09-02 16:07:06",
+  "generated_at": "2026-09-02 16:13:05",
   "gpu": {
     "occupant": "research_digest_draft（llm_digest_lane）",
-    "note": "経過7s / 目安あと約0分",
+    "note": "経過5s / 目安あと約0分",
     "vram_used_gb": 10.0,
     "vram_total_gb": 15.9,
     "util": 97,
@@ -12,8 +12,8 @@
         "pid": 7448,
         "session": "llm_digest_lane",
         "job": "research_digest_draft",
-        "started_at": "2026-09-02T16:06:57+0900",
-        "age_sec": 7,
+        "started_at": "2026-09-02T16:12:58+0900",
+        "age_sec": 5,
         "alive": true,
         "est_minutes": 1
       },
@@ -49,7 +49,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-09-02 16:06",
+    "updated": "2026-09-02 16:12",
     "current": null
   },
   "queue": [
@@ -136,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 92
+    "push_today": 93
   },
   "ai_works": [
     {
@@ -213,8 +213,8 @@
     }
   ],
   "resources": {
-    "cpu_pct": 9,
-    "mem_pct": 70,
+    "cpu_pct": 17,
+    "mem_pct": 71,
     "mem_total_gb": 31.7,
     "disk_used_gb": 501.2,
     "disk_free_gb": 1360.6
