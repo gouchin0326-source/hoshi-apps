@@ -1,21 +1,21 @@
 {
-  "generated_at": "2026-09-02 11:01:07",
+  "generated_at": "2026-09-02 11:07:05",
   "gpu": {
-    "occupant": "pilot_panel_image（pilot_panel）",
-    "note": "経過0s / 目安あと約3分",
-    "vram_used_gb": 1.2,
+    "occupant": "ha3d_make（model3d_lane）",
+    "note": "経過188s / 目安あと約8分",
+    "vram_used_gb": 2.2,
     "vram_total_gb": 15.9,
-    "util": 2,
+    "util": 0,
     "lock": {
       "locked": true,
       "holder": {
-        "pid": 27668,
-        "session": "pilot_panel",
-        "job": "pilot_panel_image",
-        "started_at": "2026-09-02T11:01:06+0900",
-        "age_sec": 0,
+        "pid": 7548,
+        "session": "model3d_lane",
+        "job": "ha3d_make",
+        "started_at": "2026-09-02T11:03:57+0900",
+        "age_sec": 188,
         "alive": true,
-        "est_minutes": 3
+        "est_minutes": 12
       },
       "stale": false
     }
@@ -27,7 +27,7 @@
     },
     {
       "name": "生成 (ComfyUI)",
-      "up": false
+      "up": true
     },
     {
       "name": "チャットUI (Open WebUI)",
@@ -49,7 +49,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-09-02 10:59",
+    "updated": "2026-09-02 11:05",
     "current": null
   },
   "queue": [
@@ -136,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 41
+    "push_today": 42
   },
   "ai_works": [
     {
@@ -213,10 +213,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 17,
-    "mem_pct": 44,
+    "cpu_pct": 19,
+    "mem_pct": 58,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 500.0,
+    "disk_used_gb": 500.1,
     "disk_free_gb": 1361.7
   }
 }
