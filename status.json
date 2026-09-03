@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-09-03 12:27:32",
+  "generated_at": "2026-09-03 12:28:32",
   "gpu": {
-    "occupant": "空き（アイドル）",
-    "note": "誰も使っていません",
-    "vram_used_gb": 0.0,
+    "occupant": "モデル待機中（アイドル）",
+    "note": "生成は完了済み・モデルがVRAMに残っています",
+    "vram_used_gb": 6.6,
     "vram_total_gb": 15.9,
-    "util": 0,
+    "util": 1,
     "lock": {
       "locked": false,
       "holder": null,
@@ -27,7 +27,11 @@
     },
     {
       "name": "自律ランナー",
-      "up": false
+      "up": true
+    },
+    {
+      "name": "電源固定(スリープ無効)",
+      "up": true
     },
     {
       "name": "バックアップ鮮度(週次)",
@@ -35,9 +39,9 @@
     }
   ],
   "runner": {
-    "up": false,
+    "up": true,
     "activity": "待機中",
-    "updated": "2026-09-03 12:24",
+    "updated": "2026-09-03 12:27",
     "current": null
   },
   "queue": [
@@ -201,10 +205,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 100,
-    "mem_pct": 85,
+    "cpu_pct": 45,
+    "mem_pct": 74,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 516.9,
-    "disk_free_gb": 1344.9
+    "disk_used_gb": 517.0,
+    "disk_free_gb": 1344.8
   }
 }
