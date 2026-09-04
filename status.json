@@ -1,14 +1,22 @@
 {
-  "generated_at": "2026-09-04 09:01:07",
+  "generated_at": "2026-09-04 09:07:05",
   "gpu": {
-    "occupant": "空き（アイドル）",
-    "note": "誰も使っていません",
-    "vram_used_gb": 0.8,
+    "occupant": "local_music_generate（music_lane）",
+    "note": "経過2s / 目安あと約7分",
+    "vram_used_gb": 12.1,
     "vram_total_gb": 15.9,
-    "util": 1,
+    "util": 0,
     "lock": {
-      "locked": false,
-      "holder": null,
+      "locked": true,
+      "holder": {
+        "pid": 27428,
+        "session": "music_lane",
+        "job": "local_music_generate",
+        "started_at": "2026-09-04T09:07:02+0900",
+        "age_sec": 2,
+        "alive": true,
+        "est_minutes": 8
+      },
       "stale": false
     }
   },
@@ -19,7 +27,7 @@
     },
     {
       "name": "生成 (ComfyUI)",
-      "up": false
+      "up": true
     },
     {
       "name": "チャットUI (Open WebUI)",
@@ -41,7 +49,7 @@
   "runner": {
     "up": true,
     "activity": "待機中",
-    "updated": "2026-09-04 09:00",
+    "updated": "2026-09-04 09:06",
     "current": null
   },
   "queue": [
@@ -128,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 26
+    "push_today": 27
   },
   "ai_works": [
     {
@@ -205,8 +213,8 @@
     }
   ],
   "resources": {
-    "cpu_pct": 11,
-    "mem_pct": 36,
+    "cpu_pct": 85,
+    "mem_pct": 44,
     "mem_total_gb": 31.7,
     "disk_used_gb": 519.4,
     "disk_free_gb": 1342.4
