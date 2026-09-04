@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-09-04 19:37:05",
+  "generated_at": "2026-09-04 19:43:15",
   "gpu": {
-    "occupant": "モデル待機中（アイドル）",
-    "note": "生成は完了済み・モデルがVRAMに残っています",
-    "vram_used_gb": 10.9,
+    "occupant": "空き（アイドル）",
+    "note": "誰も使っていません",
+    "vram_used_gb": 0.3,
     "vram_total_gb": 15.9,
     "util": 0,
     "lock": {
@@ -15,11 +15,11 @@
   "services": [
     {
       "name": "ローカルLLM (Ollama)",
-      "up": true
+      "up": false
     },
     {
       "name": "生成 (ComfyUI)",
-      "up": true
+      "up": false
     },
     {
       "name": "チャットUI (Open WebUI)",
@@ -27,7 +27,7 @@
     },
     {
       "name": "自律ランナー",
-      "up": true
+      "up": false
     },
     {
       "name": "電源固定(スリープ無効)",
@@ -39,9 +39,9 @@
     }
   ],
   "runner": {
-    "up": true,
+    "up": false,
     "activity": "待機中",
-    "updated": "2026-09-04 19:36",
+    "updated": "2026-09-04 19:39",
     "current": null
   },
   "queue": [
@@ -128,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 132
+    "push_today": 133
   },
   "ai_works": [
     {
@@ -205,10 +205,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 2,
-    "mem_pct": 41,
+    "cpu_pct": 10,
+    "mem_pct": 19,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 532.7,
-    "disk_free_gb": 1329.1
+    "disk_used_gb": 532.3,
+    "disk_free_gb": 1329.5
   }
 }
