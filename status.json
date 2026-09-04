@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-09-04 19:43:15",
+  "generated_at": "2026-09-04 19:49:13",
   "gpu": {
     "occupant": "空き（アイドル）",
     "note": "誰も使っていません",
-    "vram_used_gb": 0.3,
+    "vram_used_gb": 0.7,
     "vram_total_gb": 15.9,
-    "util": 0,
+    "util": 2,
     "lock": {
       "locked": false,
       "holder": null,
@@ -15,7 +15,7 @@
   "services": [
     {
       "name": "ローカルLLM (Ollama)",
-      "up": false
+      "up": true
     },
     {
       "name": "生成 (ComfyUI)",
@@ -27,7 +27,7 @@
     },
     {
       "name": "自律ランナー",
-      "up": false
+      "up": true
     },
     {
       "name": "電源固定(スリープ無効)",
@@ -39,9 +39,9 @@
     }
   ],
   "runner": {
-    "up": false,
+    "up": true,
     "activity": "待機中",
-    "updated": "2026-09-04 19:39",
+    "updated": "2026-09-04 19:46",
     "current": null
   },
   "queue": [
@@ -128,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 133
+    "push_today": 134
   },
   "ai_works": [
     {
@@ -205,10 +205,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 10,
-    "mem_pct": 19,
+    "cpu_pct": 6,
+    "mem_pct": 29,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 532.3,
-    "disk_free_gb": 1329.5
+    "disk_used_gb": 532.6,
+    "disk_free_gb": 1329.1
   }
 }
