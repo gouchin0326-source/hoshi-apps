@@ -1,14 +1,22 @@
 {
-  "generated_at": "2026-09-09 16:31:05",
+  "generated_at": "2026-09-09 16:37:05",
   "gpu": {
-    "occupant": "コード開発（ローカルLLM）",
-    "note": "qwen2.5:14b",
+    "occupant": "ollama_app_generate（app_lane）",
+    "note": "経過3s / 目安あと約4分",
     "vram_used_gb": 13.9,
     "vram_total_gb": 15.9,
-    "util": 1,
+    "util": 47,
     "lock": {
-      "locked": false,
-      "holder": null,
+      "locked": true,
+      "holder": {
+        "pid": 11240,
+        "session": "app_lane",
+        "job": "ollama_app_generate",
+        "started_at": "2026-09-09T16:37:01+0900",
+        "age_sec": 3,
+        "alive": true,
+        "est_minutes": 5
+      },
       "stale": false
     }
   },
@@ -128,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 95
+    "push_today": 96
   },
   "ai_works": [
     {
@@ -205,8 +213,8 @@
     }
   ],
   "resources": {
-    "cpu_pct": 7,
-    "mem_pct": 75,
+    "cpu_pct": 20,
+    "mem_pct": 77,
     "mem_total_gb": 31.7,
     "disk_used_gb": 573.4,
     "disk_free_gb": 1288.4
