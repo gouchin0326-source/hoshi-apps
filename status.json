@@ -1,14 +1,22 @@
 {
-  "generated_at": "2026-09-09 11:49:05",
+  "generated_at": "2026-09-09 11:55:05",
   "gpu": {
-    "occupant": "モデル待機中（アイドル）",
-    "note": "生成は完了済み・モデルがVRAMに残っています",
+    "occupant": "local_research（research_lane）",
+    "note": "経過5s / 目安あと約5分",
     "vram_used_gb": 5.1,
     "vram_total_gb": 15.9,
-    "util": 1,
+    "util": 10,
     "lock": {
-      "locked": false,
-      "holder": null,
+      "locked": true,
+      "holder": {
+        "pid": 19736,
+        "session": "research_lane",
+        "job": "local_research",
+        "started_at": "2026-09-09T11:54:59+0900",
+        "age_sec": 5,
+        "alive": true,
+        "est_minutes": 6
+      },
       "stale": false
     }
   },
@@ -128,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 48
+    "push_today": 49
   },
   "ai_works": [
     {
@@ -205,10 +213,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 3,
-    "mem_pct": 63,
+    "cpu_pct": 6,
+    "mem_pct": 65,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 566.3,
-    "disk_free_gb": 1295.5
+    "disk_used_gb": 566.8,
+    "disk_free_gb": 1295.0
   }
 }
