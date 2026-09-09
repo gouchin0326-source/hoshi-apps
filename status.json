@@ -1,21 +1,21 @@
 {
-  "generated_at": "2026-09-09 23:43:08",
+  "generated_at": "2026-09-09 23:49:08",
   "gpu": {
-    "occupant": "local_research（research_lane）",
-    "note": "経過22s / 目安あと約5分",
-    "vram_used_gb": 10.7,
+    "occupant": "ollama_app_generate（app_lane）",
+    "note": "経過13s / 目安あと約4分",
+    "vram_used_gb": 9.5,
     "vram_total_gb": 15.9,
-    "util": 1,
+    "util": 94,
     "lock": {
       "locked": true,
       "holder": {
-        "pid": 9112,
-        "session": "research_lane",
-        "job": "local_research",
-        "started_at": "2026-09-09T23:42:46+0900",
-        "age_sec": 22,
+        "pid": 15080,
+        "session": "app_lane",
+        "job": "ollama_app_generate",
+        "started_at": "2026-09-09T23:48:54+0900",
+        "age_sec": 13,
         "alive": true,
-        "est_minutes": 6
+        "est_minutes": 5
       },
       "stale": false
     }
@@ -136,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 163
+    "push_today": 164
   },
   "ai_works": [
     {
@@ -213,7 +213,7 @@
     }
   ],
   "resources": {
-    "cpu_pct": 5,
+    "cpu_pct": 11,
     "mem_pct": 25,
     "mem_total_gb": 31.7,
     "disk_used_gb": 574.0,
