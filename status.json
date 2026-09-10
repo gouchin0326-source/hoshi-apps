@@ -1,14 +1,22 @@
 {
-  "generated_at": "2026-09-10 13:19:06",
+  "generated_at": "2026-09-10 13:25:06",
   "gpu": {
-    "occupant": "モデル待機中（アイドル）",
-    "note": "生成は完了済み・モデルがVRAMに残っています",
-    "vram_used_gb": 10.5,
+    "occupant": "claudeworld_plan（claudeworld）",
+    "note": "経過0s / 目安あと約3分",
+    "vram_used_gb": 15.0,
     "vram_total_gb": 15.9,
-    "util": 2,
+    "util": 1,
     "lock": {
-      "locked": false,
-      "holder": null,
+      "locked": true,
+      "holder": {
+        "pid": 28344,
+        "session": "claudeworld",
+        "job": "claudeworld_plan",
+        "started_at": "2026-09-10T13:25:05+0900",
+        "age_sec": 0,
+        "alive": true,
+        "est_minutes": 3
+      },
       "stale": false
     }
   },
@@ -128,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 79
+    "push_today": 80
   },
   "ai_works": [
     {
@@ -205,10 +213,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 57,
-    "mem_pct": 52,
+    "cpu_pct": 30,
+    "mem_pct": 65,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 594.1,
-    "disk_free_gb": 1267.7
+    "disk_used_gb": 594.2,
+    "disk_free_gb": 1267.6
   }
 }
