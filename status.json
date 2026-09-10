@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-09-10 12:31:05",
+  "generated_at": "2026-09-10 12:37:06",
   "gpu": {
     "occupant": "ha3d_make（model3d_lane）",
-    "note": "経過233s / 目安あと約8分",
-    "vram_used_gb": 6.6,
+    "note": "経過593s / 目安あと約2分",
+    "vram_used_gb": 15.4,
     "vram_total_gb": 15.9,
     "util": 100,
     "lock": {
@@ -13,7 +13,7 @@
         "session": "model3d_lane",
         "job": "ha3d_make",
         "started_at": "2026-09-10T12:27:12+0900",
-        "age_sec": 233,
+        "age_sec": 593,
         "alive": true,
         "est_minutes": 12
       },
@@ -136,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 71
+    "push_today": 72
   },
   "ai_works": [
     {
@@ -213,10 +213,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 22,
-    "mem_pct": 74,
+    "cpu_pct": 20,
+    "mem_pct": 67,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 593.6,
+    "disk_used_gb": 593.5,
     "disk_free_gb": 1268.2
   }
 }
