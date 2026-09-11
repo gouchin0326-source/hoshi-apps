@@ -1,22 +1,14 @@
 {
-  "generated_at": "2026-09-11 10:43:08",
+  "generated_at": "2026-09-11 10:49:05",
   "gpu": {
-    "occupant": "hoshi_star_selfreview（hoshi_star）",
-    "note": "経過2s / 目安あと約2分",
+    "occupant": "コード開発（ローカルLLM）",
+    "note": "qwen2.5:14b, qwen2.5:7b",
     "vram_used_gb": 15.4,
     "vram_total_gb": 15.9,
-    "util": 40,
+    "util": 0,
     "lock": {
-      "locked": true,
-      "holder": {
-        "pid": 24324,
-        "session": "hoshi_star",
-        "job": "hoshi_star_selfreview",
-        "started_at": "2026-09-11T10:43:05+0900",
-        "age_sec": 2,
-        "alive": true,
-        "est_minutes": 3
-      },
+      "locked": false,
+      "holder": null,
       "stale": false
     }
   },
@@ -136,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 35
+    "push_today": 36
   },
   "ai_works": [
     {
@@ -213,10 +205,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 8,
-    "mem_pct": 74,
+    "cpu_pct": 4,
+    "mem_pct": 79,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 605.5,
-    "disk_free_gb": 1256.3
+    "disk_used_gb": 605.6,
+    "disk_free_gb": 1256.2
   }
 }
