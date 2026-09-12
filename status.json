@@ -1,21 +1,21 @@
 {
-  "generated_at": "2026-09-12 11:19:08",
+  "generated_at": "2026-09-12 11:25:15",
   "gpu": {
-    "occupant": "appmv_a2_measure（hoshi-brain-20260728-appmv）",
-    "note": "経過28s / 目安あと約4分",
-    "vram_used_gb": 10.4,
+    "occupant": "ha3d_make（model3d_lane）",
+    "note": "経過75s / 目安あと約10分",
+    "vram_used_gb": 4.6,
     "vram_total_gb": 15.9,
-    "util": 3,
+    "util": 99,
     "lock": {
       "locked": true,
       "holder": {
-        "pid": 21380,
-        "session": "hoshi-brain-20260728-appmv",
-        "job": "appmv_a2_measure",
-        "started_at": "2026-09-12T11:18:39+0900",
-        "age_sec": 28,
+        "pid": 7236,
+        "session": "model3d_lane",
+        "job": "ha3d_make",
+        "started_at": "2026-09-12T11:23:52+0900",
+        "age_sec": 75,
         "alive": true,
-        "est_minutes": 5
+        "est_minutes": 12
       },
       "stale": false
     }
@@ -27,7 +27,7 @@
     },
     {
       "name": "生成 (ComfyUI)",
-      "up": false
+      "up": true
     },
     {
       "name": "チャットUI (Open WebUI)",
@@ -136,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 44
+    "push_today": 45
   },
   "ai_works": [
     {
@@ -213,10 +213,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 72,
-    "mem_pct": 58,
+    "cpu_pct": 26,
+    "mem_pct": 75,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 574.1,
-    "disk_free_gb": 1287.7
+    "disk_used_gb": 574.3,
+    "disk_free_gb": 1287.4
   }
 }
