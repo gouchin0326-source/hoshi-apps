@@ -1,22 +1,14 @@
 {
-  "generated_at": "2026-09-13 08:07:05",
+  "generated_at": "2026-09-13 08:13:10",
   "gpu": {
-    "occupant": "hoshi_star_think（hoshi_star）",
-    "note": "経過2s / 目安あと約2分",
-    "vram_used_gb": 11.1,
+    "occupant": "モデル待機中（アイドル）",
+    "note": "生成は完了済み・モデルがVRAMに残っています",
+    "vram_used_gb": 4.6,
     "vram_total_gb": 15.9,
-    "util": 11,
+    "util": 25,
     "lock": {
-      "locked": true,
-      "holder": {
-        "pid": 3948,
-        "session": "hoshi_star",
-        "job": "hoshi_star_think",
-        "started_at": "2026-09-13T08:07:03+0900",
-        "age_sec": 2,
-        "alive": true,
-        "est_minutes": 3
-      },
+      "locked": false,
+      "holder": null,
       "stale": false
     }
   },
@@ -136,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 8
+    "push_today": 9
   },
   "ai_works": [
     {
@@ -213,10 +205,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 11,
-    "mem_pct": 68,
+    "cpu_pct": 22,
+    "mem_pct": 67,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 573.0,
-    "disk_free_gb": 1288.7
+    "disk_used_gb": 573.5,
+    "disk_free_gb": 1288.3
   }
 }
