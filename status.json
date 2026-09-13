@@ -1,22 +1,14 @@
 {
-  "generated_at": "2026-09-14 08:13:06",
+  "generated_at": "2026-09-14 08:19:05",
   "gpu": {
-    "occupant": "llm:resident:hoshi_star（resident:hoshi_star）",
-    "note": "経過39s / 目安あと約2分",
+    "occupant": "コード開発（ローカルLLM）",
+    "note": "qwen2.5:14b",
     "vram_used_gb": 15.4,
     "vram_total_gb": 15.9,
     "util": 100,
     "lock": {
-      "locked": true,
-      "holder": {
-        "pid": 14440,
-        "session": "resident:hoshi_star",
-        "job": "llm:resident:hoshi_star",
-        "started_at": "2026-09-14T08:12:25+0900",
-        "age_sec": 39,
-        "alive": true,
-        "est_minutes": 3
-      },
+      "locked": false,
+      "holder": null,
       "stale": false
     }
   },
@@ -136,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 14
+    "push_today": 15
   },
   "ai_works": [
     {
@@ -213,8 +205,8 @@
     }
   ],
   "resources": {
-    "cpu_pct": 22,
-    "mem_pct": 87,
+    "cpu_pct": 13,
+    "mem_pct": 75,
     "mem_total_gb": 31.7,
     "disk_used_gb": 604.1,
     "disk_free_gb": 1257.6
