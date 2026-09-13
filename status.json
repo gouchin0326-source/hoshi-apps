@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-09-13 22:19:05",
+  "generated_at": "2026-09-13 22:25:07",
   "gpu": {
     "occupant": "LD1_gob_guard（86ca5525-52bf-4697-b62c-b1c476dc71ae）",
-    "note": "排他ロック保持中 / 経過50s",
-    "vram_used_gb": 5.3,
+    "note": "排他ロック保持中 / 経過412s",
+    "vram_used_gb": 14.2,
     "vram_total_gb": 15.9,
-    "util": 2,
+    "util": 1,
     "lock": {
       "locked": true,
       "holder": {
@@ -13,7 +13,7 @@
         "session": "86ca5525-52bf-4697-b62c-b1c476dc71ae",
         "job": "LD1_gob_guard",
         "started_at": "2026-09-13T22:18:14+0900",
-        "age_sec": 50,
+        "age_sec": 412,
         "alive": true,
         "est_minutes": null
       },
@@ -136,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 150
+    "push_today": 151
   },
   "ai_works": [
     {
@@ -213,10 +213,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 15,
-    "mem_pct": 60,
+    "cpu_pct": 79,
+    "mem_pct": 77,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 585.9,
-    "disk_free_gb": 1275.8
+    "disk_used_gb": 595.8,
+    "disk_free_gb": 1266.0
   }
 }
