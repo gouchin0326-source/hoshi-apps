@@ -1,14 +1,22 @@
 {
-  "generated_at": "2026-09-13 20:31:07",
+  "generated_at": "2026-09-13 20:37:05",
   "gpu": {
-    "occupant": "空き（アイドル）",
-    "note": "誰も使っていません",
-    "vram_used_gb": 0.7,
+    "occupant": "ha3d_make（model3d_lane）",
+    "note": "経過45s / 目安あと約11分",
+    "vram_used_gb": 4.3,
     "vram_total_gb": 15.9,
-    "util": 1,
+    "util": 5,
     "lock": {
-      "locked": false,
-      "holder": null,
+      "locked": true,
+      "holder": {
+        "pid": 30620,
+        "session": "model3d_lane",
+        "job": "ha3d_make",
+        "started_at": "2026-09-13T20:36:19+0900",
+        "age_sec": 45,
+        "alive": true,
+        "est_minutes": 12
+      },
       "stale": false
     }
   },
@@ -19,7 +27,7 @@
     },
     {
       "name": "生成 (ComfyUI)",
-      "up": false
+      "up": true
     },
     {
       "name": "チャットUI (Open WebUI)",
@@ -128,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 132
+    "push_today": 133
   },
   "ai_works": [
     {
@@ -205,8 +213,8 @@
     }
   ],
   "resources": {
-    "cpu_pct": 1,
-    "mem_pct": 33,
+    "cpu_pct": 11,
+    "mem_pct": 46,
     "mem_total_gb": 31.7,
     "disk_used_gb": 585.0,
     "disk_free_gb": 1276.7
