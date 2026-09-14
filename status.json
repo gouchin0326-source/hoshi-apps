@@ -1,22 +1,14 @@
 {
-  "generated_at": "2026-09-15 07:49:05",
+  "generated_at": "2026-09-15 07:55:07",
   "gpu": {
-    "occupant": "local_music_generate（music_lane）",
-    "note": "経過15s / 目安あと約7分",
-    "vram_used_gb": 11.0,
+    "occupant": "コード開発（ローカルLLM）",
+    "note": "qwen2.5:14b",
+    "vram_used_gb": 13.8,
     "vram_total_gb": 15.9,
-    "util": 37,
+    "util": 0,
     "lock": {
-      "locked": true,
-      "holder": {
-        "pid": 22800,
-        "session": "music_lane",
-        "job": "local_music_generate",
-        "started_at": "2026-09-15T07:48:50+0900",
-        "age_sec": 15,
-        "alive": true,
-        "est_minutes": 8
-      },
+      "locked": false,
+      "holder": null,
       "stale": false
     }
   },
@@ -136,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 17
+    "push_today": 18
   },
   "ai_works": [
     {
@@ -213,10 +205,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 20,
-    "mem_pct": 65,
+    "cpu_pct": 21,
+    "mem_pct": 76,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 544.3,
-    "disk_free_gb": 1317.4
+    "disk_used_gb": 554.2,
+    "disk_free_gb": 1307.6
   }
 }
