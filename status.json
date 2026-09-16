@@ -1,14 +1,22 @@
 {
-  "generated_at": "2026-09-17 07:01:05",
+  "generated_at": "2026-09-17 07:07:05",
   "gpu": {
-    "occupant": "コード開発（ローカルLLM）",
-    "note": "qwen2.5:7b, qwen2.5:14b",
-    "vram_used_gb": 15.3,
+    "occupant": "llm:tool:local_research.py（tool:local_research.py）",
+    "note": "経過74s / 目安あと約4分",
+    "vram_used_gb": 15.4,
     "vram_total_gb": 15.9,
     "util": 100,
     "lock": {
-      "locked": false,
-      "holder": null,
+      "locked": true,
+      "holder": {
+        "pid": 18288,
+        "session": "tool:local_research.py",
+        "job": "llm:tool:local_research.py",
+        "started_at": "2026-09-17T07:05:50+0900",
+        "age_sec": 74,
+        "alive": true,
+        "est_minutes": 6
+      },
       "stale": false
     }
   },
@@ -128,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 11
+    "push_today": 12
   },
   "ai_works": [
     {
@@ -205,10 +213,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 22,
-    "mem_pct": 95,
+    "cpu_pct": 29,
+    "mem_pct": 81,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 584.2,
-    "disk_free_gb": 1277.5
+    "disk_used_gb": 569.7,
+    "disk_free_gb": 1292.1
   }
 }
