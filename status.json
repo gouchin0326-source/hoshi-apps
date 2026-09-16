@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-09-17 07:43:05",
+  "generated_at": "2026-09-17 07:49:05",
   "gpu": {
     "occupant": "llm:resident:hoshi_star（resident:hoshi_star）",
-    "note": "経過71s / 目安あと約1分",
+    "note": "経過68s / 目安あと約1分",
     "vram_used_gb": 15.4,
     "vram_total_gb": 15.9,
     "util": 100,
@@ -12,8 +12,8 @@
         "pid": 5992,
         "session": "resident:hoshi_star",
         "job": "llm:resident:hoshi_star",
-        "started_at": "2026-09-17T07:41:53+0900",
-        "age_sec": 71,
+        "started_at": "2026-09-17T07:47:56+0900",
+        "age_sec": 68,
         "alive": true,
         "est_minutes": 3
       },
@@ -136,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 18
+    "push_today": 19
   },
   "ai_works": [
     {
@@ -213,10 +213,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 26,
+    "cpu_pct": 24,
     "mem_pct": 76,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 569.7,
-    "disk_free_gb": 1292.0
+    "disk_used_gb": 570.0,
+    "disk_free_gb": 1291.8
   }
 }
