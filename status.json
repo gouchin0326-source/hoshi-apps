@@ -1,21 +1,21 @@
 {
-  "generated_at": "2026-09-17 06:43:06",
+  "generated_at": "2026-09-17 06:49:05",
   "gpu": {
-    "occupant": "llm:tool:local_research.py（tool:local_research.py）",
-    "note": "経過360s / 目安あと約0分",
+    "occupant": "llm:resident:hoshi_star（resident:hoshi_star）",
+    "note": "経過108s / 目安あと約1分",
     "vram_used_gb": 15.3,
     "vram_total_gb": 15.9,
     "util": 100,
     "lock": {
       "locked": true,
       "holder": {
-        "pid": 26616,
-        "session": "tool:local_research.py",
-        "job": "llm:tool:local_research.py",
-        "started_at": "2026-09-17T06:37:05+0900",
-        "age_sec": 360,
+        "pid": 5992,
+        "session": "resident:hoshi_star",
+        "job": "llm:resident:hoshi_star",
+        "started_at": "2026-09-17T06:47:17+0900",
+        "age_sec": 108,
         "alive": true,
-        "est_minutes": 6
+        "est_minutes": 3
       },
       "stale": false
     }
@@ -136,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 8
+    "push_today": 9
   },
   "ai_works": [
     {
@@ -213,8 +213,8 @@
     }
   ],
   "resources": {
-    "cpu_pct": 20,
-    "mem_pct": 95,
+    "cpu_pct": 17,
+    "mem_pct": 91,
     "mem_total_gb": 31.7,
     "disk_used_gb": 582.7,
     "disk_free_gb": 1279.0
