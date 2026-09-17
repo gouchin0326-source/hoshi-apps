@@ -1,14 +1,22 @@
 {
-  "generated_at": "2026-09-17 11:43:06",
+  "generated_at": "2026-09-17 11:49:07",
   "gpu": {
-    "occupant": "モデル待機中（アイドル）",
-    "note": "生成は完了済み・モデルがVRAMに残っています",
-    "vram_used_gb": 4.2,
+    "occupant": "llm:tool:ollama_app_generate.py（tool:ollama_app_generate.py）",
+    "note": "経過327s / 目安あと約0分",
+    "vram_used_gb": 15.5,
     "vram_total_gb": 15.9,
-    "util": 1,
+    "util": 100,
     "lock": {
-      "locked": false,
-      "holder": null,
+      "locked": true,
+      "holder": {
+        "pid": 15792,
+        "session": "tool:ollama_app_generate.py",
+        "job": "llm:tool:ollama_app_generate.py",
+        "started_at": "2026-09-17T11:43:39+0900",
+        "age_sec": 327,
+        "alive": true,
+        "est_minutes": 6
+      },
       "stale": false
     }
   },
@@ -128,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 58
+    "push_today": 59
   },
   "ai_works": [
     {
@@ -205,8 +213,8 @@
     }
   ],
   "resources": {
-    "cpu_pct": 10,
-    "mem_pct": 61,
+    "cpu_pct": 25,
+    "mem_pct": 76,
     "mem_total_gb": 31.7,
     "disk_used_gb": 570.7,
     "disk_free_gb": 1291.0
