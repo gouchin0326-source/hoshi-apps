@@ -69,6 +69,12 @@
   button{font:inherit;font-size:13px;padding:7px 14px;border:1px solid var(--border);background:var(--card);
          color:var(--ink);border-radius:10px}
   button:active{transform:scale(.98)}
+  .stale{display:none;background:var(--down-bg);color:var(--down);border:1px solid var(--down);border-radius:12px;
+         padding:10px 14px;font-size:14px;font-weight:500;margin:0 0 14px}
+  .stale.on{display:block}
+  .stale small{display:block;font-weight:400;font-size:12px;opacity:.85;margin-top:2px}
+  body.stale-mode .dot{background:var(--muted)}
+  body.stale-mode .bar > i{background:var(--muted) !important}
 </style>
 </head>
 <body>
@@ -76,6 +82,7 @@
   <a class="back" href="home.html">⌂ ★HOSHI ホーム</a>
   <h1>★HOSHI 管制塔</h1>
   <p class="lead">開発の今 — 作業台・待ち行列・結果を可視化</p>
+  <div class="stale" id="stale"></div>
 
   <h2>作業台（16GB GPU）— 1度に1ジョブ</h2>
   <div class="card" id="workbench"><div class="empty">読み込み中…</div></div>
@@ -93,6 +100,20 @@
 </div>
 <script>
 function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+// ★自宅PC切断検知: status.json は家PCが約6分毎にpush。12分(2回分)届かなければ「切断」とみなす(home.htmlと同じ閾値)。
+var STALE_MIN=12;
+function minsAgo(ts){ if(!ts) return null; var t=new Date(String(ts).replace(' ','T')); return isNaN(t.getTime())?null:Math.floor((Date.now()-t.getTime())/60000); }
+function agoText(m){ return m===null?'':(m<1?'たった今':(m<60?m+'分前':Math.floor(m/60)+'時間'+(m%60)+'分前')); }
+function renderStale(d){
+  var m=minsAgo(d&&d.generated_at), stale=(m===null||m>STALE_MIN);
+  var el=document.getElementById('stale');
+  document.body.classList.toggle('stale-mode', stale);
+  el.className='stale'+(stale?' on':'');
+  el.innerHTML = !stale ? '' :
+    '🔴 自宅PCと切断中（最終更新 '+esc((d&&d.generated_at)||'-')+(m!==null?'・'+agoText(m):'')+'）'
+    +'<small>約6分毎の自動更新が '+STALE_MIN+'分以上届いていません。下の表示は切断前の最後の状態です（家PCの停止／スリープ／回線断／push失敗を確認）。</small>';
+  return stale;
+}
 // 右端バッジ = 干場のやること（レビュー待ち等）を優先、ランナー稼働/失敗は上書き表示
 function jobBadge(it){
   if(it.job==='building') return '<span class="badge b-busy"><span class="bd"></span>ビルド中</span>';
@@ -115,6 +136,7 @@ async function load(){
   let d;
   try{ d = await (await fetch('status.json?t='+Date.now(),{cache:'no-store'})).json(); }
   catch(e){ document.getElementById('updated').textContent='status.json を読めませんでした'; return; }
+  var stale=renderStale(d);
 
   // 作業台
   var g=d.gpu||{}, idle=(g.occupant||'').indexOf('空き')>-1;
@@ -151,7 +173,8 @@ async function load(){
       +'<a class="link" href="'+esc(it.url)+'">開く →</a></div>';
   }).join('') : '<div class="empty">まだ結果はありません</div>';
 
-  document.getElementById('updated').textContent = '更新: '+(d.generated_at||'-');
+  var ago=agoText(minsAgo(d.generated_at));
+  document.getElementById('updated').textContent = '更新: '+(d.generated_at||'-')+(ago?'（'+ago+(stale?'・切断中':'')+'）':'');
 }
 load();
 setInterval(load, 30000);
