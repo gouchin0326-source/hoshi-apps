@@ -136,6 +136,9 @@
 // 公開status.jsonのみ読む＝遠隔トンネル消費0（P4追補§8）。データは家PCがpushした集約結果。
 var PUB='https://gouchin0326-source.github.io/hoshi-apps/';
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+// ★自宅PC切断検知(home.html/status.htmlと同じ閾値=12分)。家PCは約6分毎にstatus.jsonをpushする。
+function minsAgo(ts){ if(!ts) return null; var t=new Date(String(ts).replace(' ','T')); return isNaN(t.getTime())?null:Math.floor((Date.now()-t.getTime())/60000); }
+function staleInfo(d){ var m=minsAgo(d&&d.generated_at); return {m:m, stale:(m===null||m>12)}; }
 
 function render(d){
   var q=(d&&d.queue)||[], rn=(d&&d.runner)||{}, res=(d&&d.results)||[];
@@ -150,6 +153,9 @@ function render(d){
   if(rn.current!=null){ rEl.className='runner busy'; rTx.textContent='⚙ #'+rn.current+' をビルド中…（ローカルLLMが自律実装）'; }
   else if(rn.up){ rEl.className='runner up'; rTx.textContent='自律ランナー 稼働中 ・ '+esc(rn.activity||'待機中')+(rn.updated?'（最終 '+esc(rn.updated)+'）':''); }
   else { rEl.className='runner down'; rTx.textContent='自律ランナー 停止中（家PC停止 または 手動停止）'; }
+  var si=staleInfo(d);
+  if(si.stale){ rEl.className='runner down';
+    rTx.textContent='🔴 自宅PCと切断中 — status.json の更新が'+(si.m===null?'届いていません':si.m+'分前で途絶')+'（最終 '+((d&&d.generated_at)||'-')+'）。以下は切断前の最後の状態です。'; }
 
   // 統計
   document.getElementById('stats').innerHTML =
