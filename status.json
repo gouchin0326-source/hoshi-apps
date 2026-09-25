@@ -1,22 +1,14 @@
 {
-  "generated_at": "2026-09-25 11:13:05",
+  "generated_at": "2026-09-25 11:19:04",
   "gpu": {
-    "occupant": "vlm_gate:knight_arena（knight_arena_taste）",
-    "note": "経過299s / 目安あと約10分",
+    "occupant": "コード開発（ローカルLLM）",
+    "note": "qwen2.5vl:7b",
     "vram_used_gb": 12.5,
     "vram_total_gb": 15.9,
-    "util": 96,
+    "util": 2,
     "lock": {
-      "locked": true,
-      "holder": {
-        "pid": 10220,
-        "session": "knight_arena_taste",
-        "job": "vlm_gate:knight_arena",
-        "started_at": "2026-09-25T11:08:06+0900",
-        "age_sec": 299,
-        "alive": true,
-        "est_minutes": 15
-      },
+      "locked": false,
+      "holder": null,
       "stale": false
     }
   },
@@ -136,7 +128,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 61
+    "push_today": 62
   },
   "ai_works": [
     {
@@ -213,8 +205,8 @@
     }
   ],
   "resources": {
-    "cpu_pct": 99,
-    "mem_pct": 78,
+    "cpu_pct": 10,
+    "mem_pct": 75,
     "mem_total_gb": 31.7,
     "disk_used_gb": 570.0,
     "disk_free_gb": 1291.8
