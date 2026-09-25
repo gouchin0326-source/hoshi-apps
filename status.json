@@ -1,14 +1,22 @@
 {
-  "generated_at": "2026-09-25 15:55:05",
+  "generated_at": "2026-09-25 16:01:05",
   "gpu": {
-    "occupant": "モデル待機中（アイドル）",
-    "note": "生成は完了済み・モデルがVRAMに残っています",
-    "vram_used_gb": 6.0,
+    "occupant": "vlm_gate:knight_arena（knight_arena_taste）",
+    "note": "経過28s / 目安あと約14分",
+    "vram_used_gb": 12.7,
     "vram_total_gb": 15.9,
-    "util": 1,
+    "util": 73,
     "lock": {
-      "locked": false,
-      "holder": null,
+      "locked": true,
+      "holder": {
+        "pid": 25868,
+        "session": "knight_arena_taste",
+        "job": "vlm_gate:knight_arena",
+        "started_at": "2026-09-25T16:00:37+0900",
+        "age_sec": 28,
+        "alive": true,
+        "est_minutes": 15
+      },
       "stale": false
     }
   },
@@ -128,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 108
+    "push_today": 109
   },
   "ai_works": [
     {
@@ -205,10 +213,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 48,
-    "mem_pct": 45,
+    "cpu_pct": 20,
+    "mem_pct": 53,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 572.7,
+    "disk_used_gb": 572.8,
     "disk_free_gb": 1289.0
   }
 }
