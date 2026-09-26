@@ -1,19 +1,19 @@
 {
-  "generated_at": "2026-09-26 14:49:05",
+  "generated_at": "2026-09-26 14:55:05",
   "gpu": {
     "occupant": "llm:tool:chat_engine.py（tool:chat_engine.py）",
-    "note": "経過5s / 目安あと約1分",
-    "vram_used_gb": 1.2,
+    "note": "経過3s / 目安あと約1分",
+    "vram_used_gb": 1.0,
     "vram_total_gb": 15.9,
-    "util": 17,
+    "util": 93,
     "lock": {
       "locked": true,
       "holder": {
-        "pid": 39252,
+        "pid": 21640,
         "session": "tool:chat_engine.py",
         "job": "llm:tool:chat_engine.py",
-        "started_at": "2026-09-26T14:48:59+0900",
-        "age_sec": 5,
+        "started_at": "2026-09-26T14:55:02+0900",
+        "age_sec": 3,
         "alive": true,
         "est_minutes": 2
       },
@@ -136,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 87
+    "push_today": 88
   },
   "ai_works": [
     {
@@ -213,10 +213,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 21,
-    "mem_pct": 52,
+    "cpu_pct": 17,
+    "mem_pct": 55,
     "mem_total_gb": 31.7,
     "disk_used_gb": 566.9,
-    "disk_free_gb": 1294.9
+    "disk_free_gb": 1294.8
   }
 }
