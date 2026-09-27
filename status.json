@@ -1,19 +1,19 @@
 {
-  "generated_at": "2026-09-28 07:25:08",
+  "generated_at": "2026-09-28 07:31:09",
   "gpu": {
     "occupant": "llm:tool:model_bench_0928.py（tool:model_bench_0928.py）",
-    "note": "経過2s / 目安あと約1分",
-    "vram_used_gb": 9.5,
+    "note": "経過0s / 目安あと約2分",
+    "vram_used_gb": 10.9,
     "vram_total_gb": 15.9,
-    "util": 93,
+    "util": 24,
     "lock": {
       "locked": true,
       "holder": {
         "pid": 31608,
         "session": "tool:model_bench_0928.py",
         "job": "llm:tool:model_bench_0928.py",
-        "started_at": "2026-09-28T07:25:04+0900",
-        "age_sec": 2,
+        "started_at": "2026-09-28T07:31:07+0900",
+        "age_sec": 0,
         "alive": true,
         "est_minutes": 2
       },
@@ -136,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 9
+    "push_today": 10
   },
   "ai_works": [
     {
@@ -213,10 +213,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 48,
-    "mem_pct": 59,
+    "cpu_pct": 71,
+    "mem_pct": 56,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 562.3,
-    "disk_free_gb": 1299.4
+    "disk_used_gb": 560.4,
+    "disk_free_gb": 1301.3
   }
 }
