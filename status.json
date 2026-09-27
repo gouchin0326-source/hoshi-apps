@@ -1,14 +1,22 @@
 {
-  "generated_at": "2026-09-27 16:37:05",
+  "generated_at": "2026-09-27 16:43:05",
   "gpu": {
-    "occupant": "コード開発（ローカルLLM）",
-    "note": "qwen3:14b",
-    "vram_used_gb": 10.5,
+    "occupant": "llm:happiness_town_lines_acc（happiness_town_lines_acc）",
+    "note": "経過2s / 目安あと約0分",
+    "vram_used_gb": 11.0,
     "vram_total_gb": 15.9,
-    "util": 1,
+    "util": 96,
     "lock": {
-      "locked": false,
-      "holder": null,
+      "locked": true,
+      "holder": {
+        "pid": 10424,
+        "session": "happiness_town_lines_acc",
+        "job": "llm:happiness_town_lines_acc",
+        "started_at": "2026-09-27T16:43:03+0900",
+        "age_sec": 2,
+        "alive": true,
+        "est_minutes": 1
+      },
       "stale": false
     }
   },
@@ -128,7 +136,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 126
+    "push_today": 127
   },
   "ai_works": [
     {
@@ -205,10 +213,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 41,
-    "mem_pct": 79,
+    "cpu_pct": 17,
+    "mem_pct": 67,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 586.9,
-    "disk_free_gb": 1274.8
+    "disk_used_gb": 573.4,
+    "disk_free_gb": 1288.4
   }
 }
