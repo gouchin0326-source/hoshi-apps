@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-28 10:31:07",
+  "generated_at": "2026-09-28 10:31:08",
   "gpu": {
     "occupant": "コード開発（ローカルLLM）",
     "note": "qwen3:14b, qwen2.5:7b",
@@ -205,7 +205,7 @@
     }
   ],
   "resources": {
-    "cpu_pct": 22,
+    "cpu_pct": 34,
     "mem_pct": 78,
     "mem_total_gb": 31.7,
     "disk_used_gb": 562.4,
