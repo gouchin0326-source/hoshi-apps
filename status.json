@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-10-12 12:14:30",
+  "generated_at": "2026-10-12 12:44:42",
   "gpu": {
     "occupant": "空き（アイドル）",
     "note": "誰も使っていません",
-    "vram_used_gb": 0.9,
+    "vram_used_gb": 1.3,
     "vram_total_gb": 15.9,
-    "util": 2,
+    "util": 3,
     "lock": {
       "locked": false,
       "holder": null,
@@ -19,7 +19,7 @@
     },
     {
       "name": "生成 (ComfyUI)",
-      "up": false
+      "up": true
     },
     {
       "name": "チャットUI (Open WebUI)",
@@ -124,7 +124,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 12
+    "push_today": 13
   },
   "ai_works": [
     {
@@ -201,10 +201,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 8,
-    "mem_pct": 43,
+    "cpu_pct": 27,
+    "mem_pct": 47,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 633.7,
-    "disk_free_gb": 1228.0
+    "disk_used_gb": 634.5,
+    "disk_free_gb": 1227.3
   }
 }
