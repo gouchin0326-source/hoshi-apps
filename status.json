@@ -1,21 +1,21 @@
 {
-  "generated_at": "2026-10-14 06:45:58",
+  "generated_at": "2026-10-14 07:16:11",
   "gpu": {
-    "occupant": "edge headless shoot 1014a（hand-1014a）",
-    "note": "経過37s / 目安あと約14分",
+    "occupant": "heavy3_horror_cx113g0（1014brain_heavy3）",
+    "note": "経過12s / 目安あと約9分",
     "vram_used_gb": 0.8,
     "vram_total_gb": 15.9,
-    "util": 12,
+    "util": 1,
     "lock": {
       "locked": true,
       "holder": {
-        "pid": 25392,
-        "session": "hand-1014a",
-        "job": "edge headless shoot 1014a",
-        "started_at": "2026-10-14T06:45:20+0900",
-        "age_sec": 37,
+        "pid": 19584,
+        "session": "1014brain_heavy3",
+        "job": "heavy3_horror_cx113g0",
+        "started_at": "2026-10-14T07:15:59+0900",
+        "age_sec": 12,
         "alive": true,
-        "est_minutes": 15
+        "est_minutes": 10
       },
       "stale": false
     }
@@ -132,7 +132,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 1
+    "push_today": 2
   },
   "ai_works": [
     {
@@ -209,10 +209,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 17,
-    "mem_pct": 60,
+    "cpu_pct": 29,
+    "mem_pct": 53,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 629.8,
-    "disk_free_gb": 1231.9
+    "disk_used_gb": 631.8,
+    "disk_free_gb": 1230.0
   }
 }
