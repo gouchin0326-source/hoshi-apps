@@ -1,21 +1,21 @@
 {
-  "generated_at": "2026-10-14 22:32:45",
+  "generated_at": "2026-10-14 23:03:02",
   "gpu": {
-    "occupant": "kaii_bg_x14（1014brain_kaii_v074）",
-    "note": "経過93s / 目安あと約14分",
-    "vram_used_gb": 12.0,
+    "occupant": "edge headless 7B batch（brain2-1014-7B）",
+    "note": "経過223s / 目安あと約21分",
+    "vram_used_gb": 1.1,
     "vram_total_gb": 15.9,
-    "util": 98,
+    "util": 17,
     "lock": {
       "locked": true,
       "holder": {
-        "pid": 2360,
-        "session": "1014brain_kaii_v074",
-        "job": "kaii_bg_x14",
-        "started_at": "2026-10-14T22:31:11+0900",
-        "age_sec": 93,
+        "pid": 2728,
+        "session": "brain2-1014-7B",
+        "job": "edge headless 7B batch",
+        "started_at": "2026-10-14T22:59:18+0900",
+        "age_sec": 223,
         "alive": true,
-        "est_minutes": 16
+        "est_minutes": 25
       },
       "stale": false
     }
@@ -27,7 +27,7 @@
     },
     {
       "name": "生成 (ComfyUI)",
-      "up": true
+      "up": false
     },
     {
       "name": "チャットUI (Open WebUI)",
@@ -132,7 +132,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 18
+    "push_today": 19
   },
   "ai_works": [
     {
@@ -209,10 +209,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 50,
-    "mem_pct": 57,
+    "cpu_pct": 97,
+    "mem_pct": 52,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 649.6,
-    "disk_free_gb": 1212.1
+    "disk_used_gb": 650.2,
+    "disk_free_gb": 1211.5
   }
 }
