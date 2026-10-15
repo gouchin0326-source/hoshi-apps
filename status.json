@@ -1,14 +1,22 @@
 {
-  "generated_at": "2026-10-15 12:44:53",
+  "generated_at": "2026-10-15 13:15:06",
   "gpu": {
-    "occupant": "空き（アイドル）",
-    "note": "誰も使っていません",
+    "occupant": "pub1015_kaii084b（1015HOP1_pub）",
+    "note": "経過543s / 目安あと約5分",
     "vram_used_gb": 1.0,
     "vram_total_gb": 15.9,
-    "util": 0,
+    "util": 2,
     "lock": {
-      "locked": false,
-      "holder": null,
+      "locked": true,
+      "holder": {
+        "pid": 15304,
+        "session": "1015HOP1_pub",
+        "job": "pub1015_kaii084b",
+        "started_at": "2026-10-15T13:06:03+0900",
+        "age_sec": 543,
+        "alive": true,
+        "est_minutes": 15
+      },
       "stale": false
     }
   },
@@ -124,7 +132,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 14
+    "push_today": 15
   },
   "ai_works": [
     {
@@ -201,10 +209,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 15,
-    "mem_pct": 48,
+    "cpu_pct": 58,
+    "mem_pct": 50,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 670.2,
-    "disk_free_gb": 1191.5
+    "disk_used_gb": 676.8,
+    "disk_free_gb": 1184.9
   }
 }
