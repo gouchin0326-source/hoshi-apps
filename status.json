@@ -1,21 +1,21 @@
 {
-  "generated_at": "2026-10-15 14:15:32",
+  "generated_at": "2026-10-15 14:45:45",
   "gpu": {
-    "occupant": "1015HOP1_pub105（1015HOP1_rin010_brain）",
-    "note": "経過366s / 目安あと約5分",
-    "vram_used_gb": 1.2,
+    "occupant": "rin106_ab（1015HOP1_rin010_brain）",
+    "note": "経過638s / 目安あと約4分",
+    "vram_used_gb": 1.1,
     "vram_total_gb": 15.9,
-    "util": 0,
+    "util": 14,
     "lock": {
       "locked": true,
       "holder": {
-        "pid": 33012,
+        "pid": 26836,
         "session": "1015HOP1_rin010_brain",
-        "job": "1015HOP1_pub105",
-        "started_at": "2026-10-15T14:09:25+0900",
-        "age_sec": 366,
+        "job": "rin106_ab",
+        "started_at": "2026-10-15T14:35:07+0900",
+        "age_sec": 638,
         "alive": true,
-        "est_minutes": 12.0
+        "est_minutes": 15.0
       },
       "stale": false
     }
@@ -132,7 +132,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 17
+    "push_today": 18
   },
   "ai_works": [
     {
@@ -209,10 +209,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 11,
-    "mem_pct": 51,
+    "cpu_pct": 17,
+    "mem_pct": 48,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 677.0,
-    "disk_free_gb": 1184.7
+    "disk_used_gb": 677.1,
+    "disk_free_gb": 1184.5
   }
 }
