@@ -1,14 +1,22 @@
 {
-  "generated_at": "2026-10-19 10:55:37",
+  "generated_at": "2026-10-19 11:25:51",
   "gpu": {
-    "occupant": "空き（アイドル）",
-    "note": "誰も使っていません",
-    "vram_used_gb": 1.0,
+    "occupant": "compare3（rin_std472_compare3）",
+    "note": "経過174s / 目安あと約0分",
+    "vram_used_gb": 1.2,
     "vram_total_gb": 15.9,
-    "util": 2,
+    "util": 19,
     "lock": {
-      "locked": false,
-      "holder": null,
+      "locked": true,
+      "holder": {
+        "pid": 24840,
+        "session": "rin_std472_compare3",
+        "job": "compare3",
+        "started_at": "2026-10-19T11:22:56+0900",
+        "age_sec": 174,
+        "alive": true,
+        "est_minutes": 3
+      },
       "stale": false
     }
   },
@@ -124,7 +132,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 11
+    "push_today": 12
   },
   "ai_works": [
     {
@@ -201,10 +209,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 45,
-    "mem_pct": 51,
+    "cpu_pct": 13,
+    "mem_pct": 52,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 739.3,
-    "disk_free_gb": 1122.4
+    "disk_used_gb": 739.0,
+    "disk_free_gb": 1122.6
   }
 }
