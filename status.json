@@ -1,22 +1,14 @@
 {
-  "generated_at": "2026-10-21 10:28:52",
+  "generated_at": "2026-10-21 10:59:06",
   "gpu": {
-    "occupant": "rin_charmake_fps（hoshi-brain rin_motion_1020 便2）",
-    "note": "経過93s / 目安あと約8分",
-    "vram_used_gb": 1.2,
+    "occupant": "空き（アイドル）",
+    "note": "誰も使っていません",
+    "vram_used_gb": 1.0,
     "vram_total_gb": 15.9,
-    "util": 23,
+    "util": 4,
     "lock": {
-      "locked": true,
-      "holder": {
-        "pid": 24956,
-        "session": "hoshi-brain rin_motion_1020 便2",
-        "job": "rin_charmake_fps",
-        "started_at": "2026-10-21T10:27:19+0900",
-        "age_sec": 93,
-        "alive": true,
-        "est_minutes": 10
-      },
+      "locked": false,
+      "holder": null,
       "stale": false
     }
   },
@@ -132,7 +124,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 8
+    "push_today": 9
   },
   "ai_works": [
     {
@@ -209,10 +201,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 100,
+    "cpu_pct": 91,
     "mem_pct": 53,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 743.9,
-    "disk_free_gb": 1117.8
+    "disk_used_gb": 744.4,
+    "disk_free_gb": 1117.3
   }
 }
