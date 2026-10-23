@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-10-24 08:08:48",
+  "generated_at": "2026-10-24 08:39:01",
   "gpu": {
-    "occupant": "コード開発（ローカルLLM）",
-    "note": "qwen2.5:14b",
-    "vram_used_gb": 10.7,
+    "occupant": "空き（アイドル）",
+    "note": "誰も使っていません",
+    "vram_used_gb": 1.0,
     "vram_total_gb": 15.9,
-    "util": 8,
+    "util": 1,
     "lock": {
       "locked": false,
       "holder": null,
@@ -124,7 +124,7 @@
     },
     "cap_month": 20000,
     "guide_day": 666,
-    "push_today": 3
+    "push_today": 4
   },
   "ai_works": [
     {
@@ -201,10 +201,10 @@
     }
   ],
   "resources": {
-    "cpu_pct": 11,
-    "mem_pct": 46,
+    "cpu_pct": 17,
+    "mem_pct": 42,
     "mem_total_gb": 31.7,
-    "disk_used_gb": 712.4,
-    "disk_free_gb": 1149.2
+    "disk_used_gb": 713.1,
+    "disk_free_gb": 1148.5
   }
 }
