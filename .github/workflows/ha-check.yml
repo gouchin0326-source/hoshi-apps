@@ -1,0 +1,27 @@
+name: ha-check
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "17 18 * * *"
+  workflow_dispatch:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: sudo apt-get install -y -q fonts-noto-cjk > /dev/null
+      - run: pip install -q playwright && python -m playwright install --with-deps chromium
+      - run: python tools/ha_cleanroom_check.py . out | tail -1
+      - run: cat out/summary.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ha-check-report
+          path: out/
+      - name: gate (開けない0・横スクロール0)
+        run: python -c "import json,sys;s=json.load(open('out/report.json'))['summary'];print(s);sys.exit(1 if s['fail'] or s['hscroll'] else 0)"
