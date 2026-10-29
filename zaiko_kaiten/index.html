@@ -468,6 +468,9 @@ html_content = """<!DOCTYPE html>
       if (stored) {
         try {
           inventoryList = JSON.parse(stored);
+          if (!Array.isArray(inventoryList) || !inventoryList.every(it => it && typeof it.count === "number" && typeof it.price === "number")) {
+            inventoryList = [...DEFAULT_DATA];
+          }
         } catch (e) {
           inventoryList = [...DEFAULT_DATA];
         }
