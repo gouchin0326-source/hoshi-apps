@@ -101,7 +101,7 @@
 
     /* ディスプレイ表示 */
     .time-display {
-      font-size: 3.5rem; /* 48px以上（1rem=16px換算で56px） */
+      font-size: clamp(2rem, 13vw, 3.5rem); /* 375px幅で収まる・最小32px */
       font-weight: bold;
       font-family: monospace;
       text-align: center;
