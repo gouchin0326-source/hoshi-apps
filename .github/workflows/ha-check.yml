@@ -15,6 +15,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - run: sudo apt-get install -y -q fonts-noto-cjk > /dev/null
       - run: pip install -q playwright && python -m playwright install --with-deps chromium
       - run: python tools/ha_cleanroom_check.py . out | tail -1
       - run: cat out/summary.md >> "$GITHUB_STEP_SUMMARY"
