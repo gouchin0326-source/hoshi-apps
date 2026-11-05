@@ -56,6 +56,12 @@
   .note{margin-top:22px;padding:14px 16px;background:var(--card);border:1px solid var(--border);border-radius:12px;font-size:13px;color:var(--sub)}
   .note b{color:var(--ink)} .note a{color:var(--accent);font-weight:600;text-decoration:none}
   footer{margin-top:18px;color:var(--muted);font-size:12.5px;text-align:center}
+  .ctl{display:flex;gap:8px;margin:0 0 10px}
+  .ctl input{flex:1;min-width:0;font-size:16px;min-height:44px;padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--ink)}
+  .ctl select{font-size:16px;min-height:44px;padding:0 8px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--ink)}
+  .recent{display:flex;gap:8px;overflow-x:auto;margin:0 0 10px;padding-bottom:2px}
+  .recent a{flex:none;display:flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;border:1px solid var(--border);border-radius:999px;background:var(--card);color:var(--ink);text-decoration:none;font-size:14px;white-space:nowrap}
+  .hit{font-size:12.5px;color:var(--sub);margin:0 0 6px}
 </style>
 </head>
 <body>
@@ -91,6 +97,16 @@
   </a>
 
   <h2>🎮 公開アプリ（カタログ）</h2>
+  <div class="ctl">
+    <input id="q" type="search" placeholder="🔍 アプリを探す" aria-label="アプリを検索" autocomplete="off">
+    <select id="sort" aria-label="並び順">
+      <option value="use">よく使う順</option>
+      <option value="new">新しい順</option>
+      <option value="name">名前順</option>
+    </select>
+  </div>
+  <div id="recent" class="recent" hidden></div>
+  <div class="hit" id="hit"></div>
   <div class="card" id="catalog"><div class="empty">読み込み中…</div></div>
 
   <h2>掲示板（公開中のアプリ）</h2>
@@ -138,23 +154,48 @@ load();
 setInterval(load, 60000);
 
 // 公開アプリカタログ(apps.json)＝アプリ追加はjson1エントリ(P7 E1)。公開Pagesのみ=トンネル消費0。
+var CAT=[], USE_KEY='ha_pr_use_v1';
+function useGet(){try{return JSON.parse(localStorage.getItem(USE_KEY)||'{}')||{}}catch(e){return {}}}
+function useHit(id){try{var u=useGet();var o=u[id]||{n:0,t:0};o.n++;o.t=Date.now();u[id]=o;localStorage.setItem(USE_KEY,JSON.stringify(u));}catch(e){}}
+function norm(s){return String(s||'').toLowerCase().normalize('NFKC');}
+function rowHtml(a){
+  return '<a class="row" data-id="'+esc(a.id||'')+'" href="'+esc(a.path||'#')+'">'
+    + '<div class="rico">'+esc(a.icon||'📱')+'</div>'
+    + '<div class="rmeta"><div class="rname">'+esc(a.title||'')+'</div>'
+    +   '<div class="rsub">'+esc(a.desc||'')+'</div></div>'
+    + (a.badge?'<span class="badge b-open">'+esc(a.badge)+'</span>':'')
+    + '<span class="go">›</span></a>';
+}
+function draw(){
+  var el=document.getElementById('catalog'), q=norm(document.getElementById('q').value).trim(), mode=document.getElementById('sort').value, u=useGet();
+  var words=q.split(/\s+/).filter(Boolean);
+  var list=CAT.filter(function(a){var h=norm((a.title||'')+' '+(a.desc||'')+' '+(a.biz||'')+' '+(a.id||''));return words.every(function(w){return h.indexOf(w)>=0;});});
+  list.sort(function(x,y){
+    if(mode==='name') return String(x.title).replace(/^\W+/,'').localeCompare(String(y.title).replace(/^\W+/,''),'ja');
+    if(mode==='new') return String(y.date||'').localeCompare(String(x.date||''));
+    var ux=u[x.id]||{n:0,t:0}, uy=u[y.id]||{n:0,t:0};
+    return (uy.n-ux.n)||(uy.t-ux.t)||String(y.date||'').localeCompare(String(x.date||''));
+  });
+  document.getElementById('hit').textContent=q?(list.length+' 件ヒット / 全 '+CAT.length+' 件'):('全 '+CAT.length+' 件');
+  el.innerHTML=list.length?list.map(rowHtml).join(''):'<div class="empty">「'+esc(q)+'」に合うアプリはありません</div>';
+  var rec=CAT.filter(function(a){return u[a.id];}).sort(function(x,y){return u[y.id].t-u[x.id].t;}).slice(0,6), rb=document.getElementById('recent');
+  rb.hidden=!rec.length;
+  rb.innerHTML=rec.length?rec.map(function(a){return '<a data-id="'+esc(a.id)+'" href="'+esc(a.path||'#')+'">'+esc(a.icon||'📱')+' '+esc(String(a.title||'').replace(/^\S+\s/,''))+'</a>';}).join(''):'';
+}
 async function loadCatalog(){
   var el=document.getElementById('catalog');
   try{
     var r=await fetch('apps.json?_='+Date.now(),{cache:'no-store'});
     if(!r.ok) throw 0;
-    var d=await r.json(); var apps=(d&&d.apps)||[];
-    if(!apps.length){ el.innerHTML='<div class="empty">公開アプリはまだありません。</div>'; return; }
-    el.innerHTML=apps.map(function(a){
-      return '<a class="row" href="'+esc(a.path||'#')+'">'
-        + '<div class="rico">'+esc(a.icon||'📱')+'</div>'
-        + '<div class="rmeta"><div class="rname">'+esc(a.title||'')+'</div>'
-        +   '<div class="rsub">'+esc(a.desc||'')+'</div></div>'
-        + (a.badge?'<span class="badge b-open">'+esc(a.badge)+'</span>':'')
-        + '<span class="go">›</span></a>';
-    }).join('');
+    var d=await r.json(); CAT=(d&&d.apps)||[];
+    if(!CAT.length){ el.innerHTML='<div class="empty">公開アプリはまだありません。</div>'; return; }
+    try{var sv=localStorage.getItem('ha_pr_sort');if(sv)document.getElementById('sort').value=sv;}catch(e){}
+    draw();
   }catch(e){ el.innerHTML='<div class="empty">カタログを取得できません</div>'; }
 }
+document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[data-id]');if(a&&a.dataset.id)useHit(a.dataset.id);});
+document.getElementById('q').addEventListener('input',draw);
+document.getElementById('sort').addEventListener('change',function(){try{localStorage.setItem('ha_pr_sort',this.value);}catch(e){}draw();});
 loadCatalog();
 
 if('serviceWorker' in navigator){ window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); }); }
