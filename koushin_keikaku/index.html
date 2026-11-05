@@ -1058,8 +1058,8 @@ document.addEventListener("DOMContentLoaded",function(){fix(document);new Mutati
           <td>${parseInt(item.interval, 10)}年</td>
           <td>
             <strong>${escapeHtml(item.calculatedNextUpdate)}</strong>
-            ${deadline.status === "passed" ? '<div style="color: #b91c1c; font-size: 12px; font-weight: bold;">[期限超過]</div>' : ''}
-            ${deadline.status === "near" ? '<div style="color: #b45309; font-size: 12px; font-weight: bold;">[期限至近]</div>' : ''}
+            ${deadline.status === "passed" ? '<div style="color: #b91c1c; font-size: 12.5px; font-weight: bold;">[期限超過]</div>' : ''}
+            ${deadline.status === "near" ? '<div style="color: #b45309; font-size: 12.5px; font-weight: bold;">[期限至近]</div>' : ''}
           </td>
           <td><span class="badge ${badgeClass}">${escapeHtml(item.status)}</span></td>
           <td>${formattedCost}</td>
