@@ -21,7 +21,7 @@ const srv=http.createServer((q,r)=>{let f=path.join(root,decodeURIComponent(q.ur
         if(e.tagName==='SELECT'){if(e.options.length>1)e.selectedIndex=1;}
         else if(t==='checkbox'||t==='radio'){e.checked=true;}
         else if(t==='number'||t==='range'){e.value=String(10+i);}
-        else if(t==='date'){e.value='2026-11-05';}else if(t==='time'){e.value='08:30';}else if(t==='month'){e.value='2026-11';}
+        else if(t==='date'){e.value='2026-11-05';}else if(t==='datetime-local'){e.value='2026-11-05T08:30';}else if(t==='week'){e.value='2026-W45';}else if(t==='email'){e.value='test'+i+'@example.com';}else if(t==='tel'){e.value='0312345678';}else if(t==='url'){e.value='https://example.com/';}else if(t==='time'){e.value='08:30';}else if(t==='month'){e.value='2026-11';}
         else if(t==='color'){e.value='#336699';}else{e.value='テスト'+i;}
         e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}));});});
       // ボタンを順に押す（最大60）
