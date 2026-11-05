@@ -369,7 +369,9 @@ input[type=checkbox],input[type=radio]{-webkit-appearance:auto!important;appeara
  :where(button,input[type=button],input[type=submit],input[type=reset],[role=button]){min-height:44px}
  :where(input[type=checkbox],input[type=radio]){min-width:22px;min-height:22px}
 }
-</style><script>/* 入力欄の文字が16px未満の時だけ16pxへ引上げ（iOSのフォーカス時ズーム防止）。大きい指定は維持 */
+</style><script>
+function haEsc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+/* 入力欄の文字が16px未満の時だけ16pxへ引上げ（iOSのフォーカス時ズーム防止）。大きい指定は維持 */
 (function(){if(!matchMedia("(max-width:600px),(pointer:coarse)").matches)return;var Q="input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]):not([type=hidden]),select,textarea";
 function fix(r){(r.querySelectorAll?r:document).querySelectorAll(Q).forEach(function(e){if(parseFloat(getComputedStyle(e).fontSize)<16)e.style.setProperty("font-size","16px","important")})}
 var t;function run(){clearTimeout(t);t=setTimeout(function(){fix(document)},60)}
@@ -570,25 +572,25 @@ document.addEventListener("DOMContentLoaded",function(){fix(document);new Mutati
 
         card.innerHTML = `
           <div class="counter-header">
-            <label for="input-${counter.id}" class="sr-only" style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0;">名前</label>
+            <label for="input-${haEsc(counter.id)}" class="sr-only" style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0;">名前</label>
             <input 
               type="text" 
-              id="input-${counter.id}" 
+              id="input-${haEsc(counter.id)}" 
               class="counter-name-input" 
-              value="${counter.name}" 
+              value="${haEsc(counter.name)}" 
               placeholder="${defaultPlaceholder}" 
               aria-label="カウンターの名前を変更"
             >
           </div>
           <div class="counter-body">
             <div class="count-controls">
-              <button class="btn-calc btn-secondary" id="btn-minus-${counter.id}" aria-label="1減らす">-</button>
-              <div class="count-display" id="val-${counter.id}">${counter.value}</div>
-              <button class="btn-calc btn-primary" id="btn-plus-${counter.id}" aria-label="1増やす">+</button>
+              <button class="btn-calc btn-secondary" id="btn-minus-${haEsc(counter.id)}" aria-label="1減らす">-</button>
+              <div class="count-display" id="val-${haEsc(counter.id)}">${counter.value}</div>
+              <button class="btn-calc btn-primary" id="btn-plus-${haEsc(counter.id)}" aria-label="1増やす">+</button>
             </div>
             <div class="counter-actions">
-              <button class="btn-danger" id="btn-reset-${counter.id}" aria-label="数値を0に戻す">リセット</button>
-              <button class="btn-secondary" id="btn-del-${counter.id}" aria-label="このカウンターを削除" style="border-color: var(--danger-color); color: var(--danger-color);">削除</button>
+              <button class="btn-danger" id="btn-reset-${haEsc(counter.id)}" aria-label="数値を0に戻す">リセット</button>
+              <button class="btn-secondary" id="btn-del-${haEsc(counter.id)}" aria-label="このカウンターを削除" style="border-color: var(--danger-color); color: var(--danger-color);">削除</button>
             </div>
           </div>
         `;
@@ -596,26 +598,26 @@ document.addEventListener("DOMContentLoaded",function(){fix(document);new Mutati
         container.appendChild(card);
 
         // --- イベントバインド ---
-        const inputName = card.querySelector(`#input-${counter.id}`);
+        const inputName = card.querySelector(`#input-${haEsc(counter.id)}`);
         inputName.addEventListener('input', (e) => {
           updateName(counter.id, e.target.value);
           // アクセシビリティ：スクリーンリーダー用にカードのaria-labelも書き換え
           card.setAttribute('aria-label', e.target.value || defaultPlaceholder);
         });
 
-        card.querySelector(`#btn-minus-${counter.id}`).addEventListener('click', () => {
+        card.querySelector(`#btn-minus-${haEsc(counter.id)}`).addEventListener('click', () => {
           updateValue(counter.id, -1);
         });
 
-        card.querySelector(`#btn-plus-${counter.id}`).addEventListener('click', () => {
+        card.querySelector(`#btn-plus-${haEsc(counter.id)}`).addEventListener('click', () => {
           updateValue(counter.id, 1);
         });
 
-        card.querySelector(`#btn-reset-${counter.id}`).addEventListener('click', () => {
+        card.querySelector(`#btn-reset-${haEsc(counter.id)}`).addEventListener('click', () => {
           resetValue(counter.id);
         });
 
-        card.querySelector(`#btn-del-${counter.id}`).addEventListener('click', () => {
+        card.querySelector(`#btn-del-${haEsc(counter.id)}`).addEventListener('click', () => {
           if (confirm(`「${counter.name || defaultPlaceholder}」を削除してもよろしいですか？`)) {
             removeCounter(counter.id);
           }

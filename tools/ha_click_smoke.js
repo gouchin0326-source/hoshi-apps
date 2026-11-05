@@ -6,7 +6,7 @@ const apps=JSON.parse(fs.readFileSync(path.join(root,'apps.json'),'utf8')).apps
   .filter(a=>a.biz==='業務支援'&&a.path.endsWith('/')&&a.path!=='seisan_board_3d/').map(a=>a.path)
   .filter(p=>!only.length||only.includes(p.replace(/\/$/,'')));
 const T={html:'text/html; charset=utf-8',js:'text/javascript',css:'text/css',json:'application/json',png:'image/png',svg:'image/svg+xml'};
-const srv=http.createServer((q,r)=>{let f=path.join(root,decodeURIComponent(q.url.split('?')[0]));if(f.endsWith('/'))f+='index.html';fs.readFile(f,(e,d)=>{if(e){r.writeHead(404);return r.end()}r.writeHead(200,{'Content-Type':T[f.split('.').pop()]||'application/octet-stream'});r.end(d)})}).listen(0,async()=>{
+const srv=http.createServer((q,r)=>{let f;try{f=path.resolve(root,'.'+path.posix.normalize('/'+decodeURIComponent(q.url.split('?')[0])));}catch(_){r.writeHead(400);return r.end()}if(f!==root&&!f.startsWith(root+path.sep)){r.writeHead(403);return r.end()}if(q.url.split('?')[0].endsWith('/'))f=path.join(f,'index.html');fs.readFile(f,(e,d)=>{if(e){r.writeHead(404);return r.end()}r.writeHead(200,{'Content-Type':T[f.split('.').pop()]||'application/octet-stream'});r.end(d)})}).listen(0,'127.0.0.1',async()=>{
   const b=await chromium.launch();const res=[];
   for(const app of apps){
     const c=await b.newContext({viewport:{width:375,height:812},serviceWorkers:'block',acceptDownloads:true});
@@ -30,7 +30,7 @@ const srv=http.createServer((q,r)=>{let f=path.join(root,decodeURIComponent(q.ur
           if(k===0){[...document.querySelectorAll('button,input[type=button],input[type=submit],[role=button]')].forEach((e,i)=>e.dataset.smk=i);}
           // 最初に採番した順で押す（モーダル開閉・タブ切替で順番がずれないように）。見えない時は飛ばす
           const e=document.querySelector('[data-smk="'+k+'"]');if(!e)return k<400&&document.querySelectorAll('[data-smk]').length>k;if(!v(e))return true;const t=(e.textContent||e.value||'').trim();
-          if(/削除|全消|リセット|初期化|クリア|delete|reset/i.test(t))return true;
+          if(/削除|消去|全消|取り消|リセット|初期化|クリア|🗑|delete|remove|reset|clear/i.test(t))return true;
           try{e.click();}catch(_){ }return true;},k);
         if(!ok)break;await p.waitForTimeout(60);
         if(!p.url().includes(app)){await p.goBack().catch(()=>{});await p.waitForTimeout(300);}
