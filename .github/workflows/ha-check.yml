@@ -25,3 +25,9 @@ jobs:
           path: out/
       - name: gate (開けない0・横スクロール0)
         run: python -c "import json,sys;s=json.load(open('out/report.json'))['summary'];print(s);sys.exit(1 if s['fail'] or s['hscroll'] else 0)"
+      - name: 操作検分（入力→全ボタン押下のJSエラー・報告のみ）
+        if: always()
+        continue-on-error: true
+        run: |
+          npm i --no-save --silent playwright@1.48.2 && npx playwright install chromium > /dev/null
+          node tools/ha_click_smoke.js . out/smoke.json | tee -a "$GITHUB_STEP_SUMMARY"
