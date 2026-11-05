@@ -52,6 +52,18 @@ table.m tr.old td{color:#94a3b8;background:#f8fafc}
 #toast.show{opacity:1}
 .hint{font-size:11px;color:#94a3b8}
 </style>
+<!-- ha-mobile-a11y:start --><style id="ha-mobile-a11y">
+@media (max-width:600px),(pointer:coarse){
+ input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]):not([type=hidden]),select,textarea{min-height:44px;box-sizing:border-box}
+ button,input[type=button],input[type=submit],input[type=reset],[role=button]{min-height:44px}
+ input[type=checkbox],input[type=radio]{min-width:22px;min-height:22px}
+}
+</style><script>/* 入力欄の文字が16px未満の時だけ16pxへ引上げ（iOSのフォーカス時ズーム防止）。大きい指定は維持 */
+(function(){if(!matchMedia("(max-width:600px),(pointer:coarse)").matches)return;var Q="input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]):not([type=hidden]),select,textarea";
+function fix(r){(r.querySelectorAll?r:document).querySelectorAll(Q).forEach(function(e){if(parseFloat(getComputedStyle(e).fontSize)<16)e.style.setProperty("font-size","16px","important")})}
+var t;function run(){clearTimeout(t);t=setTimeout(function(){fix(document)},60)}
+document.addEventListener("DOMContentLoaded",function(){fix(document);new MutationObserver(run).observe(document.body,{childList:true,subtree:true})})})();
+</script><!-- ha-mobile-a11y:end -->
 </head>
 <body>
 <header>
