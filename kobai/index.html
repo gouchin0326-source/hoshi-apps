@@ -1412,7 +1412,7 @@ window.openMobileGrab=function(){
   setTimeout(function(){
     var lk=document.getElementById('mgrabLink'); if(lk){ lk.setAttribute('href',MOBILE_GRAB_BM); lk.onclick=function(ev){ ev.preventDefault(); toast('登録用ボタンです','PCはブックマークバーへドラッグ／スマホは下のコードをコピーしてください','',6000); return false; }; }
     var ta=document.getElementById('mgrabCode'); if(ta){ ta.value=MOBILE_GRAB_BM; }
-    var cp=document.getElementById('mgrabCopy'); if(cp){ cp.onclick=function(){ var ta2=document.getElementById('mgrabCode'); try{ navigator.clipboard.writeText(MOBILE_GRAB_BM); toast('📋 コピーしました','ブックマークのURL欄に貼り付けてください',''); }catch(e){ if(ta2){ta2.focus();ta2.select();} toast('コード欄を選択しました','長押し→コピーしてください','warn'); } }; }
+    var cp=document.getElementById('mgrabCopy'); if(cp){ cp.onclick=function(){ var ta2=document.getElementById('mgrabCode'); var fb=function(){ if(ta2){ta2.focus();ta2.select();} toast('コピーできませんでした','コード欄を選択しました。長押し→コピーしてください','warn'); }; try{ navigator.clipboard.writeText(MOBILE_GRAB_BM).then(function(){ toast('📋 コピーしました','ブックマークのURL欄に貼り付けてください',''); }).catch(fb); }catch(e){ fb(); } }; }
   },0);
 };
 

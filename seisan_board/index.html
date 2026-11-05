@@ -416,7 +416,7 @@ del:(l,p,id)=>{
     App.Bd.ren();
 },
 log:(t,l,p,id,isCopy)=>{const w=App.getW(id);const tgt=(t=='proc')?(l+'/'+p):(t=='pool'?'待機プール':t=='abs'?'欠勤':t=='supp'?'応援':t);App.st.log.unshift({tm:Date.now(),txt:(w?w.n:id)+' → '+tgt+' ('+(isCopy?'複製':'移動')+')'});if(App.st.log.length>100)App.st.log.pop();},recSave:(fn)=>{const alc=Object.values(App.st.alc).reduce((a,b)=>a+b.length,0);App.st.saveLog.unshift({tm:Date.now(),fn:fn,w:App.d.w.length,alc:alc});if(App.st.saveLog.length>200)App.st.saveLog.pop();try{localStorage.setItem('PRODUCTION_SAVE_LOG',JSON.stringify(App.st.saveLog));}catch(e){}},showLog:()=>{const fmt=t=>{const d=new Date(t);const z=n=>(''+n).padStart(2,'0');return `${d.getFullYear()}/${z(d.getMonth()+1)}/${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}`;};const sv=App.st.saveLog.length?App.st.saveLog.map(e=>`<div style="padding:4px 2px;border-bottom:1px solid #eee;"><span style="color:#0369a1;font-family:monospace;">${fmt(e.tm)}</span> ${e.fn} <span style="color:#64748b;font-size:12.5px;">(作業者${e.w}・配置${e.alc})</span></div>`).join(''):'<p style="color:#999;text-align:center;">保存履歴なし</p>';const op=App.st.log.length?App.st.log.map(e=>{const d=new Date(e.tm);const z=n=>(''+n).padStart(2,'0');return `<div style="padding:4px 2px;border-bottom:1px solid #eee;"><span style="color:#94a3b8;font-family:monospace;">${z(d.getHours())}:${z(d.getMinutes())}</span> ${e.txt}</div>`;}).join(''):'<p style="color:#999;text-align:center;">操作なし</p>';document.getElementById('log-lst').innerHTML='<h4 style="margin:6px 0 2px;">💾 保存履歴</h4>'+sv+'<h4 style="margin:12px 0 2px;">🕘 操作履歴</h4>'+op;document.getElementById('md-log').classList.remove('hidden');},csv:()=>{let rows=[['工場','ライン','工程','社員ID','氏名','スキルLv','状態']];Object.keys(App.st.alc).forEach(k=>{const a=k.split('_'),f=a[0],l=a[1],p=a.slice(2).join('_');App.st.alc[k].forEach(id=>{const w=App.getW(id);rows.push([f,l,p,id,w?w.n:'',App.getSk(id,l,p),'配置']);});});App.st.ab.forEach(id=>{const w=App.getW(id);rows.push([w?w.f:'','','',id,w?w.n:'','','欠勤']);});App.st.sp.forEach(id=>{const w=App.getW(id);rows.push([w?w.f:'','','',id,w?w.n:'','','応援']);});App.dlCsv(rows,'配置データ');},mv:(t,l,p,id,forceCopy=false)=>{if(!id)return;const isCopy=(App.st.mode==='copy'||forceCopy);App.Bd.svH();if(!isCopy){App.st.pl=App.st.pl.filter(x=>x!=id);App.st.ab=App.st.ab.filter(x=>x!=id);App.st.sp=App.st.sp.filter(x=>x!=id);Object.keys(App.st.alc).forEach(k=>App.st.alc[k]=App.st.alc[k].filter(x=>x!=id))}else if(t!='proc'){App.st.pl=App.st.pl.filter(x=>x!=id);App.st.ab=App.st.ab.filter(x=>x!=id);App.st.sp=App.st.sp.filter(x=>x!=id)}if(t=='pool')App.st.pl.push(id);else if(t=='abs')App.st.ab.push(id);else if(t=='supp')App.st.sp.push(id);else{const k=`${App.st.f}_${l}_${p}`;if(!App.st.alc[k])App.st.alc[k]=[];if(!App.st.alc[k].includes(id))App.st.alc[k].push(id)}App.Bd.log(t,l,p,id,isCopy);App.ui.toast((App.getW(id)?App.getW(id).n:id)+(isCopy?' をコピー':' を移動'));App.st.sel=null;App.st.mode='move';App.Bd.ren()},
-auto:()=>{App.Bd.svH();const f=App.st.f,lns=App.d.l[f];
+auto:()=>{const f=App.st.f,lns=(f&&App.d.l[f])||{};if(!Object.keys(lns).length){App.ui.toast('ラインが未登録のためAI配置できません');return;}App.Bd.svH();
 /* v95: FactoryMatrix理論版AI配置 — スコア=スキル倍率/(兼任+1)^2.1(専任優先)。充足カウンタは表示と同じ実効能力基準(原典の既知バグ修正) */
 const MULT={0:0,1:.5,2:.8,3:1,4:1.2,5:1.5};
 const getLoad=(id)=>{let n=0;Object.values(App.st.alc).forEach(L=>{if(L.includes(id))n++});return n;};
@@ -502,7 +502,7 @@ upLn:(skipClear=false)=>{
     lns.forEach(l=>s.add(new Option(l,l)));
     if(!skipClear) App.Sk.guests=[]; // Clear only when factory changes manually
     App.Sk.ren()},
-ren:()=>{const f=document.getElementById('sk-fac').value,l=document.getElementById('sk-ln').value;const procs=App.d.l[f][l]||[];
+ren:()=>{const f=document.getElementById('sk-fac').value,l=document.getElementById('sk-ln').value;const procs=(App.d.l[f]||{})[l]||[];
 const lineMems=App.d.w.filter(w=>w.f==f&&w.l==l);
 const guestMems=App.Sk.guests.map(id=>App.getW(id));
 const mems=[...lineMems, ...guestMems.filter(g=>!lineMems.find(m=>m.id==g.id))]; 
@@ -557,7 +557,7 @@ upPL:()=>{const f=document.getElementById('sk-p-fac'),l=document.getElementById(
     App.Sk.upPP();
 },
 upPP:()=>{const f=document.getElementById('sk-p-fac').value,l=document.getElementById('sk-p-ln').value,p=document.getElementById('sk-p-pr');
-    p.innerHTML=""; (App.d.l[f][l]||[]).forEach(k=>p.add(new Option(k,k)));
+    p.innerHTML=""; ((App.d.l[f]||{})[l]||[]).forEach(k=>p.add(new Option(k,k)));
     App.Sk.renProc();
 },
 renProc:()=>{

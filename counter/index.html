@@ -600,7 +600,8 @@ document.addEventListener("DOMContentLoaded",function(){fix(document);new Mutati
       exportTextarea.value = jsonStr;
 
       // CSVの生成
-      let csvContent = "data:text/csv;charset=utf-8,ID,名前,現在値\n";
+      // 先頭にBOM（﻿）を付けてExcelの文字化けを防ぐ（encodeURIで %EF%BB%BF になる）
+      let csvContent = "data:text/csv;charset=utf-8,﻿ID,名前,現在値\n";
       counters.forEach((c, index) => {
         const name = c.name || `カウンター ${index + 1}`;
         // カンマやクォーテーションをエスケープ
@@ -615,18 +616,31 @@ document.addEventListener("DOMContentLoaded",function(){fix(document);new Mutati
     btnCopy.addEventListener('click', () => {
       exportTextarea.select();
       exportTextarea.setSelectionRange(0, 99999); // スマホ対応
-      try {
-        navigator.clipboard.writeText(exportTextarea.value);
-        const originalText = btnCopy.textContent;
-        btnCopy.textContent = "✅ コピーしました！";
-        btnCopy.style.backgroundColor = "#e1eedd";
+      const originalText = btnCopy.textContent;
+      const showResult = (ok) => {
+        btnCopy.textContent = ok ? "✅ コピーしました！" : "⚠ コピーできませんでした（枠内を選択してコピーしてください）";
+        btnCopy.style.backgroundColor = ok ? "#e1eedd" : "#fde8e8";
         setTimeout(() => {
           btnCopy.textContent = originalText;
           btnCopy.style.backgroundColor = "";
-        }, 2000);
+        }, ok ? 2000 : 4000);
+      };
+      // 権限なし等で writeText が NotAllowedError を投げても落ちないよう Promise で受ける
+      let p;
+      try {
+        p = (navigator.clipboard && navigator.clipboard.writeText)
+          ? navigator.clipboard.writeText(exportTextarea.value)
+          : Promise.reject(new Error("clipboard API unavailable"));
       } catch (err) {
-        alert("コピーに失敗しました。枠内の文字を直接選択してコピーしてください。");
+        p = Promise.reject(err);
       }
+      Promise.resolve(p).then(() => showResult(true)).catch(() => {
+        // フォールバック: 旧API（execCommand）を試し、ダメなら選択状態のまま案内を出す
+        let ok = false;
+        try { ok = document.execCommand && document.execCommand("copy"); } catch (e) { ok = false; }
+        if (!ok) { exportTextarea.focus(); exportTextarea.select(); }
+        showResult(!!ok);
+      });
     });
 
     // カウンター新規作成ボタン
