@@ -471,9 +471,11 @@ document.addEventListener("DOMContentLoaded",function(){fix(document);new Mutati
     const date = new Date(lastDateStr);
     if (isNaN(date.getTime())) return '';
     
-    // 月を加算
-    date.setMonth(date.getMonth() + parseInt(months, 10));
-    
+    // 月を加算（周期が欠落・非数値の保存データは「不明」扱いにする）
+    const m = parseInt(months, 10);
+    if (isNaN(m)) return '';
+    date.setMonth(date.getMonth() + m);
+
     // YYYY/MM/DD形式で返却
     const yyyy = date.getFullYear();
     const mm = String(date.getMonth() + 1).padStart(2, '0');

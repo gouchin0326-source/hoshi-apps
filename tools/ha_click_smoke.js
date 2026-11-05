@@ -25,10 +25,11 @@ const srv=http.createServer((q,r)=>{let f=path.join(root,decodeURIComponent(q.ur
         else if(t==='color'){e.value='#336699';}else{e.value='テスト'+i;}
         e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}));});});
       // ボタンを順に押す（最大60）
-      for(let k=0;k<60;k++){
+      for(let k=0;k<200;k++){
         const ok=await p.evaluate(k=>{const v=e=>{const r=e.getBoundingClientRect(),s=getComputedStyle(e);return r.width>0&&r.height>0&&s.visibility!=='hidden'&&s.display!=='none'&&!e.disabled};
-          const bs=[...document.querySelectorAll('button,input[type=button],input[type=submit],[role=button]')].filter(v);
-          if(k>=bs.length)return false;const e=bs[k];const t=(e.textContent||e.value||'').trim();
+          if(k===0){[...document.querySelectorAll('button,input[type=button],input[type=submit],[role=button]')].forEach((e,i)=>e.dataset.smk=i);}
+          // 最初に採番した順で押す（モーダル開閉・タブ切替で順番がずれないように）。見えない時は飛ばす
+          const e=document.querySelector('[data-smk="'+k+'"]');if(!e)return k<400&&document.querySelectorAll('[data-smk]').length>k;if(!v(e))return true;const t=(e.textContent||e.value||'').trim();
           if(/削除|全消|リセット|初期化|クリア|delete|reset/i.test(t))return true;
           try{e.click();}catch(_){ }return true;},k);
         if(!ok)break;await p.waitForTimeout(60);
