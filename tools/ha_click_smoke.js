@@ -11,7 +11,7 @@ const srv=http.createServer((q,r)=>{let f=path.join(root,decodeURIComponent(q.ur
   for(const app of apps){
     const c=await b.newContext({viewport:{width:375,height:812},serviceWorkers:'block',acceptDownloads:true});
     const p=await c.newPage();const errs=new Set();
-    p.on('pageerror',e=>errs.add(String(e).slice(0,200)));p.on('dialog',d=>d.accept().catch(()=>{}));
+    let phase='op';p.on('pageerror',e=>errs.add((phase==='reload'?'[再読込] ':'')+String(e).slice(0,200)));p.on('dialog',d=>d.accept().catch(()=>{}));
     p.on('popup',pp=>pp.close().catch(()=>{}));
     try{
       await p.goto(`http://127.0.0.1:${srv.address().port}/${app}`,{waitUntil:'load',timeout:15000});await p.waitForTimeout(500);
@@ -35,11 +35,15 @@ const srv=http.createServer((q,r)=>{let f=path.join(root,decodeURIComponent(q.ur
         if(!p.url().includes(app)){await p.goBack().catch(()=>{});await p.waitForTimeout(300);}
       }
       await p.waitForTimeout(300);
+      // 再読込: 保存済みデータでの描画エラーを拾う（データ互換・復元の検分）
+      const ls=await p.evaluate(()=>{try{return localStorage.length}catch(e){return -1}});
+      errs.add('__LS__'+ls);
+      phase='reload';await p.reload({waitUntil:'load'});await p.waitForTimeout(600);
     }catch(e){errs.add('FAIL '+String(e).slice(0,160));}
-    res.push({app,errors:[...errs]});await c.close();
+    {const all=[...errs];const ls=all.find(x=>x.startsWith('__LS__'));res.push({app,ls:ls?+ls.slice(6):null,errors:all.filter(x=>!x.startsWith('__LS__'))});};await c.close();
   }
   await b.close();srv.close();
   fs.writeFileSync(out,JSON.stringify(res,null,1));
-  const bad=res.filter(r=>r.errors.length);console.log(`apps ${res.length} / with errors ${bad.length}`);
+  const bad=res.filter(r=>r.errors.length);console.log(`apps ${res.length} / with errors ${bad.length} / localStorage未使用 ${res.filter(r=>r.ls===0).length}`);
   bad.forEach(r=>console.log(r.app,'|',r.errors.slice(0,2).join(' || ')));
 });
