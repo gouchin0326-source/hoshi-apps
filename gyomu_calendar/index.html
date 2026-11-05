@@ -107,6 +107,41 @@ footer b{color:var(--warn);}
 .toast.on{opacity:1;}
 @media(max-width:560px){.cal td{height:4em;} .ev{display:none;} .cal td .dots{font-size:.84rem;color:var(--navy);} }
 </style>
+<style id="ha-print">@media print{
+@page{size:A4;margin:12mm}
+html,body{background:#fff!important;color:#000!important;font-size:10.5pt!important;line-height:1.5!important;min-height:0!important;height:auto!important;margin:0!important;padding:0!important;overflow:visible!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+*{color:#000!important;background-color:transparent!important;background-image:none!important;box-shadow:none!important;text-shadow:none!important;animation:none!important;transition:none!important;position:static!important}
+body>*,main,.container,.app-container,.main-container,.main-grid{max-width:none!important;width:auto!important;margin:0!important;padding:0!important;border:none!important}
+button,[role=button],input[type=button],input[type=submit],input[type=reset],input[type=file],.toast,#toast,.toast-msg,dialog,[id^=_fz_help],.modal,.modal-overlay,.modal-backdrop,.modal-content,.modal-box,[hidden]{display:none!important}
+header{background:#fff!important;color:#000!important;border-bottom:1.5pt solid #000!important;margin:0 0 8pt!important;padding:0 0 4pt!important;display:block!important}
+h1{color:#000!important;font-size:15pt!important;margin:0!important;padding:0!important;border:none!important}
+h2,h3,h4{color:#000!important;font-size:11.5pt!important;margin:8pt 0 4pt!important;padding:0!important;page-break-after:avoid;break-after:avoid;border:none!important}
+section,.card,.panel,.section-card,.form-card,.table-card{border:none!important;border-radius:0!important;padding:0!important;margin:0 0 10pt!important;page-break-inside:auto!important;max-height:none!important;overflow:visible!important}
+table{width:100%!important;min-width:0!important;border-collapse:collapse!important;font-size:9.5pt!important;table-layout:auto!important;page-break-inside:auto}
+th,td{border:0.5pt solid #999!important;padding:3pt 5pt!important;min-width:0!important;white-space:normal!important;word-break:break-all;max-width:none!important;vertical-align:top}
+th{background-color:#eee!important;font-weight:bold!important;text-align:left}
+thead{display:table-header-group}tfoot{display:table-footer-group}
+tr{page-break-inside:avoid;break-inside:avoid}
+.table-container,.gridwrap{overflow:visible!important;max-height:none!important;border:none!important;padding:0!important;margin:0!important}
+input:not([type=checkbox]):not([type=radio]),select,textarea{border:none!important;border-bottom:0.5pt solid #999!important;border-radius:0!important;background:#fff!important;padding:1pt 2pt!important;min-height:0!important;height:auto!important;font-size:10.5pt!important;box-shadow:none!important;appearance:none;-webkit-appearance:none;resize:none!important;box-sizing:border-box!important;color:#000!important}
+input::placeholder,textarea::placeholder{color:transparent!important}
+label{color:#000!important}
+a{color:#000!important;text-decoration:none!important}
+ul,ol{margin:0 0 6pt!important}
+.hbtn,#a11yPanel,.a11y-panel,section.panel:has(#fName),.tabs,.calbar button,.card .ops,footer,dialog,#fileImport,.empty:empty{display:none!important}
+header{display:flex!important;gap:8pt!important;align-items:baseline!important}
+.calbar{display:flex!important;gap:8pt!important;margin:0 0 4pt!important}
+.calbar .ym{font-size:13pt!important;font-weight:bold!important}
+table.cal{table-layout:fixed!important}
+.cal th,.cal td{border:0.5pt solid #999!important;padding:2pt 3pt!important;font-size:9pt!important;word-break:break-all;white-space:normal!important}
+.cal td{height:5em!important;page-break-inside:avoid}
+.cal td.today{background-color:#f0f0f0!important}
+.cal td.off{background-color:#fafafa!important}
+.ev{display:block!important;border-left:2pt solid #000!important;padding:0 2pt!important;white-space:normal!important;overflow:visible!important;font-size:8.5pt!important;background-color:#f3f3f3!important}
+.ev.nobk{border-left:2pt dotted #000!important}
+.card{border:0.5pt solid #999!important;padding:4pt 6pt!important;margin:0 0 6pt!important;page-break-inside:avoid}
+.badge{border:0.5pt solid #000!important;padding:0 3pt!important}
+}</style>
 <!-- ha-mobile-a11y:start --><style id="ha-mobile-a11y">
 @media (max-width:600px),(pointer:coarse){
  input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]):not([type=hidden]),select,textarea{min-height:44px;box-sizing:border-box}
