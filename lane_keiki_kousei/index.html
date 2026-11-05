@@ -453,7 +453,8 @@ document.addEventListener("DOMContentLoaded",function(){fix(document);new Mutati
     const saved = localStorage.getItem('calibration_devices');
     if (saved) {
       try {
-        devices = JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        devices = Array.isArray(parsed) ? parsed : [];
       } catch (e) {
         devices = [];
       }
@@ -477,7 +478,7 @@ document.addEventListener("DOMContentLoaded",function(){fix(document);new Mutati
     const yyyy = date.getFullYear();
     const mm = String(date.getMonth() + 1).padStart(2, '0');
     const dd = String(date.getDate()).padStart(2, '0');
-    return `${yyyy}/${MM}/${dd}`;
+    return `${yyyy}/${mm}/${dd}`;
   }
 
   // 日付文字列を YYYY/MM/DD 形式に変換
@@ -488,7 +489,7 @@ document.addEventListener("DOMContentLoaded",function(){fix(document);new Mutati
     const yyyy = date.getFullYear();
     const mm = String(date.getMonth() + 1).padStart(2, '0');
     const dd = String(date.getDate()).padStart(2, '0');
-    return `${yyyy}/${MM}/${dd}`;
+    return `${yyyy}/${mm}/${dd}`;
   }
 
   // 状態と色の判定
@@ -548,7 +549,7 @@ document.addEventListener("DOMContentLoaded",function(){fix(document);new Mutati
     e.preventDefault();
     
     const cycle = parseInt(document.getElementById('cycleMonths').value, 10);
-    if (cycle < 1 || cycle > 24) {
+    if (isNaN(cycle) || cycle < 1 || cycle > 24) {
       showToast('校正周期は1〜24ヶ月の間で入力してください。');
       return;
     }
@@ -590,8 +591,8 @@ document.addEventListener("DOMContentLoaded",function(){fix(document);new Mutati
     devices.forEach(device => {
       const nextDateStr = calculateNextDate(device.lastDate, device.cycleMonths);
       const row = [
-        `"${device.name.replace(/"/g, '""')}"`,
-        `"${device.id.replace(/"/g, '""')}"`,
+        `"${String(device.name ?? '').replace(/"/g, '""')}"`,
+        `"${String(device.id ?? '').replace(/"/g, '""')}"`,
         formatDate(device.lastDate),
         nextDateStr,
         device.cycleMonths
@@ -628,7 +629,7 @@ document.addEventListener("DOMContentLoaded",function(){fix(document);new Mutati
 
   function closeModal() {
     helpModal.classList.add('hidden');
-    document.remove('keydown', trapFocus);
+    document.removeEventListener('keydown', trapFocus);
     if (previousActiveElement) previousActiveElement.focus();
   }
 
@@ -668,7 +669,7 @@ document.addEventListener("DOMContentLoaded",function(){fix(document);new Mutati
 
   // エスケープ処理（セキュリティ対策）
   function escapeHTML(str) {
-    return str
+    return String(str ?? '')
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
