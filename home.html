@@ -36,7 +36,7 @@
   .summary{margin-bottom:14px}
   /* ★社長室コンパクト化(2026-07-09・PDCA化準備)＝信号灯+資源を1本の帯に集約。空いた面積は制作2工房へ配分。 */
   .hqstrip{display:flex;flex-wrap:wrap;align-items:center;gap:7px 14px;background:var(--card);
-    border:1px solid var(--border);border-radius:10px;padding:8px 13px;font-size:12px;color:var(--sub);
+    border:1px solid var(--border);border-radius:10px;padding:8px 13px;font-size:12.5px;color:var(--sub);
     font-variant-numeric:tabular-nums}
   .hqi{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
   .hqi b{color:var(--ink);font-weight:700}
@@ -47,7 +47,7 @@
   @media(max-width:640px){.hqsep{display:none}}
   /* zone */
   .zone{margin-top:20px}
-  .zone > h2{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  .zone > h2{font-size:12.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
     color:var(--muted);margin:0 0 9px;display:flex;align-items:center;gap:9px}
   .zone > h2::after{content:"";flex:1;height:1px;background:var(--border)}
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
@@ -61,24 +61,24 @@
   .tile .ic{font-size:25px;line-height:1;margin-bottom:5px}
   .tile .name{font-size:16px;font-weight:600}
   .tile.hero .name{font-size:18px}
-  .tile .tag{font-size:10.5px;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:999px;
+  .tile .tag{font-size:12.5px;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:999px;
     display:inline-block;margin-bottom:6px;width:max-content}
   .tile.local .tag{background:var(--local-bg);color:var(--local)}
   .tile.cloud .tag{background:var(--cloud-bg);color:var(--cloud)}
-  .tile .desc{font-size:12px;color:var(--sub)}
-  .tile .st{margin-top:auto;padding-top:8px;font-size:12px;font-weight:500}
+  .tile .desc{font-size:12.5px;color:var(--sub)}
+  .tile .st{margin-top:auto;padding-top:8px;font-size:12.5px;font-weight:500}
   .st.ok{color:var(--ok)} .st.down{color:var(--down)} .st.mut{color:var(--muted)}
   /* ★工房タイル内の状況可視化パネル(2026-07-09)＝空いた面積で各工房が稼働状況を表示 */
   .tile .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:6px 8px;margin:9px 0 2px}
   .statitem{background:var(--chip);border-radius:8px;padding:6px 9px}
-  .statitem .k{font-size:10px;color:var(--sub);font-weight:600}
+  .statitem .k{font-size:12.5px;color:var(--sub);font-weight:600}
   .statitem .v{font-size:14.5px;font-weight:700;color:var(--ink);margin-top:1px}
   .statitem.ok .v{color:var(--ok)} .statitem.down .v{color:var(--down)}
   .statplaceholder{background:var(--chip);border:1px dashed var(--border);border-radius:8px;padding:11px;
-    font-size:11.5px;color:var(--muted);margin:9px 0 2px;text-align:center}
-  .badge{position:absolute;top:13px;right:13px;font-size:11.5px;font-weight:700;color:var(--accent-ink);
+    font-size:12.5px;color:var(--muted);margin:9px 0 2px;text-align:center}
+  .badge{position:absolute;top:13px;right:13px;font-size:12.5px;font-weight:700;color:var(--accent-ink);
          background:var(--chip);border:1px solid var(--border);border-radius:999px;padding:3px 9px;font-variant-numeric:tabular-nums}
-  .ext{position:absolute;top:14px;right:14px;font-size:12px;color:var(--muted)}
+  .ext{position:absolute;top:14px;right:14px;font-size:12.5px;color:var(--muted)}
   .sublinks{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:10px}
   .sublink{font-size:12.5px;font-weight:600;color:var(--accent-ink);background:var(--chip);
            border:1px solid var(--border);border-radius:9px;padding:6px 10px;text-decoration:none}
@@ -90,11 +90,11 @@
   .tile.compact .ic{font-size:19px;margin:0}
   .tile.compact .bd{display:flex;flex-direction:column;gap:0;min-width:0}
   .tile.compact .name{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .tile.compact .st{margin:0;padding:0;font-size:10px}
-  .tile.compact .badge{top:6px;right:7px;font-size:10px;padding:2px 6px}
-  .tile.compact .ext{top:7px;right:9px;font-size:11px}
+  .tile.compact .st{margin:0;padding:0;font-size:12.5px}
+  .tile.compact .badge{top:6px;right:7px;font-size:12.5px;padding:2px 6px}
+  .tile.compact .ext{top:7px;right:9px;font-size:12.5px}
   .tile.compact .setgear{top:4px;right:4px;font-size:13px;padding:2px}
-  footer{margin-top:22px;color:var(--muted);font-size:11.5px;text-align:center;line-height:1.7}
+  footer{margin-top:22px;color:var(--muted);font-size:12.5px;text-align:center;line-height:1.7}
 </style>
 </head>
 <body>
@@ -103,9 +103,9 @@
   <p class="lead">社長室 — 会社の今をここで管理。すべてへ2タップ以内。
     <button id="forceUpdateBtn" type="button"
       style="margin-left:8px;padding:5px 11px;border:1px solid var(--border);border-radius:9px;
-      background:var(--chip);color:var(--accent-ink);font-size:12px;font-weight:600;cursor:pointer;vertical-align:middle"
+      background:var(--chip);color:var(--accent-ink);font-size:12.5px;font-weight:600;cursor:pointer;vertical-align:middle"
       >🔄 最新版に更新</button>
-    <a href="changelog.html" style="margin-left:6px;font-size:12px;color:var(--muted)">📜 更新履歴</a>
+    <a href="changelog.html" style="margin-left:6px;font-size:12.5px;color:var(--muted)">📜 更新履歴</a>
   </p>
   <div class="summary" id="summary"><span class="sc">状態を確認中…</span></div>
   <div id="grid"></div>
