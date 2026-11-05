@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💾 データ引っ越し・バックアップ｜★HOSHI</title>
+<meta name="theme-color" content="#0c447c">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#ffffff; --ink:#1a1f2b; --sub:#5a6273; --muted:#8a919f;
+    --border:#dfe3ea; --navy:#0c447c; --navy-ink:#ffffff; --navy-soft:#e6eef8; --chip:#eef1f5;
+    --ok:#0f6e56; --ok-bg:#e1f5ee; --warn:#8a6d0f; --warn-bg:#fbf1d6; --down:#a32d2d; --down-bg:#fcebeb;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#14171c; --card:#1e2229; --ink:#eef0f4; --sub:#b4bac6; --muted:#848b98;
+      --border:#343a45; --navy:#2f6fb5; --navy-ink:#ffffff; --navy-soft:#1c2b3f; --chip:#272c35;
+      --ok:#5dcaa5; --ok-bg:#0f2e26; --warn:#e3c04a; --warn-bg:#332b12; --down:#f09595; --down-bg:#3a1414; }
+  }
+  *{box-sizing:border-box}
+  html,body{overflow-x:hidden}
+  body{margin:0;background:var(--bg);color:var(--ink);line-height:1.6;-webkit-text-size-adjust:100%;
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN",Meiryo,sans-serif;font-size:14px}
+  .wrap{max-width:760px;margin:0 auto;padding:16px 16px 56px}
+  .home{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:6px 14px;margin-bottom:10px;font-size:13px;
+        font-weight:600;color:var(--navy-ink);background:var(--navy);border-radius:9px;text-decoration:none}
+  h1{font-size:22px;font-weight:700;margin:0 0 4px}
+  .lead{color:var(--sub);font-size:13px;margin:0 0 14px}
+  h2{font-size:15px;font-weight:700;color:var(--navy);margin:22px 0 8px;display:flex;align-items:center;gap:8px}
+  h2 .step{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;
+           background:var(--navy);color:#fff;font-size:12.5px;flex:none}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px}
+  .notice{background:var(--navy-soft);border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:13px;color:var(--ink);margin-bottom:14px}
+  .notice b{color:var(--navy)}
+  .muted{color:var(--muted);font-size:12.5px}
+  .sub{color:var(--sub);font-size:12.5px}
+  .btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  button{font:inherit;font-size:15px;font-weight:600;min-height:44px;padding:8px 16px;border-radius:10px;border:1px solid var(--border);
+         background:var(--card);color:var(--ink);cursor:pointer;-webkit-tap-highlight-color:transparent}
+  button:active{transform:scale(.98)}
+  button:disabled{opacity:.5;cursor:default}
+  button.primary{background:var(--navy);color:var(--navy-ink);border-color:var(--navy)}
+  button.ghost{background:transparent}
+  button.sm{min-height:44px;font-size:13.5px;padding:6px 12px}
+  .filebtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:8px 16px;border-radius:10px;
+           border:1px solid var(--navy);background:var(--navy);color:#fff;font-size:15px;font-weight:600;cursor:pointer}
+  .filebtn input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+  .summary{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+  .chip{font-size:13px;padding:6px 12px;border-radius:999px;background:var(--chip);color:var(--sub)}
+  .chip b{color:var(--ink);font-variant-numeric:tabular-nums}
+  .grp{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--border)}
+  .grp:first-child{border-top:0}
+  .grp label{display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer;min-height:44px}
+  .grp input[type=checkbox]{width:22px;height:22px;flex:none;margin:0;accent-color:var(--navy)}
+  .gico{width:40px;height:40px;border-radius:11px;background:var(--chip);display:flex;align-items:center;justify-content:center;font-size:19px;flex:none}
+  .gmeta{flex:1;min-width:0;display:block}
+  .gname{display:block;font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .gsub{display:block;font-size:12.5px;color:var(--sub);font-variant-numeric:tabular-nums}
+  .keys{display:none;font-size:12.5px;color:var(--sub);padding:0 0 8px 50px;word-break:break-all}
+  .keys.open{display:block}
+  .keys code{background:var(--chip);border-radius:5px;padding:1px 5px;font-size:12.5px}
+  .toggle{background:transparent;border:0;color:var(--navy);font-size:12.5px;font-weight:600;min-height:44px;padding:0 8px;flex:none}
+  .empty{color:var(--muted);font-size:13px;padding:10px 0}
+  .msg{margin-top:10px;padding:10px 13px;border-radius:10px;font-size:13px;display:none}
+  .msg.show{display:block}
+  .msg.ok{background:var(--ok-bg);color:var(--ok)} .msg.warn{background:var(--warn-bg);color:var(--warn)} .msg.err{background:var(--down-bg);color:var(--down)}
+  .prev{margin-top:12px}
+  .prow{padding:8px 0;border-top:1px solid var(--border);font-size:13px}
+  .prow:first-child{border-top:0}
+  .prow .pn{font-weight:600}
+  .tag{display:inline-block;font-size:12.5px;font-weight:600;padding:1px 8px;border-radius:999px;margin-left:4px}
+  .tag.new{background:var(--ok-bg);color:var(--ok)} .tag.ow{background:var(--warn-bg);color:var(--warn)}
+  details{margin-top:10px}
+  summary{cursor:pointer;font-size:13.5px;font-weight:600;color:var(--navy);min-height:44px;display:flex;align-items:center}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed}
+  th,td{text-align:left;padding:6px 4px;border-top:1px solid var(--border);word-break:break-all;vertical-align:top}
+  th{color:var(--muted);font-weight:600;border-top:0}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;width:64px}
+  .steps{font-size:13px;color:var(--sub);margin:0;padding-left:1.3em}
+  .steps li{margin:3px 0}
+  footer{margin-top:22px;color:var(--muted);font-size:12.5px;text-align:center}
+  .reopen a{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:4px 12px;margin:4px 6px 0 0;border:1px solid var(--border);
+            border-radius:999px;background:var(--card);color:var(--ink);text-decoration:none;font-size:13.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="home" href="home.html">⌂ ★HOSHI ホーム</a>
+  <h1>💾 データ引っ越し・バックアップ</h1>
+  <p class="lead">全アプリのデータを<b>1つのファイル</b>に保存し、別の端末（会社PC・家PC・スマホ）で復元します。</p>
+
+  <div class="notice">
+    <b>データはこのブラウザの中だけ</b>にあります。この画面はどこにも送信しません（通信0）。
+    端末を替えるときは「保存」→ファイルをメール・USB・Gドライブなどで運ぶ→新しい端末で「復元」。
+    復元では<b>削除は一切行いません</b>（追加・上書きのみ）。
+  </div>
+
+  <h2><span class="step">1</span>この端末にあるデータ</h2>
+  <div class="card">
+    <div class="summary" id="summary">
+      <span class="chip">🗂 アプリ <b id="s-apps">–</b></span>
+      <span class="chip">🔑 項目 <b id="s-keys">–</b></span>
+      <span class="chip">📦 合計 <b id="s-size">–</b></span>
+    </div>
+    <div id="list"><div class="empty">読み込み中…</div></div>
+    <div class="btns">
+      <button type="button" class="sm" id="btn-all">すべて選択</button>
+      <button type="button" class="sm" id="btn-none">すべて解除</button>
+      <button type="button" class="sm" id="btn-reload">再読み込み</button>
+    </div>
+    <details id="rawbox">
+      <summary>🔍 この端末の全データを表示（項目一覧）</summary>
+      <p class="sub">キー名・サイズのみ表示します（中身は表示しません）。すべてこの端末のブラウザ内の情報です。</p>
+      <div id="raw"></div>
+    </details>
+  </div>
+
+  <h2><span class="step">2</span>バックアップを保存（この端末 → ファイル）</h2>
+  <div class="card">
+    <p class="sub" style="margin:0">チェックしたアプリのデータを <code>HA_backup_日付_時刻.json</code> として端末にダウンロードします。</p>
+    <div class="btns">
+      <button type="button" class="primary" id="btn-export">💾 バックアップを保存</button>
+    </div>
+    <div class="msg" id="msg-export"></div>
+  </div>
+
+  <h2><span class="step">3</span>バックアップから復元（ファイル → この端末）</h2>
+  <div class="card">
+    <ol class="steps">
+      <li>別の端末で保存した <code>HA_backup_….json</code> を選びます。</li>
+      <li>内容を確認してから「追加・上書きで復元」を押します。</li>
+      <li>復元の直前に、いまの状態を <code>HA_before_restore_….json</code> として自動で保存します（万一の戻し用）。</li>
+    </ol>
+    <div class="btns">
+      <label class="filebtn" for="file">📂 バックアップから復元<input type="file" id="file" accept=".json,application/json"></label>
+    </div>
+    <div class="msg" id="msg-import"></div>
+    <div id="preview" class="prev" hidden>
+      <div class="sub" id="pv-head"></div>
+      <div id="pv-list"></div>
+      <div class="btns">
+        <button type="button" class="primary" id="btn-restore">⬇ 追加・上書きで復元</button>
+        <button type="button" class="ghost" id="btn-cancel">キャンセル</button>
+      </div>
+    </div>
+    <div id="done" class="prev" hidden>
+      <div class="msg ok show" id="done-msg"></div>
+      <p class="sub" style="margin:10px 0 4px">復元したアプリを開き直してください（開いていたタブは再読み込み）：</p>
+      <div class="reopen" id="reopen"></div>
+    </div>
+  </div>
+
+  <footer>★HOSHI データ引っ越し · 保存先は端末内のみ · 外部送信なし</footer>
+</div>
+<script>
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id);};
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function kb(bytes){return (bytes/1024).toFixed(bytes<10240?1:0)+' KB';}
+function pad(n){return (n<10?'0':'')+n;}
+function stamp(){var d=new Date();return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+'_'+pad(d.getHours())+pad(d.getMinutes());}
+function fmtDate(d){return d.getFullYear()+'/'+pad(d.getMonth()+1)+'/'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes());}
+function showMsg(id,cls,text){var el=$(id);el.className='msg show '+cls;el.textContent=text;}
+function hideMsg(id){var el=$(id);el.className='msg';el.textContent='';}
+
+// ---- localStorage access (always try/catch) ----
+function lsKeys(){var out=[];try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k!==null)out.push(k);}}catch(e){}return out;}
+function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,v);return true;}catch(e){return false;}}
+function byteSize(k,v){return (k.length+(v||'').length)*2;} // UTF-16 目安
+
+// ---- apps.json + source map ----
+var APPS=[];            // {id,title,icon,path,url,src}
+var OTHER={id:'__other',title:'その他（どのアプリか特定できない項目）',icon:'📁',path:'',src:''};
+var GROUPS=[];          // {app,keys:[{k,size,updated}],size}
+
+function appUrl(a){var p=a.path||'';return /\.html?$/i.test(p)?p:(p.replace(/\/?$/,'/')+'index.html');}
+function appLink(a){return a.path||'home.html';}
+
+function loadApps(){
+  return fetch('apps.json',{cache:'no-cache'}).then(function(r){return r.json();}).then(function(j){
+    APPS=(j.apps||[]).filter(function(a){return a&&a.path;}).map(function(a){
+      var t=String(a.title||a.id);try{t=t.replace(/^[^\p{L}\p{N}]+/u,'');}catch(e){}
+      return {id:a.id,title:t.trim()||a.id,icon:a.icon||'📦',path:a.path,src:null};
+    });
+    return Promise.all(APPS.map(function(a){
+      return fetch(appUrl(a),{cache:'force-cache'}).then(function(r){return r.ok?r.text():'';}).then(function(t){a.src=t;}).catch(function(){a.src='';});
+    }));
+  }).catch(function(){APPS=[];});
+}
+
+// キーをアプリに割り当て: ソースに完全一致で含まれるアプリ。複数なら先頭。無ければ区切り前の接頭辞で一意に決まる場合だけ採用。
+function attribute(key){
+  var hits=APPS.filter(function(a){return a.src&&a.src.indexOf(key)>=0;});
+  if(hits.length) return hits[0];
+  var m=key.match(/^(.{6,}?)[_:\-.\/][^_:\-.\/]*$/);
+  if(m){var pre=m[1];var h2=APPS.filter(function(a){return a.src&&a.src.indexOf("'"+pre)>=0||a.src&&a.src.indexOf('"'+pre)>=0;});if(h2.length===1)return h2[0];}
+  return OTHER;
+}
+var UPF=['updatedAt','updated_at','updated','lastUpdated','lastSaved','savedAt','saved_at','timestamp','modified','lastModified'];
+function dateOf(o){
+  if(!o||typeof o!=='object')return null;
+  for(var i=0;i<UPF.length;i++){var x=o[UPF[i]];if(x==null)continue;var d=typeof x==='number'?new Date(x<1e11?x*1000:x):new Date(String(x).replace(' ','T'));if(!isNaN(d.getTime())&&d.getFullYear()>2000)return d;}
+  return null;
+}
+function detectUpdated(v){
+  if(!v||v.length>2000000)return null;var c=v.charAt(0);if(c!=='{'&&c!=='[')return null;
+  try{var o=JSON.parse(v);if(Array.isArray(o)){var best=null;for(var i=0;i<o.length&&i<500;i++){var d=dateOf(o[i]);if(d&&(!best||d>best))best=d;}return best;}
+    return dateOf(o);
+  }catch(e){}
+  return null;
+}
+
+function build(){
+  var keys=lsKeys().sort();var map={};GROUPS=[];
+  keys.forEach(function(k){var v=lsGet(k);var a=attribute(k);var g=map[a.id];
+    if(!g){g=map[a.id]={app:a,keys:[],size:0};GROUPS.push(g);}
+    var up=detectUpdated(v);g.keys.push({k:k,size:byteSize(k,v),updated:up});g.size+=byteSize(k,v);
+    if(up&&(!g.updated||up>g.updated))g.updated=up;
+  });
+  GROUPS.sort(function(x,y){if(x.app===OTHER)return 1;if(y.app===OTHER)return -1;return y.size-x.size;});
+  render();
+}
+
+function render(){
+  var list=$('list');var total=0,n=0;
+  if(!GROUPS.length){list.innerHTML='<div class="empty">このブラウザには保存データがありません。</div>';}
+  else{
+    list.innerHTML=GROUPS.map(function(g,i){total+=g.size;n+=g.keys.length;
+      var sub=g.keys.length+' 項目 · '+kb(g.size)+(g.updated?' · 更新 '+fmtDate(g.updated):'');
+      return '<div class="grp"><label><input type="checkbox" data-g="'+i+'" checked>'
+        +'<span class="gico">'+esc(g.app.icon)+'</span><span class="gmeta"><span class="gname">'+esc(g.app.title)+'</span><span class="gsub">'+esc(sub)+'</span></span></label>'
+        +'<button type="button" class="toggle" data-t="'+i+'" aria-expanded="false">キー▾</button></div>'
+        +'<div class="keys" id="keys-'+i+'">'+g.keys.map(function(x){return '<code>'+esc(x.k)+'</code> '+kb(x.size);}).join('<br>')+'</div>';
+    }).join('');
+  }
+  $('s-apps').textContent=GROUPS.length;$('s-keys').textContent=n;$('s-size').textContent=kb(total);
+  var raw=$('raw');
+  if(!n){raw.innerHTML='<div class="empty">項目なし</div>';}
+  else{
+    var rows=[];GROUPS.forEach(function(g){g.keys.forEach(function(x){rows.push('<tr><td>'+esc(x.k)+'</td><td>'+esc(g.app.title)+'</td><td class="num">'+kb(x.size)+'</td></tr>');});});
+    raw.innerHTML='<table><thead><tr><th>キー</th><th>アプリ</th><th class="num">サイズ</th></tr></thead><tbody>'+rows.join('')+'</tbody></table>';
+  }
+}
+$('list').addEventListener('click',function(e){
+  var b=e.target.closest&&e.target.closest('button.toggle');if(!b)return;
+  var el=$('keys-'+b.dataset.t);var open=el.classList.toggle('open');b.setAttribute('aria-expanded',open?'true':'false');b.textContent=open?'キー▴':'キー▾';
+});
+function setAll(v){var cs=$('list').querySelectorAll('input[type=checkbox]');for(var i=0;i<cs.length;i++)cs[i].checked=v;}
+$('btn-all').addEventListener('click',function(){setAll(true);});
+$('btn-none').addEventListener('click',function(){setAll(false);});
+$('btn-reload').addEventListener('click',function(){build();hideMsg('msg-export');});
+
+// ---- backup file ----
+function makeBackup(keys){
+  var items={};keys.forEach(function(k){var v=lsGet(k);if(v!==null)items[k]=v;});
+  return {format:'ha-backup',version:1,created:new Date().toISOString(),origin:location.origin,items:items};
+}
+function download(name,obj){
+  var blob=new Blob([JSON.stringify(obj,null,1)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},2000);
+}
+$('btn-export').addEventListener('click',function(){
+  var cs=$('list').querySelectorAll('input[type=checkbox]:checked');var keys=[];
+  for(var i=0;i<cs.length;i++){var g=GROUPS[+cs[i].dataset.g];if(g)g.keys.forEach(function(x){keys.push(x.k);});}
+  if(!keys.length){showMsg('msg-export','warn','保存する項目がありません（チェックを入れてください）。');return;}
+  var name='HA_backup_'+stamp()+'.json';download(name,makeBackup(keys));
+  showMsg('msg-export','ok','保存しました: '+name+'（'+keys.length+' 項目）。このファイルを別の端末へ運び、「復元」で読み込んでください。');
+});
+
+// ---- restore ----
+var PENDING=null; // {data, groups:[{app,items:[{k,isNew}]}]}
+function validate(obj){
+  if(!obj||typeof obj!=='object')return 'JSONの形式が違います。';
+  if(obj.format!=='ha-backup')return 'このファイルは★HOSHIのバックアップ（format: ha-backup）ではありません。';
+  if(!obj.items||typeof obj.items!=='object'||Array.isArray(obj.items))return 'items が見つかりません。';
+  var ks=Object.keys(obj.items);if(!ks.length)return 'データが空のバックアップです。';
+  for(var i=0;i<ks.length;i++){if(typeof obj.items[ks[i]]!=='string')return '項目「'+ks[i]+'」の中身が文字列ではありません。';}
+  return null;
+}
+$('file').addEventListener('change',function(e){
+  var f=e.target.files&&e.target.files[0];if(!f)return;
+  hideMsg('msg-import');$('done').hidden=true;$('preview').hidden=true;PENDING=null;
+  var rd=new FileReader();
+  rd.onload=function(){
+    var obj=null;try{obj=JSON.parse(String(rd.result).replace(/^﻿/,''));}catch(err){showMsg('msg-import','err','JSONとして読めませんでした: '+err.message);return;}
+    var bad=validate(obj);if(bad){showMsg('msg-import','err',bad);return;}
+    var ks=Object.keys(obj.items).sort();var map={},groups=[],nNew=0,nOw=0;
+    ks.forEach(function(k){var a=attribute(k);var g=map[a.id];if(!g){g=map[a.id]={app:a,items:[]};groups.push(g);}
+      var isNew=lsGet(k)===null;if(isNew)nNew++;else nOw++;g.items.push({k:k,isNew:isNew,size:byteSize(k,obj.items[k])});});
+    groups.sort(function(x,y){if(x.app===OTHER)return 1;if(y.app===OTHER)return -1;return x.app.title<y.app.title?-1:1;});
+    PENDING={data:obj,groups:groups};
+    var when=obj.created?new Date(obj.created):null;
+    $('pv-head').innerHTML='<b>'+esc(f.name)+'</b>'+(when&&!isNaN(when)?' · 保存日時 '+esc(fmtDate(when)):'')+(obj.origin&&obj.origin!==location.origin?' · 保存元 '+esc(obj.origin):'')
+      +'<br>'+ks.length+' 項目（<span class="tag new">新規</span> '+nNew+' · <span class="tag ow">上書き</span> '+nOw+'）。復元後は既存の項目がファイルの内容に置き換わります。';
+    $('pv-list').innerHTML=groups.map(function(g){
+      return '<div class="prow"><span class="pn">'+esc(g.app.icon)+' '+esc(g.app.title)+'</span> <span class="muted">'+g.items.length+' 項目</span><br>'
+        +g.items.map(function(x){return '<code>'+esc(x.k)+'</code><span class="tag '+(x.isNew?'new">新規':'ow">上書き')+'</span>';}).join(' ')+'</div>';
+    }).join('');
+    $('preview').hidden=false;
+    showMsg('msg-import','ok','内容を確認して「追加・上書きで復元」を押してください。');
+  };
+  rd.onerror=function(){showMsg('msg-import','err','ファイルを読み込めませんでした。');};
+  rd.readAsText(f);
+  e.target.value='';
+});
+$('btn-cancel').addEventListener('click',function(){PENDING=null;$('preview').hidden=true;hideMsg('msg-import');});
+$('btn-restore').addEventListener('click',function(){
+  if(!PENDING)return;
+  var items=PENDING.data.items;var ks=Object.keys(items);var nOw=ks.filter(function(k){return lsGet(k)!==null;}).length;
+  if(!confirm(ks.length+' 項目を復元します（うち '+nOw+' 項目は上書き）。\n復元前に、いまの状態の安全バックアップを自動保存します。よろしいですか？'))return;
+  // 安全バックアップ（現在の全データ）
+  var cur=lsKeys();if(cur.length){download('HA_before_restore_'+stamp()+'.json',makeBackup(cur));}
+  var ok=0,fail=[];
+  ks.forEach(function(k){if(lsSet(k,items[k]))ok++;else fail.push(k);});
+  var apps=PENDING.groups.filter(function(g){return g.app!==OTHER;}).map(function(g){return g.app;});
+  PENDING=null;$('preview').hidden=true;hideMsg('msg-import');
+  $('done-msg').textContent='完了: '+ok+' 項目を復元しました。'+(fail.length?' 保存できなかった項目 '+fail.length+' 件（容量不足の可能性）: '+fail.join(', '):'')+(cur.length?' 復元前の状態は HA_before_restore_… に保存済みです。':'');
+  $('done-msg').className='msg show '+(fail.length?'warn':'ok');
+  $('reopen').innerHTML=apps.length?apps.map(function(a){return '<a href="'+esc(appLink(a))+'">'+esc(a.icon)+' '+esc(a.title)+' ›</a>';}).join(''):'<span class="muted">（アプリに紐づく項目はありませんでした）</span>';
+  $('done').hidden=false;$('done').scrollIntoView({behavior:'smooth',block:'start'});
+  build();
+});
+
+// ---- init ----
+loadApps().then(function(){build();}).catch(function(){build();});
+})();
+</script>
+</body>
+</html>

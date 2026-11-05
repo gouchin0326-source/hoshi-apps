@@ -1,8 +1,4 @@
-<!DOCTYPE html> から </html> までの完成した単一HTMLファイルだけを出力する。コードブロックの外に文章を書かない。"
-# Let's write a python script to generate this HTML file and output its content to the user, and also save it as a local file just in case, but print the code block to the user.
-# Let's design the single HTML file.
-
-html_content = """<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
@@ -342,6 +338,46 @@ html_content = """<!DOCTYPE html>
       }
     }
   </style>
+<style id="ha-print">@media print{
+@page{size:A4;margin:12mm}
+html,body{background:#fff!important;color:#000!important;font-size:10.5pt!important;line-height:1.5!important;height:auto!important;min-height:0!important;overflow:visible!important;margin:0!important;padding:0!important}
+*,*::before,*::after{box-shadow:none!important;text-shadow:none!important;background:transparent!important;color:#000!important;animation:none!important;transition:none!important}
+button,[role=button],input[type=button],input[type=submit],input[type=reset],input[type=file],nav,.toast,#toast,.modal-overlay,.modal-backdrop,.modal-bg,dialog,.sr-only{display:none!important}
+.container,.wrap,.app-container,.app,main,.main-grid,.grid-container{display:block!important;max-width:none!important;width:auto!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;overflow:visible!important}
+header{position:static!important;display:block!important;border:0!important;border-bottom:1.5pt solid #000!important;border-radius:0!important;margin:0 0 8pt!important;padding:0 0 4pt!important}
+header h1,h1{font-size:15pt!important;margin:0!important;padding:0!important;line-height:1.3!important}
+h2,h3{font-size:12pt!important;margin:10pt 0 4pt!important;padding:0 0 2pt!important;border:0!important;border-bottom:1px solid #999!important;border-radius:0!important}
+section,.card,.panel,.section-panel,.section-card,.form-card,.filter-panel,.results-box,.summary-section,.list-section,.history-section,.result-section{border:0!important;border-radius:0!important;padding:0!important;margin:0 0 8pt!important;box-shadow:none!important;page-break-inside:auto}
+.table-container,.table-wrap,.table-responsive,.history-table-wrapper,.mxwrap{overflow:visible!important;max-height:none!important;border:0!important;margin:0!important;padding:0!important}
+table{width:100%!important;min-width:0!important;border-collapse:collapse!important;font-size:9.5pt!important;page-break-inside:auto}
+th,td{border:1px solid #999!important;padding:3pt 4pt!important;position:static!important;white-space:normal!important;vertical-align:top!important;font-size:9.5pt!important}
+th{background:#eee!important;font-weight:700!important;text-align:left!important}
+tr{page-break-inside:avoid!important}
+thead{display:table-header-group!important}
+input:not([type=checkbox]):not([type=radio]),select,textarea{border:0!important;border-bottom:1px solid #bbb!important;border-radius:0!important;padding:1pt 2pt!important;min-height:0!important;height:auto!important;font-size:10.5pt!important;background:transparent!important;appearance:none!important;-webkit-appearance:none!important;box-shadow:none!important;resize:none!important}
+label{font-weight:700!important}
+a{text-decoration:none!important}
+.badge,.counter-badge,.stats-badge,.bdg,.tag{border:1px solid #666!important;border-radius:3pt!important;padding:0 3pt!important;font-weight:700!important}
+.list-header-actions button,#manual-modal,footer,.btn{display:none!important}
+.form-grid{display:grid!important;grid-template-columns:1fr 1fr!important;gap:3pt 12pt!important}
+.results-grid{display:flex!important;gap:12pt!important}
+.result-box{border:1px solid #999!important;padding:4pt 8pt!important;border-radius:0!important;flex:1}
+.result-value{font-size:12pt!important;font-weight:700!important}
+.diff-box{border:1px solid #999!important;padding:4pt 8pt!important;margin-top:4pt!important;border-radius:0!important}
+}</style>
+<!-- ha-mobile-a11y:start --><style id="ha-mobile-a11y">
+@media (max-width:600px),(pointer:coarse){
+ :where(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]):not([type=hidden]),select){min-height:44px;box-sizing:border-box}
+ :where(textarea){min-height:44px;box-sizing:border-box}
+ :where(button,input[type=button],input[type=submit],input[type=reset],[role=button]){min-height:44px}
+ :where(input[type=checkbox],input[type=radio]){min-width:22px;min-height:22px}
+}
+</style><script>/* 入力欄の文字が16px未満の時だけ16pxへ引上げ（iOSのフォーカス時ズーム防止）。大きい指定は維持 */
+(function(){if(!matchMedia("(max-width:600px),(pointer:coarse)").matches)return;var Q="input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]):not([type=hidden]),select,textarea";
+function fix(r){(r.querySelectorAll?r:document).querySelectorAll(Q).forEach(function(e){if(parseFloat(getComputedStyle(e).fontSize)<16)e.style.setProperty("font-size","16px","important")})}
+var t;function run(){clearTimeout(t);t=setTimeout(function(){fix(document)},60)}
+document.addEventListener("DOMContentLoaded",function(){fix(document);new MutationObserver(run).observe(document.body,{childList:true,subtree:true})})})();
+</script><!-- ha-mobile-a11y:end -->
 </head>
 <body>
 

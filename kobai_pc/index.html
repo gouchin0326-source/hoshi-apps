@@ -17,14 +17,14 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI','Meiryo',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6}
 a{color:var(--cyan)}
-kbd{background:var(--bg-elev);border:1px solid var(--border-strong);border-radius:3px;padding:1px 6px;font-size:11px}
+kbd{background:var(--bg-elev);border:1px solid var(--border-strong);border-radius:3px;padding:1px 6px;font-size:12.5px}
 .wrap{max-width:1100px;margin:0 auto;padding:0 16px 60px}
 
 /* ヘッダー */
 header{background:linear-gradient(135deg,rgba(34,211,238,0.10),rgba(59,130,246,0.05));border-bottom:1px solid var(--border);padding:16px 0;margin-bottom:18px}
 header .wrap{padding-top:0;padding-bottom:0}
 .logo{font-size:20px;font-weight:800;color:var(--cyan);display:flex;align-items:center;gap:8px;margin:0}/* V29: h1化に伴いデフォルト余白を打消し=見た目不変 */
-.logo .sub{font-size:11px;font-weight:400;color:var(--text-mute);letter-spacing:1px}
+.logo .sub{font-size:12.5px;font-weight:400;color:var(--text-mute);letter-spacing:1px}
 
 /* 検索バー */
 .searchbar{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:18px}
@@ -36,24 +36,24 @@ header .wrap{padding-top:0;padding-bottom:0}
 .btn.primary{background:linear-gradient(135deg,var(--cyan),#3b82f6);color:#06121f}
 .btn.green{background:var(--green);color:#04150d}
 .btn.ghost{background:transparent;border:1px solid var(--border-strong);color:var(--text-sub)}
-.btn.sm{padding:4px 10px;font-size:11.5px}
+.btn.sm{padding:4px 10px;font-size:12.5px}
 .site-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
-.pill{padding:4px 11px;border-radius:20px;font-size:11.5px;cursor:pointer;border:1px solid var(--border-strong);background:transparent;color:var(--text-sub);user-select:none}
+.pill{padding:4px 11px;border-radius:20px;font-size:12.5px;cursor:pointer;border:1px solid var(--border-strong);background:transparent;color:var(--text-sub);user-select:none}
 .pill.on{background:var(--cyan);color:#06121f;border-color:var(--cyan);font-weight:700}
-.searchbar .hint{font-size:11px;color:var(--text-mute);margin-top:8px}
+.searchbar .hint{font-size:12.5px;color:var(--text-mute);margin-top:8px}
 
 /* 統計バー */
 .stats{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:16px}
 .stat{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:10px 16px;flex:1;min-width:120px}
 .stat .v{font-size:20px;font-weight:800;color:var(--cyan)}
-.stat .l{font-size:11px;color:var(--text-mute)}
+.stat .l{font-size:12.5px;color:var(--text-mute)}
 
 /* グループ */
 .group{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;margin-bottom:14px;overflow:hidden}
 .group-head{display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;background:var(--bg-elev);user-select:none}
 .group-head:hover{background:#252d4d}
 .group-name{font-size:15px;font-weight:800;color:var(--text)}
-.group-meta{font-size:11.5px;color:var(--text-mute)}
+.group-meta{font-size:12.5px;color:var(--text-mute)}
 .group-spacer{flex:1}
 .group-toggle{font-size:13px;color:var(--text-sub);transition:transform .2s}
 .group.collapsed .group-toggle{transform:rotate(-90deg)}
@@ -67,23 +67,23 @@ header .wrap{padding-top:0;padding-bottom:0}
 .card.best{border-color:var(--green);box-shadow:0 0 0 1px var(--green) inset}
 .card-img{height:90px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:6px;overflow:hidden}
 .card-img img{max-height:90px;max-width:100%;object-fit:contain}
-.card-img .noimg{color:#999;font-size:11px}
-.card-site{font-size:10px;padding:1px 7px;border-radius:8px;background:var(--bg);color:var(--text-sub);align-self:flex-start}
+.card-img .noimg{color:#999;font-size:12.5px}
+.card-site{font-size:12.5px;padding:1px 7px;border-radius:8px;background:var(--bg);color:var(--text-sub);align-self:flex-start}
 .card-site.Amazon{background:#ff9900;color:#06121f}
 .card-site.楽天{background:#bf0000;color:#fff}
 .card-site.Yahoo{background:#ff0033;color:#fff}
 .card-site.MonotaRO{background:#009b4c;color:#fff}
 .card-site.オレンジブック{background:#f57c00;color:#fff}
 .card-site.ミスミ{background:#003e92;color:#fff}
-.card-title{font-size:12px;font-weight:600;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:34px}
+.card-title{font-size:12.5px;font-weight:600;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:34px}
 .card-price{font-size:18px;font-weight:800;color:var(--green)}
-.card-price .yen{font-size:12px}
-.card-trend{font-size:11px;font-weight:700}
+.card-price .yen{font-size:12.5px}
+.card-trend{font-size:12.5px;font-weight:700}
 .card-trend.down{color:var(--green)}
 .card-trend.up{color:var(--red)}
 .card-trend.flat{color:var(--text-mute)}
-.card-delivery{font-size:10.5px;color:var(--text-mute)}
-.card-score{position:absolute;top:8px;right:8px;font-size:11px;font-weight:800;padding:2px 7px;border-radius:8px;background:var(--bg);border:1px solid var(--border-strong)}
+.card-delivery{font-size:12.5px;color:var(--text-mute)}
+.card-score{position:absolute;top:8px;right:8px;font-size:12.5px;font-weight:800;padding:2px 7px;border-radius:8px;background:var(--bg);border:1px solid var(--border-strong)}
 .card-score.gold{background:var(--orange);color:#1a1000;border-color:var(--orange)}
 .card-score.silver{background:#9ca3af;color:#0a0a0a;border-color:#9ca3af}
 .card-btns{display:flex;gap:6px;margin-top:auto;flex-wrap:wrap}/* V29.1: 44px化でカード幅を超える分は折り返し（はみ出し修正・干場実機FB 07-10） */
@@ -128,12 +128,12 @@ body.teampanel{padding-right:min(460px,44vw)}
 .text-mute{color:var(--text-mute)}
 /* v24: ワイドモーダル（一括更新・価格ウォッチ）と表 */
 .modal.wide{max-width:840px}
-.wtable{width:100%;border-collapse:collapse;font-size:12px}
+.wtable{width:100%;border-collapse:collapse;font-size:12.5px}
 .wtable th,.wtable td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}
-.wtable th{color:var(--text-mute);font-size:11px;position:sticky;top:0;background:var(--bg-card);z-index:1}
+.wtable th{color:var(--text-mute);font-size:12.5px;position:sticky;top:0;background:var(--bg-card);z-index:1}
 .wtable td.num{text-align:right}
 .wtable td.tt{max-width:260px;overflow:hidden;text-overflow:ellipsis}
-.wtable input{width:90px;padding:4px 8px;background:var(--bg);border:1px solid var(--border-strong);border-radius:6px;color:var(--text);font-size:12px;text-align:right}
+.wtable input{width:90px;padding:4px 8px;background:var(--bg);border:1px solid var(--border-strong);border-radius:6px;color:var(--text);font-size:12.5px;text-align:right}
 .tbl-scroll{max-height:46vh;overflow:auto;border:1px solid var(--border);border-radius:8px}
 /* v24: 同意ゲート */
 #consentGate{position:fixed;inset:0;z-index:99000;background:rgba(4,6,14,.93);display:flex;align-items:center;justify-content:center;padding:20px}
@@ -158,7 +158,7 @@ body.a11y-contrast .toast{border-width:2px;border-left-width:6px}
 body.a11y-contrast :focus-visible{outline:4px solid #b00020}
 /* ボタンに名前を表示（アイコンだけでは分からない人向け） */
 .blabel{display:none}
-body.a11y-labels .blabel{display:inline;margin-left:3px;font-size:10.5px;font-weight:700}
+body.a11y-labels .blabel{display:inline;margin-left:3px;font-size:12.5px;font-weight:700}
 body.a11y-labels .card-btns .btn.icon{flex:1 1 auto;padding:6px 8px}
 /* ゆったり表示（行間・余白・タップ領域を拡大） */
 body.a11y-space{line-height:2}
@@ -174,6 +174,19 @@ body.light .group-head:hover{background:#dde4ef}
 body.light .toast{box-shadow:0 6px 20px rgba(60,70,90,.25)}
 body.light .card-img{border:1px solid var(--border)}
 </style>
+<!-- ha-mobile-a11y:start --><style id="ha-mobile-a11y">
+@media (max-width:600px),(pointer:coarse){
+ :where(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]):not([type=hidden]),select){min-height:44px;box-sizing:border-box}
+ :where(textarea){min-height:44px;box-sizing:border-box}
+ :where(button,input[type=button],input[type=submit],input[type=reset],[role=button]){min-height:44px}
+ :where(input[type=checkbox],input[type=radio]){min-width:22px;min-height:22px}
+}
+</style><script>/* 入力欄の文字が16px未満の時だけ16pxへ引上げ（iOSのフォーカス時ズーム防止）。大きい指定は維持 */
+(function(){if(!matchMedia("(max-width:600px),(pointer:coarse)").matches)return;var Q="input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]):not([type=hidden]),select,textarea";
+function fix(r){(r.querySelectorAll?r:document).querySelectorAll(Q).forEach(function(e){if(parseFloat(getComputedStyle(e).fontSize)<16)e.style.setProperty("font-size","16px","important")})}
+var t;function run(){clearTimeout(t);t=setTimeout(function(){fix(document)},60)}
+document.addEventListener("DOMContentLoaded",function(){fix(document);new MutationObserver(run).observe(document.body,{childList:true,subtree:true})})})();
+</script><!-- ha-mobile-a11y:end -->
 </head>
 <body>
 
@@ -267,7 +280,7 @@ body.light .card-img{border:1px solid var(--border)}
   <div style="max-width:560px;background:#161b2e;border:1px solid #ef4444;border-left:4px solid #ef4444;border-radius:12px;padding:24px">
     <div style="font-size:17px;font-weight:800;color:#ef4444;margin-bottom:10px">⚠ 画面の起動に問題が発生しました</div>
     <div id="fatalOverlayMsg" style="font-size:13px;line-height:1.7;color:#aeb9c4;white-space:pre-wrap;word-break:break-word"></div>
-    <div style="margin-top:16px;font-size:12px;color:#8b93b8">対処: 再読み込みしても直らない場合は、このツールのファイル一式（lib フォルダ含む）が揃っているか確認してください。</div>
+    <div style="margin-top:16px;font-size:12.5px;color:#8b93b8">対処: 再読み込みしても直らない場合は、このツールのファイル一式（lib フォルダ含む）が揃っているか確認してください。</div>
     <div style="margin-top:16px;text-align:right"><button class="btn primary" onclick="location.reload()">🔄 再読み込み</button></div>
   </div>
 </div>
@@ -295,7 +308,7 @@ function showChartMissing(name){
   try{
     var cv=document.getElementById(chartId(name));
     var box=cv&&cv.closest?cv.closest('.chart-box'):null;
-    if(box){ box.textContent=''; var d=document.createElement('div'); d.className='text-mute'; d.style.cssText='font-size:12px;text-align:center;padding:18px'; d.textContent='📈 価格グラフ部品を読み込めませんでした（lib/chart.umd.min.js）。価格・値下がりの数値表示はそのままご利用いただけます。'; box.appendChild(d); }
+    if(box){ box.textContent=''; var d=document.createElement('div'); d.className='text-mute'; d.style.cssText='font-size:12.5px;text-align:center;padding:18px'; d.textContent='📈 価格グラフ部品を読み込めませんでした（lib/chart.umd.min.js）。価格・値下がりの数値表示はそのままご利用いただけます。'; box.appendChild(d); }
   }catch(_e){}
 }
 
@@ -337,7 +350,7 @@ window.openA11y = function(){
       <label style="cursor:pointer;font-size:13px"><input type="checkbox" id="ayLabels" ${a11y.labels?'checked':''}> 🔤 <b>ボタンに名前を表示</b> — ★や📈などの記号に文字の説明を付けます</label>
       <label style="cursor:pointer;font-size:13px"><input type="checkbox" id="aySpace" ${a11y.space?'checked':''}> 📐 <b>ゆったり表示</b> — 行間とボタンを大きく（押し間違い防止）</label>
     </div>
-    <p class="text-mute" style="font-size:11.5px">キーボードだけでも操作できます（Tabで移動・Enterで決定・Escで閉じる）。</p>
+    <p class="text-mute" style="font-size:12.5px">キーボードだけでも操作できます（Tabで移動・Enterで決定・Escで閉じる）。</p>
     <div class="modal-actions">
       <button class="btn ghost" id="ayReset">↩ すべて標準に戻す</button>
       <button class="btn primary" onclick="closeModal()">完了</button>
@@ -676,7 +689,7 @@ function pct30(item){
 // v26: レポート用ミニ推移グラフ（依存なしのインラインSVG・印刷可）
 function sparkSvg(item){
   const h=item.priceHistory||[];
-  if(h.length<2) return '<span style="color:#94a3b8;font-size:10px">記録1回</span>';
+  if(h.length<2) return '<span style="color:#94a3b8;font-size:12.5px">記録1回</span>';
   const ps=h.map(x=>x.p);
   const mn=Math.min(...ps), mx=Math.max(...ps);
   const W=120, H=26, pad=3;
@@ -825,7 +838,7 @@ function renderCard(it, sc, isBest){
     ${isTargetHit(it)?`<div class="card-trend down" style="font-weight:800">🎯 狙い値 ${yen(it.targetPrice)} 以下（買い時）</div>`:(it.targetPrice!=null?`<div class="card-delivery">🎯 狙い値 ${yen(it.targetPrice)}</div>`:'')}
     ${it.delivery?`<div class="card-delivery">🚚 ${esc(it.delivery)}</div>`:''}
     ${it.note?`<div class="card-delivery" title="${esc(it.note)}">📝 ${esc(it.note.slice(0,40))}</div>`:''}
-    ${(it.tags&&it.tags.length)?`<div style="display:flex;gap:4px;flex-wrap:wrap">${it.tags.map(tg=>`<span class="pill" style="padding:1px 8px;font-size:10px" data-act="tagf" data-tag="${esc(tg)}" title="クリックでこのタグに絞り込み">🏷${esc(tg)}</span>`).join('')}</div>`:''}
+    ${(it.tags&&it.tags.length)?`<div style="display:flex;gap:4px;flex-wrap:wrap">${it.tags.map(tg=>`<span class="pill" style="padding:1px 8px;font-size:12.5px" data-act="tagf" data-tag="${esc(tg)}" title="クリックでこのタグに絞り込み">🏷${esc(tg)}</span>`).join('')}</div>`:''}
     ${(it.orders&&it.orders.length)?`<div class="card-delivery">🧾 最終発注 ${esc(String(it.orders[it.orders.length-1].d).slice(5))} ¥${Number(it.orders[it.orders.length-1].p).toLocaleString()}×${Number(it.orders[it.orders.length-1].q)}</div>`:''}
     ${(it.priceHistory&&it.priceHistory.length)?`<div class="card-delivery" style="color:var(--text-mute)">📅 価格の記録日 ${esc(String(it.priceHistory[it.priceHistory.length-1].d||'').slice(5))}</div>`:''}
     ${isStale(it)?`<div class="card-trend" style="color:var(--orange);font-weight:800">📅 ${daysSinceRec(it)}日前の記録 — 要更新</div>`:''}
@@ -894,7 +907,7 @@ window.toggleGroup = function(name){
 window.renameGroup = function(name){
   openModal(`
     <h2>📁 グループ名の変更・統合</h2>
-    <p class="text-mute" style="font-size:12px;margin-bottom:10px">「${esc(name)}」の新しい名前を入力。<br>既存グループ名と同じにすると<b>統合</b>されます。</p>
+    <p class="text-mute" style="font-size:12.5px;margin-bottom:10px">「${esc(name)}」の新しい名前を入力。<br>既存グループ名と同じにすると<b>統合</b>されます。</p>
     <input type="text" id="mdlGroupName" value="${esc(name)}" list="renameGrpList">
     <datalist id="renameGrpList">${Object.keys(groupItems()).filter(g=>g!==name).map(g=>`<option value="${esc(g)}">`).join('')}</datalist>
     <div class="modal-actions">
@@ -924,7 +937,7 @@ window.moveItem = function(id){
   const groups = Object.keys(groupItems());
   openModal(`
     <h2>📁 グループを変更</h2>
-    <p class="text-mute" style="font-size:12px;margin-bottom:10px">「${esc(it.title.slice(0,30))}」の移動先グループ名</p>
+    <p class="text-mute" style="font-size:12.5px;margin-bottom:10px">「${esc(it.title.slice(0,30))}」の移動先グループ名</p>
     <input type="text" id="mdlMove" value="${esc(it.group)}" list="grpList">
     <datalist id="grpList">${groups.map(g=>`<option value="${esc(g)}">`).join('')}</datalist>
     <div class="modal-actions">
@@ -1012,7 +1025,7 @@ window.openCaptureHealth = function(){
   }).join('');
   openModal(`
     <h2>🩺 価格読み取りの調子</h2>
-    <p class="text-mute" style="font-size:12px;line-height:1.7;margin-bottom:10px">拡張機能がECサイトから価格を読み取れたか（🟢成功／🔴失敗）の記録です。<b>🔴が3回以上続くサイトは、サイト側の画面が変わって読み取れなくなっている可能性</b>があります。その場合も 📈記録 ボタンからの手入力で価格追跡は続けられます。</p>
+    <p class="text-mute" style="font-size:12.5px;line-height:1.7;margin-bottom:10px">拡張機能がECサイトから価格を読み取れたか（🟢成功／🔴失敗）の記録です。<b>🔴が3回以上続くサイトは、サイト側の画面が変わって読み取れなくなっている可能性</b>があります。その場合も 📈記録 ボタンからの手入力で価格追跡は続けられます。</p>
     ${sick.length?`<p style="font-size:12.5px;color:var(--orange);font-weight:700;margin-bottom:8px">⚠ 不調: ${sick.map(esc).join(' / ')} — 拡張機能の更新が必要かもしれません（管理者へ連絡）</p>`:''}
     <div style="overflow-x:auto"><table class="wtable"><thead><tr><th>サイト</th><th>状態</th><th>成功</th><th>失敗</th><th>最終成功日</th><th>直近10回</th></tr></thead><tbody>${rows||'<tr><td colspan=6>まだ記録がありません</td></tr>'}</tbody></table></div>
     <div class="modal-actions"><button class="btn primary" onclick="closeModal()">閉じる</button></div>
@@ -1024,7 +1037,7 @@ window.recordPrice = function(id){
   if(!it) return;
   openModal(`
     <h2>📈 価格を記録（変動を追跡）</h2>
-    <p class="text-mute" style="font-size:12px;margin-bottom:10px">「${esc((it.title||'').slice(0,30))}」の今日の価格を入力すると履歴に追加され、値上がり・値下がりを追跡できます。${it.price!=null?'<br>前回の記録: '+yen(it.price):''}</p>
+    <p class="text-mute" style="font-size:12.5px;margin-bottom:10px">「${esc((it.title||'').slice(0,30))}」の今日の価格を入力すると履歴に追加され、値上がり・値下がりを追跡できます。${it.price!=null?'<br>前回の記録: '+yen(it.price):''}</p>
     <input type="text" id="rpPrice" placeholder="今日の価格（円・数字のみ）" aria-label="今日の価格（円・数字のみ）" inputmode="numeric" value="${it.price!=null?it.price:''}">
     <div class="modal-actions">
       <button class="btn ghost" onclick="closeModal()">キャンセル</button>
@@ -1057,7 +1070,7 @@ window.setTarget = function(id){
   if(!it) return;
   openModal(`
     <h2>🎯 狙い値・タグ・メモ</h2>
-    <p class="text-mute" style="font-size:12px;margin-bottom:10px">「${esc((it.title||'').slice(0,30))}」<br><b>狙い値</b>＝この値段まで下がったら買う、という自分の上限。現在価格が狙い値以下になるとカードと価格ウォッチに🎯買い時サインが出ます。${it.price!=null?'<br>現在価格: '+yen(it.price):''}</p>
+    <p class="text-mute" style="font-size:12.5px;margin-bottom:10px">「${esc((it.title||'').slice(0,30))}」<br><b>狙い値</b>＝この値段まで下がったら買う、という自分の上限。現在価格が狙い値以下になるとカードと価格ウォッチに🎯買い時サインが出ます。${it.price!=null?'<br>現在価格: '+yen(it.price):''}</p>
     <input type="text" id="tgPrice" placeholder="狙い値（円・数字のみ・空欄で解除）" inputmode="numeric" value="${it.targetPrice!=null?it.targetPrice:''}">
     <input type="text" id="tgTags" placeholder="タグ（カンマ区切り・複数可）例：至急, 定期購買, 佐藤さん依頼" value="${esc((it.tags||[]).join(', '))}" maxlength="200">
     <input type="text" id="tgNote" placeholder="メモ（任意）例：品番AB-123・10個入り" value="${esc(it.note||'')}" maxlength="100">
@@ -1095,7 +1108,7 @@ window.openItemGraph = function(id){
       <button class="btn ghost sm" data-per="0" id="igAll">全期間</button>
       <button class="btn ghost sm" data-per="90">3ヶ月</button>
       <button class="btn ghost sm" data-per="30">1ヶ月</button>
-      <span class="text-mute" style="font-size:12px;flex:1">
+      <span class="text-mute" style="font-size:12.5px;flex:1">
         最安 <b style="color:var(--green)">${s?yen(s.min):'—'}</b> ／ 最高 ${s?yen(s.max):'—'} ／ 平均 ${s?yen(s.avg):'—'} ／ 記録 ${s?s.n:0}回
         ${it.targetPrice!=null?` ／ 🎯狙い値 <b style="color:var(--orange)">${yen(it.targetPrice)}</b>`:''}
       </span>
@@ -1155,7 +1168,7 @@ window.openItemGraph = function(id){
         <td class="num" style="font-weight:700">${yen(o.q*o.p)}</td><td>${esc(o.note||'')}</td>
         <td><button class="btn ghost sm" data-odel="${(it.orders.length-1-ri)}">🗑</button></td>
       </tr>`).join('')}</tbody></table></div>`
-      : '<span class="text-mute" style="font-size:11.5px">発注したら数量・単価を記録すると、支払実績と価格推移を突き合わせられます（🧾発注管理に集計されます）</span>';
+      : '<span class="text-mute" style="font-size:12.5px">発注したら数量・単価を記録すると、支払実績と価格推移を突き合わせられます（🧾発注管理に集計されます）</span>';
     $$('#odList [data-odel]').forEach(b=>{
       b.onclick=()=>{
         const oi=Number(b.getAttribute('data-odel'));
@@ -1197,7 +1210,7 @@ window.openOrders = function(){
     <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:8px;font-size:13px">
       <span>今月の発注額 <b style="color:var(--cyan)">${yen(sumMonth)}</b></span>
       <span>累計 <b>${yen(sumAll)}</b>（${rows.length}件）</span>
-      <span class="text-mute" style="font-size:11.5px">「差」＝発注単価−現在価格（プラス=今のほうが安い）</span>
+      <span class="text-mute" style="font-size:12.5px">「差」＝発注単価−現在価格（プラス=今のほうが安い）</span>
     </div>
     <div class="tbl-scroll">
       <table class="wtable">
@@ -1212,7 +1225,7 @@ window.openOrders = function(){
             <td class="num">${yen(r.o.p)}</td>
             <td class="num" style="font-weight:700">${yen(r.o.q*r.o.p)}</td>
             <td class="num">${yen(r.it.price)}</td>
-            <td class="num ${diff!=null?(diff>0?'card-trend down':(diff<0?'card-trend up':'')):''}" style="font-size:11.5px" title="${diff!=null&&diff>0?'今なら1個あたり'+yen(diff)+'安く買えます':''}">${diff!=null?((diff>0?'+':'')+diff.toLocaleString()):'—'}</td>
+            <td class="num ${diff!=null?(diff>0?'card-trend down':(diff<0?'card-trend up':'')):''}" style="font-size:12.5px" title="${diff!=null&&diff>0?'今なら1個あたり'+yen(diff)+'安く買えます':''}">${diff!=null?((diff>0?'+':'')+diff.toLocaleString()):'—'}</td>
             <td>${esc(r.o.note||'')}</td>
             <td><button class="btn ghost sm" data-orow="${ri}">🗑</button></td>
           </tr>`;}).join('')}</tbody>
@@ -1481,7 +1494,7 @@ window.openSiteManager = function(){
     </tr>`).join('') : '<tr><td colspan="3" class="text-mute">追加したサイトはまだありません</td></tr>';
   openModal(`
     <h2>➕ 検索サイトの追加・削除</h2>
-    <p class="text-mute" style="font-size:12px;line-height:1.8;margin-bottom:10px">普段の調達先（アスクル・カウネットなど）を足すと「🌐 EC で検索」の対象になります。<br><b>検索URL</b>＝そのサイトで何かを検索した後、アドレスバーのURLから<b>検索語より前の部分</b>を貼り付けてください。<br>例：アスクルで「ペン」を検索 → <span style="word-break:break-all">https://www.askul.co.jp/s/?searchWord=ペン</span> → 貼るのは <b>https://www.askul.co.jp/s/?searchWord=</b> まで</p>
+    <p class="text-mute" style="font-size:12.5px;line-height:1.8;margin-bottom:10px">普段の調達先（アスクル・カウネットなど）を足すと「🌐 EC で検索」の対象になります。<br><b>検索URL</b>＝そのサイトで何かを検索した後、アドレスバーのURLから<b>検索語より前の部分</b>を貼り付けてください。<br>例：アスクルで「ペン」を検索 → <span style="word-break:break-all">https://www.askul.co.jp/s/?searchWord=ペン</span> → 貼るのは <b>https://www.askul.co.jp/s/?searchWord=</b> まで</p>
     <div class="tbl-scroll" style="max-height:30vh;margin-bottom:12px">
       <table class="wtable">
         <thead><tr><th>サイト名</th><th>検索URL</th><th></th></tr></thead>
@@ -1582,7 +1595,7 @@ function loadDemo(){
 window.openManualAdd = function(){
   openModal(`
     <h2>✏️ 商品を手動で追加</h2>
-    <p class="text-mute" style="font-size:12px;margin-bottom:10px">拡張機能を使わなくても、ここから商品を登録して価格を比較できます。</p>
+    <p class="text-mute" style="font-size:12.5px;margin-bottom:10px">拡張機能を使わなくても、ここから商品を登録して価格を比較できます。</p>
     <input type="text" id="maTitle" placeholder="商品名（必須）例：三菱鉛筆 ボールペン 0.7mm" aria-label="商品名（必須）">
     <input type="text" id="maPrice" placeholder="価格（円・数字のみ）例：120" inputmode="numeric" aria-label="価格（円・数字のみ）">
     <input type="text" id="maGroup" placeholder="グループ（任意）例：ボールペン" aria-label="グループ（任意）">
@@ -1692,10 +1705,10 @@ window.openBulkUpdate = function(presetScope){
       <label style="cursor:pointer"><input type="radio" name="buMode" id="buModeManual"> ✏️ 手入力</label>
     </div>
     <div id="buAutoBox">
-      <p class="text-mute" style="font-size:12px;line-height:1.8;margin-bottom:10px">URL のある商品ページを、<b>あなたのボタン操作で</b>まとめて開きます（1クリックで最大8件＝「★の価格をチェック」と同水準・5秒間隔のレート制限つき・<b>ボタンを押さない限り次は開きません＝自動巡回なし</b>）。拡張機能が入っていれば、開いたページで商品を<b>クリック</b>すると今日の価格が再記録されます。</p>
+      <p class="text-mute" style="font-size:12.5px;line-height:1.8;margin-bottom:10px">URL のある商品ページを、<b>あなたのボタン操作で</b>まとめて開きます（1クリックで最大8件＝「★の価格をチェック」と同水準・5秒間隔のレート制限つき・<b>ボタンを押さない限り次は開きません＝自動巡回なし</b>）。拡張機能が入っていれば、開いたページで商品を<b>クリック</b>すると今日の価格が再記録されます。</p>
       <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-        <label style="font-size:12px">1回で開く件数:
-          <select id="buBatch" style="padding:5px 8px;background:var(--bg);border:1px solid var(--border-strong);border-radius:7px;color:var(--text);font-size:12px">
+        <label style="font-size:12.5px">1回で開く件数:
+          <select id="buBatch" style="padding:5px 8px;background:var(--bg);border:1px solid var(--border-strong);border-radius:7px;color:var(--text);font-size:12.5px">
             <option value="1">1件ずつ</option>
             <option value="3">3件</option>
             <option value="5" selected>5件</option>
@@ -1703,12 +1716,12 @@ window.openBulkUpdate = function(presetScope){
           </select>
         </label>
         <span id="buProg" style="font-weight:700;color:var(--cyan)"></span>
-        <span id="buCur" class="text-mute" style="font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+        <span id="buCur" class="text-mute" style="font-size:12.5px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
         <button class="btn green" id="buNext">▶ 開く</button>
       </div>
     </div>
     <div id="buManualBox" class="hidden">
-      <p class="text-mute" style="font-size:12px;margin-bottom:8px">各商品の<b>今日の価格</b>を入力して保存すると、価格履歴に追記されます（同じ日の記録は上書き）。空欄の商品は変更されません。</p>
+      <p class="text-mute" style="font-size:12.5px;margin-bottom:8px">各商品の<b>今日の価格</b>を入力して保存すると、価格履歴に追記されます（同じ日の記録は上書き）。空欄の商品は変更されません。</p>
       <div class="tbl-scroll">
         <table class="wtable">
           <thead><tr><th>商品</th><th>サイト</th><th>現在価格</th><th>今日の価格（円）</th></tr></thead>
@@ -1836,8 +1849,8 @@ window.openPriceWatch = function(){
             <td class="num">${s?yen(s.max):'—'}</td>
             <td class="num">${s?yen(s.avg):'—'}</td>
             <td class="num">${it.targetPrice!=null?yen(it.targetPrice):'—'}</td>
-            <td class="${tr?('card-trend '+tr.dir):'text-mute'}" style="font-size:11.5px">${esc(trendText(tr))}</td>
-            <td class="num ${p30!=null?(p30<0?'card-trend down':(p30>0?'card-trend up':'')):''}" style="font-size:11.5px">${p30!=null?((p30>0?'+':'')+p30+'%'):'—'}</td>
+            <td class="${tr?('card-trend '+tr.dir):'text-mute'}" style="font-size:12.5px">${esc(trendText(tr))}</td>
+            <td class="num ${p30!=null?(p30<0?'card-trend down':(p30>0?'card-trend up':'')):''}" style="font-size:12.5px">${p30!=null?((p30>0?'+':'')+p30+'%'):'—'}</td>
             <td class="num">${s?s.n:0}</td>
           </tr>`;
   // ソートキー: data-k → 値取り出し（null は常に末尾）
@@ -1850,8 +1863,8 @@ window.openPriceWatch = function(){
   openModal(`
     <h2>📊 価格ウォッチ — 全商品の価格推移</h2>
     <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
-      <p class="text-mute" style="font-size:12px;flex:1;margin:0">${rows.length}件。<b>🔽</b>=過去最安 / <b>🎯</b>=狙い値以下（買い時サイン）。<b>見出しクリックで並べ替え</b>（もう一度で昇降切替）。</p>
-      <label style="font-size:12px;cursor:pointer;white-space:nowrap"><input type="checkbox" id="pwBuyOnly"> 🔽🎯 買い時のみ</label>
+      <p class="text-mute" style="font-size:12.5px;flex:1;margin:0">${rows.length}件。<b>🔽</b>=過去最安 / <b>🎯</b>=狙い値以下（買い時サイン）。<b>見出しクリックで並べ替え</b>（もう一度で昇降切替）。</p>
+      <label style="font-size:12.5px;cursor:pointer;white-space:nowrap"><input type="checkbox" id="pwBuyOnly"> 🔽🎯 買い時のみ</label>
     </div>
     <div class="tbl-scroll">
       <table class="wtable">
@@ -1950,7 +1963,7 @@ window.openPoSettings = function(){
   const listRows=(arr,cls)=>arr.map((x,i)=>`<tr><td><input class="${cls}c" value="${esc(x.c)}" placeholder="コード" style="width:90px;margin-bottom:0"></td><td><input class="${cls}n" value="${esc(x.n)}" placeholder="名称" style="margin-bottom:0"></td><td><button class="btn ghost sm" data-podel="${cls}:${i}" aria-label="この行を削除">✕</button></td></tr>`).join('');
   openModal(`
     <h2>⚙ 注文書の設定</h2>
-    <p class="text-mute" style="font-size:12px;margin-bottom:8px">一度設定すれば、次回からは選ぶだけになります（この端末に保存・💾控えにも含まれます）。</p>
+    <p class="text-mute" style="font-size:12.5px;margin-bottom:8px">一度設定すれば、次回からは選ぶだけになります（この端末に保存・💾控えにも含まれます）。</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <input id="poDept" value="${esc(poSettings.dept)}" placeholder="起案部署（例：製造部）" aria-label="起案部署" style="flex:1;min-width:150px">
       <input id="poReq" value="${esc(poSettings.requester)}" placeholder="起案者名" aria-label="起案者名" style="flex:1;min-width:120px">
@@ -1997,7 +2010,7 @@ window.openPurchaseOrder = function(){
   const rows=sorted.map(it=>`
     <tr data-poid="${esc(it.id)}">
       <td><input type="checkbox" class="poSel" ${it.pinned?'checked':''} aria-label="この商品を注文書に含める"></td>
-      <td class="tt"><input class="poName" value="${esc(it.title)}" aria-label="品名" style="min-width:180px;margin-bottom:0;text-align:left">${it.maker?`<div class="text-mute" style="font-size:10px">${esc(it.maker)}</div>`:''}</td>
+      <td class="tt"><input class="poName" value="${esc(it.title)}" aria-label="品名" style="min-width:180px;margin-bottom:0;text-align:left">${it.maker?`<div class="text-mute" style="font-size:12.5px">${esc(it.maker)}</div>`:''}</td>
       <td>${esc(it.site)}</td>
       <td><input class="poPrice" inputmode="numeric" value="${it.price!=null?it.price:''}" aria-label="単価（円）" style="width:80px;margin-bottom:0"></td>
       <td><input class="poQty" inputmode="numeric" value="1" aria-label="数量" style="width:55px;margin-bottom:0"></td>
@@ -2016,7 +2029,7 @@ window.openPurchaseOrder = function(){
       <button class="btn ghost sm" onclick="closeModal();openPoSettings()" title="勘定科目・原価センタ・捺印欄のリスト設定">⚙ リスト設定</button>
     </div>
     <textarea id="poPurpose" rows="2" placeholder="購入目的（例：第一工場ラインの消耗品補充のため）" aria-label="購入目的" style="width:100%;background:var(--bg);border:1px solid var(--border-strong);border-radius:7px;color:var(--text);font-size:12.5px;padding:8px;margin-bottom:8px"></textarea>
-    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px;font-size:12px">
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px;font-size:12.5px">
       <span>☑行に一括:</span>
       <select id="poAccAll" aria-label="一括適用する勘定科目" style="max-width:160px">${accO}</select>
       <select id="poCenAll" aria-label="一括適用する原価センタ" style="max-width:160px">${cenO}</select>
@@ -2097,15 +2110,15 @@ function exportPurchaseOrder(lines, doc){
     </section>`;
   }).join('');
   const html=`<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><title>${esc(doc.no)} 注文書</title><style>
-    @page{size:A4;margin:14mm} body{font-family:"Yu Gothic","Meiryo",sans-serif;color:#111;font-size:12px;margin:0}
+    @page{size:A4;margin:14mm} body{font-family:"Yu Gothic","Meiryo",sans-serif;color:#111;font-size:12.5px;margin:0}
     .po{page-break-after:always;padding:4mm 0} .po:last-child{page-break-after:auto}
     .head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2.5px solid #111;padding-bottom:4px}
-    h1{font-size:24px;letter-spacing:8px;margin:0} .meta{font-size:11.5px;text-align:right;line-height:1.7}
+    h1{font-size:24px;letter-spacing:8px;margin:0} .meta{font-size:12.5px;text-align:right;line-height:1.7}
     .stamps{border-collapse:collapse;margin:10px 0 6px auto} .stamps td{border:1px solid #111;text-align:center}
-    .stH{font-size:10px;padding:2px 6px;background:#f2f2f2;min-width:18mm} .stB{height:18mm}
-    .info{width:100%;border-collapse:collapse;margin:6px 0} .info th{background:#f2f2f2;font-size:10.5px;padding:4px;border:1px solid #999;width:9%} .info td{padding:4px 8px;border:1px solid #999}
-    .lines{width:100%;border-collapse:collapse;margin-top:4px} .lines th{background:#f2f2f2;border:1px solid #999;padding:5px;font-size:11px} .lines td{border:1px solid #999;padding:5px 6px;vertical-align:top}
-    .c{text-align:center} .r{text-align:right} .mut{color:#666;font-size:9.5px}
+    .stH{font-size:12.5px;padding:2px 6px;background:#f2f2f2;min-width:18mm} .stB{height:18mm}
+    .info{width:100%;border-collapse:collapse;margin:6px 0} .info th{background:#f2f2f2;font-size:12.5px;padding:4px;border:1px solid #999;width:9%} .info td{padding:4px 8px;border:1px solid #999}
+    .lines{width:100%;border-collapse:collapse;margin-top:4px} .lines th{background:#f2f2f2;border:1px solid #999;padding:5px;font-size:12.5px} .lines td{border:1px solid #999;padding:5px 6px;vertical-align:top}
+    .c{text-align:center} .r{text-align:right} .mut{color:#666;font-size:12.5px}
     .purpose{border:1px solid #999;padding:8px;margin-top:8px;min-height:16mm;line-height:1.7}
     .bar{position:fixed;top:0;left:0;right:0;background:#1a2233;color:#fff;padding:8px 14px;display:flex;gap:10px;align-items:center;font-size:13px}
     .bar button{font-size:13px;padding:6px 16px;cursor:pointer} body.hasbar{padding-top:44px}
@@ -2126,7 +2139,7 @@ window.openReport = function(){
   const groups = Object.keys(groupItems());
   openModal(`
     <h2>📑 検討レポートの書き出し</h2>
-    <p class="text-mute" style="font-size:12px;line-height:1.8;margin-bottom:10px">比較表＋価格推移（ミニグラフ）つきの<b>印刷用HTML</b>を書き出します。発注前の検討や上長への説明にそのまま使えます。書き出したファイルはブラウザで開いて印刷／PDF保存できます。</p>
+    <p class="text-mute" style="font-size:12.5px;line-height:1.8;margin-bottom:10px">比較表＋価格推移（ミニグラフ）つきの<b>印刷用HTML</b>を書き出します。発注前の検討や上長への説明にそのまま使えます。書き出したファイルはブラウザで開いて印刷／PDF保存できます。</p>
     <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px;font-size:12.5px">
       <span>範囲:</span>
       <select id="rpScope" style="padding:6px 10px;background:var(--bg);border:1px solid var(--border-strong);border-radius:7px;color:var(--text);font-size:12.5px">
@@ -2191,10 +2204,10 @@ function exportReport(list, title, author){
     +'body{font-family:"Yu Gothic UI","Meiryo",sans-serif;color:#1e293b;max-width:1000px;margin:0 auto;padding:24px;line-height:1.7}'
     +'h1{color:#1F3864;border-bottom:3px solid #1F3864;padding-bottom:8px;font-size:22px}'
     +'h2{color:#1F3864;font-size:15px;border-left:6px solid #C9962F;padding-left:10px;margin:26px 0 8px;break-after:avoid}'
-    +'h2 .gm{font-size:11.5px;color:#64748b;font-weight:400}'
-    +'.meta{font-size:12px;color:#475569;margin:10px 0 4px}'
+    +'h2 .gm{font-size:12.5px;color:#64748b;font-weight:400}'
+    +'.meta{font-size:12.5px;color:#475569;margin:10px 0 4px}'
     +'.sumline{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 14px;font-size:13px;margin:10px 0}'
-    +'table{width:100%;border-collapse:collapse;font-size:11.5px;break-inside:avoid}'
+    +'table{width:100%;border-collapse:collapse;font-size:12.5px;break-inside:avoid}'
     +'th{background:#1F3864;color:#fff;padding:5px 7px;border:1px solid #cbd5e1;text-align:left;white-space:nowrap}'
     +'td{padding:4px 7px;border:1px solid #cbd5e1;vertical-align:middle}'
     +'tr:nth-child(even){background:#f8fafc}'
@@ -2202,7 +2215,7 @@ function exportReport(list, title, author){
     +'td.num{text-align:right;white-space:nowrap}td.pr{font-weight:700;color:#047857}'
     +'td.tt{max-width:250px}td.memo{max-width:130px;color:#475569}'
     +'.buy{color:#B45309;font-weight:700}'
-    +'footer{margin-top:30px;font-size:11px;color:#64748b;border-top:1px solid #ddd;padding-top:8px}'
+    +'footer{margin-top:30px;font-size:12.5px;color:#64748b;border-top:1px solid #ddd;padding-top:8px}'
     +'@media print{body{padding:0}table{page-break-inside:avoid}}'
     +'</style></head><body>'
     +'<h1>'+esc(title)+'</h1>'
@@ -2351,7 +2364,7 @@ window.openShare = function(){
   const supported = typeof window.showDirectoryPicker==='function';
   openModal(`
     <h2>🤝 チーム共有（社内限定）</h2>
-    <p class="text-mute" style="font-size:12px;line-height:1.8;margin-bottom:10px">
+    <p class="text-mute" style="font-size:12.5px;line-height:1.8;margin-bottom:10px">
       チームの<b>共有フォルダ（Box など）</b>を選ぶと、自分の商品リスト・価格履歴を
       「購買サーチ_共有_<b>名前</b>.json」として置き、他のメンバーのファイルを<b>🧩合体</b>で取り込めます。
       通信は一切なし（フォルダへのファイル読み書きのみ）。<b>同じ部署・同じ業務目的の社内共有に限ります</b>（社外提供は禁止・利用条件§2）。
@@ -2359,9 +2372,9 @@ window.openShare = function(){
     <input type="text" id="shName" placeholder="あなたの名前（共有ファイル名に使います）例：干場" value="${esc(shareUserName())}" maxlength="20">
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
       <button class="btn ghost" id="shPick" ${supported?'':'disabled'}>📁 共有フォルダを選ぶ</button>
-      <span id="shFolder" class="text-mute" style="font-size:12px">確認中…</span>
+      <span id="shFolder" class="text-mute" style="font-size:12.5px">確認中…</span>
     </div>
-    ${supported?'':'<p class="text-mute" style="font-size:12px;color:var(--orange)">⚠ このブラウザではフォルダ連携を使えません。「💾 控えを保存」→共有フォルダへ手動コピー→相手が「📥 復元→🧩合体」でも同じことができます。</p>'}
+    ${supported?'':'<p class="text-mute" style="font-size:12.5px;color:var(--orange)">⚠ このブラウザではフォルダ連携を使えません。「💾 控えを保存」→共有フォルダへ手動コピー→相手が「📥 復元→🧩合体」でも同じことができます。</p>'}
     <div class="modal-actions">
       <button class="btn ghost" onclick="closeModal()">閉じる</button>
       <button class="btn ghost" id="shIn" ${supported?'':'disabled'}>📥 共有から取り込む</button>
@@ -2458,7 +2471,7 @@ window.openHowTo = function(){
         <text x="330" y="158" text-anchor="middle" font-size="11.5" fill="var(--text-mute)">🔄「価格を一括更新」や 📈記録 で毎日1点ずつ重ねると、値下がり・買い時が見えてきます</text>
       </g>
     </svg>
-    <p class="text-mute" style="font-size:12px;line-height:1.7">拡張機能が無い場合も「✏️ 手動で追加」「📄 Excelで取込」＋📈記録で同じように価格を追えます。記録が7日以上あくと「📅 記録が古い」でお知らせします。</p>
+    <p class="text-mute" style="font-size:12.5px;line-height:1.7">拡張機能が無い場合も「✏️ 手動で追加」「📄 Excelで取込」＋📈記録で同じように価格を追えます。記録が7日以上あくと「📅 記録が古い」でお知らせします。</p>
     <div class="modal-actions">
       <button class="btn ghost" onclick="closeModal()">閉じる</button>
       ${state.items.length?'':`<button class="btn primary" onclick="closeModal();loadDemo()">🚀 見本を入れて試す</button>`}
